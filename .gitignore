@@ -5,3 +5,5 @@ gen/
 .*
 
 !.gitignore
+!.project
+!.classpath
