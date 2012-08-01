@@ -2,9 +2,10 @@ package free.yhc.youtube.musicplayer;
 
 import android.app.Application;
 import android.content.res.Configuration;
+import free.yhc.youtube.musicplayer.model.DB;
 import free.yhc.youtube.musicplayer.model.Utils;
 
-public class YoutubeMusicPlayerApp extends Application {
+public class YTMPApp extends Application {
     @Override
     public void
     onConfigurationChanged(Configuration newConfig) {
@@ -16,6 +17,7 @@ public class YoutubeMusicPlayerApp extends Application {
     onCreate() {
         super.onCreate();
         Utils.init(getApplicationContext());
+        DB.get().open();
     }
 
     @Override

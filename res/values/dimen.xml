@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- =============================================
+                            Dimension
+         ============================================= -->
+    <dimen name="ytentry_row_height">60dip</dimen>
+         
+    <!-- Youtube thumbnail's "width:height = 4:3". So, keep this rate for thumbnail width:height --> 
+    <dimen name="thumbnail_width">60dip</dimen>
+    <dimen name="thumbnail_height">45dip</dimen>
+    
+    <dimen name="toolbtn_width">45dip</dimen>
+    <dimen name="toolbtn_height">40dip</dimen>
+
+    <dimen name="large_text_size">25dip</dimen>
+    <dimen name="title_text_size">14dip</dimen>
+    <dimen name="desc_text_size">11dip</dimen>
+    
+    <!-- =============================================
+                             Color
+         ============================================= -->
+    <color name="title_text_color_new">#eedd82</color>
+    <color name="title_text_color_existing">#bebebe</color>
+    <color name="desc_text_color">#fffafa</color>
+    
+</resources>

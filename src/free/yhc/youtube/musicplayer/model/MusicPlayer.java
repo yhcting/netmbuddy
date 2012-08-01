@@ -12,7 +12,7 @@ import android.net.Uri;
 import android.view.View;
 import android.widget.MediaController;
 
-public class MPlayer implements
+public class MusicPlayer implements
 MediaController.MediaPlayerControl,
 MediaPlayer.OnBufferingUpdateListener,
 MediaPlayer.OnCompletionListener,
@@ -26,7 +26,7 @@ MediaPlayer.OnSeekCompleteListener {
     private View                mAnchor = null;
 
 
-    public MPlayer(Context context) {
+    public MusicPlayer(Context context) {
         mContext = context;
     }
 
