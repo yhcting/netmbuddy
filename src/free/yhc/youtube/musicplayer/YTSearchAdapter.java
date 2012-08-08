@@ -125,6 +125,16 @@ YTSearchHelper.LoadThumbnailDoneReceiver {
         return mThumbnails[pos];
     }
 
+    public String
+    getItemTitle(int pos) {
+        return mEntries[pos].media.title;
+    }
+
+    public String
+    getItemUrl(int pos) {
+        return mEntries[pos].media.content.url;
+    }
+
     public void
     markEntryExist(int pos) {
         YTSearchApi.Entry e = mEntries[pos];

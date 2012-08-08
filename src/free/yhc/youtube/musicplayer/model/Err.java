@@ -12,6 +12,8 @@ public enum Err {
     IO_FILE                     (R.string.err_io_file),
     IO_UNKNOWN                  (R.string.err_io_unknown),
     DB_DUPLICATED               (R.string.err_db_duplicated),
+    DB_NODATA                   (R.string.err_db_unknown),
+    DB_UNKNOWN                  (R.string.err_db_unknown),
     INVALID_URL                 (R.string.err_invalid_url),
     PARSER_UNEXPECTED_FORMAT    (R.string.err_parser_unknown),
     PARSER_UNKNOWN              (R.string.err_parser_unknown),

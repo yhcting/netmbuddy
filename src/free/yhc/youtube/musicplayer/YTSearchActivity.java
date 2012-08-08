@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
@@ -27,6 +28,7 @@ import free.yhc.youtube.musicplayer.model.DB;
 import free.yhc.youtube.musicplayer.model.DBHelper;
 import free.yhc.youtube.musicplayer.model.DBHelper.CheckExistArg;
 import free.yhc.youtube.musicplayer.model.Err;
+import free.yhc.youtube.musicplayer.model.MusicPlayer;
 import free.yhc.youtube.musicplayer.model.UiUtils;
 import free.yhc.youtube.musicplayer.model.Utils;
 import free.yhc.youtube.musicplayer.model.YTSearchApi;
@@ -40,6 +42,7 @@ DBHelper.CheckExistDoneReceiver {
     private static final int NR_ENTRY_PER_PAGE = YTSearchApi.NR_SEARCH_MAX;
 
     private final DB        mDb = DB.get();
+    private final MusicPlayer mMp = MusicPlayer.get();
 
     private YTSearchHelper  mSearchHelper;
     private DBHelper        mDbHelper;
@@ -179,7 +182,7 @@ DBHelper.CheckExistDoneReceiver {
 
     private void
     setupTopBar() {
-        View barv = findViewById(R.id.topbar);
+        //View barv = findViewById(R.id.topbar);
     }
 
     private void
@@ -231,10 +234,18 @@ DBHelper.CheckExistDoneReceiver {
             return;
         }
 
-        mDb.insertMusicToPlayList(plid,
-                                  entry.media.title, entry.media.description,
-                                  entry.media.content.url, playtm,
-                                  Utils.compressBitmap(bm));
+        Err err = mDb.insertMusicToPlayList(plid,
+                                            entry.media.title, entry.media.description,
+                                            entry.media.content.url, playtm,
+                                            Utils.compressBitmap(bm));
+        if (Err.NO_ERR != err) {
+            if (Err.DB_DUPLICATED == err)
+                UiUtils.showTextToast(this, R.string.msg_existing_muisc);
+            else
+                UiUtils.showTextToast(this, err.getMessage());
+            return;
+        }
+
         getAdapter().markEntryExist(position);
     }
 
@@ -247,7 +258,7 @@ DBHelper.CheckExistDoneReceiver {
             @Override
             public void onOk(Dialog dialog, EditText edit) {
                 String title = edit.getText().toString();
-                if (mDb.existPlayList(title)) {
+                if (mDb.doesPlayListExist(title)) {
                     UiUtils.showTextToast(YTSearchActivity.this, R.string.msg_existing_playlist);
                     return;
                 }
@@ -305,7 +316,14 @@ DBHelper.CheckExistDoneReceiver {
 
     private void
     onListItemClick(View view, int position, long itemId) {
+        View playerv = findViewById(R.id.player);
+        playerv.setVisibility(View.VISIBLE);
 
+        MusicPlayer.Music m = new MusicPlayer.Music(
+                Uri.parse(getAdapter().getItemUrl(position)),
+                getAdapter().getItemTitle(position));
+        mMp.setController(this, playerv);
+        mMp.startMusicsAsync(new MusicPlayer.Music[] { m });
     }
 
     @Override
@@ -429,6 +447,13 @@ DBHelper.CheckExistDoneReceiver {
     protected void
     onResume() {
         super.onResume();
+        View playerv = findViewById(R.id.player);
+        if (mMp.isMusicPlaying()) {
+            playerv.setVisibility(View.VISIBLE);
+            mMp.setController(this, playerv);
+        } else {
+            playerv.setVisibility(View.GONE);
+        }
     }
 
     @Override
@@ -466,7 +491,7 @@ DBHelper.CheckExistDoneReceiver {
             i.putExtra(KEY_PLCHANGED, true);
             setResult(Activity.RESULT_OK, i);
         }
-
+        mMp.unsetController(this);
         super.onBackPressed();
     }
 }

@@ -3,9 +3,11 @@ package free.yhc.youtube.musicplayer;
 import android.content.Context;
 import android.database.Cursor;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.ResourceCursorAdapter;
 import android.widget.TextView;
 import free.yhc.youtube.musicplayer.model.DB;
+import free.yhc.youtube.musicplayer.model.UiUtils;
 import free.yhc.youtube.musicplayer.model.Utils;
 
 public class MusicsAdapter extends ResourceCursorAdapter {
@@ -33,12 +35,13 @@ public class MusicsAdapter extends ResourceCursorAdapter {
 
     @Override
     public void bindView(View view, Context context, Cursor cur) {
-        //ImageView thumbnailv = (ImageView)view.findViewById(R.id.thumbnail);
+        ImageView thumbnailv = (ImageView)view.findViewById(R.id.thumbnail);
         TextView  titlev     = (TextView)view.findViewById(R.id.title);
         TextView  playtmv    = (TextView)view.findViewById(R.id.playtime);
 
         titlev.setText(cur.getString(COLI_TITLE));
         playtmv.setText(Utils.secsToTimeText(cur.getInt(COLI_PLAYTIME)));
+        UiUtils.setThumbnailImageView(thumbnailv, cur.getBlob(COLI_THUMBNAIL));
     }
 
 }

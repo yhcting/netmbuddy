@@ -79,12 +79,21 @@
                     />
             </LinearLayout>
         </RelativeLayout>
+        <LinearLayout
+            android:id="@+id/player"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_above="@id/bottombar"
+            android:visibility="gone"
+            >
+            <include layout="@layout/music_player" />
+        </LinearLayout>
         <ListView
             android:id="@+id/list"
             android:layout_width="match_parent"
             android:layout_height="fill_parent"
             android:layout_below="@id/topbar"
-            android:layout_above="@id/bottombar"
+            android:layout_above="@id/player"
             />
     </RelativeLayout>
     <LinearLayout

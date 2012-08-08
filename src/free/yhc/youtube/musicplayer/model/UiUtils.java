@@ -5,12 +5,15 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.Toast;
 import free.yhc.youtube.musicplayer.R;
 
@@ -172,5 +175,17 @@ public class UiUtils {
     public static AlertDialog
     buildOneLineEditTextDialog(final Context context, final int title, final EditTextAction action) {
         return buildOneLineEditTextDialog(context, context.getResources().getText(title), action);
+    }
+
+    public static void
+    setThumbnailImageView(ImageView v, byte[] imgdata) {
+        Bitmap thumbnailBm = null;
+        if (null == imgdata || imgdata.length > 0)
+            thumbnailBm = BitmapFactory.decodeByteArray(imgdata, 0, imgdata.length);
+
+        if (null == thumbnailBm)
+            v.setImageResource(R.drawable.ic_unknown_image);
+        else
+            v.setImageBitmap(thumbnailBm);
     }
 }

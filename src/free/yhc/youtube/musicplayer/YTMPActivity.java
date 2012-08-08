@@ -3,6 +3,8 @@ package free.yhc.youtube.musicplayer;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.res.Configuration;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
@@ -13,11 +15,17 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.ImageView;
 import android.widget.ListView;
+import free.yhc.youtube.musicplayer.model.DB;
+import free.yhc.youtube.musicplayer.model.DB.ColMusic;
+import free.yhc.youtube.musicplayer.model.MusicPlayer;
+import free.yhc.youtube.musicplayer.model.UiUtils;
 
 public class YTMPActivity extends Activity {
     private static final int REQC_YTSEARCH  = 0;
     private static final int REQC_MUSICS    = 1;
 
+    private final DB          mDb = DB.get();
+    private final MusicPlayer mMp = MusicPlayer.get();
     private ListView mListv;
 
     private PlayListAdapter
@@ -43,9 +51,26 @@ public class YTMPActivity extends Activity {
 
     private void
     onListItemClick(View view, int position, long itemId) {
-        Intent i = new Intent(this, MusicsActivity.class);
-        i.putExtra("plid", itemId);
-        startActivityForResult(i, REQC_MUSICS);
+        Cursor c = mDb.queryMusics(itemId, new ColMusic[] { ColMusic.URL,
+                                                            ColMusic.TITLE });
+        if (!c.moveToFirst()) {
+            UiUtils.showTextToast(this, R.string.msg_empty_playlist);
+            c.close();
+            return;
+        }
+
+        MusicPlayer.Music[] ms = new MusicPlayer.Music[c.getCount()];
+        int i = 0;
+        do {
+            ms[i++] = new MusicPlayer.Music(Uri.parse(c.getString(0)),
+                                          c.getString(1));
+        } while (c.moveToNext());
+        c.close();
+
+        View playerv = findViewById(R.id.player);
+        playerv.setVisibility(View.VISIBLE);
+        mMp.setController(this, playerv);
+        mMp.startMusicsAsync(ms);
     }
 
     @Override
@@ -57,6 +82,13 @@ public class YTMPActivity extends Activity {
             return true;
         case R.id.delete:
             return true;
+        case R.id.detail_list: {
+            Intent i = new Intent(this, MusicsActivity.class);
+            i.putExtra("plid", info.id);
+            i.putExtra("title", getAdapter().getItemTitle(info.position));
+            i.putExtra("thumbnail", getAdapter().getItemThumbnail(info.position));
+            startActivityForResult(i, REQC_MUSICS);
+        } return true;
         }
         return false;
     }
@@ -94,6 +126,14 @@ public class YTMPActivity extends Activity {
     protected void
     onResume() {
         super.onResume();
+
+        View playerv = findViewById(R.id.player);
+        if (mMp.isMusicPlaying()) {
+            playerv.setVisibility(View.VISIBLE);
+            mMp.setController(this, playerv);
+        } else {
+            playerv.setVisibility(View.GONE);
+        }
     }
 
     @Override
@@ -140,6 +180,7 @@ public class YTMPActivity extends Activity {
     @Override
     public void
     onBackPressed() {
+        mMp.unsetController(this);
         super.onBackPressed();
     }
 }

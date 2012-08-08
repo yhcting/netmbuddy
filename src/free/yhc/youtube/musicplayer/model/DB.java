@@ -7,7 +7,6 @@ import java.lang.reflect.Method;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.DatabaseUtils;
-import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.provider.BaseColumns;
@@ -370,11 +369,28 @@ public class DB extends SQLiteOpenHelper {
     insertMusicRef(long plid, long mid) {
         ContentValues cvs = new ContentValues();
         cvs.put(ColMusicRef.MUSICID.getName(), mid);
-        long r = mDb.insert(getMusicRefTableName(plid), null, cvs);
-        if (r >= 0)
-            incMusicReference(mid);
-
+        long r = -1;
+        mDb.beginTransaction();
+        try {
+            r = mDb.insert(getMusicRefTableName(plid), null, cvs);
+            if (r >= 0)
+                incMusicReference(mid);
+            mDb.setTransactionSuccessful();
+        } finally {
+            mDb.endTransaction();
+        }
         return r;
+    }
+
+    private boolean
+    doesMusicExist(long plid, long mid) {
+        Cursor c = mDb.query(getMusicRefTableName(plid),
+                             new String[] { ColMusicRef.ID.getName() },
+                             ColMusicRef.MUSICID.getName() + " = " + mid,
+                             null, null, null, null);
+        boolean ret = c.getCount() > 0;
+        c.close();
+        return ret;
     }
 
     private long
@@ -393,13 +409,19 @@ public class DB extends SQLiteOpenHelper {
     private int
     deleteMusicRef(long plid, long id) {
         long mid = getMusicRefInfoMusicId(plid, id);
-        int r =  mDb.delete(getMusicRefTableName(plid),
-                            ColMusicRef.ID.getName() + " = " + id,
-                            null);
-        eAssert(0 == r || 1 == r);
-        if (r > 0)
-            decMusicReference(mid);
-
+        int r = 0;
+        try {
+            mDb.beginTransaction();
+            r =  mDb.delete(getMusicRefTableName(plid),
+                                ColMusicRef.ID.getName() + " = " + id,
+                                null);
+            eAssert(0 == r || 1 == r);
+            if (r > 0)
+                decMusicReference(mid);
+            mDb.setTransactionSuccessful();
+        } finally {
+            mDb.endTransaction();
+        }
         return r;
     }
 
@@ -409,7 +431,7 @@ public class DB extends SQLiteOpenHelper {
     //
     // ======================================================================
     public boolean
-    existPlayList(String title) {
+    doesPlayListExist(String title) {
         boolean r;
         Cursor c = mDb.query(TABLE_PLAYLIST,
                              new String[] { ColPlayList.ID.getName() },
@@ -430,22 +452,33 @@ public class DB extends SQLiteOpenHelper {
     insertPlayList(String title, String desc) {
         // Inserting PlayList that has same 'title' is NOT allowed.
         ContentValues cvs = ColPlayList.createContentValuesForInsert(title, desc);
-        long id = mDb.insert(TABLE_PLAYLIST, null, cvs);
+        long id = -1;
+        mDb.beginTransaction();
         try {
+            id = mDb.insert(TABLE_PLAYLIST, null, cvs);
             if (id >= 0)
                 mDb.execSQL(buildTableSQL(getMusicRefTableName(id), ColMusicRef.values()));
-        } catch (SQLException e) {
-            deletePlayList(id);
+            mDb.setTransactionSuccessful();
+        } finally {
+            mDb.endTransaction();
         }
+
         return id;
     }
 
     public int
     deletePlayList(long id) {
-        int r = mDb.delete(TABLE_PLAYLIST, ColPlayList.ID.getName() + " = " + id, null);
-        eAssert(0 == r || 1 == r);
-        if (r > 0)
-            mDb.execSQL("DROP TABLE " + getMusicRefTableName(id) + ";");
+        int r = -1;
+        mDb.beginTransaction();
+        try {
+            r = mDb.delete(TABLE_PLAYLIST, ColPlayList.ID.getName() + " = " + id, null);
+            eAssert(0 == r || 1 == r);
+            if (r > 0)
+                mDb.execSQL("DROP TABLE " + getMusicRefTableName(id) + ";");
+            mDb.setTransactionSuccessful();
+        } finally {
+            mDb.endTransaction();
+        }
         return r;
     }
 
@@ -475,9 +508,9 @@ public class DB extends SQLiteOpenHelper {
      * @param playtime
      * @param thumbnail
      * @return
-     *   -1 for error;
+     *   -1 for error (ex. already exist)
      */
-    public long
+    public Err
     insertMusicToPlayList(long plid,
                           String title, String desc,
                           String url, int playtime,
@@ -487,16 +520,31 @@ public class DB extends SQLiteOpenHelper {
         long mid;
         if (c.getCount() <= 0) {
             // This is new music
-            mid = insertMusic(title, desc, url, playtime, thumbnail);
-            if (mid < 0) {
-                c.close();
-                return -1;
+            c.close();
+            mDb.beginTransaction();
+            try {
+                mid = insertMusic(title, desc, url, playtime, thumbnail);
+                if (mid < 0)
+                    return Err.DB_UNKNOWN;
+
+                if (0 > insertMusicRef(plid, mid))
+                    return Err.DB_UNKNOWN;
+
+                mDb.setTransactionSuccessful();
+            } finally {
+                mDb.endTransaction();
             }
         } else {
             c.moveToFirst();
             mid = c.getLong(0);
+            c.close();
+            if (doesMusicExist(plid, mid))
+                return Err.DB_DUPLICATED;
+
+            if (0 > insertMusicRef(plid, mid))
+                return Err.DB_UNKNOWN;
         }
-        return insertMusicRef(plid, mid);
+        return Err.NO_ERR;
     }
 
     /**
@@ -522,5 +570,14 @@ public class DB extends SQLiteOpenHelper {
     queryMusics(long plid, ColMusic[] cols) {
         eAssert(cols.length > 0);
         return mDb.rawQuery(buildQueryMusicsSQL(plid, cols), null);
+    }
+
+    public Cursor
+    queryMusic(long mid, ColMusic[] cols) {
+        eAssert(cols.length > 0);
+        return mDb.query(TABLE_MUSIC,
+                         getColNames(cols),
+                         ColMusic.ID.getName() + " = " + mid,
+                         null, null, null, null);
     }
 }

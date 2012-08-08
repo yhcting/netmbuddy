@@ -2,4 +2,5 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android" >
     <item android:id="@+id/rename" android:visible="true" android:title="@string/rename"></item>
     <item android:id="@+id/delete" android:visible="true" android:title="@string/delete"></item>
+    <item android:id="@+id/detail_list" android:enabled="true" android:title="@string/detail_list"></item>
 </menu>
