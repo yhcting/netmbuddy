@@ -406,14 +406,20 @@ public class DB extends SQLiteOpenHelper {
         return mid;
     }
 
+    /**
+     *
+     * @param plid
+     * @param mid
+     *   NOTE : This is music id (NOT music reference's id - primary key.
+     * @return
+     */
     private int
-    deleteMusicRef(long plid, long id) {
-        long mid = getMusicRefInfoMusicId(plid, id);
+    deleteMusicRef(long plid, long mid) {
         int r = 0;
         try {
             mDb.beginTransaction();
             r =  mDb.delete(getMusicRefTableName(plid),
-                                ColMusicRef.ID.getName() + " = " + id,
+                                ColMusicRef.MUSICID.getName() + " = " + mid,
                                 null);
             eAssert(0 == r || 1 == r);
             if (r > 0)
@@ -550,13 +556,13 @@ public class DB extends SQLiteOpenHelper {
     /**
      *
      * @param plid
-     * @param mrid
-     *   MusicRef id
+     * @param mid
+     *   NOTE : Music id (NOT Music reference id).
      * @return
      */
     public int
-    deleteMusicFromPlayList(long plid, long mrid) {
-        return deleteMusicRef(plid, mrid);
+    deleteMusicFromPlayList(long plid, long mid) {
+        return deleteMusicRef(plid, mid);
     }
 
     /**

@@ -26,7 +26,9 @@ public class MusicsActivity extends Activity {
 
     private final DB            mDb = DB.get();
     private final MusicPlayer   mMp = MusicPlayer.get();
-    private ListView    mListv;
+
+    private long        mPlid   = -1;
+    private ListView    mListv  = null;
 
 
     private MusicsAdapter
@@ -59,6 +61,10 @@ public class MusicsActivity extends Activity {
     onContextItemSelected(MenuItem mItem) {
         AdapterContextMenuInfo info = (AdapterContextMenuInfo)mItem.getMenuInfo();
         switch (mItem.getItemId()) {
+        case R.id.delete:
+            mDb.deleteMusicFromPlayList(mPlid, info.id);
+            getAdapter().reloadCursor(mPlid);
+            return true;
         }
         return false;
     }
@@ -68,7 +74,7 @@ public class MusicsActivity extends Activity {
     onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
         super.onCreateContextMenu(menu, v, menuInfo);
         MenuInflater inflater = getMenuInflater();
-        // nflater.inflate(R.menu.playlist_context, menu);
+        inflater.inflate(R.menu.musics_context, menu);
         // AdapterContextMenuInfo mInfo = (AdapterContextMenuInfo)menuInfo;
     }
 
@@ -78,8 +84,8 @@ public class MusicsActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.musics);
 
-        long plid = getIntent().getLongExtra("plid", -1);
-        eAssert(plid >= 0);
+        mPlid = getIntent().getLongExtra("plid", -1);
+        eAssert(mPlid >= 0);
 
         String title = getIntent().getStringExtra("title");
         ((TextView)findViewById(R.id.title)).setText(title);
@@ -97,7 +103,7 @@ public class MusicsActivity extends Activity {
                 onListItemClick(view, position, itemId);
             }
         });
-        MusicsAdapter adapter = new MusicsAdapter(this, plid);
+        MusicsAdapter adapter = new MusicsAdapter(this, mPlid);
         mListv.setAdapter(adapter);
     }
 

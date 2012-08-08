@@ -33,6 +33,12 @@ public class MusicsAdapter extends ResourceCursorAdapter {
         super(context, LAYOUT, createCursor(plid));
     }
 
+    public void
+    reloadCursor(long plid) {
+        Cursor newc = createCursor(plid);
+        changeCursor(newc);
+    }
+
     @Override
     public void bindView(View view, Context context, Cursor cur) {
         ImageView thumbnailv = (ImageView)view.findViewById(R.id.thumbnail);

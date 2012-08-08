@@ -453,6 +453,7 @@ DBHelper.CheckExistDoneReceiver {
             mMp.setController(this, playerv);
         } else {
             playerv.setVisibility(View.GONE);
+            mMp.setController(this, null);
         }
     }
 

@@ -81,6 +81,8 @@ public class YTMPActivity extends Activity {
         case R.id.rename:
             return true;
         case R.id.delete:
+            mDb.deletePlayList(info.id);
+            getAdapter().reloadCursor();
             return true;
         case R.id.detail_list: {
             Intent i = new Intent(this, MusicsActivity.class);

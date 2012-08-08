@@ -281,8 +281,6 @@ MediaPlayer.OnSeekCompleteListener {
 
     public Err
     setController(Context context, View playerv) {
-        eAssert(null != playerv.findViewById(R.id.music_player_layout_magic_id));
-
         if (context == mMcContext && mPlayerv == playerv)
             // controller is already set for this context.
             // So, nothing to do. just return!
@@ -293,6 +291,8 @@ MediaPlayer.OnSeekCompleteListener {
 
         if (null == mPlayerv)
             return Err.NO_ERR;
+
+        eAssert(null != playerv.findViewById(R.id.music_player_layout_magic_id));
 
         mMc = new MediaController(context);
         mMc.setMediaPlayer(this);
