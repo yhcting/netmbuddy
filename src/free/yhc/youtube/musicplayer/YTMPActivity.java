@@ -17,7 +17,6 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import free.yhc.youtube.musicplayer.model.DB;
 import free.yhc.youtube.musicplayer.model.DB.ColMusic;
-import free.yhc.youtube.musicplayer.model.MusicPlayer;
 import free.yhc.youtube.musicplayer.model.UiUtils;
 
 public class YTMPActivity extends Activity {

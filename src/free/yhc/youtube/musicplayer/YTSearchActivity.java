@@ -28,7 +28,6 @@ import free.yhc.youtube.musicplayer.model.DB;
 import free.yhc.youtube.musicplayer.model.DBHelper;
 import free.yhc.youtube.musicplayer.model.DBHelper.CheckExistArg;
 import free.yhc.youtube.musicplayer.model.Err;
-import free.yhc.youtube.musicplayer.model.MusicPlayer;
 import free.yhc.youtube.musicplayer.model.UiUtils;
 import free.yhc.youtube.musicplayer.model.Utils;
 import free.yhc.youtube.musicplayer.model.YTSearchApi;

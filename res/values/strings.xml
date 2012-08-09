@@ -7,7 +7,8 @@
     <string name="cancel">취소</string>
     <string name="delete">삭제</string>
     <string name="rename">이름 수정</string>
-    <string name="loading">로딩 중</string>
+    <string name="loading">로딩</string>
+    <string name="buffering">버퍼링</string>
     <string name="search_word">검색어</string>
     <string name="enter_search_word">검색어 입력</string>
     <string name="new_search">새로 검색하기</string>
@@ -25,6 +26,8 @@
     <string name="msg_wait_cancel">취소가 완료되길 기다리고 있습니다.</string>
     <string name="msg_preparing_mplayer">음악을 재생하기 위해 준비 중입니다..</string>
     <string name="msg_playing_done">재생이 모두 완료되었습니다.</string>
+    <string name="msg_mplayer_err_unknown">음악 재생 중 알수 없는 오류가 발생했습니다.</string>
+    <string name="msg_mplayer_err_not_allowed">현재 수행할 수 없는 기능입니다.</string>
     <string name="msg_empty_playlist">비어있는 재생 목록입니다.</string>
     
     <string name="err_no_err">성공.</string>

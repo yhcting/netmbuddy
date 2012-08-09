@@ -19,7 +19,6 @@ import android.widget.ListView;
 import android.widget.TextView;
 import free.yhc.youtube.musicplayer.model.DB;
 import free.yhc.youtube.musicplayer.model.DB.ColMusic;
-import free.yhc.youtube.musicplayer.model.MusicPlayer;
 import free.yhc.youtube.musicplayer.model.UiUtils;
 
 public class MusicsActivity extends Activity {
