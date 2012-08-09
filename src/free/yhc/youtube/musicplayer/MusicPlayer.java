@@ -2,6 +2,7 @@ package free.yhc.youtube.musicplayer;
 
 import static free.yhc.youtube.musicplayer.model.Utils.eAssert;
 import static free.yhc.youtube.musicplayer.model.Utils.logD;
+import static free.yhc.youtube.musicplayer.model.Utils.logW;
 
 import java.io.IOException;
 
@@ -32,7 +33,7 @@ MediaPlayer.OnVideoSizeChangedListener,
 MediaPlayer.OnSeekCompleteListener {
     private static final String WLTAG = "MusicPlayer";
     private static final int    NO_BUFFERING    = -1;
-    private static final int    RETRY_HANG_ON_BUFFERING     = 3;
+    private static final int    RETRY_HANG_ON_BUFFERING     = 4;
     private static final int    TIMEOUT_HANG_ON_BUFFERING   = 5 * 1000;
 
 
@@ -87,27 +88,44 @@ MediaPlayer.OnSeekCompleteListener {
 
     private class UpdateProgress implements Runnable {
         private ProgressBar progbar = null;
+        private int         lastProgress = -1;
 
         void start(ProgressBar aProgbar) {
             end();
             progbar = aProgbar;
+            lastProgress = -1;
             run();
         }
 
         void end() {
             progbar = null;
+            lastProgress = -1;
             Utils.getUiHandler().removeCallbacks(this);
         }
 
         @Override
         public void run() {
             if (null != progbar && progbar == mProgbar) {
-                mProgbar.setProgress(mpGetCurrentPosition() * 100 / mpGetDuration());
+                int curProgress = mpGetCurrentPosition() * 100 / mpGetDuration();
+                if (curProgress > lastProgress) {
+                    mProgbar.setProgress(curProgress);
+
+                    // This is dirty hack code for unexpected buffering - workaround of media player...
+                    // DO NOT think about the reason! This is guard code to avoid strange bug of media player
+                    //   based on experimental test.
+                    mRetryHangOnBuffering.end();
+                }
+                lastProgress = curProgress;
                 Utils.getUiHandler().postDelayed(this, 1000);
             }
         }
     }
 
+    // This RetryHangOnBuffering class is for workaround regarding bugs of MediaPlayer.
+    // So, module is very hacky and dirty.
+    // But... sigh... yes, but, I can't help .. :-(
+    // DO NOT think about the reason! This is guard code to avoid strange bug of media player
+    //   based on experimental test.
     private class RetryHangOnBuffering implements Runnable {
         private int         retry       = 0;
         private MediaPlayer mp          = null;
@@ -133,7 +151,20 @@ MediaPlayer.OnSeekCompleteListener {
 
         @Override
         public void run() {
-            if (retry-- > 0 && null != mp && mp == mpGet()) {
+            if (null == mp || mp != mpGet()) {
+                logW("MPlayer : RetryHangOnRecover - unexpected MediaPlayer!");
+                return; // unexpected media player... skip this case...
+            }
+
+            if (0 != mp.getCurrentPosition()) {
+                // Hang on buffering in the middle of playing.
+                // If we try to recover it, this means play one music over and over again.
+                // So, just skip this music if it fails in the middle of playing.
+                logD("MPlayer : Buffering fails in the middle of music - skip this music!");
+                retry = 0;
+            }
+
+            if (retry-- > 0) {
                 if (!isMediaPlayerAvailable()) {
                     end();
                     return;
@@ -141,6 +172,8 @@ MediaPlayer.OnSeekCompleteListener {
 
                 logD("MusicPlayer : try to recover from HangOnBuffering ***");
 
+                // This should handle the case only hang on first buffering...
+                // This is dirty but workaround based on experimental...
                 // Check it still preparing for recovery.
                 if (State.PREPARING != mpGetState()) {
                     // Below code is fully hack of MusicPlayer's mechanism to recover from exceptional state.
@@ -164,9 +197,14 @@ MediaPlayer.OnSeekCompleteListener {
                 }
 
                 Utils.getUiHandler().postDelayed(this, TIMEOUT_HANG_ON_BUFFERING);
-            } else {
-                logD("MPlayer : HangOnBuffering - Done");
-                setPlayerViewTitle(mRes.getText(R.string.msg_mplayer_err_unknown));
+            }
+
+            if (retry < 0) {
+                logD("MPlayer : HangOnBuffering - recovery fails.");
+                // Buffering fails.
+                // So, let's finish this music and complete it - hacking...
+                // Let's move to next music!!
+                MusicPlayer.this.onCompletion(mpGet());
             }
         }
     }
@@ -187,7 +225,7 @@ MediaPlayer.OnSeekCompleteListener {
                 .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, WLTAG);
         // Playing youtube requires high performance wifi for high quality media play.
         mWfl = ((WifiManager)Utils.getAppContext().getSystemService(Context.WIFI_SERVICE))
-                .createWifiLock(WifiManager.WIFI_MODE_FULL, WLTAG);
+                .createWifiLock(WifiManager.WIFI_MODE_FULL_HIGH_PERF, WLTAG);
         mWl.acquire();
         mWfl.acquire();
     }
@@ -230,15 +268,14 @@ MediaPlayer.OnSeekCompleteListener {
 
     private void
     initMediaPlayer(MediaPlayer mp) {
-        // can be called only once.
         mp.setOnBufferingUpdateListener(this);
         mp.setOnCompletionListener(this);
         mp.setOnPreparedListener(this);
-        mp.setScreenOnWhilePlaying(true);
         mp.setOnVideoSizeChangedListener(this);
         mp.setOnSeekCompleteListener(this);
         mp.setOnErrorListener(this);
         mp.setOnInfoListener(this);
+        mp.setScreenOnWhilePlaying(false);
         mp.setAudioStreamType(AudioManager.STREAM_MUSIC);
     }
 
@@ -583,7 +620,9 @@ MediaPlayer.OnSeekCompleteListener {
 
     public void
     unsetController(Context context) {
-        eAssert(null == mVContext || context == mVContext);
+        if (null != mVContext && context != mVContext)
+            logW("MusicPlayer : Unset Controller at different context...");
+
         mProgbar = null;
         mPlayerv = null;
         mVContext = null;

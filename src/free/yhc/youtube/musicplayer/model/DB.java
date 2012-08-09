@@ -473,6 +473,13 @@ public class DB extends SQLiteOpenHelper {
     }
 
     public int
+    updatePlayListName(long id, String name) {
+        ContentValues cvs = new ContentValues();
+        cvs.put(ColPlayList.TITLE.getName(), name);
+        return mDb.update(TABLE_PLAYLIST, cvs, ColPlayList.ID.getName() + " = " + id, null);
+    }
+
+    public int
     deletePlayList(long id) {
         int r = -1;
         mDb.beginTransaction();

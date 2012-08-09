@@ -82,7 +82,7 @@ public class UiUtils {
                        final CharSequence title,
                        final CharSequence description,
                        final ConfirmAction action) {
-        final AlertDialog dialog = createAlertDialog(context, R.drawable.ic_launcher, title, description);
+        final AlertDialog dialog = createAlertDialog(context, R.drawable.ic_info, title, description);
         dialog.setButton(context.getResources().getText(R.string.yes),
                          new DialogInterface.OnClickListener() {
             @Override

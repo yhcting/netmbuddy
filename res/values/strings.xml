@@ -14,6 +14,7 @@
     <string name="new_search">새로 검색하기</string>
     
     <string name="detail_list">상세 목록 보기</string>
+    <string name="enter_new_name">새 이름 입력</string>
     <string name="new_playlist">새 재생목록</string>
     <string name="add_to_playlist">재생목록에 추가</string>
     <string name="enter_playlist_title">재생목록 이름 입력</string>

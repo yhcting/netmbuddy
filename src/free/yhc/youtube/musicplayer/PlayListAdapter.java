@@ -11,12 +11,28 @@ import free.yhc.youtube.musicplayer.model.DB;
 import free.yhc.youtube.musicplayer.model.UiUtils;
 
 public class PlayListAdapter extends ResourceCursorAdapter {
-
     private static final int LAYOUT = R.layout.playlist_row;
 
     private static final int COLI_ID        = 0;
     private static final int COLI_TITLE     = 1;
     private static final int COLI_THUMBNAIL = 2;
+
+    private final OnItemButtonClickListener   onItemBtnClick;
+    private final View.OnClickListener        detailListOnClick = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            if (null != onItemBtnClick)
+                onItemBtnClick.onClick((Integer)v.getTag(), ItemButton.LIST);
+        }
+    };
+
+    public enum ItemButton {
+        LIST,
+    }
+
+    public interface OnItemButtonClickListener {
+        void onClick(int pos, ItemButton button);
+    }
 
     private static Cursor
     createCursor() {
@@ -27,8 +43,10 @@ public class PlayListAdapter extends ResourceCursorAdapter {
         });
     }
 
-    public PlayListAdapter(Context context) {
+    public PlayListAdapter(Context context,
+                           OnItemButtonClickListener listener) {
         super(context, LAYOUT, createCursor());
+        onItemBtnClick = listener;
     }
 
     public void
@@ -60,6 +78,9 @@ public class PlayListAdapter extends ResourceCursorAdapter {
     bindView(View view, Context context, Cursor cur) {
         ImageView thumbnailv = (ImageView)view.findViewById(R.id.thumbnail);
         TextView  titlev     = (TextView) view.findViewById(R.id.title);
+        ImageView listbtn    = (ImageView)view.findViewById(R.id.detaillist);
+        listbtn.setTag(cur.getPosition());
+        listbtn.setOnClickListener(detailListOnClick);
 
         titlev.setText(cur.getString(COLI_TITLE));
         UiUtils.setThumbnailImageView(thumbnailv, cur.getBlob(COLI_THUMBNAIL));
