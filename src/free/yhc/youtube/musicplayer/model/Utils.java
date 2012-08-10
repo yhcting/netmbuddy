@@ -7,11 +7,13 @@ import org.apache.http.impl.cookie.DateParseException;
 import org.apache.http.impl.cookie.DateUtils;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Handler;
+import android.preference.PreferenceManager;
 import android.util.Log;
 
 public class Utils {
@@ -26,6 +28,9 @@ public class Utils {
     private static Context  sAppContext  = null;
     private static Handler  sUiHandler   = null;
 
+    private static SharedPreferences sPrefs = null;
+
+
     private static final String[] sDateFormats = new String[] {
             // To support W3CDTF
         "yyyy-MM-d'T'HH:mm:ss.SSSZ",
@@ -33,6 +38,7 @@ public class Utils {
         "yyyy-MM-d'T'HH:mm:ssZ",
         "yyyy-MM-d'T'HH:mm:ss'Z'",
     };
+
     // ========================================================================
     //
     // Initialization
@@ -49,6 +55,7 @@ public class Utils {
 
         sAppContext = aAppContext;
         sUiHandler = new Handler();
+        sPrefs = PreferenceManager.getDefaultSharedPreferences(getAppContext());
     }
 
     // ========================================================================
@@ -340,6 +347,17 @@ public class Utils {
         } catch (DateParseException e) { }
         return date;
     }
+
+    // ------------------------------------------------------------------------
+    //
+    // Accessing preference
+    //
+    // ------------------------------------------------------------------------
+    public static boolean
+    isPrefSuffle() {
+        return sPrefs.getBoolean("shuffle", false);
+    }
+
     // ------------------------------------------------------------------------
     //
     // Misc

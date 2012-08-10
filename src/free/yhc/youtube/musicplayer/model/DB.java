@@ -34,6 +34,7 @@ public class DB extends SQLiteOpenHelper {
 
     public static enum ColPlayList implements Col {
         TITLE           ("title",           "text",     "not null"),
+        // DESCRIPTION : Not used yet - reserved for future use.
         DESCRIPTION     ("description",     "text",     "not null"),
         THUMBNAIL       ("thumbnail",       "blob",     "not null"),
         ID              (BaseColumns._ID,   "integer",  "primary key autoincrement");
@@ -106,7 +107,7 @@ public class DB extends SQLiteOpenHelper {
         TIME_ADD        ("time_add",        "integer",  "not null"),
         TIME_PLAYED     ("time_played",     "integer",  "not_null"), // time last played
 
-        // Music information
+        // Music information - Not used yet (reserved for future use)
         GENRE           ("genre",           "text",     "not null"),
         ARTIST          ("artist",          "text",     "not null"),
         ALBUM           ("album",           "text",     "not null"),
@@ -188,6 +189,13 @@ public class DB extends SQLiteOpenHelper {
         return sql;
     }
 
+    private static String
+    buildSQLOrderBy(boolean withStatement, Col col, boolean asc) {
+        if (null == col)
+            return null;
+        return (withStatement? "ORDER BY ": "") + col.getName() + " " + (asc? "ASC": "DESC");
+    }
+
     /**
      * Build SQL from joining music and music-ref tables
      * @param plid
@@ -195,7 +203,7 @@ public class DB extends SQLiteOpenHelper {
      * @return
      */
     private static String
-    buildQueryMusicsSQL(long plid, ColMusic[] cols) {
+    buildQueryMusicsSQL(long plid, ColMusic[] cols, ColMusic colOrderBy, boolean asc) {
         eAssert(cols.length > 0);
 
         String sql = "SELECT ";
@@ -206,11 +214,16 @@ public class DB extends SQLiteOpenHelper {
             sel += tableMusicNS + cnames[i] + ", ";
         sel += tableMusicNS + cnames[cnames.length - 1];
 
+        String orderBy = buildSQLOrderBy(true, colOrderBy, asc);
+        // NOTE
+        // There is NO USE CASE requiring sorted cursor for musics.
+        // result of querying musics don't need to be sorted cursor.
         String mrefTable = getMusicRefTableName(plid);
         sql += sel + " FROM " + TABLE_MUSIC + ", " + mrefTable
-                + " WHERE " + mrefTable + "." + ColMusicRef.MUSICID.getName() + " = "
-                + tableMusicNS + ColMusic.ID.getName()
-                + " ORDER BY " + tableMusicNS + ColMusic.TITLE.getName() + ";";
+                + " WHERE " + mrefTable + "." + ColMusicRef.MUSICID.getName()
+                            + " = " + tableMusicNS + ColMusic.ID.getName()
+                + " " + (null != orderBy? orderBy: "")
+                + ";";
         return sql;
     }
 
@@ -303,7 +316,7 @@ public class DB extends SQLiteOpenHelper {
     }
 
     private Cursor
-    queryMusic(ColMusic[] cols, ColMusic whCol, Object v) {
+    queryMusics(ColMusic[] cols, ColMusic whCol, Object v) {
         return mDb.query(TABLE_MUSIC,
                          getColNames(cols),
                          whCol.getName() + " = " + DatabaseUtils.sqlEscapeString(v.toString()),
@@ -351,7 +364,7 @@ public class DB extends SQLiteOpenHelper {
 
     private long
     getMusicInfoLong(long id, ColMusic col) {
-        Cursor c = queryMusic(new ColMusic[] { col }, ColMusic.ID, id);
+        Cursor c = queryMusics(new ColMusic[] { col }, ColMusic.ID, id);
         eAssert(c.getCount() > 0);
         c.moveToFirst();
         long r = c.getLong(0);
@@ -480,6 +493,14 @@ public class DB extends SQLiteOpenHelper {
     }
 
     public int
+    updatePlayListThumbnail(long id, byte[] data) {
+        eAssert(null != data);
+        ContentValues cvs = new ContentValues();
+        cvs.put(ColPlayList.THUMBNAIL.getName(), data);
+        return mDb.update(TABLE_PLAYLIST, cvs, ColPlayList.ID.getName() + " = " + id, null);
+    }
+
+    public int
     deletePlayList(long id) {
         int r = -1;
         mDb.beginTransaction();
@@ -505,7 +526,7 @@ public class DB extends SQLiteOpenHelper {
 
     public boolean
     existMusic(String url) {
-        Cursor c = queryMusic(new ColMusic[] { ColMusic.ID }, ColMusic.URL, url);
+        Cursor c = queryMusics(new ColMusic[] { ColMusic.ID }, ColMusic.URL, url);
         boolean r = c.getCount() > 0;
         c.close();
         return r;
@@ -528,7 +549,7 @@ public class DB extends SQLiteOpenHelper {
                           String title, String desc,
                           String url, int playtime,
                           byte[] thumbnail) {
-        Cursor c = queryMusic(new ColMusic[] { ColMusic.ID }, ColMusic.URL, url);
+        Cursor c = queryMusics(new ColMusic[] { ColMusic.ID }, ColMusic.URL, url);
         eAssert(0 == c.getCount() || 1 == c.getCount());
         long mid;
         if (c.getCount() <= 0) {
@@ -560,6 +581,22 @@ public class DB extends SQLiteOpenHelper {
         return Err.NO_ERR;
     }
 
+    public int
+    updateMusic(ColMusic where, Object wherev,
+                ColMusic field, Object v) {
+        ContentValues cvs = new ContentValues();
+        try {
+            Method m = cvs.getClass().getMethod("put", String.class, v.getClass());
+            m.invoke(cvs, field.getName(), v);
+        } catch (Exception e) {
+            eAssert(false);
+        }
+        return mDb.update(TABLE_MUSIC,
+                          cvs,
+                          where.getName() + " = " + DatabaseUtils.sqlEscapeString(wherev.toString()),
+                          null);
+    }
+
     /**
      *
      * @param plid
@@ -572,6 +609,13 @@ public class DB extends SQLiteOpenHelper {
         return deleteMusicRef(plid, mid);
     }
 
+    public Cursor
+    queryMusics(ColMusic[] cols, ColMusic colOrderBy, boolean asc) {
+        return mDb.query(TABLE_MUSIC,
+                         getColNames(cols),
+                         null, null, null, null, buildSQLOrderBy(false, colOrderBy, asc));
+    }
+
     /**
      * Joined table is used.
      * So, DO NOT find column index with column name!
@@ -580,9 +624,9 @@ public class DB extends SQLiteOpenHelper {
      * @return
      */
     public Cursor
-    queryMusics(long plid, ColMusic[] cols) {
+    queryMusics(long plid, ColMusic[] cols, ColMusic colOrderBy, boolean asc) {
         eAssert(cols.length > 0);
-        return mDb.rawQuery(buildQueryMusicsSQL(plid, cols), null);
+        return mDb.rawQuery(buildQueryMusicsSQL(plid, cols, colOrderBy, asc), null);
     }
 
     public Cursor

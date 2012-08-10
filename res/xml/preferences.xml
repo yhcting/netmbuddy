@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+    <PreferenceCategory android:title="@string/pref_cat_operation">
+        <SwitchPreference android:switchTextOff="@string/off" android:summary="@string/pref_shuffle_desc" android:title="@string/pref_shuffle" android:switchTextOn="@string/on" android:key="shuffle"/>
+    </PreferenceCategory>
+    
+
+</PreferenceScreen>

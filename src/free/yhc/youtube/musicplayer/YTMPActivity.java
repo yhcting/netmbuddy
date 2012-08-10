@@ -7,7 +7,6 @@ import android.app.Dialog;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.database.Cursor;
-import android.net.Uri;
 import android.os.Bundle;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
@@ -23,13 +22,17 @@ import free.yhc.youtube.musicplayer.PlayListAdapter.ItemButton;
 import free.yhc.youtube.musicplayer.model.DB;
 import free.yhc.youtube.musicplayer.model.DB.ColMusic;
 import free.yhc.youtube.musicplayer.model.UiUtils;
+import free.yhc.youtube.musicplayer.model.Utils;
 
 public class YTMPActivity extends Activity {
+    public static final String KEY_PLCHANGED    = "playListChanged";
+
     private static final int REQC_YTSEARCH  = 0;
     private static final int REQC_MUSICS    = 1;
 
     private final DB          mDb = DB.get();
     private final MusicPlayer mMp = MusicPlayer.get();
+
     private ListView mListv;
 
     private PlayListAdapter
@@ -37,18 +40,73 @@ public class YTMPActivity extends Activity {
         return (PlayListAdapter)mListv.getAdapter();
     }
 
+    /**
+     * Closing cursor is this functions responsibility.
+     * DO NOT close cursor by caller.
+     * @param c
+     */
     private void
-    startSearchingYoutube(View anchor) {
-        Intent i = new Intent(this, YTSearchActivity.class);
-        startActivityForResult(i, REQC_YTSEARCH);
+    playMusics(Cursor c) {
+        if (!c.moveToFirst()) {
+            UiUtils.showTextToast(this, R.string.msg_empty_playlist);
+            c.close();
+            return;
+        }
+        View playerv = findViewById(R.id.player);
+        playerv.setVisibility(View.VISIBLE);
+        mMp.setController(this, playerv);
+        mMp.startMusicsAsync(c, 0, 1, Utils.isPrefSuffle());
+    }
+
+    private void
+    searchMusics(View anchor) {
+
+    }
+
+    private void
+    playAllMusics(View anchor) {
+        playMusics(mDb.queryMusics(new ColMusic[] { ColMusic.URL, ColMusic.TITLE },
+                                   null, false));
     }
 
     private void
     setupToolButtons() {
-        ((ImageView)findViewById(R.id.btn_ytsearch)).setOnClickListener(new View.OnClickListener() {
+        ((ImageView)findViewById(R.id.playall)).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startSearchingYoutube(v);
+                playAllMusics(v);
+            }
+        });
+
+        ((ImageView)findViewById(R.id.recent_played)).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent i = new Intent(YTMPActivity.this, MusicsActivity.class);
+                i.putExtra("plid", MusicsActivity.PLID_RECENT_PLAYED);
+                startActivityForResult(i, REQC_MUSICS);
+            }
+        });
+
+        ((ImageView)findViewById(R.id.dbsearch)).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                searchMusics(v);
+            }
+        });
+
+        ((ImageView)findViewById(R.id.ytsearch)).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent i = new Intent(YTMPActivity.this, YTSearchActivity.class);
+                startActivityForResult(i, REQC_YTSEARCH);
+            }
+        });
+
+        ((ImageView)findViewById(R.id.preferences)).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent i = new Intent(YTMPActivity.this, YTMPPreferenceActivity.class);
+                startActivity(i);
             }
         });
     }
@@ -79,26 +137,9 @@ public class YTMPActivity extends Activity {
 
     private void
     onListItemClick(View view, int position, long itemId) {
-        Cursor c = mDb.queryMusics(itemId, new ColMusic[] { ColMusic.URL,
-                                                            ColMusic.TITLE });
-        if (!c.moveToFirst()) {
-            UiUtils.showTextToast(this, R.string.msg_empty_playlist);
-            c.close();
-            return;
-        }
-
-        MusicPlayer.Music[] ms = new MusicPlayer.Music[c.getCount()];
-        int i = 0;
-        do {
-            ms[i++] = new MusicPlayer.Music(Uri.parse(c.getString(0)),
-                                          c.getString(1));
-        } while (c.moveToNext());
-        c.close();
-
-        View playerv = findViewById(R.id.player);
-        playerv.setVisibility(View.VISIBLE);
-        mMp.setController(this, playerv);
-        mMp.startMusicsAsync(ms);
+        playMusics(mDb.queryMusics(itemId,
+                                   new ColMusic[] { ColMusic.URL, ColMusic.TITLE },
+                                   null, false));
     }
 
     @Override
@@ -196,11 +237,15 @@ public class YTMPActivity extends Activity {
         if (Activity.RESULT_OK != resultCode)
             return;
 
+        // Check common result.
+        boolean plChanged = data.getBooleanExtra(KEY_PLCHANGED, false);
+        if (plChanged)
+            getAdapter().reloadCursor();
+
         switch (requestCode) {
         case REQC_YTSEARCH:
-            boolean plChanged = data.getBooleanExtra(YTSearchActivity.KEY_PLCHANGED, false);
-            if (plChanged)
-                getAdapter().reloadCursor();
+            break;
+        case REQC_MUSICS:
             break;
         }
     }

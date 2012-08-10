@@ -5,20 +5,27 @@ import static free.yhc.youtube.musicplayer.model.Utils.logD;
 import static free.yhc.youtube.musicplayer.model.Utils.logW;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.Random;
 
 import android.content.Context;
 import android.content.res.Resources;
+import android.database.Cursor;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.net.wifi.WifiManager;
 import android.net.wifi.WifiManager.WifiLock;
+import android.os.AsyncTask;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import free.yhc.youtube.musicplayer.model.DB;
+import free.yhc.youtube.musicplayer.model.DB.ColMusic;
 import free.yhc.youtube.musicplayer.model.Err;
 import free.yhc.youtube.musicplayer.model.UiUtils;
 import free.yhc.youtube.musicplayer.model.Utils;
@@ -32,16 +39,38 @@ MediaPlayer.OnInfoListener,
 MediaPlayer.OnVideoSizeChangedListener,
 MediaPlayer.OnSeekCompleteListener {
     private static final String WLTAG = "MusicPlayer";
+    private static final int    RETRY_ON_ERROR  = 1;
     private static final int    NO_BUFFERING    = -1;
     private static final int    RETRY_HANG_ON_BUFFERING     = 4;
     private static final int    TIMEOUT_HANG_ON_BUFFERING   = 5 * 1000;
 
+    private static final Comparator<NrElem> sNrElemComparator = new Comparator<NrElem>() {
+        @Override
+        public int compare(NrElem o1, NrElem o2) {
+            if (o1.n > o2.n)
+                return 1;
+            else if (o1.n < o2.n)
+                return -1;
+            else
+                return 0;
+        }
+    };
+    private static final Comparator<Music> sMusicTitleComparator = new Comparator<Music>() {
+        @Override
+        public int compare(Music o1, Music o2) {
+            return o1.title.compareTo(o2.title);
+        }
+    };
 
     private static MusicPlayer instance = null;
 
-    private final Resources     mRes        = Utils.getAppContext().getResources();
 
+    private final Resources     mRes        = Utils.getAppContext().getResources();
+    private final DB            mDb         = DB.get();
+
+    // ------------------------------------------------------------------------
     // Runnables
+    // ------------------------------------------------------------------------
     private final UpdateProgress        mUpdateProg             = new UpdateProgress();
     private final RetryHangOnBuffering  mRetryHangOnBuffering   = new RetryHangOnBuffering();
 
@@ -51,13 +80,23 @@ MediaPlayer.OnSeekCompleteListener {
     private MediaPlayer         mMp         = null;
     private State               mMpS        = State.INVALID; // state of mMp;
 
+    // ------------------------------------------------------------------------
     // UI Control.
+    // ------------------------------------------------------------------------
     private Context             mVContext   = null;
     private View                mPlayerv    = null;
     private ProgressBar         mProgbar    = null;
 
+    // ------------------------------------------------------------------------
     // MediaPlayer Runtime Status
+    // ------------------------------------------------------------------------
     private int                 mBuffering  = NO_BUFFERING;
+    // This variable is for retrying errored music again.
+    // Sometimes, playing music fails with error just after start playing due to unknown several issues.
+    // (May be due to mediaplayer bug or unstable device platform.)
+    // In this case trying to recover this is better than just skip it.
+    // This also a kind of workaround and dirty hack!
+    private int                 mPlayErrRetry = RETRY_ON_ERROR;
 
     private Music[]             mMusics     = null;
     private int                 mMusici     = -1;
@@ -83,6 +122,15 @@ MediaPlayer.OnSeekCompleteListener {
         public Music(Uri aUri, String aTitle) {
             uri = aUri;
             title = aTitle;
+        }
+    }
+
+    private static class NrElem {
+        public int      n;
+        public Object   tag;
+        NrElem(int aN, Object aTag) {
+            n = aN;
+            tag = aTag;
         }
     }
 
@@ -305,10 +353,11 @@ MediaPlayer.OnSeekCompleteListener {
 
     private void
     mpRelease() {
-        if (null == mMp)
+        if (null == mMp || State.END == mpGetState())
             return;
 
-        if (mMp.isPlaying())
+
+        if (State.ERROR != mMpS && mMp.isPlaying())
             mMp.stop();
 
         mMp.release();
@@ -400,6 +449,7 @@ MediaPlayer.OnSeekCompleteListener {
 
     private void
     playMusicAsync() {
+        mPlayErrRetry = RETRY_ON_ERROR;
         while (mMusici < mMusics.length) {
             try {
                 // onPrepare
@@ -408,6 +458,14 @@ MediaPlayer.OnSeekCompleteListener {
                 mMusici++;
                 continue;
             }
+            AsyncTask.execute(new Runnable() {
+                @Override
+                public void run() {
+                    int n = mDb.updateMusic(ColMusic.URL, mMusics[mMusici].uri.toString(),
+                                    ColMusic.TIME_PLAYED, System.currentTimeMillis());
+                    logD("MusicPlayer : TIME_PLAYED updated : " + n);
+                }
+            });
             mpPrepareAsync();
             return;
         }
@@ -647,6 +705,76 @@ MediaPlayer.OnSeekCompleteListener {
         startMusicPlayerAsync();
     }
 
+
+
+    /**
+     * This may takes some time. it depends on size of cursor.
+     * @param c
+     *   Musics from this cursor will be sorted order by it's title.
+     *   So, this function doesn't require ordered cursor.
+     *   <This is for performance reason!>
+     * @param coliTitle
+     * @param coliUrl
+     * @param shuffle
+     * @return
+     */
+    private Music[]
+    getMusics(Cursor c, int coliTitle, int coliUrl, boolean shuffle) {
+        if (!c.moveToFirst())
+            return new Music[0];
+
+        Music[] ms = new Music[c.getCount()];
+        int i = 0;
+        if (!shuffle) {
+            do {
+                ms[i++] = new Music(Uri.parse(c.getString(coliUrl)),
+                                    c.getString(coliTitle));
+            } while (c.moveToNext());
+            Arrays.sort(ms, sMusicTitleComparator);
+        } else {
+            // This is shuffled case!
+            Random r = new Random(System.currentTimeMillis());
+            NrElem[] nes = new NrElem[c.getCount()];
+            do {
+                nes[i++] = new NrElem(r.nextInt(),
+                                      new MusicPlayer.Music(Uri.parse(c.getString(coliUrl)),
+                                                                      c.getString(coliTitle)));
+            } while (c.moveToNext());
+            Arrays.sort(nes, sNrElemComparator);
+            for (i = 0; i < nes.length; i++)
+                ms[i] = (MusicPlayer.Music)nes[i].tag;
+        }
+        return ms;
+    }
+
+    /**
+     *
+     * @param c
+     *   closing cursor is in charge of this function.
+     * @param coliUrl
+     * @param coliTitle
+     * @param shuffle
+     */
+    public void
+    startMusicsAsync(final Cursor c, final int coliUrl, final int coliTitle, final boolean shuffle) {
+        eAssert(Utils.isUiThread());
+        eAssert(null != mPlayerv);
+
+        AsyncTask.execute(new Runnable() {
+            @Override
+            public void run() {
+                final Music[] ms = getMusics(c, coliTitle, coliUrl, shuffle);
+                Utils.getUiHandler().post(new Runnable() {
+                    @Override
+                    public void run() {
+                        startMusicsAsync(ms);
+                    }
+                });
+                c.close();
+            }
+        });
+    }
+
     public boolean
     isMusicPlaying() {
         return null != mMusics && mMusici < mMusics.length;
@@ -708,21 +836,48 @@ MediaPlayer.OnSeekCompleteListener {
     @Override
     public boolean
     onError(MediaPlayer mp, int what, int extra) {
+        boolean tryAgain = false;
         mpSetState(State.ERROR);
-        logD("MPlayer - onError");
         switch (what) {
         case MediaPlayer.MEDIA_ERROR_NOT_VALID_FOR_PROGRESSIVE_PLAYBACK:
+            logD("MPlayer - onError : NOT_VALID_FOR_PROGRESSIVE_PLAYBACK");
             break;
 
         case MediaPlayer.MEDIA_ERROR_SERVER_DIED:
+            logD("MPlayer - onError : MEDIA_ERROR_SERVER_DIED");
+            tryAgain = true;
             break;
 
         case MediaPlayer.MEDIA_ERROR_UNKNOWN:
+            logD("MPlayer - onError : UNKNOWN");
             break;
 
         default:
+            logD("MPlayer - onError");
         }
-        return false;
+
+        if (!tryAgain || mPlayErrRetry-- <= 0)
+            // Kind of HACK!
+            // Retry is over.
+            // Move to next music.
+            mMusici++;
+
+        // At startMusicPlayerAsync, mPlayErrRetry value is initialized.
+        // This leads to infinite retrying.
+        // So avoid this, backup current value and restore it after startMusicPlayerAsync() is called.
+        int playErrRetrySv = mPlayErrRetry;
+
+        // To recover from error state
+        // Release -> Create new instance is essential.
+        startMusicPlayerAsync();
+
+        // Restore to saved value.
+        mPlayErrRetry = playErrRetrySv;
+
+        // onComplete() will be called.
+        // So, playing next music will be done at 'onComplete()'
+
+        return true; // DO NOT call onComplete Listener.
     }
 
     @Override

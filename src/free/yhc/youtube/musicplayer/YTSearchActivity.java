@@ -36,8 +36,6 @@ import free.yhc.youtube.musicplayer.model.YTSearchHelper;
 public class YTSearchActivity extends Activity implements
 YTSearchHelper.SearchDoneReceiver,
 DBHelper.CheckExistDoneReceiver {
-    public static final String KEY_PLCHANGED    = "playlistChanged";
-
     private static final int NR_ENTRY_PER_PAGE = YTSearchApi.NR_SEARCH_MAX;
 
     private final DB        mDb = DB.get();
@@ -488,7 +486,7 @@ DBHelper.CheckExistDoneReceiver {
     onBackPressed() {
         if (mPlayListChanged) {
             Intent i = new Intent();
-            i.putExtra(KEY_PLCHANGED, true);
+            i.putExtra(YTMPActivity.KEY_PLCHANGED, true);
             setResult(Activity.RESULT_OK, i);
         }
         mMp.unsetController(this);

@@ -19,14 +19,19 @@ public class MusicsAdapter extends ResourceCursorAdapter {
     private static final int COLI_THUMBNAIL = 2;
     private static final int COLI_PLAYTIME  = 3;
 
+    private static final DB.ColMusic[] sQueryCols
+        = new DB.ColMusic[] { DB.ColMusic.ID,
+                              DB.ColMusic.TITLE,
+                              DB.ColMusic.THUMBNAIL,
+                              DB.ColMusic.PLAYTIME };
+
+
     private static Cursor
     createCursor(long plid) {
-        return DB.get().queryMusics(plid, new DB.ColMusic[] {
-                DB.ColMusic.ID,
-                DB.ColMusic.TITLE,
-                DB.ColMusic.THUMBNAIL,
-                DB.ColMusic.PLAYTIME,
-        });
+        if (MusicsActivity.PLID_RECENT_PLAYED == plid)
+            return DB.get().queryMusics(sQueryCols, DB.ColMusic.TIME_PLAYED, false);
+        else
+            return DB.get().queryMusics(plid, sQueryCols, DB.ColMusic.TITLE, true);
     }
 
     public MusicsAdapter(Context context, long plid) {

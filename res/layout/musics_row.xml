@@ -14,7 +14,7 @@
         android:layout_gravity="center_vertical"
         android:gravity="center"
         android:scaleType="fitCenter"
-        android:src="@drawable/ic_unknown"
+        android:src="@drawable/ic_unknown_image"
         />
     <RelativeLayout
         android:layout_width="fill_parent"

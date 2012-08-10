@@ -75,7 +75,7 @@
                     android:gravity="center"
                     android:scaleType="fitCenter"
                     android:clickable="true"
-                    android:src="@drawable/ic_search"
+                    android:src="@drawable/ic_ytsearch"
                     />
             </LinearLayout>
         </RelativeLayout>

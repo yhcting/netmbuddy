@@ -3,6 +3,8 @@
     <string name="app_name">유투브 뮤직 플레이어</string>
     <string name="yes">예</string>
     <string name="no">아니오</string>
+    <string name="on">켜기</string>
+    <string name="off">끄기</string>
     <string name="ok">확인</string>
     <string name="cancel">취소</string>
     <string name="delete">삭제</string>
@@ -10,14 +12,20 @@
     <string name="loading">로딩</string>
     <string name="buffering">버퍼링</string>
     <string name="search_word">검색어</string>
+    
     <string name="enter_search_word">검색어 입력</string>
     <string name="new_search">새로 검색하기</string>
-    
     <string name="detail_list">상세 목록 보기</string>
     <string name="enter_new_name">새 이름 입력</string>
     <string name="new_playlist">새 재생목록</string>
     <string name="add_to_playlist">재생목록에 추가</string>
     <string name="enter_playlist_title">재생목록 이름 입력</string>
+    <string name="recent_played">최근 재생 목록</string>
+    <string name="set_to_plthumbnail">재생목록 아이콘으로 사용</string>
+    
+    <string name="pref_cat_operation">동작 방식 설정</string>
+    <string name="pref_shuffle">임의 순서로 재생</string>
+    <string name="pref_shuffle_desc">이 기능을 "켜기"로 설정하면 음악 재생시 재생되는 곡의 순서가 무작위로 됩니다.</string>
     
     <string name="msg_unknown_dberror">알수 없는 데이타베이스 오류가 발생했습니다.</string>
     <string name="msg_unknown_format">알수 없는 형식의 유투브 비디오 입니다.</string>

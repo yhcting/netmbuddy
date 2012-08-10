@@ -5,7 +5,6 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.database.Cursor;
-import android.net.Uri;
 import android.os.Bundle;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
@@ -20,19 +19,50 @@ import android.widget.TextView;
 import free.yhc.youtube.musicplayer.model.DB;
 import free.yhc.youtube.musicplayer.model.DB.ColMusic;
 import free.yhc.youtube.musicplayer.model.UiUtils;
+import free.yhc.youtube.musicplayer.model.Utils;
 
 public class MusicsActivity extends Activity {
+    public static final long PLID_INVALID       = -100000;
+    public static final long PLID_RECENT_PLAYED = -1;
 
     private final DB            mDb = DB.get();
     private final MusicPlayer   mMp = MusicPlayer.get();
 
-    private long        mPlid   = -1;
+    private boolean     mPlayListChanged = false;
+
+    private long        mPlid   = PLID_INVALID;
     private ListView    mListv  = null;
 
+
+    private static boolean
+    isUserPlayList(long plid) {
+        return plid >= 0;
+    }
 
     private MusicsAdapter
     getAdapter() {
         return (MusicsAdapter)mListv.getAdapter();
+    }
+
+    private void
+    setToPlayListThumbnail(long musicid) {
+        eAssert(isUserPlayList(mPlid));
+
+        Cursor c = mDb.queryMusic(musicid, new ColMusic[] { ColMusic.THUMBNAIL });
+        if (!c.moveToFirst()) {
+            UiUtils.showTextToast(this, R.string.err_db_unknown);
+            c.close();
+            return;
+        }
+
+        byte[] data = c.getBlob(0);
+        eAssert(null != data);
+        c.close();
+
+        mDb.updatePlayListThumbnail(mPlid, data);
+        mPlayListChanged = true;
+        // update current screen's thumbnail too.
+        UiUtils.setThumbnailImageView(((ImageView)findViewById(R.id.thumbnail)), data);
     }
 
     private void
@@ -45,14 +75,10 @@ public class MusicsActivity extends Activity {
             return;
         }
 
-        MusicPlayer.Music m = new MusicPlayer.Music(Uri.parse(c.getString(0)),
-                                                    c.getString(1));
-        c.close();
-
         View playerv = findViewById(R.id.player);
         playerv.setVisibility(View.VISIBLE);
         mMp.setController(this, playerv);
-        mMp.startMusicsAsync(new MusicPlayer.Music[] { m });
+        mMp.startMusicsAsync(c, 0, 1, Utils.isPrefSuffle());
     }
 
     @Override
@@ -64,6 +90,10 @@ public class MusicsActivity extends Activity {
             mDb.deleteMusicFromPlayList(mPlid, info.id);
             getAdapter().reloadCursor(mPlid);
             return true;
+
+        case R.id.plthumbnail:
+            setToPlayListThumbnail(info.id);
+            return true;
         }
         return false;
     }
@@ -74,7 +104,12 @@ public class MusicsActivity extends Activity {
         super.onCreateContextMenu(menu, v, menuInfo);
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.musics_context, menu);
-        // AdapterContextMenuInfo mInfo = (AdapterContextMenuInfo)menuInfo;
+        //AdapterContextMenuInfo mInfo = (AdapterContextMenuInfo)menuInfo;
+
+        if (isUserPlayList(mPlid))
+            menu.findItem(R.id.plthumbnail).setVisible(true);
+        else
+            menu.findItem(R.id.plthumbnail).setVisible(false);
     }
 
     @Override
@@ -83,14 +118,19 @@ public class MusicsActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.musics);
 
-        mPlid = getIntent().getLongExtra("plid", -1);
-        eAssert(mPlid >= 0);
+        mPlid = getIntent().getLongExtra("plid", PLID_INVALID);
+        eAssert(PLID_INVALID != mPlid);
 
-        String title = getIntent().getStringExtra("title");
-        ((TextView)findViewById(R.id.title)).setText(title);
+        if (isUserPlayList(mPlid)) {
+            String title = getIntent().getStringExtra("title");
+            ((TextView)findViewById(R.id.title)).setText(title);
 
-        byte[] imgdata = getIntent().getByteArrayExtra("thumbnail");
-        UiUtils.setThumbnailImageView(((ImageView)findViewById(R.id.thumbnail)), imgdata);
+            byte[] imgdata = getIntent().getByteArrayExtra("thumbnail");
+            UiUtils.setThumbnailImageView(((ImageView)findViewById(R.id.thumbnail)), imgdata);
+        } else if (PLID_RECENT_PLAYED == mPlid) {
+            ((TextView)findViewById(R.id.title)).setText(R.string.recent_played);
+            ((ImageView)findViewById(R.id.thumbnail)).setImageResource(R.drawable.ic_recent_played_up);
+        }
 
         mListv = (ListView)findViewById(R.id.list);
         //mListv.setEmptyView(UiUtils.inflateLayout(this, R.layout.ytsearch_empty_list));
@@ -161,7 +201,11 @@ public class MusicsActivity extends Activity {
     public void
     onBackPressed() {
         mMp.unsetController(this);
-
+        if (mPlayListChanged) {
+            Intent i = new Intent();
+            i.putExtra(YTMPActivity.KEY_PLCHANGED, true);
+            setResult(RESULT_OK, i);
+        }
         super.onBackPressed();
     }
 }
