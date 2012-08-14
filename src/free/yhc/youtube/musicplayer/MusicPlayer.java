@@ -154,7 +154,9 @@ MediaPlayer.OnSeekCompleteListener {
         @Override
         public void run() {
             if (null != progbar && progbar == mProgbar) {
-                int curProgress = mpGetCurrentPosition() * 100 / mpGetDuration();
+                int duration = mpGetDuration();
+                int curProgress = (duration > 0)? mpGetCurrentPosition() * 100 / mpGetDuration()
+                                                : 0;
                 if (curProgress > lastProgress) {
                     mProgbar.setProgress(curProgress);
 
