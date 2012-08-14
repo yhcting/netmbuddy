@@ -24,6 +24,7 @@ import free.yhc.youtube.musicplayer.model.Utils;
 public class MusicsActivity extends Activity {
     public static final long PLID_INVALID       = -100000;
     public static final long PLID_RECENT_PLAYED = -1;
+    public static final long PLID_SEARCHED      = -2;
 
     private final DB            mDb = DB.get();
     private final MusicPlayer   mMp = MusicPlayer.get();
@@ -87,8 +88,9 @@ public class MusicsActivity extends Activity {
         AdapterContextMenuInfo info = (AdapterContextMenuInfo)mItem.getMenuInfo();
         switch (mItem.getItemId()) {
         case R.id.delete:
+            eAssert(isUserPlayList(mPlid));
             mDb.deleteMusicFromPlayList(mPlid, info.id);
-            getAdapter().reloadCursor(mPlid);
+            getAdapter().reloadCursor();
             return true;
 
         case R.id.plthumbnail:
@@ -118,6 +120,7 @@ public class MusicsActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.musics);
 
+        String searchWord = null;
         mPlid = getIntent().getLongExtra("plid", PLID_INVALID);
         eAssert(PLID_INVALID != mPlid);
 
@@ -130,6 +133,12 @@ public class MusicsActivity extends Activity {
         } else if (PLID_RECENT_PLAYED == mPlid) {
             ((TextView)findViewById(R.id.title)).setText(R.string.recent_played);
             ((ImageView)findViewById(R.id.thumbnail)).setImageResource(R.drawable.ic_recent_played_up);
+        } else if (PLID_SEARCHED == mPlid) {
+            String word = getIntent().getStringExtra("word");
+            searchWord = (null == word)? "": word;
+            String title = Utils.getAppContext().getResources().getText(R.string.search_word) + " : " + word;
+            ((TextView)findViewById(R.id.title)).setText(title);
+            ((ImageView)findViewById(R.id.thumbnail)).setImageResource(R.drawable.ic_search_list_up);
         }
 
         mListv = (ListView)findViewById(R.id.list);
@@ -142,8 +151,9 @@ public class MusicsActivity extends Activity {
                 onListItemClick(view, position, itemId);
             }
         });
-        MusicsAdapter adapter = new MusicsAdapter(this, mPlid);
+        MusicsAdapter adapter = new MusicsAdapter(this, new MusicsAdapter.CursorArg(mPlid, searchWord));
         mListv.setAdapter(adapter);
+        adapter.reloadCursor();
     }
 
     @Override

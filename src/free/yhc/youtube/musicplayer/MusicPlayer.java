@@ -515,7 +515,7 @@ MediaPlayer.OnSeekCompleteListener {
         if (null == mPlayerv || null == title)
             return;
 
-        TextView tv = (TextView)mPlayerv.findViewById(R.id.title);
+        TextView tv = (TextView)mPlayerv.findViewById(R.id.music_player_title);
         if (buffering < 0)
             tv.setText(title);
         else
@@ -533,7 +533,7 @@ MediaPlayer.OnSeekCompleteListener {
         if (null == mPlayerv)
             return;
 
-        ImageView play = (ImageView)mPlayerv.findViewById(R.id.play);
+        ImageView play = (ImageView)mPlayerv.findViewById(R.id.music_player_play);
         play.setImageResource(icon);
         play.setClickable(clickable);
     }
@@ -616,7 +616,7 @@ MediaPlayer.OnSeekCompleteListener {
 
     private void
     initPlayerView() {
-        ImageView play = (ImageView)mPlayerv.findViewById(R.id.play);
+        ImageView play = (ImageView)mPlayerv.findViewById(R.id.music_player_play);
         play.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -670,7 +670,7 @@ MediaPlayer.OnSeekCompleteListener {
             return Err.NO_ERR;
 
         eAssert(null != mPlayerv.findViewById(R.id.music_player_layout_magic_id));
-        mProgbar = (ProgressBar)mPlayerv.findViewById(R.id.progressbar);
+        mProgbar = (ProgressBar)mPlayerv.findViewById(R.id.music_player_progressbar);
         initPlayerView();
 
         return Err.NO_ERR;

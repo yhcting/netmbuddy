@@ -60,7 +60,21 @@ public class YTMPActivity extends Activity {
 
     private void
     searchMusics(View anchor) {
-
+        UiUtils.EditTextAction action = new UiUtils.EditTextAction() {
+            @Override
+            public void prepare(Dialog dialog, EditText edit) { }
+            @Override
+            public void onOk(Dialog dialog, EditText edit) {
+                Intent i = new Intent(YTMPActivity.this, MusicsActivity.class);
+                i.putExtra("plid", MusicsActivity.PLID_SEARCHED);
+                i.putExtra("word", edit.getText().toString());
+                startActivityForResult(i, REQC_MUSICS);
+            }
+        };
+        AlertDialog diag = UiUtils.buildOneLineEditTextDialog(this,
+                                                              R.string.enter_search_word,
+                                                              action);
+        diag.show();
     }
 
     private void
@@ -173,6 +187,16 @@ public class YTMPActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
         mListv = (ListView)findViewById(R.id.list);
+        registerForContextMenu(mListv);
+        mListv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void
+            onItemClick(AdapterView<?> parent, View view, int position, long itemId) {
+                onListItemClick(view, position, itemId);
+            }
+        });
+        setupToolButtons();
+
         PlayListAdapter adapter = new PlayListAdapter(this, new PlayListAdapter.OnItemButtonClickListener() {
             @Override
             public void onClick(int pos, ItemButton button) {
@@ -186,16 +210,7 @@ public class YTMPActivity extends Activity {
             }
         });
         mListv.setAdapter(adapter);
-        registerForContextMenu(mListv);
-        mListv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void
-            onItemClick(AdapterView<?> parent, View view, int position, long itemId) {
-                onListItemClick(view, position, itemId);
-            }
-        });
-
-        setupToolButtons();
+        adapter.reloadCursor();
     }
 
     @Override

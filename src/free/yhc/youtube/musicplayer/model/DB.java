@@ -630,6 +630,14 @@ public class DB extends SQLiteOpenHelper {
     }
 
     public Cursor
+    queryMusicsSearchTitle(ColMusic[] cols, String titleLike) {
+        return mDb.query(TABLE_MUSIC,
+                         getColNames(cols),
+                         ColMusic.TITLE.getName() + " LIKE " + DatabaseUtils.sqlEscapeString("%" + titleLike + "%"),
+                         null, null, null, buildSQLOrderBy(false, ColMusic.TITLE, true));
+    }
+
+    public Cursor
     queryMusic(long mid, ColMusic[] cols) {
         eAssert(cols.length > 0);
         return mDb.query(TABLE_MUSIC,

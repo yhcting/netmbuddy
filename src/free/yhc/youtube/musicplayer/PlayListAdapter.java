@@ -8,6 +8,7 @@ import android.widget.ImageView;
 import android.widget.ResourceCursorAdapter;
 import android.widget.TextView;
 import free.yhc.youtube.musicplayer.model.DB;
+import free.yhc.youtube.musicplayer.model.Err;
 import free.yhc.youtube.musicplayer.model.UiUtils;
 
 public class PlayListAdapter extends ResourceCursorAdapter {
@@ -17,12 +18,13 @@ public class PlayListAdapter extends ResourceCursorAdapter {
     private static final int COLI_TITLE     = 1;
     private static final int COLI_THUMBNAIL = 2;
 
-    private final OnItemButtonClickListener   onItemBtnClick;
-    private final View.OnClickListener        detailListOnClick = new View.OnClickListener() {
+    private final Context                     mContext;
+    private final OnItemButtonClickListener   mOnItemBtnClick;
+    private final View.OnClickListener        mDetailListOnClick = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
-            if (null != onItemBtnClick)
-                onItemBtnClick.onClick((Integer)v.getTag(), ItemButton.LIST);
+            if (null != mOnItemBtnClick)
+                mOnItemBtnClick.onClick((Integer)v.getTag(), ItemButton.LIST);
         }
     };
 
@@ -34,7 +36,7 @@ public class PlayListAdapter extends ResourceCursorAdapter {
         void onClick(int pos, ItemButton button);
     }
 
-    private static Cursor
+    private Cursor
     createCursor() {
         return DB.get().queryPlayList(new DB.ColPlayList[] {
                 DB.ColPlayList.ID,
@@ -45,12 +47,31 @@ public class PlayListAdapter extends ResourceCursorAdapter {
 
     public PlayListAdapter(Context context,
                            OnItemButtonClickListener listener) {
-        super(context, LAYOUT, createCursor());
-        onItemBtnClick = listener;
+        super(context, LAYOUT, null);
+        mContext        = context;
+        mOnItemBtnClick = listener;
     }
 
     public void
     reloadCursor() {
+        SpinAsyncTask.Worker worker = new SpinAsyncTask.Worker() {
+            private Cursor newCursor;
+            @Override
+            public void onPostExecute(SpinAsyncTask task, Err result) {
+                changeCursor(newCursor);
+            }
+            @Override
+            public void onCancel(SpinAsyncTask task) {
+                // TODO Auto-generated method stub
+
+            }
+            @Override
+            public Err doBackgroundWork(SpinAsyncTask task, Object... objs) {
+                newCursor = createCursor();
+                return Err.NO_ERR;
+            }
+        };
+        new SpinAsyncTask(mContext, worker, R.string.loading, false).execute();
         Cursor newc = createCursor();
         changeCursor(newc);
     }
@@ -80,7 +101,7 @@ public class PlayListAdapter extends ResourceCursorAdapter {
         TextView  titlev     = (TextView) view.findViewById(R.id.title);
         ImageView listbtn    = (ImageView)view.findViewById(R.id.detaillist);
         listbtn.setTag(cur.getPosition());
-        listbtn.setOnClickListener(detailListOnClick);
+        listbtn.setOnClickListener(mDetailListOnClick);
 
         titlev.setText(cur.getString(COLI_TITLE));
         UiUtils.setThumbnailImageView(thumbnailv, cur.getBlob(COLI_THUMBNAIL));
