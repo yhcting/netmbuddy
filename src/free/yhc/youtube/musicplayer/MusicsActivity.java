@@ -90,7 +90,7 @@ public class MusicsActivity extends Activity {
         case R.id.delete:
             eAssert(isUserPlayList(mPlid));
             mDb.deleteMusicFromPlayList(mPlid, info.id);
-            getAdapter().reloadCursor();
+            getAdapter().reloadCursorAsync();
             return true;
 
         case R.id.plthumbnail:
@@ -153,7 +153,7 @@ public class MusicsActivity extends Activity {
         });
         MusicsAdapter adapter = new MusicsAdapter(this, new MusicsAdapter.CursorArg(mPlid, searchWord));
         mListv.setAdapter(adapter);
-        adapter.reloadCursor();
+        adapter.reloadCursorAsync();
     }
 
     @Override

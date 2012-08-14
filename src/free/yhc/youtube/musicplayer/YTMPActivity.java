@@ -21,6 +21,7 @@ import android.widget.ListView;
 import free.yhc.youtube.musicplayer.PlayListAdapter.ItemButton;
 import free.yhc.youtube.musicplayer.model.DB;
 import free.yhc.youtube.musicplayer.model.DB.ColMusic;
+import free.yhc.youtube.musicplayer.model.Err;
 import free.yhc.youtube.musicplayer.model.UiUtils;
 import free.yhc.youtube.musicplayer.model.Utils;
 
@@ -134,7 +135,7 @@ public class YTMPActivity extends Activity {
             public void onOk(Dialog dialog, EditText edit) {
                 String word = edit.getText().toString();
                 mDb.updatePlayListName(info.id, word);
-                getAdapter().reloadCursor();
+                getAdapter().reloadCursorAsync();
             }
         };
         AlertDialog diag = UiUtils.buildOneLineEditTextDialog(this,
@@ -145,8 +146,23 @@ public class YTMPActivity extends Activity {
 
     private void
     onContextDelete(AdapterContextMenuInfo info) {
-        mDb.deletePlayList(info.id);
-        getAdapter().reloadCursor();
+        SpinAsyncTask.Worker worker = new SpinAsyncTask.Worker() {
+            @Override
+            public void onPostExecute(SpinAsyncTask task, Err result) {
+                getAdapter().reloadCursor();
+            }
+            @Override
+            public void onCancel(SpinAsyncTask task) {
+                // TODO Auto-generated method stub
+
+            }
+            @Override
+            public Err doBackgroundWork(SpinAsyncTask task, Object... objs) {
+                mDb.deletePlayList((Long)objs[0]);
+                return Err.NO_ERR;
+            }
+        };
+        new SpinAsyncTask(this, worker, R.string.loading, false).execute(info.id);
     }
 
     private void
@@ -210,7 +226,7 @@ public class YTMPActivity extends Activity {
             }
         });
         mListv.setAdapter(adapter);
-        adapter.reloadCursor();
+        adapter.reloadCursorAsync();
     }
 
     @Override
@@ -255,7 +271,7 @@ public class YTMPActivity extends Activity {
         // Check common result.
         boolean plChanged = data.getBooleanExtra(KEY_PLCHANGED, false);
         if (plChanged)
-            getAdapter().reloadCursor();
+            getAdapter().reloadCursorAsync();
 
         switch (requestCode) {
         case REQC_YTSEARCH:

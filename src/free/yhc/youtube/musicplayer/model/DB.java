@@ -432,8 +432,8 @@ public class DB extends SQLiteOpenHelper {
         try {
             mDb.beginTransaction();
             r =  mDb.delete(getMusicRefTableName(plid),
-                                ColMusicRef.MUSICID.getName() + " = " + mid,
-                                null);
+                            ColMusicRef.MUSICID.getName() + " = " + mid,
+                            null);
             eAssert(0 == r || 1 == r);
             if (r > 0)
                 decMusicReference(mid);
@@ -507,8 +507,17 @@ public class DB extends SQLiteOpenHelper {
         try {
             r = mDb.delete(TABLE_PLAYLIST, ColPlayList.ID.getName() + " = " + id, null);
             eAssert(0 == r || 1 == r);
-            if (r > 0)
+            if (r > 0) {
+                Cursor c = mDb.query(getMusicRefTableName(id),
+                                     new String[] { ColMusicRef.MUSICID.getName() },
+                                     null, null, null, null, null);
+                if (c.moveToFirst()) {
+                    do {
+                        decMusicReference(c.getLong(0));
+                    } while(c.moveToNext());
+                }
                 mDb.execSQL("DROP TABLE " + getMusicRefTableName(id) + ";");
+            }
             mDb.setTransactionSuccessful();
         } finally {
             mDb.endTransaction();

@@ -54,6 +54,11 @@ public class PlayListAdapter extends ResourceCursorAdapter {
 
     public void
     reloadCursor() {
+        changeCursor(createCursor());
+    }
+
+    public void
+    reloadCursorAsync() {
         SpinAsyncTask.Worker worker = new SpinAsyncTask.Worker() {
             private Cursor newCursor;
             @Override
@@ -72,8 +77,6 @@ public class PlayListAdapter extends ResourceCursorAdapter {
             }
         };
         new SpinAsyncTask(mContext, worker, R.string.loading, false).execute();
-        Cursor newc = createCursor();
-        changeCursor(newc);
     }
 
     public String

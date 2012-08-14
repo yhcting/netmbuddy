@@ -58,6 +58,11 @@ public class MusicsAdapter extends ResourceCursorAdapter {
 
     public void
     reloadCursor() {
+        changeCursor(createCursor());
+    }
+
+    public void
+    reloadCursorAsync() {
         SpinAsyncTask.Worker worker = new SpinAsyncTask.Worker() {
             private Cursor newCursor;
             @Override
