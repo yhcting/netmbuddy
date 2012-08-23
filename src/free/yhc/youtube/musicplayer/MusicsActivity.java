@@ -27,7 +27,7 @@ public class MusicsActivity extends Activity {
     public static final long PLID_SEARCHED      = -2;
 
     private final DB            mDb = DB.get();
-    private final MusicPlayer   mMp = MusicPlayer.get();
+    private final YTJSPlayer    mMp = YTJSPlayer.get();
 
     private boolean     mPlayListChanged = false;
 

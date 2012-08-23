@@ -1,7 +1,17 @@
 package free.yhc.youtube.musicplayer.model;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Date;
+import java.util.Enumeration;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 import org.apache.http.impl.cookie.DateParseException;
 import org.apache.http.impl.cookie.DateUtils;
@@ -327,6 +337,62 @@ public class Utils {
     }
 
 
+
+    // ------------------------------------------------------------------------
+    //
+    // Files
+    //
+    // ------------------------------------------------------------------------
+
+    public static boolean unzip(String file, String outDir) {
+        final int BUFSZ = 1024;
+        try {
+            File fSrc = new File(file);
+            ZipFile zipFile = new ZipFile(fSrc);
+            Enumeration<?> e = zipFile.entries();
+
+            while (e.hasMoreElements()) {
+                ZipEntry entry = (ZipEntry)e.nextElement();
+                File destinationFilePath = new File(outDir, entry.getName());
+                //create directories if required.
+                destinationFilePath.getParentFile().mkdirs();
+
+                //if the entry is directory, leave it. Otherwise extract it.
+                if (entry.isDirectory())
+                    continue;
+                else {
+                    BufferedInputStream bis = new BufferedInputStream(zipFile.getInputStream(entry));
+                    int b;
+                    byte buffer[] = new byte[BUFSZ];
+                    FileOutputStream fos = new FileOutputStream(destinationFilePath);
+                    BufferedOutputStream bos = new BufferedOutputStream(fos, BUFSZ);
+                    while ((b = bis.read(buffer, 0, 1024)) != -1)
+                        bos.write(buffer, 0, b);
+
+                    bos.flush();
+                    bos.close();
+                    bis.close();
+                }
+            }
+        } catch(IOException e) {
+            return false;
+        }
+        return true;
+    }
+
+    public static boolean
+    copyAssetFile(String file) {
+        try {
+            InputStream is = Utils.getAppContext().getAssets().open(file);
+            FileOutputStream os = Utils.getAppContext().openFileOutput(file, 0);
+            Utils.copy(os, is);
+            is.close();
+            os.close();
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
     // ------------------------------------------------------------------------
     //
     // Date
@@ -387,5 +453,13 @@ public class Utils {
         int m = secs / 60;
         secs -= m * 60;
         return String.format("%02d:%02d:%02d", h, m, secs);
+    }
+
+    public static void
+    copy(OutputStream os, InputStream is) throws IOException {
+        byte buf[]=new byte[1024 * 16];
+        int len;
+        while((len = is.read(buf)) > 0)
+            os.write(buf, 0, len);
     }
 }

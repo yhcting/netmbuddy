@@ -9,7 +9,6 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.database.Cursor;
 import android.graphics.Bitmap;
-import android.net.Uri;
 import android.os.Bundle;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
@@ -38,8 +37,8 @@ YTSearchHelper.SearchDoneReceiver,
 DBHelper.CheckExistDoneReceiver {
     private static final int NR_ENTRY_PER_PAGE = YTSearchApi.NR_SEARCH_MAX;
 
-    private final DB        mDb = DB.get();
-    private final MusicPlayer mMp = MusicPlayer.get();
+    private final DB            mDb = DB.get();
+    private final YTJSPlayer    mMp = YTJSPlayer.get();
 
     private YTSearchHelper  mSearchHelper;
     private DBHelper        mDbHelper;
@@ -316,11 +315,11 @@ DBHelper.CheckExistDoneReceiver {
         View playerv = findViewById(R.id.player);
         playerv.setVisibility(View.VISIBLE);
 
-        MusicPlayer.Music m = new MusicPlayer.Music(
-                Uri.parse(getAdapter().getItemUrl(position)),
+        YTJSPlayer.Music m = new YTJSPlayer.Music(
+                getAdapter().getItemUrl(position),
                 getAdapter().getItemTitle(position));
         mMp.setController(this, playerv);
-        mMp.startMusicsAsync(new MusicPlayer.Music[] { m });
+        mMp.startMusicsAsync(new YTJSPlayer.Music[] { m });
     }
 
     @Override

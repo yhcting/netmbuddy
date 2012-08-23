@@ -18,7 +18,7 @@ public class YTMPApp extends Application {
         super.onCreate();
         Utils.init(getApplicationContext());
         DB.get().open();
-        MusicPlayer.get().init();
+        YTJSPlayer.get().init();
     }
 
     @Override

@@ -19,6 +19,7 @@ public enum Err {
     PARSER_UNKNOWN              (R.string.err_parser_unknown),
     NO_MATCH                    (R.string.err_no_match),
     YTSEARCH                    (R.string.err_ytsearch),
+    YTHTTPGET                   (R.string.err_ytprotocol),
     END_OF_DATA                 (R.string.err_end_of_data);
 
     private final int mMsg;

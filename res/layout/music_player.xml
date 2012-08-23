@@ -11,36 +11,29 @@
         android:scaleType="fitXY"
         android:src="@drawable/divider_horizontal_bright"
         />
-    <RelativeLayout
+    <WebView
+        android:id="@+id/webview"
+        android:layout_width="match_parent"
+        android:layout_height="300dip"
+        />
+    <TextView
+        android:id="@+id/music_player_title"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/toolbtn_height"
+        android:layout_marginRight="2dip"
+        android:layout_marginLeft="2dip"
+        android:gravity="center_vertical"
+        android:textSize="@dimen/desc_text_size"
+        android:textColor="@color/title_text_color_new"
+        android:singleLine="true"
+        android:ellipsize="end"
+        />
+    <MediaController
+        android:id="@+id/music_player_controller"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="3dip"
-        android:layout_marginBottom="3dip"
-        >
-        <ImageView
-            android:id="@+id/music_player_play"
-            android:layout_width="@dimen/toolbtn_width"
-            android:layout_height="@dimen/toolbtn_height"
-            android:layout_alignParentRight="true"
-            android:gravity="center"
-            android:scaleType="fitCenter"
-            android:src="@drawable/ic_media_play"
-            android:clickable="true"
-            />
-        <TextView
-            android:id="@+id/music_player_title"
-            android:layout_width="fill_parent"
-            android:layout_height="@dimen/toolbtn_height"
-            android:layout_toLeftOf="@id/music_player_play"
-            android:layout_marginRight="1dip"
-            android:layout_marginLeft="3dip"
-            android:gravity="center_vertical"
-            android:textSize="@dimen/title_text_size"
-            android:textColor="@color/title_text_color_new"
-            android:maxLines="2"
-            android:ellipsize="end"
-            />
-    </RelativeLayout>
+        android:visibility="gone"
+        />
     <ProgressBar
         android:id="@+id/music_player_progressbar" 
         android:layout_width="match_parent" 

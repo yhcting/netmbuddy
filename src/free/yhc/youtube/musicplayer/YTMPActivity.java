@@ -1,6 +1,5 @@
 package free.yhc.youtube.musicplayer;
 
-import static free.yhc.youtube.musicplayer.model.Utils.eAssert;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -31,8 +30,8 @@ public class YTMPActivity extends Activity {
     private static final int REQC_YTSEARCH  = 0;
     private static final int REQC_MUSICS    = 1;
 
-    private final DB          mDb = DB.get();
-    private final MusicPlayer mMp = MusicPlayer.get();
+    private final DB            mDb = DB.get();
+    private final YTJSPlayer    mMp = YTJSPlayer.get();
 
     private ListView mListv;
 
@@ -201,6 +200,7 @@ public class YTMPActivity extends Activity {
     public void
     onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.main);
         mListv = (ListView)findViewById(R.id.list);
         registerForContextMenu(mListv);
@@ -216,7 +216,7 @@ public class YTMPActivity extends Activity {
         PlayListAdapter adapter = new PlayListAdapter(this, new PlayListAdapter.OnItemButtonClickListener() {
             @Override
             public void onClick(int pos, ItemButton button) {
-                eAssert(PlayListAdapter.ItemButton.LIST == button);
+                //eAssert(PlayListAdapter.ItemButton.LIST == button);
                 Intent i = new Intent(YTMPActivity.this, MusicsActivity.class);
                 PlayListAdapter adapter = getAdapter();
                 i.putExtra("plid", adapter.getItemId(pos));
@@ -227,6 +227,7 @@ public class YTMPActivity extends Activity {
         });
         mListv.setAdapter(adapter);
         adapter.reloadCursorAsync();
+
     }
 
     @Override
@@ -234,6 +235,17 @@ public class YTMPActivity extends Activity {
     onResume() {
         super.onResume();
 
+        Utils.getUiHandler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                View playerv = findViewById(R.id.player);
+                playerv.setVisibility(View.VISIBLE);
+                mMp.setController(YTMPActivity.this, playerv);
+
+                YTJSPlayer.get().playTest();
+            }
+        }, 1000);
+        /*
         View playerv = findViewById(R.id.player);
         if (mMp.isMusicPlaying()) {
             playerv.setVisibility(View.VISIBLE);
@@ -241,6 +253,7 @@ public class YTMPActivity extends Activity {
         } else {
             playerv.setVisibility(View.GONE);
         }
+        */
     }
 
     @Override
