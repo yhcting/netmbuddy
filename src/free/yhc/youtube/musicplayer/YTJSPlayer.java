@@ -52,6 +52,12 @@ public class YTJSPlayer {
     private static final int YTPSTATE_VIDEO_CUED    = 5;
     private static final int YTPSTATE_ERROR         = -10;
 
+    private static final int YTPERRCODE_OK              = 0;
+    private static final int YTPERRCODE_INVALID_PARAM   = 2;
+    private static final int YTPERRCODE_NOT_FOUND       = 100;
+    private static final int YTPERRCODE_NOT_ALLOWED     = 101;
+    private static final int YTPERRCODE_NOT_ALLOWED2    = 150;
+
 
     private static final Comparator<NrElem> sNrElemComparator = new Comparator<NrElem>() {
             @Override
@@ -91,6 +97,7 @@ public class YTJSPlayer {
 
     private WebView             mWv         = null; // WebView instance.
     private int                 mYtpS       = YTPSTATE_UNSTARTED; // state of YTP;
+    private int                 mYtpEC      = YTPERRCODE_OK;
 
     // ------------------------------------------------------------------------
     // UI Control.
@@ -429,15 +436,15 @@ public class YTJSPlayer {
             setPlayerViewTitle(videoTitle, true);
         } break;
 
-        case YTPSTATE_ERROR:
-            setPlayerViewTitle(mRes.getText(R.string.msg_mplayer_err_unknown), false);
-            break;
-
         case YTPSTATE_PAUSED:
         case YTPSTATE_PLAYING:
             eAssert(null != videoTitle);
             if (null != videoTitle)
                 setPlayerViewTitle(videoTitle, false);
+            break;
+
+        case YTPSTATE_ERROR:
+            setPlayerViewTitle(mRes.getText(R.string.msg_ytplayer_err), false);
             break;
 
         default:
@@ -596,7 +603,13 @@ public class YTJSPlayer {
 
     private void
     onPlayerError(int errCode) {
-        mYtpS = YTPSTATE_ERROR;
+        ytpSetState(YTPSTATE_ERROR);
+        if (null != mVideos
+            && mVideoi >= 0
+            && mVideoi < mVideos.length - 1) {
+            ajsStop();
+            playNext();
+        }
     }
 
     private void
