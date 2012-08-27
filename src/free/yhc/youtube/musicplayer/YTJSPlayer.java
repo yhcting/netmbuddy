@@ -27,22 +27,21 @@ import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.MediaController;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.VideoView;
 import free.yhc.youtube.musicplayer.model.DB;
-import free.yhc.youtube.musicplayer.model.DB.ColMusic;
 import free.yhc.youtube.musicplayer.model.Err;
 import free.yhc.youtube.musicplayer.model.NanoHTTPD;
 import free.yhc.youtube.musicplayer.model.Utils;
 
 // See Youtube player Javascript API document
 public class YTJSPlayer {
-    private static final String WLTAG = "YTJSPlayer";
-    private static final int    WEBSERVER_PORT  = 8999;
-    private static final String YTPLAYER_SCRIPT = "ytplayer.html";
+    private static final String WLTAG               = "YTJSPlayer";
+    private static final int    WEBSERVER_PORT      = 8999;
+    private static final String YTPLAYER_SCRIPT     = "ytplayer.html";
+    private static final String VIDEOID_DELIMITER   = " ";
 
 
     private static final int YTPSTATE_UNSTARTED     = -1;
@@ -51,21 +50,24 @@ public class YTJSPlayer {
     private static final int YTPSTATE_PAUSED        = 2;
     private static final int YTPSTATE_BUFFERING     = 3;
     private static final int YTPSTATE_VIDEO_CUED    = 5;
+    private static final int YTPSTATE_ERROR         = -10;
+
 
     private static final Comparator<NrElem> sNrElemComparator = new Comparator<NrElem>() {
+            @Override
+            public int compare(NrElem o1, NrElem o2) {
+                if (o1.n > o2.n)
+                    return 1;
+                else if (o1.n < o2.n)
+                    return -1;
+                else
+                    return 0;
+            }
+        };
+
+    private static final Comparator<Video> sVideoTitleComparator = new Comparator<Video>() {
         @Override
-        public int compare(NrElem o1, NrElem o2) {
-            if (o1.n > o2.n)
-                return 1;
-            else if (o1.n < o2.n)
-                return -1;
-            else
-                return 0;
-        }
-    };
-    private static final Comparator<Music> sMusicTitleComparator = new Comparator<Music>() {
-        @Override
-        public int compare(Music o1, Music o2) {
+        public int compare(Video o1, Video o2) {
             return o1.title.compareTo(o2.title);
         }
     };
@@ -88,8 +90,7 @@ public class YTJSPlayer {
     private WifiLock            mWfl        = null;
 
     private WebView             mWv         = null; // WebView instance.
-    private State               mWvS        = State.INVALID; // state of mVv;
-    private VideoView           mVv         = null;
+    private int                 mYtpS       = YTPSTATE_UNSTARTED; // state of YTP;
 
     // ------------------------------------------------------------------------
     // UI Control.
@@ -99,31 +100,17 @@ public class YTJSPlayer {
     private ProgressBar         mProgbar    = null;
 
     // ------------------------------------------------------------------------
-    // MediaPlayer Runtime Status
+    // Player Runtime Status
     // ------------------------------------------------------------------------
-    private Music[]             mMusics     = null;
-    private int                 mMusici     = -1;
+    private OnPlayerReadyListener mPlayerReadyListener = null;
+    private Video[]               mVideos = null;
+    private int                   mVideoi = -1;
 
-
-    // see "http://developer.android.com/reference/android/media/MediaPlayer.html"
-    public enum State {
-        INVALID,
-        IDLE,
-        INITIALIZED,
-        PREPARING,
-        PREPARED,
-        STARTED,
-        STOPPED,
-        PAUSED,
-        PLAYBACK_COMPLETED,
-        ERROR
-    }
-
-    public static class Music {
+    public static class Video {
         public String   title;
-        public String   url;
-        public Music(String aUrl, String aTitle) {
-            url = aUrl;
+        public String   videoId;
+        public Video(String aVideoId, String aTitle) {
+            videoId = aVideoId;
             title = aTitle;
         }
     }
@@ -137,51 +124,37 @@ public class YTJSPlayer {
         }
     }
 
-    private class UpdateProgress implements Runnable {
+    public interface OnPlayerReadyListener {
+        void onPlayerReady(WebView wv);
+    }
+
+    private class UpdateProgress {
         private ProgressBar progbar = null;
         private int         lastProgress = -1;
 
         void start(ProgressBar aProgbar) {
-            end();
             progbar = aProgbar;
             lastProgress = -1;
-            run();
         }
 
         void end() {
             progbar = null;
             lastProgress = -1;
-            Utils.getUiHandler().removeCallbacks(this);
         }
 
-        @Override
-        public void run() {
+        void update(int duration, int currentPos) {
             if (null != progbar && progbar == mProgbar) {
-                int duration = wvVvGetDuration();
-                int curProgress = (duration > 0)? wvVvGetCurrentPosition() * 100 / wvVvGetDuration()
+                int curProgress = (duration > 0)? currentPos * 100 / duration
                                                 : 0;
                 if (curProgress > lastProgress)
                     mProgbar.setProgress(curProgress);
 
                 lastProgress = curProgress;
-                Utils.getUiHandler().postDelayed(this, 1000);
             }
         }
     }
 
     private class WVClient extends WebViewClient {
-        private VideoView
-        findVideoView(ViewGroup v) {
-            for (int i = 0; i < v.getChildCount(); i++) {
-                View cv = v.getChildAt(i);
-                if (cv instanceof VideoView)
-                    return (VideoView)cv;
-                else if (cv instanceof ViewGroup)
-                    return findVideoView((ViewGroup)cv);
-            }
-            return null;
-        }
-
         @Override
         public boolean
         shouldOverrideUrlLoading(WebView wView, String url) {
@@ -262,6 +235,41 @@ public class YTJSPlayer {
 
     // ========================================================================
     //
+    // Debug
+    //
+    // ========================================================================
+    private String
+    dbgStateName(int state) {
+        switch (state) {
+        case YTPSTATE_UNSTARTED:
+            return "unstarted";
+
+        case YTPSTATE_ENDED:
+            return "ended";
+
+        case YTPSTATE_PLAYING:
+            return "playing";
+
+        case YTPSTATE_PAUSED:
+            return "paused";
+
+        case YTPSTATE_BUFFERING:
+            return "buffering";
+
+        case YTPSTATE_VIDEO_CUED:
+            return "video queued";
+
+        case YTPSTATE_ERROR:
+            return "error";
+
+        default:
+            eAssert(false);
+        }
+        return null;
+    }
+
+    // ========================================================================
+    //
     //
     //
     // ========================================================================
@@ -289,164 +297,88 @@ public class YTJSPlayer {
         mWfl = null;
     }
 
-
     // ========================================================================
     //
-    // WebView Interfaces
+    //
     //
     // ========================================================================
-
     private void
-    wvNew() {
-        if (null != mWv)
+    ytpSetState(int state) {
+        if (state == mYtpS)
             return;
 
-        wvSetState(State.INVALID);
-        WebView wv = (WebView)mPlayerv.findViewById(R.id.webview);
-        wv.setWebViewClient(new WVClient());
-        wv.setWebChromeClient(new WCClient());
-        setWebSettings(wv);
-
-        mWv = wv;
-        wvSetState(State.INITIALIZED);
+        int old = mYtpS;
+        mYtpS = state;
+        onYtpStateChanged(old, state);
     }
 
-    private void
-    wvLoad(String url) {
-        wvSetState(State.PREPARING);
-        mWv.loadUrl(url + "&autoplay=1");
+    private int
+    ytpGetState() {
+        return mYtpS;
     }
-
-    private boolean
-    wvIsAvailable() {
-        return null != mWv && State.INVALID != wvGetState();
-    }
-
-    private void
-    wvSetState(State newState) {
-        logD("MusicPlayer : State : " + mWvS.name() + " => " + newState.name());
-        State old = mWvS;
-        mWvS = newState;
-        onWvStateChanged(old, newState);
-    }
-
-    private State
-    wvGetState() {
-        return mWvS;
-    }
-
-    private void
-    wvInitVideoView(VideoView vv) {
-        mVv = vv;
-        eAssert(null != mPlayerv);
-        mVv.setMediaController((MediaController)mPlayerv.findViewById(R.id.music_player_controller));
-    }
-
-
-    private void
-    wvDestroy() {
-        if (null != mWv)
-            mWv.destroy();
-
-        wvSetState(State.INVALID);
-
-    }
-
-    // ------------------------------------------------------------------------
-    // WebView VideoView interfaces
-    // ------------------------------------------------------------------------
-    public int
-    wvVvGetCurrentPosition() {
-        switch (wvGetState()) {
-        case ERROR:
-            return 0;
-        }
-        return mVv.getCurrentPosition();
-    }
-
-    public int
-    wvVvGetDuration() {
-        switch(wvGetState()) {
-        case STARTED:
-        case PAUSED:
-        case STOPPED:
-        case PLAYBACK_COMPLETED:
-            return mVv.getDuration();
-        }
-        return 0;
-    }
-
-    public boolean
-    wvVvIsPlaying() {
-        //logD("VideoView - isPlaying");
-        return mVv.isPlaying();
-    }
-
-    public void
-    wvVvPause() {
-        logD("VideoView - pause");
-        mVv.pause();
-        wvSetState(State.PAUSED);
-    }
-
-    public void
-    wvVvSeekTo(int pos) {
-        logD("VideoView - seekTo");
-        mVv.seekTo(pos);
-    }
-
-    public void
-    wvVvStart() {
-        logD("VideoView - start");
-        mVv.start();
-        wvSetState(State.STARTED);
-    }
-
-    public void
-    wvVvStop() {
-        logD("VideoView - stop");
-        mVv.stopPlayback();
-    }
-
     // ========================================================================
     //
     // General Control
     //
     // ========================================================================
     private void
-    onWvStateChanged(State from, State to) {
-        if (from == to)
-            return;
-
-        configurePlayerViewAll();
-    }
-
-
-    private void
-    playMusicAsync() {
-        wvDestroy();
-
-        if (mMusici < 0 || mMusici >= mMusics.length) {
-            playDone();
-            return;
+    playNext() {
+        mVideoi++;
+        if (mVideoi >= mVideos.length) {
+            mVideoi = mVideos.length;
+            ytpPlayDone();
+        } else {
+            ajsPrepare(mVideos[mVideoi].videoId);
+            ajsPlay();
         }
-
-        wvNew();
-        wvLoad(mMusics[mMusici].url);
-        AsyncTask.execute(new Runnable() {
-            @Override
-            public void run() {
-                int n = mDb.updateMusic(ColMusic.URL, mMusics[mMusici].url,
-                                        ColMusic.TIME_PLAYED, System.currentTimeMillis());
-                logD("MusicPlayer : TIME_PLAYED updated : " + n);
-            }
-        });
     }
 
     private void
-    playDone() {
+    playPrev() {
+        mVideoi--;
+        if (mVideoi < 0) {
+            mVideoi = -1;
+            ytpPlayDone();
+        } else {
+            ajsPrepare(mVideos[mVideoi].videoId);
+            ajsPlay();
+        }
+    }
+
+    private void
+    onYtpStateChanged(int from, int to) {
+        logI("onYtpStateChanged : " + dbgStateName(from) + " -> " + dbgStateName(to));
+        configurePlayerViewAll(to);
+
+        switch (to) {
+        case YTPSTATE_UNSTARTED:
+            break;
+
+        case YTPSTATE_ENDED:
+            playNext();
+            break;
+
+        case YTPSTATE_PLAYING:
+            break;
+
+        case YTPSTATE_PAUSED:
+            break;
+
+        case YTPSTATE_BUFFERING:
+            break;
+
+        case YTPSTATE_VIDEO_CUED:
+            break;
+
+        default:
+            eAssert(false);
+        }
+    }
+
+    private void
+    ytpPlayDone() {
         logD("VideoView - playDone");
-        setPlayerViewTitle(mRes.getText(R.string.msg_playing_done));
+        setPlayerViewTitle(mRes.getText(R.string.msg_playing_done), false);
         releaseLocks();
     }
 
@@ -455,73 +387,132 @@ public class YTJSPlayer {
     // Player View Handling
     //
     // ========================================================================
+    private void
+    disableButton(ImageView btn) {
+        btn.setClickable(false);
+        btn.setImageResource(R.drawable.ic_block);
+    }
 
     private void
-    setPlayerViewTitle(CharSequence title) {
+    enableButton(ImageView btn, int image) {
+        btn.setClickable(true);
+        btn.setImageResource(image);
+    }
+
+    private void
+    setPlayerViewTitle(CharSequence title, boolean buffering) {
         if (null == mPlayerv || null == title)
             return;
 
         TextView tv = (TextView)mPlayerv.findViewById(R.id.music_player_title);
-        tv.setText(title);
+        if (buffering)
+            tv.setText("(" + mRes.getText(R.string.buffering) + ") " + title);
+        else
+            tv.setText(title);
     }
 
     private void
-    configurePlayerViewTitle() {
+    configurePlayerViewTitle(int state) {
         if (null == mPlayerv)
             return;
 
-        CharSequence musicTitle = null;
-        if (null != mMusics
-                && 0 <= mMusici
-                && mMusici < mMusics.length) {
-            musicTitle = mMusics[mMusici].title;
+        CharSequence videoTitle = "";
+        if (null != mVideos
+                && 0 <= mVideoi
+                && mVideoi < mVideos.length) {
+            videoTitle = mVideos[mVideoi].title;
         }
 
-        switch (wvGetState()) {
-        case ERROR:
-            setPlayerViewTitle(mRes.getText(R.string.msg_mplayer_err_unknown));
+        switch (state) {
+        case YTPSTATE_BUFFERING: {
+            eAssert(null != videoTitle);
+            setPlayerViewTitle(videoTitle, true);
+        } break;
+
+        case YTPSTATE_ERROR:
+            setPlayerViewTitle(mRes.getText(R.string.msg_mplayer_err_unknown), false);
             break;
 
-        case PAUSED:
-        case STARTED:
-            eAssert(null != musicTitle);
-            if (null != musicTitle)
-                setPlayerViewTitle(musicTitle);
+        case YTPSTATE_PAUSED:
+        case YTPSTATE_PLAYING:
+            eAssert(null != videoTitle);
+            if (null != videoTitle)
+                setPlayerViewTitle(videoTitle, false);
             break;
 
         default:
-            setPlayerViewTitle(mRes.getText(R.string.msg_preparing_mplayer));
+            setPlayerViewTitle(mRes.getText(R.string.msg_preparing_mplayer), false);
         }
     }
 
+
     private void
-    configurePlayerViewController() {
+    disablePlayerViewControlButton(ViewGroup playerv) {
+        disableButton((ImageView)playerv.findViewById(R.id.music_player_btnplay));
+        disableButton((ImageView)playerv.findViewById(R.id.music_player_btnnext));
+        disableButton((ImageView)playerv.findViewById(R.id.music_player_btnprev));
+    }
+
+    private void
+    configurePlayerViewControl(int state) {
         if (null == mPlayerv)
             return;
 
-        switch (wvGetState()) {
-        case PAUSED:
-        case STARTED:
-            mPlayerv.findViewById(R.id.music_player_controller).setVisibility(View.VISIBLE);
+        switch (state) {
+        case YTPSTATE_PAUSED:
+        case YTPSTATE_PLAYING:
+            mPlayerv.findViewById(R.id.music_player_control).setVisibility(View.VISIBLE);
+
+            if (mVideos.length - 1 <= mVideoi)
+                disableButton((ImageView)mPlayerv.findViewById(R.id.music_player_btnnext));
+            else
+                enableButton((ImageView)mPlayerv.findViewById(R.id.music_player_btnnext),
+                             R.drawable.ic_media_next);
+
+            if (0 >= mVideoi)
+                disableButton((ImageView)mPlayerv.findViewById(R.id.music_player_btnprev));
+            else
+                enableButton((ImageView)mPlayerv.findViewById(R.id.music_player_btnprev),
+                             R.drawable.ic_media_prev);
             break;
+        }
+
+        switch (state) {
+        case YTPSTATE_PAUSED: {
+            ImageView btn = (ImageView)mPlayerv.findViewById(R.id.music_player_btnplay);
+            btn.setClickable(true);
+            btn.setImageResource(R.drawable.ic_media_play);
+        } break;
+
+        case YTPSTATE_PLAYING: {
+            ImageView btn = (ImageView)mPlayerv.findViewById(R.id.music_player_btnplay);
+            btn.setClickable(true);
+            btn.setImageResource(R.drawable.ic_media_pause);
+        } break;
 
         default:
-            mPlayerv.findViewById(R.id.music_player_controller).setVisibility(View.GONE);
+            mPlayerv.findViewById(R.id.music_player_control).setVisibility(View.GONE);
         }
     }
 
     private void
-    configurePlayerViewProgressBar() {
+    configurePlayerViewProgressBar(int state) {
         if (null == mProgbar)
             return;
 
-        switch (wvGetState()) {
-        case STARTED:
+        switch (state) {
+        case YTPSTATE_VIDEO_CUED:
             mUpdateProg.start(mProgbar);
             break;
 
-        case PAUSED:
+        case YTPSTATE_ENDED:
             mUpdateProg.end();
+            break;
+
+        case YTPSTATE_PLAYING:
+        case YTPSTATE_PAUSED:
+        case YTPSTATE_BUFFERING:
+            ; // do nothing progress is now under update..
             break;
 
         default:
@@ -531,16 +522,86 @@ public class YTJSPlayer {
     }
 
     private void
-    configurePlayerViewAll() {
-        configurePlayerViewTitle();
-        configurePlayerViewProgressBar();
-        configurePlayerViewController();
+    configurePlayerViewAll(int state) {
+        configurePlayerViewTitle(state);
+        configurePlayerViewProgressBar(state);
+        configurePlayerViewControl(state);
     }
 
+    private void
+    setupPlayerViewControlButton(final ViewGroup playerv) {
+        ImageView btn = (ImageView)playerv.findViewById(R.id.music_player_btnplay);
+        btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ImageView btn = (ImageView)v;
+                switch (ytpGetState()) {
+                case YTPSTATE_PAUSED:
+                    ajsPlay();
+                    break;
+
+                case YTPSTATE_PLAYING:
+                    ajsPause();
+                    // prevent clickable during transition player state.
+                    break;
+
+                default:
+                    ; // do nothing.
+                }
+                disablePlayerViewControlButton(playerv);
+            }
+        });
+
+        btn = (ImageView)playerv.findViewById(R.id.music_player_btnprev);
+        btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ajsStop();
+                playPrev();
+                disablePlayerViewControlButton(playerv);
+            }
+        });
+
+        btn = (ImageView)playerv.findViewById(R.id.music_player_btnnext);
+        btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ajsStop();
+                playNext();
+                disablePlayerViewControlButton(playerv);
+            }
+        });
+    }
 
     private void
-    initPlayerView() {
-        configurePlayerViewAll();
+    initPlayerView(ViewGroup playerv) {
+        TextView tv = (TextView)playerv.findViewById(R.id.music_player_title);
+        setupPlayerViewControlButton(playerv);
+        configurePlayerViewAll(ytpGetState());
+    }
+
+    // ------------------------------------------------------------------------
+    // Listeners run on UI thread
+    // ------------------------------------------------------------------------
+    private void
+    onPlayerReady() {
+        if (null != mPlayerReadyListener)
+            mPlayerReadyListener.onPlayerReady(mWv);
+    }
+
+    private void
+    onPlayerStateChanged(int state) {
+        ytpSetState(state);
+    }
+
+    private void
+    onPlayerError(int errCode) {
+        mYtpS = YTPSTATE_ERROR;
+    }
+
+    private void
+    onNotifyPlayerInfo(int videoDuration, int videoCurrentTime) {
+        mUpdateProg.update(videoDuration, videoCurrentTime);
     }
 
     // ========================================================================
@@ -548,31 +609,101 @@ public class YTJSPlayer {
     // Java script player interface
     //
     // ========================================================================
+    private void
+    callJsFunction(String func, String... args) {
+        eAssert(null != mWv);
+
+        if (null == mWv)
+            return;
+
+        StringBuilder bldr = new StringBuilder("javascript:")
+                .append(func)
+                .append("(");
+        int i = 0;
+        for (i = 0; i < args.length - 1; i++)
+            bldr.append("\"")
+                .append(args[i])
+                .append("\", ");
+
+        if (args.length > 0)
+            bldr.append("\"")
+                .append(args[i])
+                .append("\"");
+
+        bldr.append(")");
+        mWv.loadUrl(bldr.toString());
+    }
+
+    // NOTATION
+    // jsa : JavaScript to Android
+    // ajs : Android to JavaScript
     public void
-    jsLog(String msg) {
+    jsaLog(String msg) {
         logI(msg);
     }
 
     public void
-    jsOnPlayerStateChanged(int state) {
-        logI("OnPlayerStateChanged : " + state);
-    }
-
-    public void
-    jsOnPlayerError(int errCode) {
-        logI("OnPlayerError : " + errCode);
-    }
-
-    public void
-    jsOnTryLoadPlayer() {
-        logI("OnTryLoadPlayer");
+    jsaOnPlayerReady() {
         Utils.getUiHandler().post(new Runnable() {
             @Override
             public void run() {
-                mWv.requestFocus();
-                mWv.invalidate();
+                onPlayerReady();
             }
         });
+    }
+
+    public void
+    jsaOnPlayerStateChanged(final int state) {
+        logI("OnPlayerStateChanged : " + state);
+        Utils.getUiHandler().post(new Runnable() {
+            @Override
+            public void run() {
+                onPlayerStateChanged(state);
+            }
+        });
+    }
+
+    public void
+    jsaOnPlayerError(final int errCode) {
+        logI("OnPlayerError : " + errCode);
+        Utils.getUiHandler().post(new Runnable() {
+            @Override
+            public void run() {
+                onPlayerError(errCode);
+            }
+        });
+    }
+
+    public void
+    jsaOnNotifyPlayerInfo(final int videoDuration,
+                          final int videoCurrentTime) {
+        Utils.getUiHandler().post(new Runnable() {
+            @Override
+            public void run() {
+                onNotifyPlayerInfo(videoDuration, videoCurrentTime);
+            }
+        });
+    }
+
+    private void
+    ajsPrepare(String videoId) {
+        eAssert(null != mWv && null != mVContext);
+        callJsFunction("prepareVideo", videoId);
+    }
+
+    private void
+    ajsPlay() {
+        callJsFunction("playVideo");
+    }
+
+    private void
+    ajsPause() {
+        callJsFunction("pauseVideo");
+    }
+
+    private void
+    ajsStop() {
+        callJsFunction("stopVideo");
     }
 
     // ========================================================================
@@ -593,12 +724,11 @@ public class YTJSPlayer {
     @Override
     protected void
     finalize() {
-        wvDestroy();
     }
 
     public Err
     init() {
-        /*
+        /* TODO
         File fScript = new File(Utils.getAppContext().getFilesDir().getAbsolutePath()
                                 + "/" + YTPLAYER_SCRIPT);
         if (!fScript.exists())
@@ -620,7 +750,21 @@ public class YTJSPlayer {
     }
 
     public Err
-    setController(Context context, View playerv) {
+    prepare(WebView wv, OnPlayerReadyListener listener) {
+        logI("YTJSPlayer : Prepare!!");
+        mWv = wv;
+        mPlayerReadyListener = listener;
+        wv.setWebViewClient(new WVClient());
+        wv.setWebChromeClient(new WCClient());
+        setWebSettings(wv);
+        mWv.addJavascriptInterface(this, "Android");
+        mWv.loadUrl("http://127.0.0.1:" + WEBSERVER_PORT + "/" + YTPLAYER_SCRIPT);
+
+        return Err.NO_ERR;
+    }
+
+    public Err
+    setController(Context context, ViewGroup playerv) {
         if (context == mVContext && mPlayerv == playerv)
             // controller is already set for this context.
             // So, nothing to do. just return!
@@ -635,7 +779,7 @@ public class YTJSPlayer {
 
         eAssert(null != mPlayerv.findViewById(R.id.music_player_layout_magic_id));
         mProgbar = (ProgressBar)mPlayerv.findViewById(R.id.music_player_progressbar);
-        initPlayerView();
+        initPlayerView(playerv);
 
         return Err.NO_ERR;
     }
@@ -643,7 +787,7 @@ public class YTJSPlayer {
     public void
     unsetController(Context context) {
         if (null != mVContext && context != mVContext)
-            logW("MusicPlayer : Unset Controller at different context...");
+            logW("YTJSPlayer : Unset Controller at different context...");
 
         mProgbar = null;
         mPlayerv = null;
@@ -651,104 +795,73 @@ public class YTJSPlayer {
 
     }
 
-    public void
-    playTest() {
-        wvNew();
-        mWv.addJavascriptInterface(this, "Android");
-        mWv.loadUrl("http://127.0.0.1:" + WEBSERVER_PORT + "/" + YTPLAYER_SCRIPT);
-    }
-
-
-    /**
-     * Should be called after {@link #setController(Context, View)}
-     * @param ms
-     */
-    public void
-    startMusicsAsync(Music[] ms) {
-        playTest();
-        /*
-        eAssert(Utils.isUiThread());
-        eAssert(null != mPlayerv);
-
-        releaseLocks();
-        acquireLocks();
-
-        mMusics = ms;
-        mMusici = 0;
-
-        playMusicAsync();
-        */
-    }
-
-
-
-    /**
-     * This may takes some time. it depends on size of cursor.
-     * @param c
-     *   Musics from this cursor will be sorted order by it's title.
-     *   So, this function doesn't require ordered cursor.
-     *   <This is for performance reason!>
-     * @param coliTitle
-     * @param coliUrl
-     * @param shuffle
-     * @return
-     */
-    private Music[]
-    getMusics(Cursor c, int coliTitle, int coliUrl, boolean shuffle) {
+    private Video[]
+    getVideos(Cursor c, int coliTitle, int coliUrl, boolean shuffle) {
         if (!c.moveToFirst())
-            return new Music[0];
+            return new Video[0];
 
-        Music[] ms = new Music[c.getCount()];
+        Video[] vs = new Video[c.getCount()];
+
         int i = 0;
         if (!shuffle) {
             do {
-                ms[i++] = new Music(c.getString(coliUrl), c.getString(coliTitle));
+                vs[i++] = new Video(c.getString(coliUrl), c.getString(coliTitle));
             } while (c.moveToNext());
-            Arrays.sort(ms, sMusicTitleComparator);
+            Arrays.sort(vs, sVideoTitleComparator);
         } else {
             // This is shuffled case!
             Random r = new Random(System.currentTimeMillis());
             NrElem[] nes = new NrElem[c.getCount()];
             do {
                 nes[i++] = new NrElem(r.nextInt(),
-                                      new Music(c.getString(coliUrl), c.getString(coliTitle)));
+                                      new Video(c.getString(coliUrl), c.getString(coliTitle)));
             } while (c.moveToNext());
             Arrays.sort(nes, sNrElemComparator);
             for (i = 0; i < nes.length; i++)
-                ms[i] = (Music)nes[i].tag;
+                vs[i] = (Video)nes[i].tag;
         }
-        return ms;
+        return vs;
     }
 
-    /**
-     *
-     * @param c
-     *   closing cursor is in charge of this function.
-     * @param coliUrl
-     * @param coliTitle
-     * @param shuffle
-     */
     public void
-    startMusicsAsync(final Cursor c, final int coliUrl, final int coliTitle, final boolean shuffle) {
-        playTest();
-        /*
+    startVideos(final Video[] vs) {
+        eAssert(Utils.isUiThread());
+        eAssert(null != mPlayerv);
+
+        if (vs.length <= 0)
+            return;
+
+        // Stop if player is already running.
+        ajsStop();
+
+        releaseLocks();
+        acquireLocks();
+
+        mVideos = vs;
+        mVideoi = 0;
+
+        ajsPrepare(mVideos[mVideoi].videoId);
+        ajsPlay();
+    }
+
+    public void
+    startVideos(final Cursor c, final int coliUrl, final int coliTitle, final boolean shuffle) {
         eAssert(Utils.isUiThread());
         eAssert(null != mPlayerv);
 
         AsyncTask.execute(new Runnable() {
             @Override
             public void run() {
-                final Music[] ms = getMusics(c, coliTitle, coliUrl, shuffle);
+                final Video[] vs = getVideos(c, coliTitle, coliUrl, shuffle);
                 Utils.getUiHandler().post(new Runnable() {
                     @Override
                     public void run() {
-                        startMusicsAsync(ms);
+                        startVideos(vs);
                     }
                 });
                 c.close();
             }
         });
-        */
     }
 
     // ============================================================================
@@ -759,9 +872,10 @@ public class YTJSPlayer {
 
     public boolean
     isMusicPlaying() {
-        // TODO implement this.
+        if (null != mVideos
+            && 0 <= mVideoi
+            && mVideoi < mVideos.length)
+            return true;
         return false;
     }
-
-
 }

@@ -59,14 +59,9 @@ public class YTSearchApi {
             public String   description     = "";
             public String   thumbnailUrl    = ""; // smallest thumbnail url
             public String   uploadedTime    = "";
-            public Content  content         = new Content();
+            public String   videoId         = "";
+            public String   playTime        = "";
             public Credit   credit          = new Credit();
-
-            public class Content {
-                // content for yt:format='5'
-                public String url       = "";
-                public String playTime  = "";  // seconds
-            }
 
             public class Credit {
                 public String role  = "";
@@ -134,7 +129,7 @@ public class YTSearchApi {
      */
     private static boolean
     verifyEntry(Entry en) {
-        return Utils.isValidValue(en.media.content.url)
+        return Utils.isValidValue(en.media.videoId)
                && Utils.isValidValue(en.media.title);
     }
 
@@ -253,21 +248,12 @@ public class YTSearchApi {
     }
 
     private static Err
-    parseEntryMediaContent(Node n, Entry.Media.Content en) {
+    parseEntryMediaDuration(Node n, Entry.Media en) {
         NamedNodeMap nnm = n.getAttributes();
-        Node nItem = nnm.getNamedItem("yt:format");
-        if (null == nItem || !"5".equals(nItem.getNodeValue()))
-            return Err.NO_ERR;
-
-        nItem = nnm.getNamedItem("url");
-        if (null == nItem)
-            return Err.NO_ERR;
-        en.url = nItem.getNodeValue();
-
-        nItem = nnm.getNamedItem("duration");
+        Node nItem = nnm.getNamedItem("seconds");
         if (null != nItem)
             en.playTime = nItem.getNodeValue();
-
+        logI("==> Duration : " + en.playTime);
         return Err.NO_ERR;
     }
 
@@ -275,8 +261,10 @@ public class YTSearchApi {
     parseEntryMedia(Node n, Entry.Media en) {
         n = n.getFirstChild();
         while (null != n) {
-            if ("media:content".equals(n.getNodeName()))
-                parseEntryMediaContent(n, en.content);
+            if ("yt:videoid".equals(n.getNodeName()))
+                en.videoId = getTextValue(n);
+            else if ("yt:duration".equals(n.getNodeName()))
+                parseEntryMediaDuration(n, en);
             else if ("media:credit".equals(n.getNodeName()))
                 parseEntryMediaCredit(n, en.credit);
             else if ("media:description".equals(n.getNodeName()))

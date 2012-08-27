@@ -15,6 +15,7 @@ import android.view.ContextMenu.ContextMenuInfo;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.animation.AnimationUtils;
 import android.widget.AdapterView;
 import android.widget.AdapterView.AdapterContextMenuInfo;
@@ -224,7 +225,7 @@ DBHelper.CheckExistDoneReceiver {
         final YTSearchApi.Entry entry = (YTSearchApi.Entry)getAdapter().getItem(position);
         int playtm = 0;
         try {
-             playtm = Integer.parseInt(entry.media.content.playTime);
+             playtm = Integer.parseInt(entry.media.playTime);
         } catch (NumberFormatException ex) {
             UiUtils.showTextToast(this, R.string.msg_unknown_format);
             return;
@@ -232,7 +233,7 @@ DBHelper.CheckExistDoneReceiver {
 
         Err err = mDb.insertMusicToPlayList(plid,
                                             entry.media.title, entry.media.description,
-                                            entry.media.content.url, playtm,
+                                            entry.media.videoId, playtm,
                                             Utils.compressBitmap(bm));
         if (Err.NO_ERR != err) {
             if (Err.DB_DUPLICATED == err)
@@ -312,14 +313,14 @@ DBHelper.CheckExistDoneReceiver {
 
     private void
     onListItemClick(View view, int position, long itemId) {
-        View playerv = findViewById(R.id.player);
+        ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
         playerv.setVisibility(View.VISIBLE);
 
-        YTJSPlayer.Music m = new YTJSPlayer.Music(
-                getAdapter().getItemUrl(position),
+        YTJSPlayer.Video v = new YTJSPlayer.Video(
+                getAdapter().getItemVideoId(position),
                 getAdapter().getItemTitle(position));
         mMp.setController(this, playerv);
-        mMp.startMusicsAsync(new YTJSPlayer.Music[] { m });
+        mMp.startVideos(new YTJSPlayer.Video[] { v });
     }
 
     @Override
@@ -443,7 +444,7 @@ DBHelper.CheckExistDoneReceiver {
     protected void
     onResume() {
         super.onResume();
-        View playerv = findViewById(R.id.player);
+        ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
         if (mMp.isMusicPlaying()) {
             playerv.setVisibility(View.VISIBLE);
             mMp.setController(this, playerv);
@@ -485,7 +486,7 @@ DBHelper.CheckExistDoneReceiver {
     onBackPressed() {
         if (mPlayListChanged) {
             Intent i = new Intent();
-            i.putExtra(YTMPActivity.KEY_PLCHANGED, true);
+            i.putExtra(PlayListActivity.KEY_PLCHANGED, true);
             setResult(Activity.RESULT_OK, i);
         }
         mMp.unsetController(this);

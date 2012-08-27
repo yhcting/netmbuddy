@@ -101,7 +101,7 @@ YTSearchHelper.LoadThumbnailDoneReceiver {
 
         String playtmtext = "?";
         try {
-            playtmtext = Utils.secsToTimeText(Integer.parseInt(e.media.content.playTime));
+            playtmtext = Utils.secsToTimeText(Integer.parseInt(e.media.playTime));
         } catch (NumberFormatException ex) { }
         ((TextView)v.findViewById(R.id.playtime)).setText(playtmtext);
 
@@ -131,8 +131,8 @@ YTSearchHelper.LoadThumbnailDoneReceiver {
     }
 
     public String
-    getItemUrl(int pos) {
-        return mEntries[pos].media.content.url;
+    getItemVideoId(int pos) {
+        return mEntries[pos].media.videoId;
     }
 
     public void

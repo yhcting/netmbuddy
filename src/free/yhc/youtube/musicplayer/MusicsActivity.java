@@ -11,6 +11,7 @@ import android.view.ContextMenu.ContextMenuInfo;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.ImageView;
@@ -68,7 +69,7 @@ public class MusicsActivity extends Activity {
 
     private void
     onListItemClick(View view, int position, long itemId) {
-        Cursor c = mDb.queryMusic(itemId, new ColMusic[] { ColMusic.URL,
+        Cursor c = mDb.queryMusic(itemId, new ColMusic[] { ColMusic.VIDEOID,
                                                            ColMusic.TITLE });
         if (!c.moveToFirst()) {
             UiUtils.showTextToast(this, R.string.err_unknown);
@@ -76,10 +77,10 @@ public class MusicsActivity extends Activity {
             return;
         }
 
-        View playerv = findViewById(R.id.player);
+        ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
         playerv.setVisibility(View.VISIBLE);
         mMp.setController(this, playerv);
-        mMp.startMusicsAsync(c, 0, 1, Utils.isPrefSuffle());
+        mMp.startVideos(c, 0, 1, Utils.isPrefSuffle());
     }
 
     @Override
@@ -161,7 +162,7 @@ public class MusicsActivity extends Activity {
     onResume() {
         super.onResume();
 
-        View playerv = findViewById(R.id.player);
+        ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
         if (mMp.isMusicPlaying()) {
             playerv.setVisibility(View.VISIBLE);
             mMp.setController(this, playerv);
@@ -213,7 +214,7 @@ public class MusicsActivity extends Activity {
         mMp.unsetController(this);
         if (mPlayListChanged) {
             Intent i = new Intent();
-            i.putExtra(YTMPActivity.KEY_PLCHANGED, true);
+            i.putExtra(PlayListActivity.KEY_PLCHANGED, true);
             setResult(RESULT_OK, i);
         }
         super.onBackPressed();

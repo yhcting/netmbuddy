@@ -98,7 +98,7 @@ public class DB extends SQLiteOpenHelper {
         // Youtube information
         TITLE           ("title",           "text",     "not null"),
         DESCRIPTION     ("description",     "text",     "not null"),
-        URL             ("url",             "text",     "not null"),
+        VIDEOID         ("videoid",         "text",     "not null"),
         PLAYTIME        ("playtime",        "integer",  "not null"),
         THUMBNAIL       ("thumbnail",       "blob",     "not null"),
 
@@ -123,9 +123,9 @@ public class DB extends SQLiteOpenHelper {
 
         static ContentValues
         createContentValuesForInsert(String title, String desc,
-                                     String url, int playtime,
+                                     String videoId, int playtime,
                                      byte[] thumbnail) {
-            eAssert(null != title && null != url);
+            eAssert(null != title && null != videoId);
             if (null == desc)
                 desc = "";
             if (null == thumbnail)
@@ -134,7 +134,7 @@ public class DB extends SQLiteOpenHelper {
             ContentValues cvs = new ContentValues();
             cvs.put(ColMusic.TITLE.getName(), title);
             cvs.put(ColMusic.DESCRIPTION.getName(), desc);
-            cvs.put(ColMusic.URL.getName(), url);
+            cvs.put(ColMusic.VIDEOID.getName(), videoId);
             cvs.put(ColMusic.PLAYTIME.getName(), playtime);
             cvs.put(ColMusic.THUMBNAIL.getName(), thumbnail);
 
@@ -534,8 +534,8 @@ public class DB extends SQLiteOpenHelper {
     }
 
     public boolean
-    existMusic(String url) {
-        Cursor c = queryMusics(new ColMusic[] { ColMusic.ID }, ColMusic.URL, url);
+    existMusic(String videoId) {
+        Cursor c = queryMusics(new ColMusic[] { ColMusic.ID }, ColMusic.VIDEOID, videoId);
         boolean r = c.getCount() > 0;
         c.close();
         return r;
@@ -556,9 +556,9 @@ public class DB extends SQLiteOpenHelper {
     public Err
     insertMusicToPlayList(long plid,
                           String title, String desc,
-                          String url, int playtime,
+                          String videoId, int playtime,
                           byte[] thumbnail) {
-        Cursor c = queryMusics(new ColMusic[] { ColMusic.ID }, ColMusic.URL, url);
+        Cursor c = queryMusics(new ColMusic[] { ColMusic.ID }, ColMusic.VIDEOID, videoId);
         eAssert(0 == c.getCount() || 1 == c.getCount());
         long mid;
         if (c.getCount() <= 0) {
@@ -566,7 +566,7 @@ public class DB extends SQLiteOpenHelper {
             c.close();
             mDb.beginTransaction();
             try {
-                mid = insertMusic(title, desc, url, playtime, thumbnail);
+                mid = insertMusic(title, desc, videoId, playtime, thumbnail);
                 if (mid < 0)
                     return Err.DB_UNKNOWN;
 
