@@ -262,7 +262,7 @@ DBHelper.CheckExistDoneReceiver {
 
                 long plid = mDb.insertPlayList(title, "");
                 if (plid < 0) {
-                    UiUtils.showTextToast(YTSearchActivity.this, R.string.msg_unknown_dberror);
+                    UiUtils.showTextToast(YTSearchActivity.this, R.string.err_db_unknown);
                 } else {
                     mPlayListChanged = true;
                     addToPlayList(plid, position);
@@ -329,7 +329,7 @@ DBHelper.CheckExistDoneReceiver {
                    boolean[] results, Err err) {
         stopLoadingLookAndFeel();
         if (Err.NO_ERR != err || results.length != arg.ents.length) {
-            UiUtils.showTextToast(this, R.string.msg_unknown_dberror);
+            UiUtils.showTextToast(this, R.string.err_db_unknown);
             return;
         }
 

@@ -1,8 +1,10 @@
 package free.yhc.youtube.musicplayer;
 
+import static free.yhc.youtube.musicplayer.model.Utils.eAssert;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.database.Cursor;
@@ -18,6 +20,7 @@ import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.PopupMenu;
 import free.yhc.youtube.musicplayer.PlayListAdapter.ItemButton;
 import free.yhc.youtube.musicplayer.model.DB;
 import free.yhc.youtube.musicplayer.model.DB.ColMusic;
@@ -28,6 +31,7 @@ import free.yhc.youtube.musicplayer.model.Utils;
 public class PlayListActivity extends Activity {
     public static final String KEY_PLCHANGED    = "playListChanged";
 
+    private static final String REPORT_RECEIVER = "yhcting77@gmail.com";
     private static final int REQC_YTSEARCH  = 0;
     private static final int REQC_MUSICS    = 1;
 
@@ -39,6 +43,24 @@ public class PlayListActivity extends Activity {
     private PlayListAdapter
     getAdapter() {
         return (PlayListAdapter)mListv.getAdapter();
+    }
+
+    private void
+    sendMail(CharSequence diagTitle, CharSequence subject, CharSequence text) {
+        if (!Utils.isNetworkAvailable())
+            return;
+
+        Intent intent = new Intent(Intent.ACTION_SEND);
+        intent.putExtra(Intent.EXTRA_EMAIL, new String[] { REPORT_RECEIVER });
+        intent.putExtra(Intent.EXTRA_TEXT, text);
+        intent.putExtra(Intent.EXTRA_SUBJECT, subject);
+        intent.setType("message/rfc822");
+        intent = Intent.createChooser(intent, diagTitle);
+        try {
+            startActivity(intent);
+        } catch (ActivityNotFoundException e) {
+            UiUtils.showTextToast(this, R.string.msg_fail_find_app);
+        }
     }
 
     /**
@@ -85,6 +107,22 @@ public class PlayListActivity extends Activity {
     }
 
     private void
+    onMenuMoreDbManagement(View anchor) {
+        UiUtils.showTextToast(this, R.string.msg_not_implemented);
+    }
+
+    private void
+    onMenuMoreSendOpinion(View anchor) {
+        if (!Utils.isNetworkAvailable()) {
+            UiUtils.showTextToast(this, R.string.msg_network_unavailable);
+            return;
+        }
+        sendMail(getResources().getText(R.string.choose_app),
+                 getResources().getText(R.string.report_opinion_title),
+                 "");
+    }
+
+    private void
     setupToolButtons() {
         ((ImageView)findViewById(R.id.playall)).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -122,6 +160,34 @@ public class PlayListActivity extends Activity {
             public void onClick(View v) {
                 Intent i = new Intent(PlayListActivity.this, YTMPPreferenceActivity.class);
                 startActivity(i);
+            }
+        });
+
+        ((ImageView)findViewById(R.id.more)).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(final View v) {
+                PopupMenu popup = new PopupMenu(PlayListActivity.this, v);
+                popup.getMenuInflater().inflate(R.menu.playlist_more_popup, popup.getMenu());
+                popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+                    @Override
+                    public boolean onMenuItemClick(MenuItem item) {
+                        switch (item.getItemId()) {
+                        case R.id.db_management:
+                            onMenuMoreDbManagement(v);
+                            break;
+
+                        case R.id.send_opinion:
+                            onMenuMoreSendOpinion(v);
+                            break;
+
+                        default:
+                            eAssert(false);
+                        }
+                        return true;
+                    }
+                });
+                popup.show();
+
             }
         });
     }

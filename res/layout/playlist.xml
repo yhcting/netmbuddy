@@ -66,6 +66,16 @@
                 android:src="@drawable/ic_preferences"
                 android:clickable="true"
                 />
+            <ImageView
+                android:id="@+id/more"
+                android:layout_width="@dimen/toolbtn_width"
+                android:layout_height="match_parent"
+                android:layout_weight="1.0"
+                android:gravity="center"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_more"
+                android:clickable="true"
+                />
         </LinearLayout>
     </HorizontalScrollView>
     <LinearLayout
