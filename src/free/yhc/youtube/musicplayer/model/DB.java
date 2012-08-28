@@ -3,6 +3,8 @@ package free.yhc.youtube.musicplayer.model;
 import static free.yhc.youtube.musicplayer.model.Utils.eAssert;
 
 import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Iterator;
 
 import android.content.ContentValues;
 import android.database.Cursor;
@@ -24,6 +26,10 @@ public class DB extends SQLiteOpenHelper {
 
     private SQLiteDatabase mDb = null;
 
+    // Watcher for playlist table is changed.
+    private final HashMap<Object, Boolean> mPlTblWatcherMap = new HashMap<Object, Boolean>();
+
+
     public interface Col {
         String getName();
         String getType();
@@ -35,6 +41,7 @@ public class DB extends SQLiteOpenHelper {
         // DESCRIPTION : Not used yet - reserved for future use.
         DESCRIPTION     ("description",     "text",     "not null"),
         THUMBNAIL       ("thumbnail",       "blob",     "not null"),
+        SIZE            ("size",            "integer",  "not null"), // # of videos in this playlist.
         ID              (BaseColumns._ID,   "integer",  "primary key autoincrement");
 
         private final String name;
@@ -51,6 +58,7 @@ public class DB extends SQLiteOpenHelper {
             cvs.put(ColPlayList.TITLE.getName(), title);
             cvs.put(ColPlayList.DESCRIPTION.getName(), desc);
             cvs.put(ColPlayList.THUMBNAIL.getName(), new byte[0]);
+            cvs.put(ColPlayList.SIZE.getName(), 0);
             return cvs;
         }
 
@@ -312,6 +320,47 @@ public class DB extends SQLiteOpenHelper {
     //
     // ======================================================================
 
+    // ----------------------------------------------------------------------
+    //
+    // For watchers
+    //
+    // ----------------------------------------------------------------------
+    private void
+    markBooleanWatcherChanged(HashMap<Object, Boolean> hm) {
+        synchronized (hm) {
+            Iterator<Object> itr = hm.keySet().iterator();
+            while (itr.hasNext())
+                hm.put(itr.next(), true);
+        }
+    }
+
+    private void
+    registerToBooleanWatcher(HashMap<Object, Boolean> hm, Object key) {
+        synchronized (hm) {
+            hm.put(key, false);
+        }
+    }
+
+    private boolean
+    isRegisteredToBooleanWatcher(HashMap<Object, Boolean> hm, Object key) {
+        synchronized (hm) {
+            return (null != hm.get(key));
+        }
+    }
+
+    private void
+    unregisterToBooleanWatcher(HashMap<Object, Boolean> hm, Object key) {
+        synchronized (hm) {
+            hm.remove(key);
+        }
+    }
+
+    private boolean
+    isBooleanWatcherUpdated(HashMap<Object, Boolean> hm, Object key) {
+        synchronized (hm) {
+            return hm.get(key);
+        }
+    }
 
     // ----------------------------------------------------------------------
     //
@@ -390,7 +439,6 @@ public class DB extends SQLiteOpenHelper {
     // For TABLE_VIDEOREF_xxx
     //
     // ----------------------------------------------------------------------
-
     private long
     insertVideoRef(long plid, long mid) {
         ContentValues cvs = new ContentValues();
@@ -399,8 +447,10 @@ public class DB extends SQLiteOpenHelper {
         mDb.beginTransaction();
         try {
             r = mDb.insert(getVideoRefTableName(plid), null, cvs);
-            if (r >= 0)
+            if (r >= 0) {
                 incVideoReference(mid);
+                incPlayListSize(plid);
+            }
             mDb.setTransactionSuccessful();
         } finally {
             mDb.endTransaction();
@@ -419,19 +469,6 @@ public class DB extends SQLiteOpenHelper {
         return ret;
     }
 
-    private long
-    getVideoRefInfoVideoId(long plid, long id) {
-        Cursor c = mDb.query(getVideoRefTableName(plid),
-                             new String[] { ColVideoRef.VIDEOID.getName() },
-                             ColVideoRef.ID.getName() + " = " + id,
-                             null, null, null, null);
-        eAssert(c.getCount() > 0);
-        c.moveToFirst();
-        long mid = c.getLong(0);
-        c.close();
-        return mid;
-    }
-
     /**
      *
      * @param plid
@@ -448,13 +485,64 @@ public class DB extends SQLiteOpenHelper {
                             ColVideoRef.VIDEOID.getName() + " = " + mid,
                             null);
             eAssert(0 == r || 1 == r);
-            if (r > 0)
+            if (r > 0) {
                 decVideoReference(mid);
+                decPlayListSize(plid);
+            }
             mDb.setTransactionSuccessful();
         } finally {
             mDb.endTransaction();
         }
         return r;
+    }
+
+    // ----------------------------------------------------------------------
+    //
+    // For TABLE_PLAYLIST
+    //
+    // ----------------------------------------------------------------------
+    private long
+    getPlayListInfoLong(long plid, ColPlayList col) {
+        Cursor c = queryPlayList(plid, col);
+        if (!c.moveToFirst())
+            eAssert(false);
+        long v = c.getLong(0);
+        c.close();
+        return v;
+    }
+
+    private Cursor
+    queryPlayList(long plid, ColPlayList col) {
+        return mDb.query(TABLE_PLAYLIST,
+                         new String[] { col.getName() },
+                         ColPlayList.ID.getName() + " = " + plid,
+                         null, null, null, null);
+    }
+
+    public int
+    updatePlayListSize(long plid, long size) {
+        ContentValues cvs = new ContentValues();
+        cvs.put(ColPlayList.SIZE.getName(), size);
+        int r = mDb.update(TABLE_PLAYLIST, cvs, ColPlayList.ID.getName() + " = " + plid, null);
+        if (r > 0)
+            markBooleanWatcherChanged(mPlTblWatcherMap);
+        return r;
+    }
+
+    private void
+    incPlayListSize(long plid) {
+        long sz = getPlayListInfoLong(plid, ColPlayList.SIZE);
+        eAssert(sz >= 0);
+        sz++;
+        updatePlayListSize(plid, sz);
+    }
+
+    private void
+    decPlayListSize(long plid) {
+        long sz = getPlayListInfoLong(plid, ColPlayList.SIZE);
+        eAssert(sz > 0);
+        sz--;
+        updatePlayListSize(plid, sz);
     }
 
     // ======================================================================
@@ -488,8 +576,10 @@ public class DB extends SQLiteOpenHelper {
         mDb.beginTransaction();
         try {
             id = mDb.insert(TABLE_PLAYLIST, null, cvs);
-            if (id >= 0)
+            if (id >= 0) {
                 mDb.execSQL(buildTableSQL(getVideoRefTableName(id), ColVideoRef.values()));
+                markBooleanWatcherChanged(mPlTblWatcherMap);
+            }
             mDb.setTransactionSuccessful();
         } finally {
             mDb.endTransaction();
@@ -499,18 +589,23 @@ public class DB extends SQLiteOpenHelper {
     }
 
     public int
-    updatePlayListName(long id, String name) {
+    updatePlayList(long plid,
+                   ColPlayList field, Object v) {
         ContentValues cvs = new ContentValues();
-        cvs.put(ColPlayList.TITLE.getName(), name);
-        return mDb.update(TABLE_PLAYLIST, cvs, ColPlayList.ID.getName() + " = " + id, null);
-    }
+        try {
+            Method m = cvs.getClass().getMethod("put", String.class, v.getClass());
+            m.invoke(cvs, field.getName(), v);
+        } catch (Exception e) {
+            eAssert(false);
+        }
+        int r = mDb.update(TABLE_PLAYLIST,
+                           cvs,
+                           ColPlayList.ID.getName() + " = " + plid,
+                           null);
+        if (r > 0)
+            markBooleanWatcherChanged(mPlTblWatcherMap);
 
-    public int
-    updatePlayListThumbnail(long id, byte[] data) {
-        eAssert(null != data);
-        ContentValues cvs = new ContentValues();
-        cvs.put(ColPlayList.THUMBNAIL.getName(), data);
-        return mDb.update(TABLE_PLAYLIST, cvs, ColPlayList.ID.getName() + " = " + id, null);
+        return r;
     }
 
     public int
@@ -530,6 +625,7 @@ public class DB extends SQLiteOpenHelper {
                     } while(c.moveToNext());
                 }
                 mDb.execSQL("DROP TABLE " + getVideoRefTableName(id) + ";");
+                markBooleanWatcherChanged(mPlTblWatcherMap);
             }
             mDb.setTransactionSuccessful();
         } finally {
@@ -666,5 +762,30 @@ public class DB extends SQLiteOpenHelper {
                          getColNames(cols),
                          ColVideo.ID.getName() + " = " + mid,
                          null, null, null, null);
+    }
+
+    // ----------------------------------------------------------------------
+    //
+    // For watchers
+    //
+    // ----------------------------------------------------------------------
+    public void
+    registerToPlayListTableWatcher(Object key) {
+        registerToBooleanWatcher(mPlTblWatcherMap, key);
+    }
+
+    public boolean
+    isRegisteredToPlayListTableWatcher(Object key) {
+        return isRegisteredToBooleanWatcher(mPlTblWatcherMap, key);
+    }
+
+    public void
+    unregisterToPlayListTableWatcher(Object key) {
+        unregisterToBooleanWatcher(mPlTblWatcherMap, key);
+    }
+
+    public boolean
+    isPlayListTableUpdated(Object key) {
+        return isBooleanWatcherUpdated(mPlTblWatcherMap, key);
     }
 }

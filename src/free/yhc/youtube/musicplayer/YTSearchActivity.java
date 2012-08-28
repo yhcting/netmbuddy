@@ -5,7 +5,6 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.content.res.Configuration;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -45,8 +44,6 @@ DBHelper.CheckExistDoneReceiver {
     private YTSearchHelper  mSearchHelper;
     private DBHelper        mDbHelper;
     private ListView        mListv;     // viewHolder for ListView
-
-    private boolean         mPlayListChanged = false;
 
     // Variable to store current activity state.
     private String  mCurSearchWord = "";
@@ -265,7 +262,6 @@ DBHelper.CheckExistDoneReceiver {
                 if (plid < 0) {
                     UiUtils.showTextToast(YTSearchActivity.this, R.string.err_db_unknown);
                 } else {
-                    mPlayListChanged = true;
                     addToPlayList(plid, position);
                 }
             }
@@ -486,11 +482,6 @@ DBHelper.CheckExistDoneReceiver {
     @Override
     public void
     onBackPressed() {
-        if (mPlayListChanged) {
-            Intent i = new Intent();
-            i.putExtra(PlayListActivity.KEY_PLCHANGED, true);
-            setResult(Activity.RESULT_OK, i);
-        }
         mMp.unsetController(this);
         super.onBackPressed();
     }

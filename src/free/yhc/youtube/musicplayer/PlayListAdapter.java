@@ -17,6 +17,7 @@ public class PlayListAdapter extends ResourceCursorAdapter {
     private static final int COLI_ID        = 0;
     private static final int COLI_TITLE     = 1;
     private static final int COLI_THUMBNAIL = 2;
+    private static final int COLI_SIZE      = 3;
 
     private final Context                     mContext;
     private final OnItemButtonClickListener   mOnItemBtnClick;
@@ -41,7 +42,8 @@ public class PlayListAdapter extends ResourceCursorAdapter {
         return DB.get().queryPlayList(new DB.ColPlayList[] {
                 DB.ColPlayList.ID,
                 DB.ColPlayList.TITLE,
-                DB.ColPlayList.THUMBNAIL
+                DB.ColPlayList.THUMBNAIL,
+                DB.ColPlayList.SIZE
         });
     }
 
@@ -102,11 +104,13 @@ public class PlayListAdapter extends ResourceCursorAdapter {
     bindView(View view, Context context, Cursor cur) {
         ImageView thumbnailv = (ImageView)view.findViewById(R.id.thumbnail);
         TextView  titlev     = (TextView) view.findViewById(R.id.title);
+        TextView  nritemsv   = (TextView) view.findViewById(R.id.nritems);
         ImageView listbtn    = (ImageView)view.findViewById(R.id.detaillist);
         listbtn.setTag(cur.getPosition());
         listbtn.setOnClickListener(mDetailListOnClick);
 
         titlev.setText(cur.getString(COLI_TITLE));
+        nritemsv.setText(cur.getLong(COLI_SIZE) + "");
         UiUtils.setThumbnailImageView(thumbnailv, cur.getBlob(COLI_THUMBNAIL));
     }
 }

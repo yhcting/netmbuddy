@@ -23,6 +23,16 @@
         android:src="@drawable/ic_list"
         android:clickable="true"
         />
+    <TextView
+        android:id="@+id/nritems"
+        android:layout_width="@dimen/thumbnail_height"
+        android:layout_height="@dimen/thumbnail_height"
+        android:layout_alignParentRight="true"
+        android:gravity="center"
+        android:textSize="@dimen/title_text_size"
+        android:textColor="@color/title_text_color_new"
+        android:singleLine="true"
+        />
     <RelativeLayout
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
@@ -32,16 +42,6 @@
         android:layout_marginRight="3dip"
         android:gravity="center_vertical"
         >
-        <TextView
-            android:id="@+id/nritems"
-            android:layout_width="wrap_content"
-            android:layout_height="35dip"
-            android:layout_alignParentRight="true"
-            android:gravity="center_vertical"
-            android:textSize="@dimen/desc_text_size"
-            android:textColor="@color/desc_text_color"
-            android:singleLine="true"
-            />
         <TextView
             android:id="@+id/title"
             android:layout_width="fill_parent"

@@ -32,8 +32,6 @@ public class PlayListActivity extends Activity {
     public static final String KEY_PLCHANGED    = "playListChanged";
 
     private static final String REPORT_RECEIVER = "yhcting77@gmail.com";
-    private static final int REQC_YTSEARCH  = 0;
-    private static final int REQC_MUSICS    = 1;
 
     private final DB            mDb = DB.get();
     private final YTJSPlayer    mMp = YTJSPlayer.get();
@@ -91,7 +89,7 @@ public class PlayListActivity extends Activity {
                 Intent i = new Intent(PlayListActivity.this, MusicsActivity.class);
                 i.putExtra("plid", MusicsActivity.PLID_SEARCHED);
                 i.putExtra("word", edit.getText().toString());
-                startActivityForResult(i, REQC_MUSICS);
+                startActivity(i);
             }
         };
         AlertDialog diag = UiUtils.buildOneLineEditTextDialog(this,
@@ -138,7 +136,7 @@ public class PlayListActivity extends Activity {
             public void onClick(View v) {
                 Intent i = new Intent(PlayListActivity.this, MusicsActivity.class);
                 i.putExtra("plid", MusicsActivity.PLID_RECENT_PLAYED);
-                startActivityForResult(i, REQC_MUSICS);
+                startActivity(i);
             }
         });
 
@@ -153,7 +151,7 @@ public class PlayListActivity extends Activity {
             @Override
             public void onClick(View v) {
                 Intent i = new Intent(PlayListActivity.this, YTSearchActivity.class);
-                startActivityForResult(i, REQC_YTSEARCH);
+                startActivity(i);
             }
         });
 
@@ -202,7 +200,7 @@ public class PlayListActivity extends Activity {
             @Override
             public void onOk(Dialog dialog, EditText edit) {
                 String word = edit.getText().toString();
-                mDb.updatePlayListName(info.id, word);
+                mDb.updatePlayList(info.id, DB.ColPlayList.TITLE, word);
                 getAdapter().reloadCursorAsync();
             }
         };
@@ -220,10 +218,7 @@ public class PlayListActivity extends Activity {
                 getAdapter().reloadCursor();
             }
             @Override
-            public void onCancel(SpinAsyncTask task) {
-                // TODO Auto-generated method stub
-
-            }
+            public void onCancel(SpinAsyncTask task) { }
             @Override
             public Err doBackgroundWork(SpinAsyncTask task, Object... objs) {
                 mDb.deletePlayList((Long)objs[0]);
@@ -293,7 +288,7 @@ public class PlayListActivity extends Activity {
                 i.putExtra("plid", adapter.getItemId(pos));
                 i.putExtra("title", adapter.getItemTitle(pos));
                 i.putExtra("thumbnail", adapter.getItemThumbnail(pos));
-                startActivityForResult(i, REQC_MUSICS);
+                startActivity(i);
             }
         });
         mListv.setAdapter(adapter);
@@ -312,12 +307,17 @@ public class PlayListActivity extends Activity {
         } else {
             playerv.setVisibility(View.GONE);
         }
+
+        if (mDb.isRegisteredToPlayListTableWatcher(this)
+            && mDb.isPlayListTableUpdated(this))
+            getAdapter().reloadCursorAsync();
     }
 
     @Override
     protected void
     onPause() {
         super.onPause();
+        mDb.registerToPlayListTableWatcher(this);
     }
 
     @Override
@@ -331,25 +331,6 @@ public class PlayListActivity extends Activity {
     onDestroy() {
         super.onDestroy();
 
-    }
-
-    @Override
-    protected void
-    onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (Activity.RESULT_OK != resultCode)
-            return;
-
-        // Check common result.
-        boolean plChanged = data.getBooleanExtra(KEY_PLCHANGED, false);
-        if (plChanged)
-            getAdapter().reloadCursorAsync();
-
-        switch (requestCode) {
-        case REQC_YTSEARCH:
-            break;
-        case REQC_MUSICS:
-            break;
-        }
     }
 
     @Override

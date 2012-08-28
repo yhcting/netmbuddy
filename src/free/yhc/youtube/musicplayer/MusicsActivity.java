@@ -31,8 +31,6 @@ public class MusicsActivity extends Activity {
     private final DB            mDb = DB.get();
     private final YTJSPlayer    mMp = YTJSPlayer.get();
 
-    private boolean     mPlayListChanged = false;
-
     private long        mPlid   = PLID_INVALID;
     private ListView    mListv  = null;
 
@@ -51,8 +49,7 @@ public class MusicsActivity extends Activity {
     setToPlayListThumbnail(long musicId, int itemPos) {
         eAssert(isUserPlayList(mPlid));
         byte[] data = getAdapter().getMusicThumbnail(itemPos);
-        mDb.updatePlayListThumbnail(mPlid, data);
-        mPlayListChanged = true;
+        mDb.updatePlayList(mPlid, DB.ColPlayList.THUMBNAIL, data);
         // update current screen's thumbnail too.
         UiUtils.setThumbnailImageView(((ImageView)findViewById(R.id.thumbnail)), data);
     }
@@ -250,11 +247,6 @@ public class MusicsActivity extends Activity {
     public void
     onBackPressed() {
         mMp.unsetController(this);
-        if (mPlayListChanged) {
-            Intent i = new Intent();
-            i.putExtra(PlayListActivity.KEY_PLCHANGED, true);
-            setResult(RESULT_OK, i);
-        }
         super.onBackPressed();
     }
 }
