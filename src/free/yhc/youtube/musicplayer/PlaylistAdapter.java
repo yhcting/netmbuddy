@@ -11,7 +11,7 @@ import free.yhc.youtube.musicplayer.model.DB;
 import free.yhc.youtube.musicplayer.model.Err;
 import free.yhc.youtube.musicplayer.model.UiUtils;
 
-public class PlayListAdapter extends ResourceCursorAdapter {
+public class PlaylistAdapter extends ResourceCursorAdapter {
     private static final int LAYOUT = R.layout.playlist_row;
 
     private static final int COLI_ID        = 0;
@@ -39,15 +39,15 @@ public class PlayListAdapter extends ResourceCursorAdapter {
 
     private Cursor
     createCursor() {
-        return DB.get().queryPlayList(new DB.ColPlayList[] {
-                DB.ColPlayList.ID,
-                DB.ColPlayList.TITLE,
-                DB.ColPlayList.THUMBNAIL,
-                DB.ColPlayList.SIZE
+        return DB.get().queryPlaylist(new DB.ColPlaylist[] {
+                DB.ColPlaylist.ID,
+                DB.ColPlaylist.TITLE,
+                DB.ColPlaylist.THUMBNAIL,
+                DB.ColPlaylist.SIZE
         });
     }
 
-    public PlayListAdapter(Context context,
+    public PlaylistAdapter(Context context,
                            OnItemButtonClickListener listener) {
         super(context, LAYOUT, null);
         mContext        = context;

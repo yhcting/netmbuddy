@@ -21,16 +21,14 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.PopupMenu;
-import free.yhc.youtube.musicplayer.PlayListAdapter.ItemButton;
+import free.yhc.youtube.musicplayer.PlaylistAdapter.ItemButton;
 import free.yhc.youtube.musicplayer.model.DB;
 import free.yhc.youtube.musicplayer.model.DB.ColVideo;
 import free.yhc.youtube.musicplayer.model.Err;
 import free.yhc.youtube.musicplayer.model.UiUtils;
 import free.yhc.youtube.musicplayer.model.Utils;
 
-public class PlayListActivity extends Activity {
-    public static final String KEY_PLCHANGED    = "playListChanged";
-
+public class PlaylistActivity extends Activity {
     private static final String REPORT_RECEIVER = "yhcting77@gmail.com";
 
     private final DB            mDb = DB.get();
@@ -38,9 +36,9 @@ public class PlayListActivity extends Activity {
 
     private ListView mListv;
 
-    private PlayListAdapter
+    private PlaylistAdapter
     getAdapter() {
-        return (PlayListAdapter)mListv.getAdapter();
+        return (PlaylistAdapter)mListv.getAdapter();
     }
 
     private void
@@ -86,7 +84,7 @@ public class PlayListActivity extends Activity {
             public void prepare(Dialog dialog, EditText edit) { }
             @Override
             public void onOk(Dialog dialog, EditText edit) {
-                Intent i = new Intent(PlayListActivity.this, MusicsActivity.class);
+                Intent i = new Intent(PlaylistActivity.this, MusicsActivity.class);
                 i.putExtra("plid", MusicsActivity.PLID_SEARCHED);
                 i.putExtra("word", edit.getText().toString());
                 startActivity(i);
@@ -134,7 +132,7 @@ public class PlayListActivity extends Activity {
         ((ImageView)findViewById(R.id.recent_played)).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent i = new Intent(PlayListActivity.this, MusicsActivity.class);
+                Intent i = new Intent(PlaylistActivity.this, MusicsActivity.class);
                 i.putExtra("plid", MusicsActivity.PLID_RECENT_PLAYED);
                 startActivity(i);
             }
@@ -150,7 +148,7 @@ public class PlayListActivity extends Activity {
         ((ImageView)findViewById(R.id.ytsearch)).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent i = new Intent(PlayListActivity.this, YTSearchActivity.class);
+                Intent i = new Intent(PlaylistActivity.this, YTSearchActivity.class);
                 startActivity(i);
             }
         });
@@ -158,7 +156,7 @@ public class PlayListActivity extends Activity {
         ((ImageView)findViewById(R.id.preferences)).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent i = new Intent(PlayListActivity.this, YTMPPreferenceActivity.class);
+                Intent i = new Intent(PlaylistActivity.this, YTMPPreferenceActivity.class);
                 startActivity(i);
             }
         });
@@ -166,7 +164,7 @@ public class PlayListActivity extends Activity {
         ((ImageView)findViewById(R.id.more)).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(final View v) {
-                PopupMenu popup = new PopupMenu(PlayListActivity.this, v);
+                PopupMenu popup = new PopupMenu(PlaylistActivity.this, v);
                 popup.getMenuInflater().inflate(R.menu.playlist_more_popup, popup.getMenu());
                 popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
                     @Override
@@ -200,7 +198,7 @@ public class PlayListActivity extends Activity {
             @Override
             public void onOk(Dialog dialog, EditText edit) {
                 String word = edit.getText().toString();
-                mDb.updatePlayList(info.id, DB.ColPlayList.TITLE, word);
+                mDb.updatePlaylist(info.id, DB.ColPlaylist.TITLE, word);
                 getAdapter().reloadCursorAsync();
             }
         };
@@ -221,7 +219,7 @@ public class PlayListActivity extends Activity {
             public void onCancel(SpinAsyncTask task) { }
             @Override
             public Err doBackgroundWork(SpinAsyncTask task, Object... objs) {
-                mDb.deletePlayList((Long)objs[0]);
+                mDb.deletePlaylist((Long)objs[0]);
                 return Err.NO_ERR;
             }
         };
@@ -279,12 +277,12 @@ public class PlayListActivity extends Activity {
         });
         setupToolButtons();
 
-        PlayListAdapter adapter = new PlayListAdapter(this, new PlayListAdapter.OnItemButtonClickListener() {
+        PlaylistAdapter adapter = new PlaylistAdapter(this, new PlaylistAdapter.OnItemButtonClickListener() {
             @Override
             public void onClick(int pos, ItemButton button) {
-                //eAssert(PlayListAdapter.ItemButton.LIST == button);
-                Intent i = new Intent(PlayListActivity.this, MusicsActivity.class);
-                PlayListAdapter adapter = getAdapter();
+                //eAssert(PlaylistAdapter.ItemButton.LIST == button);
+                Intent i = new Intent(PlaylistActivity.this, MusicsActivity.class);
+                PlaylistAdapter adapter = getAdapter();
                 i.putExtra("plid", adapter.getItemId(pos));
                 i.putExtra("title", adapter.getItemTitle(pos));
                 i.putExtra("thumbnail", adapter.getItemThumbnail(pos));
@@ -308,8 +306,8 @@ public class PlayListActivity extends Activity {
             playerv.setVisibility(View.GONE);
         }
 
-        if (mDb.isRegisteredToPlayListTableWatcher(this)
-            && mDb.isPlayListTableUpdated(this))
+        if (mDb.isRegisteredToPlaylistTableWatcher(this)
+            && mDb.isPlaylistTableUpdated(this))
             getAdapter().reloadCursorAsync();
     }
 
@@ -317,7 +315,7 @@ public class PlayListActivity extends Activity {
     protected void
     onPause() {
         super.onPause();
-        mDb.registerToPlayListTableWatcher(this);
+        mDb.registerToPlaylistTableWatcher(this);
     }
 
     @Override

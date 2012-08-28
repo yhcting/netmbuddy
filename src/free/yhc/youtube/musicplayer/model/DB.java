@@ -26,8 +26,9 @@ public class DB extends SQLiteOpenHelper {
 
     private SQLiteDatabase mDb = null;
 
-    // Watcher for playlist table is changed.
-    private final HashMap<Object, Boolean> mPlTblWatcherMap = new HashMap<Object, Boolean>();
+    // mPlTblWM : PLaylist TaBLe Watcher Map
+    // Watcher for playlist table is changed
+    private final HashMap<Object, Boolean> mPlTblWM = new HashMap<Object, Boolean>();
 
 
     public interface Col {
@@ -36,7 +37,7 @@ public class DB extends SQLiteOpenHelper {
         String getConstraint();
     }
 
-    public static enum ColPlayList implements Col {
+    public static enum ColPlaylist implements Col {
         TITLE           ("title",           "text",     "not null"),
         // DESCRIPTION : Not used yet - reserved for future use.
         DESCRIPTION     ("description",     "text",     "not null"),
@@ -55,14 +56,14 @@ public class DB extends SQLiteOpenHelper {
                 desc = "";
 
             ContentValues cvs = new ContentValues();
-            cvs.put(ColPlayList.TITLE.getName(), title);
-            cvs.put(ColPlayList.DESCRIPTION.getName(), desc);
-            cvs.put(ColPlayList.THUMBNAIL.getName(), new byte[0]);
-            cvs.put(ColPlayList.SIZE.getName(), 0);
+            cvs.put(ColPlaylist.TITLE.getName(), title);
+            cvs.put(ColPlaylist.DESCRIPTION.getName(), desc);
+            cvs.put(ColPlaylist.THUMBNAIL.getName(), new byte[0]);
+            cvs.put(ColPlaylist.SIZE.getName(), 0);
             return cvs;
         }
 
-        ColPlayList(String aName, String aType, String aConstraint) {
+        ColPlaylist(String aName, String aType, String aConstraint) {
             name = aName;
             type = aType;
             constraint = aConstraint;
@@ -292,7 +293,7 @@ public class DB extends SQLiteOpenHelper {
     public void
     onCreate(SQLiteDatabase db) {
         db.execSQL(buildTableSQL(TABLE_VIDEO, ColVideo.values()));
-        db.execSQL(buildTableSQL(TABLE_PLAYLIST, ColPlayList.values()));
+        db.execSQL(buildTableSQL(TABLE_PLAYLIST, ColPlaylist.values()));
     }
 
     @Override
@@ -449,7 +450,7 @@ public class DB extends SQLiteOpenHelper {
             r = mDb.insert(getVideoRefTableName(plid), null, cvs);
             if (r >= 0) {
                 incVideoReference(mid);
-                incPlayListSize(plid);
+                incPlaylistSize(plid);
             }
             mDb.setTransactionSuccessful();
         } finally {
@@ -487,7 +488,7 @@ public class DB extends SQLiteOpenHelper {
             eAssert(0 == r || 1 == r);
             if (r > 0) {
                 decVideoReference(mid);
-                decPlayListSize(plid);
+                decPlaylistSize(plid);
             }
             mDb.setTransactionSuccessful();
         } finally {
@@ -502,8 +503,8 @@ public class DB extends SQLiteOpenHelper {
     //
     // ----------------------------------------------------------------------
     private long
-    getPlayListInfoLong(long plid, ColPlayList col) {
-        Cursor c = queryPlayList(plid, col);
+    getPlaylistInfoLong(long plid, ColPlaylist col) {
+        Cursor c = queryPlaylist(plid, col);
         if (!c.moveToFirst())
             eAssert(false);
         long v = c.getLong(0);
@@ -512,37 +513,37 @@ public class DB extends SQLiteOpenHelper {
     }
 
     private Cursor
-    queryPlayList(long plid, ColPlayList col) {
+    queryPlaylist(long plid, ColPlaylist col) {
         return mDb.query(TABLE_PLAYLIST,
                          new String[] { col.getName() },
-                         ColPlayList.ID.getName() + " = " + plid,
+                         ColPlaylist.ID.getName() + " = " + plid,
                          null, null, null, null);
     }
 
     public int
-    updatePlayListSize(long plid, long size) {
+    updatePlaylistSize(long plid, long size) {
         ContentValues cvs = new ContentValues();
-        cvs.put(ColPlayList.SIZE.getName(), size);
-        int r = mDb.update(TABLE_PLAYLIST, cvs, ColPlayList.ID.getName() + " = " + plid, null);
+        cvs.put(ColPlaylist.SIZE.getName(), size);
+        int r = mDb.update(TABLE_PLAYLIST, cvs, ColPlaylist.ID.getName() + " = " + plid, null);
         if (r > 0)
-            markBooleanWatcherChanged(mPlTblWatcherMap);
+            markBooleanWatcherChanged(mPlTblWM);
         return r;
     }
 
     private void
-    incPlayListSize(long plid) {
-        long sz = getPlayListInfoLong(plid, ColPlayList.SIZE);
+    incPlaylistSize(long plid) {
+        long sz = getPlaylistInfoLong(plid, ColPlaylist.SIZE);
         eAssert(sz >= 0);
         sz++;
-        updatePlayListSize(plid, sz);
+        updatePlaylistSize(plid, sz);
     }
 
     private void
-    decPlayListSize(long plid) {
-        long sz = getPlayListInfoLong(plid, ColPlayList.SIZE);
+    decPlaylistSize(long plid) {
+        long sz = getPlaylistInfoLong(plid, ColPlaylist.SIZE);
         eAssert(sz > 0);
         sz--;
-        updatePlayListSize(plid, sz);
+        updatePlaylistSize(plid, sz);
     }
 
     // ======================================================================
@@ -551,11 +552,11 @@ public class DB extends SQLiteOpenHelper {
     //
     // ======================================================================
     public boolean
-    doesPlayListExist(String title) {
+    doesPlaylistExist(String title) {
         boolean r;
         Cursor c = mDb.query(TABLE_PLAYLIST,
-                             new String[] { ColPlayList.ID.getName() },
-                             ColPlayList.TITLE.getName() + " = " + DatabaseUtils.sqlEscapeString(title),
+                             new String[] { ColPlaylist.ID.getName() },
+                             ColPlaylist.TITLE.getName() + " = " + DatabaseUtils.sqlEscapeString(title),
                              null, null, null, null);
         r = c.getCount() > 0;
         c.close();
@@ -569,16 +570,16 @@ public class DB extends SQLiteOpenHelper {
      * @return
      */
     public long
-    insertPlayList(String title, String desc) {
-        // Inserting PlayList that has same 'title' is NOT allowed.
-        ContentValues cvs = ColPlayList.createContentValuesForInsert(title, desc);
+    insertPlaylist(String title, String desc) {
+        // Inserting Playlist that has same 'title' is NOT allowed.
+        ContentValues cvs = ColPlaylist.createContentValuesForInsert(title, desc);
         long id = -1;
         mDb.beginTransaction();
         try {
             id = mDb.insert(TABLE_PLAYLIST, null, cvs);
             if (id >= 0) {
                 mDb.execSQL(buildTableSQL(getVideoRefTableName(id), ColVideoRef.values()));
-                markBooleanWatcherChanged(mPlTblWatcherMap);
+                markBooleanWatcherChanged(mPlTblWM);
             }
             mDb.setTransactionSuccessful();
         } finally {
@@ -589,8 +590,8 @@ public class DB extends SQLiteOpenHelper {
     }
 
     public int
-    updatePlayList(long plid,
-                   ColPlayList field, Object v) {
+    updatePlaylist(long plid,
+                   ColPlaylist field, Object v) {
         ContentValues cvs = new ContentValues();
         try {
             Method m = cvs.getClass().getMethod("put", String.class, v.getClass());
@@ -600,20 +601,20 @@ public class DB extends SQLiteOpenHelper {
         }
         int r = mDb.update(TABLE_PLAYLIST,
                            cvs,
-                           ColPlayList.ID.getName() + " = " + plid,
+                           ColPlaylist.ID.getName() + " = " + plid,
                            null);
         if (r > 0)
-            markBooleanWatcherChanged(mPlTblWatcherMap);
+            markBooleanWatcherChanged(mPlTblWM);
 
         return r;
     }
 
     public int
-    deletePlayList(long id) {
+    deletePlaylist(long id) {
         int r = -1;
         mDb.beginTransaction();
         try {
-            r = mDb.delete(TABLE_PLAYLIST, ColPlayList.ID.getName() + " = " + id, null);
+            r = mDb.delete(TABLE_PLAYLIST, ColPlaylist.ID.getName() + " = " + id, null);
             eAssert(0 == r || 1 == r);
             if (r > 0) {
                 Cursor c = mDb.query(getVideoRefTableName(id),
@@ -625,7 +626,7 @@ public class DB extends SQLiteOpenHelper {
                     } while(c.moveToNext());
                 }
                 mDb.execSQL("DROP TABLE " + getVideoRefTableName(id) + ";");
-                markBooleanWatcherChanged(mPlTblWatcherMap);
+                markBooleanWatcherChanged(mPlTblWM);
             }
             mDb.setTransactionSuccessful();
         } finally {
@@ -635,11 +636,11 @@ public class DB extends SQLiteOpenHelper {
     }
 
     public Cursor
-    queryPlayList(ColPlayList[] cols) {
+    queryPlaylist(ColPlaylist[] cols) {
         return mDb.query(TABLE_PLAYLIST,
                 getColNames(cols),
                 null, null, null, null,
-                ColPlayList.TITLE.getName());
+                ColPlaylist.TITLE.getName());
     }
 
     public boolean
@@ -653,7 +654,7 @@ public class DB extends SQLiteOpenHelper {
     /**
      *
      * @param plid
-     *   PlayList DB id
+     *   Playlist DB id
      * @param title
      * @param desc
      * @param url
@@ -663,7 +664,7 @@ public class DB extends SQLiteOpenHelper {
      *   -1 for error (ex. already exist)
      */
     public Err
-    insertVideoToPlayList(long plid,
+    insertVideoToPlaylist(long plid,
                           String title, String desc,
                           String videoId, int playtime,
                           byte[] thumbnail) {
@@ -723,7 +724,7 @@ public class DB extends SQLiteOpenHelper {
      * @return
      */
     public int
-    deleteVideoFromPlayList(long plid, long mid) {
+    deleteVideoFromPlaylist(long plid, long mid) {
         return deleteVideoRef(plid, mid);
     }
 
@@ -770,22 +771,22 @@ public class DB extends SQLiteOpenHelper {
     //
     // ----------------------------------------------------------------------
     public void
-    registerToPlayListTableWatcher(Object key) {
-        registerToBooleanWatcher(mPlTblWatcherMap, key);
+    registerToPlaylistTableWatcher(Object key) {
+        registerToBooleanWatcher(mPlTblWM, key);
     }
 
     public boolean
-    isRegisteredToPlayListTableWatcher(Object key) {
-        return isRegisteredToBooleanWatcher(mPlTblWatcherMap, key);
+    isRegisteredToPlaylistTableWatcher(Object key) {
+        return isRegisteredToBooleanWatcher(mPlTblWM, key);
     }
 
     public void
-    unregisterToPlayListTableWatcher(Object key) {
-        unregisterToBooleanWatcher(mPlTblWatcherMap, key);
+    unregisterToPlaylistTableWatcher(Object key) {
+        unregisterToBooleanWatcher(mPlTblWM, key);
     }
 
     public boolean
-    isPlayListTableUpdated(Object key) {
-        return isBooleanWatcherUpdated(mPlTblWatcherMap, key);
+    isPlaylistTableUpdated(Object key) {
+        return isBooleanWatcherUpdated(mPlTblWM, key);
     }
 }

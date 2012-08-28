@@ -42,7 +42,7 @@ OnPlayerReadyListener {
     public void
     onPlayerReady(WebView wv) {
         Utils.getUiHandler().removeCallbacks(mAppInitTimeOut);
-        Intent i = new Intent(this, PlayListActivity.class);
+        Intent i = new Intent(this, PlaylistActivity.class);
         startActivity(i);
         finish();
     }

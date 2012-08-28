@@ -36,7 +36,7 @@ public class MusicsActivity extends Activity {
 
 
     private static boolean
-    isUserPlayList(long plid) {
+    isUserPlaylist(long plid) {
         return plid >= 0;
     }
 
@@ -46,10 +46,10 @@ public class MusicsActivity extends Activity {
     }
 
     private void
-    setToPlayListThumbnail(long musicId, int itemPos) {
-        eAssert(isUserPlayList(mPlid));
+    setToPlaylistThumbnail(long musicId, int itemPos) {
+        eAssert(isUserPlaylist(mPlid));
         byte[] data = getAdapter().getMusicThumbnail(itemPos);
-        mDb.updatePlayList(mPlid, DB.ColPlayList.THUMBNAIL, data);
+        mDb.updatePlaylist(mPlid, DB.ColPlaylist.THUMBNAIL, data);
         // update current screen's thumbnail too.
         UiUtils.setThumbnailImageView(((ImageView)findViewById(R.id.thumbnail)), data);
     }
@@ -117,13 +117,13 @@ public class MusicsActivity extends Activity {
         AdapterContextMenuInfo info = (AdapterContextMenuInfo)mItem.getMenuInfo();
         switch (mItem.getItemId()) {
         case R.id.delete:
-            eAssert(isUserPlayList(mPlid));
-            mDb.deleteVideoFromPlayList(mPlid, info.id);
+            eAssert(isUserPlaylist(mPlid));
+            mDb.deleteVideoFromPlaylist(mPlid, info.id);
             getAdapter().reloadCursorAsync();
             return true;
 
         case R.id.plthumbnail:
-            setToPlayListThumbnail(info.id, info.position);
+            setToPlaylistThumbnail(info.id, info.position);
             return true;
 
         case R.id.volume:
@@ -141,7 +141,7 @@ public class MusicsActivity extends Activity {
         inflater.inflate(R.menu.musics_context, menu);
         //AdapterContextMenuInfo mInfo = (AdapterContextMenuInfo)menuInfo;
 
-        if (isUserPlayList(mPlid)) {
+        if (isUserPlaylist(mPlid)) {
             menu.findItem(R.id.plthumbnail).setVisible(true);
             menu.findItem(R.id.delete).setVisible(true);
         } else {
@@ -160,7 +160,7 @@ public class MusicsActivity extends Activity {
         mPlid = getIntent().getLongExtra("plid", PLID_INVALID);
         eAssert(PLID_INVALID != mPlid);
 
-        if (isUserPlayList(mPlid)) {
+        if (isUserPlaylist(mPlid)) {
             String title = getIntent().getStringExtra("title");
             ((TextView)findViewById(R.id.title)).setText(title);
 

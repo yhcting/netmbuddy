@@ -213,7 +213,7 @@ DBHelper.CheckExistDoneReceiver {
     }
 
     private void
-    addToPlayList(long plid, int position) {
+    addToPlaylist(long plid, int position) {
         eAssert(plid >= 0);
         Bitmap bm = getAdapter().getItemThumbnail(position);
         if (null == bm) {
@@ -229,7 +229,7 @@ DBHelper.CheckExistDoneReceiver {
             return;
         }
 
-        Err err = mDb.insertVideoToPlayList(plid,
+        Err err = mDb.insertVideoToPlaylist(plid,
                                             entry.media.title, entry.media.description,
                                             entry.media.videoId, playtm,
                                             Utils.compressBitmap(bm));
@@ -245,7 +245,7 @@ DBHelper.CheckExistDoneReceiver {
     }
 
     private void
-    addToNewPlayList(final int position) {
+    addToNewPlaylist(final int position) {
         UiUtils.EditTextAction action = new UiUtils.EditTextAction() {
             @Override
             public void prepare(Dialog dialog, EditText edit) { }
@@ -253,16 +253,16 @@ DBHelper.CheckExistDoneReceiver {
             @Override
             public void onOk(Dialog dialog, EditText edit) {
                 String title = edit.getText().toString();
-                if (mDb.doesPlayListExist(title)) {
+                if (mDb.doesPlaylistExist(title)) {
                     UiUtils.showTextToast(YTSearchActivity.this, R.string.msg_existing_playlist);
                     return;
                 }
 
-                long plid = mDb.insertPlayList(title, "");
+                long plid = mDb.insertPlaylist(title, "");
                 if (plid < 0) {
                     UiUtils.showTextToast(YTSearchActivity.this, R.string.err_db_unknown);
                 } else {
-                    addToPlayList(plid, position);
+                    addToPlaylist(plid, position);
                 }
             }
         };
@@ -271,13 +271,13 @@ DBHelper.CheckExistDoneReceiver {
     }
 
     private void
-    onAddToPlayList(final int position) {
+    onAddToPlaylist(final int position) {
         // Create menu list
-        final Cursor c = mDb.queryPlayList(new DB.ColPlayList[] { DB.ColPlayList.ID,
-                                                                  DB.ColPlayList.TITLE });
+        final Cursor c = mDb.queryPlaylist(new DB.ColPlaylist[] { DB.ColPlaylist.ID,
+                                                                  DB.ColPlaylist.TITLE });
 
-        final int iTitle = c.getColumnIndex(DB.ColPlayList.TITLE.getName());
-        final int iId    = c.getColumnIndex(DB.ColPlayList.ID.getName());
+        final int iTitle = c.getColumnIndex(DB.ColPlaylist.TITLE.getName());
+        final int iId    = c.getColumnIndex(DB.ColPlaylist.ID.getName());
 
         final String[] menus = new String[c.getCount() + 1]; // + 1 for 'new playlist'
         final long[]   ids   = new long[menus.length];
@@ -298,9 +298,9 @@ DBHelper.CheckExistDoneReceiver {
             public void onClick(DialogInterface dialog, int which) {
                 eAssert(which >= 0);
                 if (0 == which)
-                    addToNewPlayList(position);
+                    addToNewPlaylist(position);
                 else
-                    addToPlayList(ids[which], position);
+                    addToPlaylist(ids[which], position);
 
                 dialog.cancel();
             }
@@ -394,7 +394,7 @@ DBHelper.CheckExistDoneReceiver {
         AdapterContextMenuInfo info = (AdapterContextMenuInfo)mItem.getMenuInfo();
         switch (mItem.getItemId()) {
         case R.id.add_to_playlist:
-            onAddToPlayList(info.position);
+            onAddToPlaylist(info.position);
             return true;
 
         }
