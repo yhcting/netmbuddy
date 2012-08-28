@@ -17,14 +17,18 @@ public class MusicsAdapter extends ResourceCursorAdapter {
 
     // Below value SHOULD match queries of 'createCursor()'
     private static final int COLI_ID        = 0;
-    private static final int COLI_TITLE     = 1;
-    private static final int COLI_THUMBNAIL = 2;
-    private static final int COLI_PLAYTIME  = 3;
+    private static final int COLI_VIDEOID   = 1;
+    private static final int COLI_TITLE     = 2;
+    private static final int COLI_THUMBNAIL = 3;
+    private static final int COLI_VOLUME    = 4;
+    private static final int COLI_PLAYTIME  = 5;
 
     private static final DB.ColVideo[] sQueryCols
         = new DB.ColVideo[] { DB.ColVideo.ID,
+                              DB.ColVideo.VIDEOID,
                               DB.ColVideo.TITLE,
                               DB.ColVideo.THUMBNAIL,
+                              DB.ColVideo.VOLUME,
                               DB.ColVideo.PLAYTIME };
 
     private final Context       mContext;
@@ -54,6 +58,46 @@ public class MusicsAdapter extends ResourceCursorAdapter {
         eAssert(null != arg);
         mContext = context;
         mCurArg = arg;
+    }
+
+    public String
+    getMusicYtid(int pos) {
+        Cursor c = getCursor();
+        if (!c.move(pos))
+            eAssert(false);
+        return c.getString(COLI_VIDEOID);
+    }
+
+    public String
+    getMusicTitle(int pos) {
+        Cursor c = getCursor();
+        if (!c.move(pos))
+            eAssert(false);
+        return c.getString(COLI_TITLE);
+    }
+
+    public byte[]
+    getMusicThumbnail(int pos) {
+        Cursor c = getCursor();
+        if (!c.move(pos))
+            eAssert(false);
+        return c.getBlob(COLI_THUMBNAIL);
+    }
+
+    public int
+    getMusicVolume(int pos) {
+        Cursor c = getCursor();
+        if (!c.move(pos))
+            eAssert(false);
+        return c.getInt(COLI_VOLUME);
+    }
+
+    public int
+    getMusicPlaytime(int pos) {
+        Cursor c = getCursor();
+        if (!c.move(pos))
+            eAssert(false);
+        return c.getInt(COLI_PLAYTIME);
     }
 
     public void

@@ -2,9 +2,10 @@ package free.yhc.youtube.musicplayer;
 
 import static free.yhc.youtube.musicplayer.model.Utils.eAssert;
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Configuration;
-import android.database.Cursor;
 import android.os.Bundle;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
@@ -16,9 +17,9 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import free.yhc.youtube.musicplayer.model.DB;
-import free.yhc.youtube.musicplayer.model.DB.ColVideo;
 import free.yhc.youtube.musicplayer.model.UiUtils;
 import free.yhc.youtube.musicplayer.model.Utils;
 
@@ -47,20 +48,9 @@ public class MusicsActivity extends Activity {
     }
 
     private void
-    setToPlayListThumbnail(long musicId) {
+    setToPlayListThumbnail(long musicId, int itemPos) {
         eAssert(isUserPlayList(mPlid));
-
-        Cursor c = mDb.queryVideo(musicId, new ColVideo[] { ColVideo.THUMBNAIL });
-        if (!c.moveToFirst()) {
-            UiUtils.showTextToast(this, R.string.err_db_unknown);
-            c.close();
-            return;
-        }
-
-        byte[] data = c.getBlob(0);
-        eAssert(null != data);
-        c.close();
-
+        byte[] data = getAdapter().getMusicThumbnail(itemPos);
         mDb.updatePlayListThumbnail(mPlid, data);
         mPlayListChanged = true;
         // update current screen's thumbnail too.
@@ -69,19 +59,59 @@ public class MusicsActivity extends Activity {
 
     private void
     onListItemClick(View view, int position, long itemId) {
-        Cursor c = mDb.queryVideo(itemId, new ColVideo[] { ColVideo.VIDEOID,
-                                                           ColVideo.TITLE,
-                                                           ColVideo.VOLUME});
-        if (!c.moveToFirst()) {
-            UiUtils.showTextToast(this, R.string.err_unknown);
-            c.close();
-            return;
-        }
-
+        YTJSPlayer.Video vid = new YTJSPlayer.Video(getAdapter().getMusicYtid(position),
+                                                    getAdapter().getMusicTitle(position),
+                                                    getAdapter().getMusicVolume(position));
         ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
         playerv.setVisibility(View.VISIBLE);
         mMp.setController(this, playerv);
-        mMp.startVideos(c, 0, 1, 2, Utils.isPrefSuffle());
+        mMp.startVideos(new YTJSPlayer.Video[] { vid });
+    }
+
+    private void
+    onContextMenuVolume(final long itemId, final int itemPos) {
+        final int oldVolume = getAdapter().getMusicVolume(itemPos);
+
+        ViewGroup diagv = (ViewGroup)UiUtils.inflateLayout(this, R.layout.set_volume_dialog);
+        AlertDialog.Builder bldr = new AlertDialog.Builder(this);
+        bldr.setView(diagv);
+        bldr.setTitle(R.string.volume);
+        final AlertDialog aDiag = bldr.create();
+
+        final SeekBar sbar = (SeekBar)diagv.findViewById(R.id.seekbar);
+        sbar.setMax(100);
+        sbar.setProgress(getAdapter().getMusicVolume(itemPos));
+        sbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void
+            onStopTrackingTouch(SeekBar seekBar) { }
+            @Override
+            public void
+            onStartTrackingTouch(SeekBar seekBar) { }
+            @Override
+            public void
+            onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                mMp.setVideoVolume(progress);
+            }
+        });
+
+        aDiag.setOnDismissListener(new DialogInterface.OnDismissListener() {
+            @Override
+            public void
+            onDismiss(DialogInterface dialog) {
+                int newVolume = sbar.getProgress();
+                if (oldVolume == newVolume)
+                    return;
+                // Save to database and update adapter
+                // NOTE
+                // Should I consider about performance?
+                // Not yet. do something when performance is issued.
+                mDb.updateVideo(DB.ColVideo.ID, itemId, DB.ColVideo.VOLUME, sbar.getProgress());
+                getAdapter().reloadCursor();
+            }
+        });
+
+        aDiag.show();
     }
 
     @Override
@@ -96,7 +126,11 @@ public class MusicsActivity extends Activity {
             return true;
 
         case R.id.plthumbnail:
-            setToPlayListThumbnail(info.id);
+            setToPlayListThumbnail(info.id, info.position);
+            return true;
+
+        case R.id.volume:
+            onContextMenuVolume(info.id, info.position);
             return true;
         }
         return false;

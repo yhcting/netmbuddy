@@ -13,6 +13,7 @@
     <string name="error">에러</string>
     <string name="buffering">버퍼링</string>
     <string name="search_word">검색어</string>
+    <string name="volume">볼륨</string>
     
     <string name="enter_search_word">검색어 입력</string>
     <string name="new_search">새로 검색하기</string>

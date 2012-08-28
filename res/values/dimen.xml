@@ -16,6 +16,8 @@
     <dimen name="title_text_size">14dip</dimen>
     <dimen name="desc_text_size">11dip</dimen>
     
+    <dimen name="seekbar_width">400px</dimen>
+    
     <!-- =============================================
                              Color
          ============================================= -->

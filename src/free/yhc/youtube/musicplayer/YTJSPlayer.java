@@ -331,15 +331,21 @@ public class YTJSPlayer {
     //
     // ========================================================================
     private void
+    playVideo(String videoId, int volume) {
+        eAssert(0 <= volume && volume <= 100);
+        ajsPrepare(videoId);
+        ajsSetVolume(volume);
+        ajsPlay();
+    }
+
+    private void
     playNext() {
         mVideoi++;
         if (mVideoi >= mVideos.length) {
             mVideoi = mVideos.length;
             ytpPlayDone();
-        } else {
-            ajsPrepare(mVideos[mVideoi].videoId);
-            ajsPlay();
-        }
+        } else
+            playVideo(mVideos[mVideoi].videoId, mVideos[mVideoi].volume);
     }
 
     private void
@@ -348,10 +354,8 @@ public class YTJSPlayer {
         if (mVideoi < 0) {
             mVideoi = -1;
             ytpPlayDone();
-        } else {
-            ajsPrepare(mVideos[mVideoi].videoId);
-            ajsPlay();
-        }
+        } else
+            playVideo(mVideos[mVideoi].videoId, mVideos[mVideoi].volume);
     }
 
     private void
@@ -721,6 +725,11 @@ public class YTJSPlayer {
         callJsFunction("stopVideo");
     }
 
+    private void
+    ajsSetVolume(int volume) {
+        callJsFunction("setVideoVolume", "" + volume);
+    }
+
     // ========================================================================
     //
     // Public interface
@@ -859,8 +868,7 @@ public class YTJSPlayer {
         mVideos = vs;
         mVideoi = 0;
 
-        ajsPrepare(mVideos[mVideoi].videoId);
-        ajsPlay();
+        playVideo(mVideos[mVideoi].videoId, mVideos[mVideoi].volume);
     }
 
     public void
@@ -883,6 +891,13 @@ public class YTJSPlayer {
                 c.close();
             }
         });
+    }
+
+    public void
+    setVideoVolume(int vol) {
+        eAssert(0 <= vol && vol <= 100);
+        if (null != mWv)
+            ajsSetVolume(vol);
     }
 
     // ============================================================================

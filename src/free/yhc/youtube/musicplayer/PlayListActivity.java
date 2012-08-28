@@ -236,7 +236,9 @@ public class PlayListActivity extends Activity {
     private void
     onListItemClick(View view, int position, long itemId) {
         playMusics(mDb.queryVideos(itemId,
-                                   new ColVideo[] { ColVideo.VIDEOID, ColVideo.TITLE },
+                                   new ColVideo[] { ColVideo.VIDEOID,
+                                                    ColVideo.TITLE,
+                                                    ColVideo.VOLUME },
                                    null, false));
     }
 

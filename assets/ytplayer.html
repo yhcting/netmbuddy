@@ -52,7 +52,7 @@ Apache license (http://www.apache.org/licenses/LICENSE-2.0.html)
         // Allow the user to set the volume from 0-100
         function setVideoVolume(volume) {
             if (ytplayer) {
-                ytplayer.setVolume(volume);
+                ytplayer.setVolume(Number(volume));
             }
         }
 
@@ -111,7 +111,10 @@ Apache license (http://www.apache.org/licenses/LICENSE-2.0.html)
             setInterval(notifyPlayerInfo, 1000);
             ytplayer.addEventListener("onStateChange", "onPlayerStateChange");
             ytplayer.addEventListener("onError", "onPlayerError");
-            ytplayer.setVolume(100);
+
+            // 50 is default value.
+            // Android java code (Policy.java) for this value.
+            ytplayer.setVolume(50);
         }
 
         // The "main method" of this sample. Called when someone clicks "Run".
