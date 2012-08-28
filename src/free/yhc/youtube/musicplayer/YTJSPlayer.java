@@ -31,18 +31,16 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import free.yhc.youtube.musicplayer.model.DB;
 import free.yhc.youtube.musicplayer.model.Err;
 import free.yhc.youtube.musicplayer.model.NanoHTTPD;
+import free.yhc.youtube.musicplayer.model.Policy;
 import free.yhc.youtube.musicplayer.model.Utils;
 
 // See Youtube player Javascript API document
 public class YTJSPlayer {
     private static final String WLTAG               = "YTJSPlayer";
-    private static final int    WEBSERVER_PORT      = 8999;
+    private static final int    WEBSERVER_PORT      = Policy.DefaultConstants.WEBSERVER_PORT;
     private static final String YTPLAYER_SCRIPT     = "ytplayer.html";
-    private static final String VIDEOID_DELIMITER   = " ";
-
 
     private static final int YTPSTATE_UNSTARTED     = -1;
     private static final int YTPSTATE_ENDED         = 0;
@@ -82,7 +80,6 @@ public class YTJSPlayer {
 
 
     private final Resources     mRes        = Utils.getAppContext().getResources();
-    private final DB            mDb         = DB.get();
 
     // ------------------------------------------------------------------------
     // Final Runnables

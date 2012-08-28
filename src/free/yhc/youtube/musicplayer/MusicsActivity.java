@@ -144,10 +144,13 @@ public class MusicsActivity extends Activity {
         inflater.inflate(R.menu.musics_context, menu);
         //AdapterContextMenuInfo mInfo = (AdapterContextMenuInfo)menuInfo;
 
-        if (isUserPlayList(mPlid))
+        if (isUserPlayList(mPlid)) {
             menu.findItem(R.id.plthumbnail).setVisible(true);
-        else
+            menu.findItem(R.id.delete).setVisible(true);
+        } else {
             menu.findItem(R.id.plthumbnail).setVisible(false);
+            menu.findItem(R.id.delete).setVisible(false);
+        }
     }
 
     @Override
