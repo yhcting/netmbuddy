@@ -13,7 +13,7 @@
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:weightSum="5.0"
+            android:weightSum="6.0"
             android:orientation="horizontal"
             >
             <ImageView
