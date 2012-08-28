@@ -28,6 +28,7 @@ import free.yhc.youtube.musicplayer.model.DB;
 import free.yhc.youtube.musicplayer.model.DBHelper;
 import free.yhc.youtube.musicplayer.model.DBHelper.CheckExistArg;
 import free.yhc.youtube.musicplayer.model.Err;
+import free.yhc.youtube.musicplayer.model.Policy;
 import free.yhc.youtube.musicplayer.model.UiUtils;
 import free.yhc.youtube.musicplayer.model.Utils;
 import free.yhc.youtube.musicplayer.model.YTSearchApi;
@@ -231,7 +232,7 @@ DBHelper.CheckExistDoneReceiver {
             return;
         }
 
-        Err err = mDb.insertMusicToPlayList(plid,
+        Err err = mDb.insertVideoToPlayList(plid,
                                             entry.media.title, entry.media.description,
                                             entry.media.videoId, playtm,
                                             Utils.compressBitmap(bm));
@@ -318,7 +319,8 @@ DBHelper.CheckExistDoneReceiver {
 
         YTJSPlayer.Video v = new YTJSPlayer.Video(
                 getAdapter().getItemVideoId(position),
-                getAdapter().getItemTitle(position));
+                getAdapter().getItemTitle(position),
+                Policy.DefaultConstants.VIDEO_VOLUME);
         mMp.setController(this, playerv);
         mMp.startVideos(new YTJSPlayer.Video[] { v });
     }
@@ -445,7 +447,7 @@ DBHelper.CheckExistDoneReceiver {
     onResume() {
         super.onResume();
         ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
-        if (mMp.isMusicPlaying()) {
+        if (mMp.isVideoPlaying()) {
             playerv.setVisibility(View.VISIBLE);
             mMp.setController(this, playerv);
         } else {

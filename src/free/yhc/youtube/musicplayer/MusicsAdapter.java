@@ -21,11 +21,11 @@ public class MusicsAdapter extends ResourceCursorAdapter {
     private static final int COLI_THUMBNAIL = 2;
     private static final int COLI_PLAYTIME  = 3;
 
-    private static final DB.ColMusic[] sQueryCols
-        = new DB.ColMusic[] { DB.ColMusic.ID,
-                              DB.ColMusic.TITLE,
-                              DB.ColMusic.THUMBNAIL,
-                              DB.ColMusic.PLAYTIME };
+    private static final DB.ColVideo[] sQueryCols
+        = new DB.ColVideo[] { DB.ColVideo.ID,
+                              DB.ColVideo.TITLE,
+                              DB.ColVideo.THUMBNAIL,
+                              DB.ColVideo.PLAYTIME };
 
     private final Context       mContext;
     private final CursorArg     mCurArg;
@@ -42,11 +42,11 @@ public class MusicsAdapter extends ResourceCursorAdapter {
     private Cursor
     createCursor() {
         if (MusicsActivity.PLID_RECENT_PLAYED == mCurArg.plid)
-            return DB.get().queryMusics(sQueryCols, DB.ColMusic.TIME_PLAYED, false);
+            return DB.get().queryVideos(sQueryCols, DB.ColVideo.TIME_PLAYED, false);
         else if (MusicsActivity.PLID_SEARCHED == mCurArg.plid)
-            return DB.get().queryMusicsSearchTitle(sQueryCols, mCurArg.extra);
+            return DB.get().queryVideosSearchTitle(sQueryCols, mCurArg.extra);
         else
-            return DB.get().queryMusics(mCurArg.plid, sQueryCols, DB.ColMusic.TITLE, true);
+            return DB.get().queryVideos(mCurArg.plid, sQueryCols, DB.ColVideo.TITLE, true);
     }
 
     public MusicsAdapter(Context context, CursorArg arg) {

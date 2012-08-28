@@ -16,15 +16,13 @@ public class DB extends SQLiteOpenHelper {
     private static final String NAME            = "ytmp.db";
     private static final int    VERSION         = 1;
 
-    private static final String TABLE_MUSIC             = "music";
+    private static final String TABLE_VIDEO             = "video";
     private static final String TABLE_PLAYLIST          = "playlist";
-    private static final String TABLE_MUSICREF_PREFIX   = "musicref_";
+    private static final String TABLE_VIDEOREF_PREFIX   = "videoref_";
 
     private static DB instance = null;
 
-
     private SQLiteDatabase mDb = null;
-
 
     public interface Col {
         String getName();
@@ -70,18 +68,18 @@ public class DB extends SQLiteOpenHelper {
     }
 
     // NOTE
-    // This is just music list
+    // This is just video list
     // To get detail and sorted table, 'Joining Table' should be used.
-    public static enum ColMusicRef implements Col {
-        MUSICID         ("musicid",         "integer",  ""),
+    public static enum ColVideoRef implements Col {
+        VIDEOID         ("videoid",         "integer",  ""),
         ID              (BaseColumns._ID,   "integer",  "primary key autoincrement, "
-                + "FOREIGN KEY(musicid) REFERENCES " + TABLE_MUSIC + "(" + ColMusic.ID.getName() + ")");
+                + "FOREIGN KEY(videoid) REFERENCES " + TABLE_VIDEO + "(" + ColVideo.ID.getName() + ")");
 
         private final String name;
         private final String type;
         private final String constraint;
 
-        ColMusicRef(String aName, String aType, String aConstraint) {
+        ColVideoRef(String aName, String aType, String aConstraint) {
             name = aName;
             type = aType;
             constraint = aConstraint;
@@ -94,25 +92,39 @@ public class DB extends SQLiteOpenHelper {
         public String getConstraint() { return constraint; }
     }
 
-    public static enum ColMusic implements Col {
+    public static enum ColVideo implements Col {
+        // --------------------------------------------------------------------
         // Youtube information
+        // --------------------------------------------------------------------
         TITLE           ("title",           "text",     "not null"),
         DESCRIPTION     ("description",     "text",     "not null"),
         VIDEOID         ("videoid",         "text",     "not null"),
         PLAYTIME        ("playtime",        "integer",  "not null"),
         THUMBNAIL       ("thumbnail",       "blob",     "not null"),
 
+        // --------------------------------------------------------------------
         // Custom information
-        RATE            ("rate",            "integer",  "not null"), // my rate of this Music
+        // --------------------------------------------------------------------
+        // Why volume is here?
+        // Each Youtube video has it's own volume that is set at encoding step.
+        // So, even if device volume setting is not changed, some video
+        //   plays with loud sound but others are not.
+        // To tune this variance between videos this field is required.
+        VOLUME          ("volume",          "integer",  "not null"),
+        RATE            ("rate",            "integer",  "not null"), // my rate of this Video
         TIME_ADD        ("time_add",        "integer",  "not null"),
         TIME_PLAYED     ("time_played",     "integer",  "not_null"), // time last played
 
-        // Music information - Not used yet (reserved for future use)
+        // --------------------------------------------------------------------
+        // Video information - Not used yet (reserved for future use)
+        // --------------------------------------------------------------------
         GENRE           ("genre",           "text",     "not null"),
         ARTIST          ("artist",          "text",     "not null"),
         ALBUM           ("album",           "text",     "not null"),
 
+        // --------------------------------------------------------------------
         // Internal use for DB management
+        // --------------------------------------------------------------------
         REFCOUNT        ("refcount",        "integer",  "not null"), // reference count
 
         ID              (BaseColumns._ID,   "integer",  "primary key autoincrement");
@@ -132,25 +144,26 @@ public class DB extends SQLiteOpenHelper {
                 thumbnail = new byte[0];
 
             ContentValues cvs = new ContentValues();
-            cvs.put(ColMusic.TITLE.getName(), title);
-            cvs.put(ColMusic.DESCRIPTION.getName(), desc);
-            cvs.put(ColMusic.VIDEOID.getName(), videoId);
-            cvs.put(ColMusic.PLAYTIME.getName(), playtime);
-            cvs.put(ColMusic.THUMBNAIL.getName(), thumbnail);
+            cvs.put(ColVideo.TITLE.getName(), title);
+            cvs.put(ColVideo.DESCRIPTION.getName(), desc);
+            cvs.put(ColVideo.VIDEOID.getName(), videoId);
+            cvs.put(ColVideo.PLAYTIME.getName(), playtime);
+            cvs.put(ColVideo.THUMBNAIL.getName(), thumbnail);
 
-            cvs.put(ColMusic.RATE.getName(), 0);
-            cvs.put(ColMusic.TIME_ADD.getName(), System.currentTimeMillis());
-            cvs.put(ColMusic.TIME_PLAYED.getName(), System.currentTimeMillis());
+            cvs.put(ColVideo.VOLUME.getName(), Policy.DefaultConstants.VIDEO_VOLUME);
+            cvs.put(ColVideo.RATE.getName(), 0);
+            cvs.put(ColVideo.TIME_ADD.getName(), System.currentTimeMillis());
+            cvs.put(ColVideo.TIME_PLAYED.getName(), System.currentTimeMillis());
 
-            cvs.put(ColMusic.GENRE.getName(), "");
-            cvs.put(ColMusic.ARTIST.getName(), "");
-            cvs.put(ColMusic.ALBUM.getName(), "");
+            cvs.put(ColVideo.GENRE.getName(), "");
+            cvs.put(ColVideo.ARTIST.getName(), "");
+            cvs.put(ColVideo.ALBUM.getName(), "");
 
-            cvs.put(ColMusic.REFCOUNT.getName(), 0);
+            cvs.put(ColVideo.REFCOUNT.getName(), 0);
             return cvs;
         }
 
-        ColMusic(String aName, String aType, String aConstraint) {
+        ColVideo(String aName, String aType, String aConstraint) {
             name = aName;
             type = aType;
             constraint = aConstraint;
@@ -197,39 +210,39 @@ public class DB extends SQLiteOpenHelper {
     }
 
     /**
-     * Build SQL from joining music and music-ref tables
+     * Build SQL from joining video and video-ref tables
      * @param plid
      * @param cols
      * @return
      */
     private static String
-    buildQueryMusicsSQL(long plid, ColMusic[] cols, ColMusic colOrderBy, boolean asc) {
+    buildQueryVideosSQL(long plid, ColVideo[] cols, ColVideo colOrderBy, boolean asc) {
         eAssert(cols.length > 0);
 
         String sql = "SELECT ";
         String sel = "";
-        String tableMusicNS = TABLE_MUSIC + "."; // NS : NameSpace
+        String tableVideoNS = TABLE_VIDEO + "."; // NS : NameSpace
         String[] cnames = getColNames(cols);
         for (int i = 0; i < cnames.length - 1; i++)
-            sel += tableMusicNS + cnames[i] + ", ";
-        sel += tableMusicNS + cnames[cnames.length - 1];
+            sel += tableVideoNS + cnames[i] + ", ";
+        sel += tableVideoNS + cnames[cnames.length - 1];
 
         String orderBy = buildSQLOrderBy(true, colOrderBy, asc);
         // NOTE
-        // There is NO USE CASE requiring sorted cursor for musics.
-        // result of querying musics don't need to be sorted cursor.
-        String mrefTable = getMusicRefTableName(plid);
-        sql += sel + " FROM " + TABLE_MUSIC + ", " + mrefTable
-                + " WHERE " + mrefTable + "." + ColMusicRef.MUSICID.getName()
-                            + " = " + tableMusicNS + ColMusic.ID.getName()
+        // There is NO USE CASE requiring sorted cursor for videos.
+        // result of querying videos don't need to be sorted cursor.
+        String mrefTable = getVideoRefTableName(plid);
+        sql += sel + " FROM " + TABLE_VIDEO + ", " + mrefTable
+                + " WHERE " + mrefTable + "." + ColVideoRef.VIDEOID.getName()
+                            + " = " + tableVideoNS + ColVideo.ID.getName()
                 + " " + (null != orderBy? orderBy: "")
                 + ";";
         return sql;
     }
 
     private static String
-    getMusicRefTableName(long playlistId) {
-        return TABLE_MUSICREF_PREFIX + playlistId;
+    getVideoRefTableName(long playlistId) {
+        return TABLE_VIDEOREF_PREFIX + playlistId;
     }
 
     /**
@@ -270,7 +283,7 @@ public class DB extends SQLiteOpenHelper {
     @Override
     public void
     onCreate(SQLiteDatabase db) {
-        db.execSQL(buildTableSQL(TABLE_MUSIC, ColMusic.values()));
+        db.execSQL(buildTableSQL(TABLE_VIDEO, ColVideo.values()));
         db.execSQL(buildTableSQL(TABLE_PLAYLIST, ColPlayList.values()));
     }
 
@@ -302,34 +315,34 @@ public class DB extends SQLiteOpenHelper {
 
     // ----------------------------------------------------------------------
     //
-    // For TABLE_MUSIC
+    // For TABLE_VIDEO
     //
     // ----------------------------------------------------------------------
     private long
-    insertMusic(String title, String desc,
+    insertVideo(String title, String desc,
                 String url, int playtime,
                 byte[] thumbnail) {
-        ContentValues cvs = ColMusic.createContentValuesForInsert(title, desc,
+        ContentValues cvs = ColVideo.createContentValuesForInsert(title, desc,
                                                                   url, playtime,
                                                                   thumbnail);
-        return mDb.insert(TABLE_MUSIC, null, cvs);
+        return mDb.insert(TABLE_VIDEO, null, cvs);
     }
 
     private Cursor
-    queryMusics(ColMusic[] cols, ColMusic whCol, Object v) {
-        return mDb.query(TABLE_MUSIC,
+    queryVideos(ColVideo[] cols, ColVideo whCol, Object v) {
+        return mDb.query(TABLE_VIDEO,
                          getColNames(cols),
                          whCol.getName() + " = " + DatabaseUtils.sqlEscapeString(v.toString()),
                          null, null, null, null);
     }
 
     private int
-    deleteMusic(long id) {
-        return mDb.delete(TABLE_MUSIC, ColMusic.ID.getName() + " = " + id, null);
+    deleteVideo(long id) {
+        return mDb.delete(TABLE_VIDEO, ColVideo.ID.getName() + " = " + id, null);
     }
 
     private int
-    updateMusic(long id, ColMusic[] cols, Object[] vs) {
+    updateVideo(long id, ColVideo[] cols, Object[] vs) {
         eAssert(cols.length == vs.length);
         ContentValues cvs = new ContentValues();
         for (int i = 0; i < cols.length; i++) {
@@ -340,31 +353,31 @@ public class DB extends SQLiteOpenHelper {
                 eAssert(false);
             }
         }
-        return mDb.update(TABLE_MUSIC, cvs, ColMusic.ID.getName() + " = " + id, null);
+        return mDb.update(TABLE_VIDEO, cvs, ColVideo.ID.getName() + " = " + id, null);
     }
 
     private void
-    incMusicReference(long id) {
-        long rcnt = getMusicInfoLong(id, ColMusic.REFCOUNT);
+    incVideoReference(long id) {
+        long rcnt = getVideoInfoLong(id, ColVideo.REFCOUNT);
         eAssert(rcnt >= 0);
         rcnt++;
-        updateMusic(id, new ColMusic[] { ColMusic.REFCOUNT }, new Long[] { rcnt });
+        updateVideo(id, new ColVideo[] { ColVideo.REFCOUNT }, new Long[] { rcnt });
     }
 
     private void
-    decMusicReference(long id) {
-        long rcnt = getMusicInfoLong(id, ColMusic.REFCOUNT);
+    decVideoReference(long id) {
+        long rcnt = getVideoInfoLong(id, ColVideo.REFCOUNT);
         eAssert(rcnt >= 0);
         rcnt--;
         if (0 == rcnt)
-            deleteMusic(id);
+            deleteVideo(id);
         else
-            updateMusic(id, new ColMusic[] { ColMusic.REFCOUNT }, new Long[] { rcnt });
+            updateVideo(id, new ColVideo[] { ColVideo.REFCOUNT }, new Long[] { rcnt });
     }
 
     private long
-    getMusicInfoLong(long id, ColMusic col) {
-        Cursor c = queryMusics(new ColMusic[] { col }, ColMusic.ID, id);
+    getVideoInfoLong(long id, ColVideo col) {
+        Cursor c = queryVideos(new ColVideo[] { col }, ColVideo.ID, id);
         eAssert(c.getCount() > 0);
         c.moveToFirst();
         long r = c.getLong(0);
@@ -374,20 +387,20 @@ public class DB extends SQLiteOpenHelper {
 
     // ----------------------------------------------------------------------
     //
-    // For TABLE_MUSICREF_xxx
+    // For TABLE_VIDEOREF_xxx
     //
     // ----------------------------------------------------------------------
 
     private long
-    insertMusicRef(long plid, long mid) {
+    insertVideoRef(long plid, long mid) {
         ContentValues cvs = new ContentValues();
-        cvs.put(ColMusicRef.MUSICID.getName(), mid);
+        cvs.put(ColVideoRef.VIDEOID.getName(), mid);
         long r = -1;
         mDb.beginTransaction();
         try {
-            r = mDb.insert(getMusicRefTableName(plid), null, cvs);
+            r = mDb.insert(getVideoRefTableName(plid), null, cvs);
             if (r >= 0)
-                incMusicReference(mid);
+                incVideoReference(mid);
             mDb.setTransactionSuccessful();
         } finally {
             mDb.endTransaction();
@@ -396,10 +409,10 @@ public class DB extends SQLiteOpenHelper {
     }
 
     private boolean
-    doesMusicExist(long plid, long mid) {
-        Cursor c = mDb.query(getMusicRefTableName(plid),
-                             new String[] { ColMusicRef.ID.getName() },
-                             ColMusicRef.MUSICID.getName() + " = " + mid,
+    doesVideoExist(long plid, long mid) {
+        Cursor c = mDb.query(getVideoRefTableName(plid),
+                             new String[] { ColVideoRef.ID.getName() },
+                             ColVideoRef.VIDEOID.getName() + " = " + mid,
                              null, null, null, null);
         boolean ret = c.getCount() > 0;
         c.close();
@@ -407,10 +420,10 @@ public class DB extends SQLiteOpenHelper {
     }
 
     private long
-    getMusicRefInfoMusicId(long plid, long id) {
-        Cursor c = mDb.query(getMusicRefTableName(plid),
-                             new String[] { ColMusicRef.MUSICID.getName() },
-                             ColMusicRef.ID.getName() + " = " + id,
+    getVideoRefInfoVideoId(long plid, long id) {
+        Cursor c = mDb.query(getVideoRefTableName(plid),
+                             new String[] { ColVideoRef.VIDEOID.getName() },
+                             ColVideoRef.ID.getName() + " = " + id,
                              null, null, null, null);
         eAssert(c.getCount() > 0);
         c.moveToFirst();
@@ -423,20 +436,20 @@ public class DB extends SQLiteOpenHelper {
      *
      * @param plid
      * @param mid
-     *   NOTE : This is music id (NOT music reference's id - primary key.
+     *   NOTE : This is video id (NOT video reference's id - primary key.
      * @return
      */
     private int
-    deleteMusicRef(long plid, long mid) {
+    deleteVideoRef(long plid, long mid) {
         int r = 0;
         try {
             mDb.beginTransaction();
-            r =  mDb.delete(getMusicRefTableName(plid),
-                            ColMusicRef.MUSICID.getName() + " = " + mid,
+            r =  mDb.delete(getVideoRefTableName(plid),
+                            ColVideoRef.VIDEOID.getName() + " = " + mid,
                             null);
             eAssert(0 == r || 1 == r);
             if (r > 0)
-                decMusicReference(mid);
+                decVideoReference(mid);
             mDb.setTransactionSuccessful();
         } finally {
             mDb.endTransaction();
@@ -476,7 +489,7 @@ public class DB extends SQLiteOpenHelper {
         try {
             id = mDb.insert(TABLE_PLAYLIST, null, cvs);
             if (id >= 0)
-                mDb.execSQL(buildTableSQL(getMusicRefTableName(id), ColMusicRef.values()));
+                mDb.execSQL(buildTableSQL(getVideoRefTableName(id), ColVideoRef.values()));
             mDb.setTransactionSuccessful();
         } finally {
             mDb.endTransaction();
@@ -508,15 +521,15 @@ public class DB extends SQLiteOpenHelper {
             r = mDb.delete(TABLE_PLAYLIST, ColPlayList.ID.getName() + " = " + id, null);
             eAssert(0 == r || 1 == r);
             if (r > 0) {
-                Cursor c = mDb.query(getMusicRefTableName(id),
-                                     new String[] { ColMusicRef.MUSICID.getName() },
+                Cursor c = mDb.query(getVideoRefTableName(id),
+                                     new String[] { ColVideoRef.VIDEOID.getName() },
                                      null, null, null, null, null);
                 if (c.moveToFirst()) {
                     do {
-                        decMusicReference(c.getLong(0));
+                        decVideoReference(c.getLong(0));
                     } while(c.moveToNext());
                 }
-                mDb.execSQL("DROP TABLE " + getMusicRefTableName(id) + ";");
+                mDb.execSQL("DROP TABLE " + getVideoRefTableName(id) + ";");
             }
             mDb.setTransactionSuccessful();
         } finally {
@@ -534,8 +547,8 @@ public class DB extends SQLiteOpenHelper {
     }
 
     public boolean
-    existMusic(String videoId) {
-        Cursor c = queryMusics(new ColMusic[] { ColMusic.ID }, ColMusic.VIDEOID, videoId);
+    existVideo(String videoId) {
+        Cursor c = queryVideos(new ColVideo[] { ColVideo.ID }, ColVideo.VIDEOID, videoId);
         boolean r = c.getCount() > 0;
         c.close();
         return r;
@@ -554,23 +567,23 @@ public class DB extends SQLiteOpenHelper {
      *   -1 for error (ex. already exist)
      */
     public Err
-    insertMusicToPlayList(long plid,
+    insertVideoToPlayList(long plid,
                           String title, String desc,
                           String videoId, int playtime,
                           byte[] thumbnail) {
-        Cursor c = queryMusics(new ColMusic[] { ColMusic.ID }, ColMusic.VIDEOID, videoId);
+        Cursor c = queryVideos(new ColVideo[] { ColVideo.ID }, ColVideo.VIDEOID, videoId);
         eAssert(0 == c.getCount() || 1 == c.getCount());
         long mid;
         if (c.getCount() <= 0) {
-            // This is new music
+            // This is new video
             c.close();
             mDb.beginTransaction();
             try {
-                mid = insertMusic(title, desc, videoId, playtime, thumbnail);
+                mid = insertVideo(title, desc, videoId, playtime, thumbnail);
                 if (mid < 0)
                     return Err.DB_UNKNOWN;
 
-                if (0 > insertMusicRef(plid, mid))
+                if (0 > insertVideoRef(plid, mid))
                     return Err.DB_UNKNOWN;
 
                 mDb.setTransactionSuccessful();
@@ -581,18 +594,18 @@ public class DB extends SQLiteOpenHelper {
             c.moveToFirst();
             mid = c.getLong(0);
             c.close();
-            if (doesMusicExist(plid, mid))
+            if (doesVideoExist(plid, mid))
                 return Err.DB_DUPLICATED;
 
-            if (0 > insertMusicRef(plid, mid))
+            if (0 > insertVideoRef(plid, mid))
                 return Err.DB_UNKNOWN;
         }
         return Err.NO_ERR;
     }
 
     public int
-    updateMusic(ColMusic where, Object wherev,
-                ColMusic field, Object v) {
+    updateVideo(ColVideo where, Object wherev,
+                ColVideo field, Object v) {
         ContentValues cvs = new ContentValues();
         try {
             Method m = cvs.getClass().getMethod("put", String.class, v.getClass());
@@ -600,7 +613,7 @@ public class DB extends SQLiteOpenHelper {
         } catch (Exception e) {
             eAssert(false);
         }
-        return mDb.update(TABLE_MUSIC,
+        return mDb.update(TABLE_VIDEO,
                           cvs,
                           where.getName() + " = " + DatabaseUtils.sqlEscapeString(wherev.toString()),
                           null);
@@ -610,17 +623,17 @@ public class DB extends SQLiteOpenHelper {
      *
      * @param plid
      * @param mid
-     *   NOTE : Music id (NOT Music reference id).
+     *   NOTE : Video id (NOT Video reference id).
      * @return
      */
     public int
-    deleteMusicFromPlayList(long plid, long mid) {
-        return deleteMusicRef(plid, mid);
+    deleteVideoFromPlayList(long plid, long mid) {
+        return deleteVideoRef(plid, mid);
     }
 
     public Cursor
-    queryMusics(ColMusic[] cols, ColMusic colOrderBy, boolean asc) {
-        return mDb.query(TABLE_MUSIC,
+    queryVideos(ColVideo[] cols, ColVideo colOrderBy, boolean asc) {
+        return mDb.query(TABLE_VIDEO,
                          getColNames(cols),
                          null, null, null, null, buildSQLOrderBy(false, colOrderBy, asc));
     }
@@ -633,25 +646,25 @@ public class DB extends SQLiteOpenHelper {
      * @return
      */
     public Cursor
-    queryMusics(long plid, ColMusic[] cols, ColMusic colOrderBy, boolean asc) {
+    queryVideos(long plid, ColVideo[] cols, ColVideo colOrderBy, boolean asc) {
         eAssert(cols.length > 0);
-        return mDb.rawQuery(buildQueryMusicsSQL(plid, cols, colOrderBy, asc), null);
+        return mDb.rawQuery(buildQueryVideosSQL(plid, cols, colOrderBy, asc), null);
     }
 
     public Cursor
-    queryMusicsSearchTitle(ColMusic[] cols, String titleLike) {
-        return mDb.query(TABLE_MUSIC,
+    queryVideosSearchTitle(ColVideo[] cols, String titleLike) {
+        return mDb.query(TABLE_VIDEO,
                          getColNames(cols),
-                         ColMusic.TITLE.getName() + " LIKE " + DatabaseUtils.sqlEscapeString("%" + titleLike + "%"),
-                         null, null, null, buildSQLOrderBy(false, ColMusic.TITLE, true));
+                         ColVideo.TITLE.getName() + " LIKE " + DatabaseUtils.sqlEscapeString("%" + titleLike + "%"),
+                         null, null, null, buildSQLOrderBy(false, ColVideo.TITLE, true));
     }
 
     public Cursor
-    queryMusic(long mid, ColMusic[] cols) {
+    queryVideo(long mid, ColVideo[] cols) {
         eAssert(cols.length > 0);
-        return mDb.query(TABLE_MUSIC,
+        return mDb.query(TABLE_VIDEO,
                          getColNames(cols),
-                         ColMusic.ID.getName() + " = " + mid,
+                         ColVideo.ID.getName() + " = " + mid,
                          null, null, null, null);
     }
 }

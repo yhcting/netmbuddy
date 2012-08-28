@@ -52,7 +52,7 @@ public class DBHelper {
             // Should I check "entries[i].available" flag???
             boolean[] r = new boolean[entries.length];
             for (int i = 0; i < r.length; i++)
-                r[i] = mDb.existMusic(entries[i].media.videoId);
+                r[i] = mDb.existVideo(entries[i].media.videoId);
             return r;
         }
 

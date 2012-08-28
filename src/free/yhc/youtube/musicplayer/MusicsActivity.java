@@ -18,7 +18,7 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import free.yhc.youtube.musicplayer.model.DB;
-import free.yhc.youtube.musicplayer.model.DB.ColMusic;
+import free.yhc.youtube.musicplayer.model.DB.ColVideo;
 import free.yhc.youtube.musicplayer.model.UiUtils;
 import free.yhc.youtube.musicplayer.model.Utils;
 
@@ -47,10 +47,10 @@ public class MusicsActivity extends Activity {
     }
 
     private void
-    setToPlayListThumbnail(long musicid) {
+    setToPlayListThumbnail(long musicId) {
         eAssert(isUserPlayList(mPlid));
 
-        Cursor c = mDb.queryMusic(musicid, new ColMusic[] { ColMusic.THUMBNAIL });
+        Cursor c = mDb.queryVideo(musicId, new ColVideo[] { ColVideo.THUMBNAIL });
         if (!c.moveToFirst()) {
             UiUtils.showTextToast(this, R.string.err_db_unknown);
             c.close();
@@ -69,8 +69,9 @@ public class MusicsActivity extends Activity {
 
     private void
     onListItemClick(View view, int position, long itemId) {
-        Cursor c = mDb.queryMusic(itemId, new ColMusic[] { ColMusic.VIDEOID,
-                                                           ColMusic.TITLE });
+        Cursor c = mDb.queryVideo(itemId, new ColVideo[] { ColVideo.VIDEOID,
+                                                           ColVideo.TITLE,
+                                                           ColVideo.VOLUME});
         if (!c.moveToFirst()) {
             UiUtils.showTextToast(this, R.string.err_unknown);
             c.close();
@@ -80,7 +81,7 @@ public class MusicsActivity extends Activity {
         ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
         playerv.setVisibility(View.VISIBLE);
         mMp.setController(this, playerv);
-        mMp.startVideos(c, 0, 1, Utils.isPrefSuffle());
+        mMp.startVideos(c, 0, 1, 2, Utils.isPrefSuffle());
     }
 
     @Override
@@ -90,7 +91,7 @@ public class MusicsActivity extends Activity {
         switch (mItem.getItemId()) {
         case R.id.delete:
             eAssert(isUserPlayList(mPlid));
-            mDb.deleteMusicFromPlayList(mPlid, info.id);
+            mDb.deleteVideoFromPlayList(mPlid, info.id);
             getAdapter().reloadCursorAsync();
             return true;
 
@@ -163,7 +164,7 @@ public class MusicsActivity extends Activity {
         super.onResume();
 
         ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
-        if (mMp.isMusicPlaying()) {
+        if (mMp.isVideoPlaying()) {
             playerv.setVisibility(View.VISIBLE);
             mMp.setController(this, playerv);
         } else {

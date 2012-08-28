@@ -23,7 +23,7 @@ import android.widget.ListView;
 import android.widget.PopupMenu;
 import free.yhc.youtube.musicplayer.PlayListAdapter.ItemButton;
 import free.yhc.youtube.musicplayer.model.DB;
-import free.yhc.youtube.musicplayer.model.DB.ColMusic;
+import free.yhc.youtube.musicplayer.model.DB.ColVideo;
 import free.yhc.youtube.musicplayer.model.Err;
 import free.yhc.youtube.musicplayer.model.UiUtils;
 import free.yhc.youtube.musicplayer.model.Utils;
@@ -78,7 +78,7 @@ public class PlayListActivity extends Activity {
         ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
         playerv.setVisibility(View.VISIBLE);
         mMp.setController(this, playerv);
-        mMp.startVideos(c, 0, 1, Utils.isPrefSuffle());
+        mMp.startVideos(c, 0, 1, 2, Utils.isPrefSuffle());
     }
 
     private void
@@ -102,7 +102,9 @@ public class PlayListActivity extends Activity {
 
     private void
     playAllMusics(View anchor) {
-        playMusics(mDb.queryMusics(new ColMusic[] { ColMusic.VIDEOID, ColMusic.TITLE },
+        playMusics(mDb.queryVideos(new ColVideo[] { ColVideo.VIDEOID,
+                                                    ColVideo.TITLE,
+                                                    ColVideo.VOLUME },
                                    null, false));
     }
 
@@ -233,8 +235,8 @@ public class PlayListActivity extends Activity {
 
     private void
     onListItemClick(View view, int position, long itemId) {
-        playMusics(mDb.queryMusics(itemId,
-                                   new ColMusic[] { ColMusic.VIDEOID, ColMusic.TITLE },
+        playMusics(mDb.queryVideos(itemId,
+                                   new ColVideo[] { ColVideo.VIDEOID, ColVideo.TITLE },
                                    null, false));
     }
 
@@ -302,7 +304,7 @@ public class PlayListActivity extends Activity {
     onResume() {
         super.onResume();
         ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
-        if (mMp.isMusicPlaying()) {
+        if (mMp.isVideoPlaying()) {
             playerv.setVisibility(View.VISIBLE);
             mMp.setController(this, playerv);
         } else {

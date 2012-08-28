@@ -114,11 +114,13 @@ public class YTJSPlayer {
     private int                   mVideoi = -1;
 
     public static class Video {
-        public String   title;
-        public String   videoId;
-        public Video(String aVideoId, String aTitle) {
+        String   title;
+        String   videoId;
+        int      volume;
+        public Video(String aVideoId, String aTitle, int aVolume) {
             videoId = aVideoId;
             title = aTitle;
+            volume = aVolume;
         }
     }
 
@@ -809,7 +811,7 @@ public class YTJSPlayer {
     }
 
     private Video[]
-    getVideos(Cursor c, int coliTitle, int coliUrl, boolean shuffle) {
+    getVideos(Cursor c, int coliTitle, int coliUrl, int coliVolume, boolean shuffle) {
         if (!c.moveToFirst())
             return new Video[0];
 
@@ -818,7 +820,9 @@ public class YTJSPlayer {
         int i = 0;
         if (!shuffle) {
             do {
-                vs[i++] = new Video(c.getString(coliUrl), c.getString(coliTitle));
+                vs[i++] = new Video(c.getString(coliUrl),
+                                    c.getString(coliTitle),
+                                    c.getInt(coliVolume));
             } while (c.moveToNext());
             Arrays.sort(vs, sVideoTitleComparator);
         } else {
@@ -827,7 +831,9 @@ public class YTJSPlayer {
             NrElem[] nes = new NrElem[c.getCount()];
             do {
                 nes[i++] = new NrElem(r.nextInt(),
-                                      new Video(c.getString(coliUrl), c.getString(coliTitle)));
+                                      new Video(c.getString(coliUrl),
+                                                c.getString(coliTitle),
+                                                c.getInt(coliVolume)));
             } while (c.moveToNext());
             Arrays.sort(nes, sNrElemComparator);
             for (i = 0; i < nes.length; i++)
@@ -858,14 +864,16 @@ public class YTJSPlayer {
     }
 
     public void
-    startVideos(final Cursor c, final int coliUrl, final int coliTitle, final boolean shuffle) {
+    startVideos(final Cursor c,
+                final int coliUrl, final int coliTitle, final int coliVolume,
+                final boolean shuffle) {
         eAssert(Utils.isUiThread());
         eAssert(null != mPlayerv);
 
         AsyncTask.execute(new Runnable() {
             @Override
             public void run() {
-                final Video[] vs = getVideos(c, coliTitle, coliUrl, shuffle);
+                final Video[] vs = getVideos(c, coliTitle, coliUrl, coliVolume, shuffle);
                 Utils.getUiHandler().post(new Runnable() {
                     @Override
                     public void run() {
@@ -884,7 +892,7 @@ public class YTJSPlayer {
     // ============================================================================
 
     public boolean
-    isMusicPlaying() {
+    isVideoPlaying() {
         if (null != mVideos
             && 0 <= mVideoi
             && mVideoi < mVideos.length)

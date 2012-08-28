@@ -1,0 +1,7 @@
+Naming Convention
+-----------------
+Name 'Music' is used for user-front-side.
+(ex. Activity, Button, XML etc.)
+
+Name 'Video' is used for behind user side.
+(ex. DB, Player etc.)
