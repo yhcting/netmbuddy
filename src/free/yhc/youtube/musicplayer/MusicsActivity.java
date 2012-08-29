@@ -167,7 +167,7 @@ public class MusicsActivity extends Activity {
             byte[] imgdata = getIntent().getByteArrayExtra("thumbnail");
             UiUtils.setThumbnailImageView(((ImageView)findViewById(R.id.thumbnail)), imgdata);
         } else if (PLID_RECENT_PLAYED == mPlid) {
-            ((TextView)findViewById(R.id.title)).setText(R.string.recent_played);
+            ((TextView)findViewById(R.id.title)).setText(R.string.recently_played);
             ((ImageView)findViewById(R.id.thumbnail)).setImageResource(R.drawable.ic_recent_played_up);
         } else if (PLID_SEARCHED == mPlid) {
             String word = getIntent().getStringExtra("word");

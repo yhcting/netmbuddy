@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Youtube Music Player</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="on">On</string>
+    <string name="off">Off</string>
+    <string name="ok">Ok</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete">Delete</string>
+    <string name="rename">Rename</string>
+    <string name="loading">Loading</string>
+    <string name="error">Error</string>
+    <string name="buffering">Buffering</string>
+    <string name="search_word">Search word</string>
+    <string name="volume">Volume</string>
+    <string name="database">Database</string>
+
+    <string name="enter_search_word">Enter search word</string>
+    <string name="new_search">New search</string>
+    <string name="detail_list">Detail list</string>
+    <string name="enter_new_name">Enter new name</string>
+    <string name="new_playlist">New playlist</string>
+    <string name="add_to_playlist">Add to playlist</string>
+    <string name="enter_playlist_title">Enter playlist title</string>
+    <string name="recently_played">Recently played</string>
+    <string name="set_to_plthumbnail">Set as playlist icon</string>
+    <string name="exportdb">Export DB</string>
+    <string name="importdb">Import DB</string>
+    <string name="app_info">App. infomation</string>
+    <string name="feedback">Feedback</string>
+    <string name="choose_app">Choose App.</string>
+
+    <string name="importing_db">Importing DB...</string>
+    <string name="exporting_db">Exporting DB...</string>
+
+    <string name="pref_cat_operation">Setting operation</string>
+    <string name="pref_shuffle">Shuffle</string>
+    <string name="pref_shuffle_desc">Set to On to play musics in random order.</string>
+
+    <string name="report_opinion_title">[Youtube Music Player] Opinion</string>
+
+    <string name="msg_not_implemented">Not implemented yet.</string>
+    <string name="msg_ytplayer_err">Fail in playing.</string>
+    <string name="msg_initialize_app">Preparing application.</string>
+    <string name="msg_appinit_fail">Fail in initializing application.\nNetwork or Youtube server might be unstable.\nApplication is going to be terminated after a while.</string>
+    <string name="msg_appinit_network_unavailable">Network is unavailable.\nApplication is going to be terminated after a while.</string>
+    <string name="msg_unknown_format">Video format is unknown.</string>
+    <string name="msg_no_thumbnail">Thumbnail is not loaded yet.\nTry again after loading thumbnail is done.</string>
+    <string name="msg_existing_playlist">Playlist name is already in used.</string>
+    <string name="msg_existing_muisc">Same music is already in the playlist.</string>
+    <string name="msg_wait_cancel">Waiting for canceling.</string>
+    <string name="msg_preparing_mplayer">Preparing for playing musics.</string>
+    <string name="msg_playing_done">Playing is done.</string>
+    <string name="msg_mplayer_err_unknown">Unknown error during playing.</string>
+    <string name="msg_mplayer_err_not_allowed">Not allowed operation at the moment.</string>
+    <string name="msg_empty_playlist">Playlist is empty.</string>
+    <string name="msg_network_unavailable">Network is unavailable.</string>
+    <string name="msg_fail_find_app">Fail in finding appropriate application.</string>
+    <string name="msg_fail_access_exdb">Fail in accessing external database file.</string>
+
+    <string name="err_no_err">Success.</string>
+    <string name="err_unknown">Unknown error.</string>
+    <string name="err_interrupted">Interrupted.</string>
+    <string name="err_cancelled">Cancelled.</string>
+    <string name="err_io_net">Error in accessing network.</string>
+    <string name="err_io_file">Error in accessing local file.</string>
+    <string name="err_io_unknown">Error in IO operation - network or file etc.</string>
+    <string name="err_db_duplicated">Duplicated database item.</string>
+    <string name="err_db_version_mismatch">Database versions are mismatched.</string>
+    <string name="err_db_invalid">Invalid database.</string>
+    <string name="err_db_unknown">Unknown database error.</string>
+    <string name="err_invalid_url">Invalid URL.</string>
+    <string name="err_parser_unknown">Fail in parsing Youtube data.</string>
+    <string name="err_no_match">No matching result.</string>
+    <string name="err_ytsearch">Fail in searching Youtube.</string>
+    <string name="err_ytprotocol">Error in communication between Youtube.</string>
+    <string name="err_end_of_data">End of data.</string>
+
+    <string name="appinfo_text">
+Youtube Music Player\n
+E-mail : yhcting77@gmail.com\n
+Blog : yhcting.tistory.com\n
+\n
+I have not contribute anything to my family as an software engineer.\n
+Therefore, my boss(wife) would like to listen to bunch of Youtube musics easily and continuously on her new smart phone, without any user interaction.\n
+So, I have been programming in my spare time.\n
+Here is my lovely wife. Thank to my wife with my heart.
+    </string>
+</resources>

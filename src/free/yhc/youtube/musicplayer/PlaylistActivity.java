@@ -314,7 +314,7 @@ public class PlaylistActivity extends Activity {
                     @Override
                     public boolean onMenuItemClick(MenuItem item) {
                         switch (item.getItemId()) {
-                        case R.id.send_opinion:
+                        case R.id.feedback:
                             onMenuMoreSendOpinion(v);
                             break;
 
