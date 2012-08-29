@@ -15,6 +15,7 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.net.http.SslError;
 import android.net.wifi.WifiManager;
 import android.net.wifi.WifiManager.WifiLock;
 import android.os.AsyncTask;
@@ -23,6 +24,7 @@ import android.os.PowerManager.WakeLock;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.JsResult;
+import android.webkit.SslErrorHandler;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -188,10 +190,13 @@ public class YTJSPlayer {
         @Override
         public void
         onLoadResource(WebView view, String url) {
+            super.onLoadResource(view, url);
             logI("WebView : onLoadResource : " + url);
+            /*
             if (url.startsWith("http://s.youtube.com/s")) {
                 logI("WebView : onLoadResource(Youtube contents?) : " + url);
             }
+            */
         }
 
         @Override
@@ -204,7 +209,15 @@ public class YTJSPlayer {
         @Override
         public void
         onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
-            logI("URL : " + failingUrl + "\nOh no! " + description);
+            super.onReceivedError(view, errorCode, description, failingUrl);
+            logI("WebView : URL : " + failingUrl + "\nOh no! " + description);
+        }
+
+        @Override
+        public void
+        onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
+            super.onReceivedSslError(view, handler, error);
+            logI("WebView : SSL Error : " + error.toString());
         }
     }
 
@@ -242,10 +255,9 @@ public class YTJSPlayer {
     setWebSettings(WebView wv) {
         WebSettings ws = wv.getSettings();
         ws.setJavaScriptEnabled(true);
-        ws.setSavePassword(true);
-        ws.setPluginsEnabled(true);
-
-        ws.setUserAgent(1);
+        // PluginState.ON should be set!
+        ws.setPluginState(WebSettings.PluginState.ON);
+        ws.setLoadsImagesAutomatically(false);
     }
 
 
@@ -497,6 +509,9 @@ public class YTJSPlayer {
 
         controlv.setVisibility(View.VISIBLE);
         switch (to) {
+        case YTPSTATE_BUFFERING:
+            if (YTPSTATE_VIDEO_CUED != from)
+                break; // if this is NOT first buffering, do nothing.
         case YTPSTATE_PAUSED:
         case YTPSTATE_PLAYING:
             if (mVideos.length - 1 <= mVideoi)
@@ -525,6 +540,10 @@ public class YTJSPlayer {
             btn.setClickable(true);
             btn.setImageResource(R.drawable.ic_media_pause);
         } break;
+
+        case YTPSTATE_BUFFERING:
+            ; // ignore when buffering
+            break;
 
         default:
             controlv.setVisibility(View.GONE);
