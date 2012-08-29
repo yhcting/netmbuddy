@@ -212,7 +212,7 @@ public class YTSearchHelper {
 
     public void
     searchAsync(SearchArg arg) {
-        eAssert(0 < arg.starti && 0 < arg.max && arg.max <= YTSearchApi.NR_SEARCH_MAX);
+        eAssert(0 < arg.starti && 0 < arg.max && arg.max <= Policy.Constants.YTSEARCH_MAX_RESULTS);
         Message msg = mBgHandler.obtainMessage(MSG_WHAT_SEARCH, arg);
         mBgHandler.sendMessage(msg);
     }

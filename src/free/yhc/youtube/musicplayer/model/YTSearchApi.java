@@ -23,8 +23,6 @@ import android.net.Uri;
 //     //P <= comment out for performance.
 //
 public class YTSearchApi {
-    public static final int NR_SEARCH_MAX = 50; // See google API document for this value.
-
     // For debugging
     private String mDbgQuery = "";
     private String mDbgXml   = "";
@@ -112,7 +110,7 @@ public class YTSearchApi {
 
     public static String
     getFeedUrl(String word, int start, int maxCount) {
-        eAssert(0 < start && 0 < maxCount && maxCount <= NR_SEARCH_MAX);
+        eAssert(0 < start && 0 < maxCount && maxCount <= Policy.Constants.YTSEARCH_MAX_RESULTS);
         // http://gdata.youtube.com/feeds/api/videos?q=김광석&start-index=1&max-results=50&client=ytapi-youtube-search&autoplay=1&format=5&v=2
         word = word.replaceAll("\\s+", "+");
         return "http://gdata.youtube.com/feeds/api/videos?q="

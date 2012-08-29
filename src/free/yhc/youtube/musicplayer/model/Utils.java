@@ -102,8 +102,6 @@ public class Utils {
         if (!DBG || null == msg)
             return;
 
-        Log.w(TAG, msg);
-        /*
         switch(lv) {
         case V: Log.v(TAG, msg); break;
         case D: Log.d(TAG, msg); break;
@@ -112,7 +110,6 @@ public class Utils {
         case E: Log.e(TAG, msg); break;
         case F: Log.wtf(TAG, msg); break;
         }
-        */
     }
 
     // Assert

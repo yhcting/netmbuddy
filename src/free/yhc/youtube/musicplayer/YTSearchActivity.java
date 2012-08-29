@@ -36,7 +36,7 @@ import free.yhc.youtube.musicplayer.model.YTSearchHelper;
 public class YTSearchActivity extends Activity implements
 YTSearchHelper.SearchDoneReceiver,
 DBHelper.CheckExistDoneReceiver {
-    private static final int NR_ENTRY_PER_PAGE = YTSearchApi.NR_SEARCH_MAX;
+    private static final int NR_ENTRY_PER_PAGE = Policy.Constants.YTSEARCH_MAX_RESULTS;
 
     private final DB            mDb = DB.get();
     private final YTJSPlayer    mMp = YTJSPlayer.get();
