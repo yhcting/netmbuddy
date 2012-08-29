@@ -33,8 +33,6 @@ import free.yhc.youtube.musicplayer.model.UiUtils;
 import free.yhc.youtube.musicplayer.model.Utils;
 
 public class PlaylistActivity extends Activity {
-    private static final String REPORT_RECEIVER = "yhcting77@gmail.com";
-
     private final DB            mDb = DB.get();
     private final YTJSPlayer    mMp = YTJSPlayer.get();
 
@@ -51,7 +49,7 @@ public class PlaylistActivity extends Activity {
             return;
 
         Intent intent = new Intent(Intent.ACTION_SEND);
-        intent.putExtra(Intent.EXTRA_EMAIL, new String[] { REPORT_RECEIVER });
+        intent.putExtra(Intent.EXTRA_EMAIL, new String[] { Policy.Constants.REPORT_RECEIVER });
         intent.putExtra(Intent.EXTRA_TEXT, text);
         intent.putExtra(Intent.EXTRA_SUBJECT, subject);
         intent.setType("message/rfc822");
@@ -172,7 +170,10 @@ public class PlaylistActivity extends Activity {
     // ------------------------------------------------------------------------
     private void
     onMenuMoreAppInfo(View anchor) {
-        UiUtils.showTextToast(this, R.string.msg_not_implemented);
+        AlertDialog.Builder bldr = new AlertDialog.Builder(this);
+        bldr.setView(UiUtils.inflateLayout(this, R.layout.appinfo));
+        AlertDialog aDiag = bldr.create();
+        aDiag.show();
     }
 
     private void
@@ -453,9 +454,8 @@ public class PlaylistActivity extends Activity {
         if (mMp.isVideoPlaying()) {
             playerv.setVisibility(View.VISIBLE);
             mMp.setController(this, playerv);
-        } else {
+        } else
             playerv.setVisibility(View.GONE);
-        }
 
         if (mDb.isRegisteredToPlaylistTableWatcher(this)
             && mDb.isPlaylistTableUpdated(this))

@@ -76,4 +76,15 @@
     <string name="err_ytsearch">유투브 검색에 실패했습니다.</string>
     <string name="err_ytprotocol">유투브와 통신중 알 수 없는 오류가 발생했습니다 .</string>
     <string name="err_end_of_data">마지막 데이타입니다.</string>
+
+    <string name="appinfo_text">
+유투브 뮤직 플레이어\n
+E-mail : yhcting77@gmail.com\n
+블로그 : yhcting.tistory.com\n
+\n
+소프트웨어 엔지니어 하면서 가족한테 무언가 해 준 기억이 없었습니다.\n
+그런데, 새로 스마트폰을 장만한 아내가 유투브에서 음악을 쉽게 그리고, 여러개를 계속해서 들을 수 있으면 좋겠다고 하더군요.\n
+그래서 틈틈히 만들었습니다.\n
+사랑하는 아내의 사진을 기념으로 넣었습니다.
+    </string>
 </resources>
