@@ -1,7 +1,13 @@
 package free.yhc.youtube.musicplayer.model;
 
 import static free.yhc.youtube.musicplayer.model.Utils.eAssert;
+import static free.yhc.youtube.musicplayer.model.Utils.logI;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -10,6 +16,7 @@ import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.provider.BaseColumns;
 
@@ -159,7 +166,7 @@ public class DB extends SQLiteOpenHelper {
             cvs.put(ColVideo.PLAYTIME.getName(), playtime);
             cvs.put(ColVideo.THUMBNAIL.getName(), thumbnail);
 
-            cvs.put(ColVideo.VOLUME.getName(), Policy.DefaultConstants.VIDEO_VOLUME);
+            cvs.put(ColVideo.VOLUME.getName(), Policy.Constants.DEFAULT_VIDEO_VOLUME);
             cvs.put(ColVideo.RATE.getName(), 0);
             cvs.put(ColVideo.TIME_ADD.getName(), System.currentTimeMillis());
             cvs.put(ColVideo.TIME_PLAYED.getName(), System.currentTimeMillis());
@@ -267,6 +274,43 @@ public class DB extends SQLiteOpenHelper {
         return strs;
     }
 
+    private static Err
+    verifyDB(SQLiteDatabase db) {
+        if (VERSION != db.getVersion())
+            return Err.DB_VERSION_MISMATCH;
+
+        final int iTblName = 0;
+        final int iTblSql  = 1;
+        String[][] tbls = new String[][] {
+                new String[] { "android_metadata",  "CREATE TABLE android_metadata (locale TEXT);" },
+                new String[] { TABLE_PLAYLIST,      buildTableSQL(TABLE_PLAYLIST, ColPlaylist.values())},
+                new String[] { TABLE_VIDEO,         buildTableSQL(TABLE_VIDEO,    ColVideo.values())},
+        };
+
+        Cursor c = db.query("sqlite_master",
+                            new String[] {"name", "sql"},
+                            "type = 'table'",
+                            null, null, null, null);
+
+        HashMap<String, String> map = new HashMap<String, String>();
+        if (c.moveToFirst()) {
+            do {
+                // Key : table name, Value : sql text
+                map.put(c.getString(0), c.getString(1));
+            } while (c.moveToNext());
+        }
+        c.close();
+
+        // Verify
+        for (String[] ts : tbls) {
+            // Remove tailing ';' of sql statement.
+            String tssql = ts[iTblSql].substring(0, ts[iTblSql].length() - 1);
+            String sql = map.get(ts[iTblName]);
+            if (null == sql || !sql.equalsIgnoreCase(tssql))
+                return Err.DB_UNKNOWN;
+        }
+        return Err.NO_ERR;
+    }
     // ======================================================================
     //
     // Creation / Upgrade
@@ -546,6 +590,109 @@ public class DB extends SQLiteOpenHelper {
         updatePlaylistSize(plid, sz);
     }
 
+    // ======================================================================
+    //
+    // Importing/Exporting DB
+    //
+    // ======================================================================
+    private Err
+    verifyExternalDBFile(File exDbf) {
+        if (!exDbf.canRead())
+            return Err.IO_FILE;
+
+        SQLiteDatabase exDb = null;
+        try {
+            exDb = SQLiteDatabase.openDatabase(exDbf.getAbsolutePath(), null, SQLiteDatabase.OPEN_READONLY);
+        } catch (SQLiteException e) {
+            return Err.DB_INVALID;
+        }
+
+        return DB.verifyDB(exDb);
+    }
+
+    /**
+     * Extremely critical function.
+     * PREREQUISITE
+     *   All operations that might access DB, SHOULD BE STOPPED
+     *     before importing DB.
+     *   And that operation should be resumed after importing DB.
+     * @param exDbf
+     */
+    public Err
+    importDatabase(File exDbf) {
+        Err err = verifyExternalDBFile(exDbf);
+        if (err != Err.NO_ERR)
+            return err;
+
+        // External DB is verified.
+        // Let's do real importing.
+        mDb.close();
+        mDb = null;
+
+        File inDbf = Utils.getAppContext().getDatabasePath(NAME);
+        File inDbfBackup = new File(inDbf.getAbsolutePath() + "____backup");
+
+        if (!inDbf.renameTo(inDbfBackup))
+            return Err.DB_UNKNOWN;
+
+        logI("--- " + inDbf.getPath());
+
+        try {
+            FileInputStream fis = new FileInputStream(exDbf);
+            FileOutputStream fos = new FileOutputStream(inDbf);
+            Utils.copy(fos, fis);
+            fis.close();
+            fos.close();
+        } catch (FileNotFoundException e0) {
+            err = Err.IO_FILE;
+        } catch (IOException e1) {
+            err = Err.IO_FILE;
+        } finally {
+            if (Err.NO_ERR != err) {
+                // Restore it
+                inDbf.delete();
+                inDbfBackup.renameTo(inDbf);
+                open();
+                return err;
+            }
+        }
+
+        // Open imported new DB
+        open();
+
+        // DB is successfully imported!
+        // Mark that playlist table is changed.
+        markBooleanWatcherChanged(mPlTblWM);
+        return Err.NO_ERR;
+    }
+
+    public Err
+    exportDatabase(File exDbf) {
+        Err err = Err.NO_ERR;
+        mDb.close();
+        mDb = null;
+
+        File inDbf = Utils.getAppContext().getDatabasePath(NAME);
+        try {
+            FileInputStream fis = new FileInputStream(inDbf);
+            FileOutputStream fos = new FileOutputStream(exDbf);
+            Utils.copy(fos, fis);
+            fis.close();
+            fos.close();
+        } catch (FileNotFoundException e0) {
+            err = Err.IO_FILE;
+        } catch (IOException e1) {
+            err = Err.IO_FILE;
+        } finally {
+            if (Err.NO_ERR != err) {
+                exDbf.delete();
+                return err;
+            }
+        }
+
+        open(); // open again.
+        return Err.NO_ERR;
+    }
     // ======================================================================
     //
     // Operations (Public)

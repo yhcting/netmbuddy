@@ -1,6 +1,9 @@
 package free.yhc.youtube.musicplayer;
 
 import static free.yhc.youtube.musicplayer.model.Utils.eAssert;
+
+import java.io.File;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -25,6 +28,7 @@ import free.yhc.youtube.musicplayer.PlaylistAdapter.ItemButton;
 import free.yhc.youtube.musicplayer.model.DB;
 import free.yhc.youtube.musicplayer.model.DB.ColVideo;
 import free.yhc.youtube.musicplayer.model.Err;
+import free.yhc.youtube.musicplayer.model.Policy;
 import free.yhc.youtube.musicplayer.model.UiUtils;
 import free.yhc.youtube.musicplayer.model.Utils;
 
@@ -104,9 +108,148 @@ public class PlaylistActivity extends Activity {
                                    null, false));
     }
 
+    // ------------------------------------------------------------------------
+    //
+    // Importing/Exporting DB
+    // Cautious! Extremely fatal/critical operation.
+    //
+    // ------------------------------------------------------------------------
+
+    // CAUTIOUS!
+    // This function MUST COVER ALL USE-CASE regarding DB ACCESS.
     private void
-    onMenuMoreDbManagement(View anchor) {
+    stopDbAccess() {
+        final Object uiWait = new Object();
+        Utils.getUiHandler().post(new Runnable() {
+            @Override
+            public void run() {
+                // NOTE & IMPORTANT
+                // Stop/Pause all operations that might use DB before changing and reloading DB.
+                // At this moment, playing video is only operation accessing DB
+                // (Updating playtime)
+                YTJSPlayer.get().stopVideos();
+                synchronized (uiWait) {
+                    uiWait.notifyAll();
+                }
+            }
+        });
+
+        synchronized (uiWait) {
+            try {
+                uiWait.wait();
+            } catch (InterruptedException e) { }
+        }
+
+        // Wait for sometime that existing DB operation is completed.
+        // This is not safe enough.
+        // But, waiting 2 seconds is fair enough.
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) { }
+    }
+
+    private Err
+    importDbInBackground(File exDbf) {
+        stopDbAccess();
+
+        // Let's do real-import.
+        return mDb.importDatabase(exDbf);
+    }
+
+    private Err
+    exportDbInBackground(File exDbf) {
+        stopDbAccess();
+
+        // Make directories.
+        new File(exDbf.getAbsoluteFile().getParent()).mkdirs();
+        return mDb.exportDatabase(exDbf);
+    }
+
+    // ------------------------------------------------------------------------
+    //
+    //
+    //
+    // ------------------------------------------------------------------------
+    private void
+    onMenuMoreAppInfo(View anchor) {
         UiUtils.showTextToast(this, R.string.msg_not_implemented);
+    }
+
+    private void
+    onMenuMoreImportDb(View anchor) {
+        final File exDbf = new File(Policy.Constants.EXTERNAL_DBFILE);
+        // Actual import!
+        CharSequence title = getResources().getText(R.string.importdb);
+        CharSequence msg = getResources().getText(R.string.database) + " <= " + exDbf.getAbsolutePath();
+        UiUtils.buildConfirmDialog(this, title, msg, new UiUtils.ConfirmAction() {
+            @Override
+            public void onOk(Dialog dialog) {
+                // Check external DB file.
+                if (!exDbf.canRead()) {
+                    UiUtils.showTextToast(PlaylistActivity.this, R.string.msg_fail_access_exdb);
+                    return;
+                }
+
+                SpinAsyncTask.Worker worker = new SpinAsyncTask.Worker() {
+                    @Override
+                    public void
+                    onPostExecute(SpinAsyncTask task, Err result) {
+                        if (Err.NO_ERR == result)
+                            getAdapter().reloadCursorAsync();
+                        else
+                            UiUtils.showTextToast(PlaylistActivity.this, result.getMessage());
+                    }
+
+                    @Override
+                    public void onCancel(SpinAsyncTask task) { }
+
+                    @Override
+                    public Err
+                    doBackgroundWork(SpinAsyncTask task, Object... objs) {
+                        return importDbInBackground(exDbf);
+                    }
+                };
+                new SpinAsyncTask(PlaylistActivity.this, worker, R.string.importing_db, false).execute(exDbf);
+            }
+        }).show();
+    }
+
+    private void
+    onMenuMoreExportDb(View anchor) {
+        final File exDbf = new File(Policy.Constants.EXTERNAL_DBFILE);
+        // Actual import!
+        CharSequence title = getResources().getText(R.string.exportdb);
+        CharSequence msg = getResources().getText(R.string.database) + " => " + exDbf.getAbsolutePath();
+        UiUtils.buildConfirmDialog(this, title, msg, new UiUtils.ConfirmAction() {
+            @Override
+            public void onOk(Dialog dialog) {
+                // Check external DB file.
+                if (exDbf.exists() && !exDbf.canWrite()) {
+                    UiUtils.showTextToast(PlaylistActivity.this, R.string.msg_fail_access_exdb);
+                    return;
+                }
+
+                SpinAsyncTask.Worker worker = new SpinAsyncTask.Worker() {
+                    @Override
+                    public void
+                    onPostExecute(SpinAsyncTask task, Err result) {
+                        if (Err.NO_ERR != result) {
+                            UiUtils.showTextToast(PlaylistActivity.this, result.getMessage());
+                        }
+                    }
+
+                    @Override
+                    public void onCancel(SpinAsyncTask task) { }
+
+                    @Override
+                    public Err
+                    doBackgroundWork(SpinAsyncTask task, Object... objs) {
+                        return exportDbInBackground(exDbf);
+                    }
+                };
+                new SpinAsyncTask(PlaylistActivity.this, worker, R.string.exporting_db, false).execute(exDbf);
+            }
+        }).show();
     }
 
     private void
@@ -170,12 +313,20 @@ public class PlaylistActivity extends Activity {
                     @Override
                     public boolean onMenuItemClick(MenuItem item) {
                         switch (item.getItemId()) {
-                        case R.id.db_management:
-                            onMenuMoreDbManagement(v);
-                            break;
-
                         case R.id.send_opinion:
                             onMenuMoreSendOpinion(v);
+                            break;
+
+                        case R.id.exportdb:
+                            onMenuMoreExportDb(v);
+                            break;
+
+                        case R.id.importdb:
+                            onMenuMoreImportDb(v);
+                            break;
+
+                        case R.id.app_info:
+                            onMenuMoreAppInfo(v);
                             break;
 
                         default:

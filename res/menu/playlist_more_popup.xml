@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android" >
-    <item android:id="@+id/db_management"	android:title="@string/db_management"></item>
+    <item android:id="@+id/app_info"		android:title="@string/app_info"></item>
+    <item android:id="@+id/importdb"		android:title="@string/importdb"></item>
+    <item android:id="@+id/exportdb"		android:title="@string/exportdb"></item>
     <item android:id="@+id/send_opinion"	android:title="@string/send_opinion"></item>
 </menu>

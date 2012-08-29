@@ -63,7 +63,7 @@ public class MusicsAdapter extends ResourceCursorAdapter {
     public String
     getMusicYtid(int pos) {
         Cursor c = getCursor();
-        if (!c.move(pos))
+        if (!c.moveToPosition(pos))
             eAssert(false);
         return c.getString(COLI_VIDEOID);
     }
@@ -71,7 +71,7 @@ public class MusicsAdapter extends ResourceCursorAdapter {
     public String
     getMusicTitle(int pos) {
         Cursor c = getCursor();
-        if (!c.move(pos))
+        if (!c.moveToPosition(pos))
             eAssert(false);
         return c.getString(COLI_TITLE);
     }
@@ -79,7 +79,7 @@ public class MusicsAdapter extends ResourceCursorAdapter {
     public byte[]
     getMusicThumbnail(int pos) {
         Cursor c = getCursor();
-        if (!c.move(pos))
+        if (!c.moveToPosition(pos))
             eAssert(false);
         return c.getBlob(COLI_THUMBNAIL);
     }
@@ -87,7 +87,7 @@ public class MusicsAdapter extends ResourceCursorAdapter {
     public int
     getMusicVolume(int pos) {
         Cursor c = getCursor();
-        if (!c.move(pos))
+        if (!c.moveToPosition(pos))
             eAssert(false);
         return c.getInt(COLI_VOLUME);
     }
@@ -95,7 +95,7 @@ public class MusicsAdapter extends ResourceCursorAdapter {
     public int
     getMusicPlaytime(int pos) {
         Cursor c = getCursor();
-        if (!c.move(pos))
+        if (!c.moveToPosition(pos))
             eAssert(false);
         return c.getInt(COLI_PLAYTIME);
     }

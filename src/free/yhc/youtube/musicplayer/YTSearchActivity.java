@@ -316,7 +316,7 @@ DBHelper.CheckExistDoneReceiver {
         YTJSPlayer.Video v = new YTJSPlayer.Video(
                 getAdapter().getItemVideoId(position),
                 getAdapter().getItemTitle(position),
-                Policy.DefaultConstants.VIDEO_VOLUME);
+                Policy.Constants.DEFAULT_VIDEO_VOLUME);
         mMp.setController(this, playerv);
         mMp.startVideos(new YTJSPlayer.Video[] { v });
     }

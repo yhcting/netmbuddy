@@ -31,15 +31,24 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import free.yhc.youtube.musicplayer.model.DB;
+import free.yhc.youtube.musicplayer.model.DB.ColVideo;
 import free.yhc.youtube.musicplayer.model.Err;
 import free.yhc.youtube.musicplayer.model.NanoHTTPD;
 import free.yhc.youtube.musicplayer.model.Policy;
 import free.yhc.youtube.musicplayer.model.Utils;
 
+// Player State Diagram
+// * [Playing] :  ajsStop()
+//      [Playing] -> [Unstarted] -> [Video Cued]
+//
+// * [Unstarted] : PlayVideo()
+//      [Unstarted] -> [Video Cued] -> [Buffering] -> [Playing]
+//
 // See Youtube player Javascript API document
 public class YTJSPlayer {
     private static final String WLTAG               = "YTJSPlayer";
-    private static final int    WEBSERVER_PORT      = Policy.DefaultConstants.WEBSERVER_PORT;
+    private static final int    WEBSERVER_PORT      = Policy.Constants.WEBSERVER_PORT;
     private static final String YTPLAYER_SCRIPT     = "ytplayer.html";
 
     private static final int YTPSTATE_UNSTARTED     = -1;
@@ -49,6 +58,7 @@ public class YTJSPlayer {
     private static final int YTPSTATE_BUFFERING     = 3;
     private static final int YTPSTATE_VIDEO_CUED    = 5;
     private static final int YTPSTATE_ERROR         = -10;
+    private static final int YTPSTATE_INVALID       = -100;
 
     private static final int YTPERRCODE_OK              = 0;
     private static final int YTPERRCODE_INVALID_PARAM   = 2;
@@ -80,6 +90,7 @@ public class YTJSPlayer {
 
 
     private final Resources     mRes        = Utils.getAppContext().getResources();
+    private final DB            mDb         = DB.get();
 
     // ------------------------------------------------------------------------
     // Final Runnables
@@ -101,7 +112,6 @@ public class YTJSPlayer {
     // ------------------------------------------------------------------------
     private Context             mVContext   = null;
     private LinearLayout        mPlayerv    = null;
-    private ProgressBar         mProgbar    = null;
 
     // ------------------------------------------------------------------------
     // Player Runtime Status
@@ -149,11 +159,11 @@ public class YTJSPlayer {
         }
 
         void update(int duration, int currentPos) {
-            if (null != progbar && progbar == mProgbar) {
+            if (null != progbar) {
                 int curProgress = (duration > 0)? currentPos * 100 / duration
                                                 : 0;
                 if (curProgress > lastProgress)
-                    mProgbar.setProgress(curProgress);
+                    progbar.setProgress(curProgress);
 
                 lastProgress = curProgress;
             }
@@ -333,10 +343,17 @@ public class YTJSPlayer {
         ajsPrepare(videoId);
         ajsSetVolume(volume);
         ajsPlay();
+        // Below may fail if video is deleted while playlist of videos are playing.
+        // But, this case can be ignored.
+        mDb.updateVideo(ColVideo.VIDEOID, videoId,
+                        ColVideo.TIME_PLAYED, System.currentTimeMillis());
     }
 
     private void
     playNext() {
+        if (null == mVideos)
+            return; // do nothing
+
         mVideoi++;
         if (mVideoi >= mVideos.length) {
             mVideoi = mVideos.length;
@@ -347,6 +364,9 @@ public class YTJSPlayer {
 
     private void
     playPrev() {
+        if (null == mVideos)
+            return; // do nothing
+
         mVideoi--;
         if (mVideoi < 0) {
             mVideoi = -1;
@@ -358,7 +378,7 @@ public class YTJSPlayer {
     private void
     onYtpStateChanged(int from, int to) {
         logI("onYtpStateChanged : " + dbgStateName(from) + " -> " + dbgStateName(to));
-        configurePlayerViewAll(to);
+        configurePlayerViewAll(mPlayerv, from, to);
 
         switch (to) {
         case YTPSTATE_UNSTARTED:
@@ -388,7 +408,10 @@ public class YTJSPlayer {
     private void
     ytpPlayDone() {
         logD("VideoView - playDone");
-        setPlayerViewTitle(mRes.getText(R.string.msg_playing_done), false);
+        if (null != mPlayerv) {
+            setPlayerViewTitle((TextView)mPlayerv.findViewById(R.id.music_player_title),
+                                mRes.getText(R.string.msg_playing_done), false);
+        }
         releaseLocks();
     }
 
@@ -410,48 +433,47 @@ public class YTJSPlayer {
     }
 
     private void
-    setPlayerViewTitle(CharSequence title, boolean buffering) {
-        if (null == mPlayerv || null == title)
+    setPlayerViewTitle(TextView titlev, CharSequence title, boolean buffering) {
+        if (null == titlev || null == title)
             return;
 
-        TextView tv = (TextView)mPlayerv.findViewById(R.id.music_player_title);
         if (buffering)
-            tv.setText("(" + mRes.getText(R.string.buffering) + ") " + title);
+            titlev.setText("(" + mRes.getText(R.string.buffering) + ") " + title);
         else
-            tv.setText(title);
+            titlev.setText(title);
     }
 
     private void
-    configurePlayerViewTitle(int state) {
-        if (null == mPlayerv)
+    configurePlayerViewTitle(TextView titlev, int from, int to) {
+        if (null == titlev)
             return;
 
         CharSequence videoTitle = "";
         if (null != mVideos
-                && 0 <= mVideoi
-                && mVideoi < mVideos.length) {
+            && 0 <= mVideoi
+            && mVideoi < mVideos.length) {
             videoTitle = mVideos[mVideoi].title;
         }
 
-        switch (state) {
+        switch (to) {
         case YTPSTATE_BUFFERING: {
             eAssert(null != videoTitle);
-            setPlayerViewTitle(videoTitle, true);
+            setPlayerViewTitle(titlev, videoTitle, true);
         } break;
 
         case YTPSTATE_PAUSED:
         case YTPSTATE_PLAYING:
             eAssert(null != videoTitle);
             if (null != videoTitle)
-                setPlayerViewTitle(videoTitle, false);
+                setPlayerViewTitle(titlev, videoTitle, false);
             break;
 
         case YTPSTATE_ERROR:
-            setPlayerViewTitle(mRes.getText(R.string.msg_ytplayer_err), false);
+            setPlayerViewTitle(titlev, mRes.getText(R.string.msg_ytplayer_err), false);
             break;
 
         default:
-            setPlayerViewTitle(mRes.getText(R.string.msg_preparing_mplayer), false);
+            setPlayerViewTitle(titlev, mRes.getText(R.string.msg_preparing_mplayer), false);
         }
     }
 
@@ -464,57 +486,63 @@ public class YTJSPlayer {
     }
 
     private void
-    configurePlayerViewControl(int state) {
-        if (null == mPlayerv)
+    configurePlayerViewControl(ViewGroup controlv, int from, int to) {
+        if (null == controlv)
             return;
 
-        switch (state) {
+        if (null == mVideos) {
+            controlv.setVisibility(View.GONE);
+            return;
+        }
+
+        controlv.setVisibility(View.VISIBLE);
+        switch (to) {
         case YTPSTATE_PAUSED:
         case YTPSTATE_PLAYING:
-            mPlayerv.findViewById(R.id.music_player_control).setVisibility(View.VISIBLE);
-
             if (mVideos.length - 1 <= mVideoi)
-                disableButton((ImageView)mPlayerv.findViewById(R.id.music_player_btnnext));
+                disableButton((ImageView)controlv.findViewById(R.id.music_player_btnnext));
             else
-                enableButton((ImageView)mPlayerv.findViewById(R.id.music_player_btnnext),
+                enableButton((ImageView)controlv.findViewById(R.id.music_player_btnnext),
                              R.drawable.ic_media_next);
 
             if (0 >= mVideoi)
-                disableButton((ImageView)mPlayerv.findViewById(R.id.music_player_btnprev));
+                disableButton((ImageView)controlv.findViewById(R.id.music_player_btnprev));
             else
-                enableButton((ImageView)mPlayerv.findViewById(R.id.music_player_btnprev),
+                enableButton((ImageView)controlv.findViewById(R.id.music_player_btnprev),
                              R.drawable.ic_media_prev);
             break;
         }
 
-        switch (state) {
+        switch (to) {
         case YTPSTATE_PAUSED: {
-            ImageView btn = (ImageView)mPlayerv.findViewById(R.id.music_player_btnplay);
+            ImageView btn = (ImageView)controlv.findViewById(R.id.music_player_btnplay);
             btn.setClickable(true);
             btn.setImageResource(R.drawable.ic_media_play);
         } break;
 
         case YTPSTATE_PLAYING: {
-            ImageView btn = (ImageView)mPlayerv.findViewById(R.id.music_player_btnplay);
+            ImageView btn = (ImageView)controlv.findViewById(R.id.music_player_btnplay);
             btn.setClickable(true);
             btn.setImageResource(R.drawable.ic_media_pause);
         } break;
 
         default:
-            mPlayerv.findViewById(R.id.music_player_control).setVisibility(View.GONE);
+            controlv.setVisibility(View.GONE);
         }
     }
 
     private void
-    configurePlayerViewProgressBar(int state) {
-        if (null == mProgbar)
+    configurePlayerViewProgressBar(ProgressBar pbar, int from, int to) {
+
+        if (null == pbar)
             return;
 
-        switch (state) {
+        switch (to) {
         case YTPSTATE_VIDEO_CUED:
-            mUpdateProg.start(mProgbar);
+            mUpdateProg.start(pbar);
             break;
 
+        case YTPSTATE_UNSTARTED:
         case YTPSTATE_ENDED:
             mUpdateProg.end();
             break;
@@ -527,15 +555,29 @@ public class YTJSPlayer {
 
         default:
             mUpdateProg.end();
-            mProgbar.setProgress(0);
+            pbar.setProgress(0);
         }
     }
 
     private void
-    configurePlayerViewAll(int state) {
-        configurePlayerViewTitle(state);
-        configurePlayerViewProgressBar(state);
-        configurePlayerViewControl(state);
+    configurePlayerViewAll(ViewGroup playerv, int from, int to) {
+        if (null == playerv)
+            return; // nothing to do
+
+        if ((YTPSTATE_UNSTARTED == to || YTPSTATE_VIDEO_CUED == to)
+            && (null == mVideos
+                || 0 > mVideoi
+                || mVideoi >= mVideos.length))
+            mPlayerv.setVisibility(View.GONE);
+        else
+            mPlayerv.setVisibility(View.VISIBLE);
+
+        configurePlayerViewTitle((TextView)playerv.findViewById(R.id.music_player_title),
+                                 from, to);
+        configurePlayerViewProgressBar((ProgressBar)playerv.findViewById(R.id.music_player_progressbar),
+                                       from, to);
+        configurePlayerViewControl((ViewGroup)playerv.findViewById(R.id.music_player_control),
+                                   from, to);
     }
 
     private void
@@ -544,7 +586,6 @@ public class YTJSPlayer {
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                ImageView btn = (ImageView)v;
                 switch (ytpGetState()) {
                 case YTPSTATE_PAUSED:
                     ajsPlay();
@@ -585,9 +626,8 @@ public class YTJSPlayer {
 
     private void
     initPlayerView(ViewGroup playerv) {
-        TextView tv = (TextView)playerv.findViewById(R.id.music_player_title);
         setupPlayerViewControlButton(playerv);
-        configurePlayerViewAll(ytpGetState());
+        configurePlayerViewAll(playerv, YTPSTATE_INVALID, ytpGetState());
     }
 
     // ------------------------------------------------------------------------
@@ -717,6 +757,10 @@ public class YTJSPlayer {
         callJsFunction("pauseVideo");
     }
 
+    /**
+     * State of YoutubePlayer will move to
+     *   [ current ] -> 'unstarted' -> 'video cued'.
+     */
     private void
     ajsStop() {
         callJsFunction("stopVideo");
@@ -793,13 +837,11 @@ public class YTJSPlayer {
 
         mVContext = context;
         mPlayerv = (LinearLayout)playerv;
-        mProgbar = null;
 
         if (null == mPlayerv)
             return Err.NO_ERR;
 
         eAssert(null != mPlayerv.findViewById(R.id.music_player_layout_magic_id));
-        mProgbar = (ProgressBar)mPlayerv.findViewById(R.id.music_player_progressbar);
         initPlayerView(playerv);
 
         return Err.NO_ERR;
@@ -810,7 +852,6 @@ public class YTJSPlayer {
         if (null != mVContext && context != mVContext)
             logW("YTJSPlayer : Unset Controller at different context...");
 
-        mProgbar = null;
         mPlayerv = null;
         mVContext = null;
 
@@ -888,6 +929,13 @@ public class YTJSPlayer {
                 c.close();
             }
         });
+    }
+
+    public void
+    stopVideos() {
+        ajsStop();
+        mVideos = null;
+        mVideoi = -1;
     }
 
     public void

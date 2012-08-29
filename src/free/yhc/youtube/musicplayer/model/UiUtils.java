@@ -38,7 +38,7 @@ public class UiUtils {
     }
 
     public static void
-    showTextToast(Context context, String text) {
+    showTextToast(Context context, CharSequence text) {
         Toast t = Toast.makeText(context, text, Toast.LENGTH_SHORT);
         t.setGravity(Gravity.CENTER, 0, 0);
         t.show();
