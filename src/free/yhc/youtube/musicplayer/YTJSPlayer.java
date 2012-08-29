@@ -150,17 +150,27 @@ public class YTJSPlayer {
         private ProgressBar progbar = null;
         private int         lastProgress = -1;
 
+        void setProgbar(ProgressBar aProgbar) {
+            eAssert(Utils.isUiThread());
+            progbar = aProgbar;
+            if (null != progbar)
+                progbar.setProgress(lastProgress);
+        }
+
         void start(ProgressBar aProgbar) {
+            logI("Progress Start");
             progbar = aProgbar;
             lastProgress = -1;
         }
 
         void end() {
+            logI("Progress End");
             progbar = null;
             lastProgress = -1;
         }
 
         void update(int duration, int currentPos) {
+            logI("Progress Update(" + (null == progbar? "X": "O") + ") : " + currentPos + " / " + duration);
             if (null != progbar) {
                 int curProgress = (duration > 0)? currentPos * 100 / duration
                                                 : 0;
@@ -561,8 +571,13 @@ public class YTJSPlayer {
             mUpdateProg.start(pbar);
             break;
 
-        case YTPSTATE_UNSTARTED:
         case YTPSTATE_ENDED:
+            // Workaround of Youtube player.
+            // Sometimes Youtube player doesn't update progress 100% before playing is ended.
+            // So, update to 100% in force at this ended state.
+            mUpdateProg.update(1, 1);
+            // Missing 'break' is intentional.
+        case YTPSTATE_UNSTARTED:
             mUpdateProg.end();
             break;
 
@@ -645,6 +660,7 @@ public class YTJSPlayer {
 
     private void
     initPlayerView(ViewGroup playerv) {
+        mUpdateProg.setProgbar((ProgressBar)playerv.findViewById(R.id.music_player_progressbar));
         setupPlayerViewControlButton(playerv);
         configurePlayerViewAll(playerv, YTPSTATE_INVALID, ytpGetState());
     }
