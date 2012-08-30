@@ -106,7 +106,7 @@ public class YTJSPlayer {
     private WifiLock            mWfl        = null;
 
     private WebView             mWv         = null; // WebView instance.
-    private int                 mYtpS       = YTPSTATE_UNSTARTED; // state of YTP;
+    private int                 mYtpS       = YTPSTATE_INVALID; // state of YTP;
     private int                 mYtpEC      = YTPERRCODE_OK;
 
     // ------------------------------------------------------------------------
@@ -299,6 +299,9 @@ public class YTJSPlayer {
 
         case YTPSTATE_ERROR:
             return "error";
+
+        case YTPSTATE_INVALID:
+            return "invalid";
 
         default:
             eAssert(false);
@@ -832,14 +835,10 @@ public class YTJSPlayer {
 
     public Err
     init() {
-        /* TODO
         File fScript = new File(Utils.getAppContext().getFilesDir().getAbsolutePath()
                                 + "/" + YTPLAYER_SCRIPT);
         if (!fScript.exists())
             Utils.copyAssetFile(YTPLAYER_SCRIPT);
-        */
-        new File(Utils.getAppContext().getFilesDir().getAbsolutePath() + "/" + YTPLAYER_SCRIPT).delete();
-        Utils.copyAssetFile(YTPLAYER_SCRIPT);
 
         // NOTE
         // script for chromeless player should be loaded from webserver
@@ -869,7 +868,7 @@ public class YTJSPlayer {
 
     public boolean
     isPlayerReady() {
-        return null != mWv;
+        return YTPSTATE_INVALID != ytpGetState();
     }
 
     public Err
