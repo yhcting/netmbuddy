@@ -378,10 +378,10 @@ public class Utils {
     }
 
     public static boolean
-    copyAssetFile(String file) {
+    copyAssetFile(String dest, String assetFile) {
         try {
-            InputStream is = Utils.getAppContext().getAssets().open(file);
-            FileOutputStream os = Utils.getAppContext().openFileOutput(file, 0);
+            InputStream is = Utils.getAppContext().getAssets().open(assetFile);
+            FileOutputStream os = new FileOutputStream(new File(dest));
             Utils.copy(os, is);
             is.close();
             os.close();

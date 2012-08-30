@@ -50,13 +50,13 @@ OnPlayerReadyListener {
             return;
         }
 
-        setContentView(R.layout.main);
-
         if (!Utils.isNetworkAvailable()) {
             UiUtils.showTextToast(this, R.string.msg_appinit_network_unavailable);
             finish();
             return;
         }
+
+        setContentView(R.layout.main);
 
         ((ImageView)findViewById(R.id.progressimg)).startAnimation(
                 AnimationUtils.loadAnimation(this, R.anim.rotate));

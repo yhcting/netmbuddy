@@ -49,9 +49,15 @@ import free.yhc.youtube.musicplayer.model.Utils;
 //
 // See Youtube player Javascript API document
 public class YTJSPlayer {
-    private static final String WLTAG               = "YTJSPlayer";
-    private static final int    WEBSERVER_PORT      = Policy.Constants.WEBSERVER_PORT;
-    private static final String YTPLAYER_SCRIPT     = "ytplayer.html";
+    private static final String WLTAG   = "YTJSPlayer";
+
+    private static final int    WEBSERVER_PORT          = Policy.Constants.WEBSERVER_PORT;
+    private static final String WEBSERVER_ROOT          = Utils.getAppContext().getFilesDir().getAbsolutePath() + "/";
+    private static final String YTPLAYER_SCRIPT_ASSET   = "ytplayer.html";
+    private static final int    YTPLAYER_SCRIPT_VERSION = 1;
+    private static final String YTPLAYER_SCRIPT_DIR     = "ytpscript/";
+    private static final String YTPLAYER_SCRIPT_FILE    = YTPLAYER_SCRIPT_DIR + "ytplayer"
+                                                          + YTPLAYER_SCRIPT_VERSION + ".html";
 
     private static final int YTPSTATE_UNSTARTED     = -1;
     private static final int YTPSTATE_ENDED         = 0;
@@ -187,7 +193,7 @@ public class YTJSPlayer {
         public boolean
         shouldOverrideUrlLoading(WebView wView, String url) {
             logI("WebView : shouldOverrideUrlLoading : " + url);
-            return true;
+            return false;
         }
 
         @Override
@@ -340,7 +346,7 @@ public class YTJSPlayer {
 
     // ========================================================================
     //
-    //
+    // General Control
     //
     // ========================================================================
     private void
@@ -357,13 +363,9 @@ public class YTJSPlayer {
     ytpGetState() {
         return mYtpS;
     }
-    // ========================================================================
-    //
-    // General Control
-    //
-    // ========================================================================
+
     private void
-    playVideo(String videoId, int volume) {
+    ytpPlayVideo(String videoId, int volume) {
         eAssert(0 <= volume && volume <= 100);
         ajsPrepare(videoId);
         ajsSetVolume(volume);
@@ -375,7 +377,7 @@ public class YTJSPlayer {
     }
 
     private void
-    playNext() {
+    ytpPlayNext() {
         if (null == mVideos)
             return; // do nothing
 
@@ -384,11 +386,11 @@ public class YTJSPlayer {
             mVideoi = mVideos.length;
             ytpPlayDone();
         } else
-            playVideo(mVideos[mVideoi].videoId, mVideos[mVideoi].volume);
+            ytpPlayVideo(mVideos[mVideoi].videoId, mVideos[mVideoi].volume);
     }
 
     private void
-    playPrev() {
+    ytpPlayPrev() {
         if (null == mVideos)
             return; // do nothing
 
@@ -397,7 +399,21 @@ public class YTJSPlayer {
             mVideoi = -1;
             ytpPlayDone();
         } else
-            playVideo(mVideos[mVideoi].videoId, mVideos[mVideoi].volume);
+            ytpPlayVideo(mVideos[mVideoi].videoId, mVideos[mVideoi].volume);
+    }
+
+    private void
+    ytpPlayDone() {
+        logD("VideoView - playDone");
+        if (Utils.isPrefRepeat())
+            startVideos(mVideos);
+        else {
+            if (null != mPlayerv) {
+                setPlayerViewTitle((TextView)mPlayerv.findViewById(R.id.music_player_title),
+                                    mRes.getText(R.string.msg_playing_done), false);
+            }
+            releaseLocks();
+        }
     }
 
     private void
@@ -410,7 +426,7 @@ public class YTJSPlayer {
             break;
 
         case YTPSTATE_ENDED:
-            playNext();
+            ytpPlayNext();
             break;
 
         case YTPSTATE_PLAYING:
@@ -427,20 +443,6 @@ public class YTJSPlayer {
 
         default:
             eAssert(false);
-        }
-    }
-
-    private void
-    ytpPlayDone() {
-        logD("VideoView - playDone");
-        if (Utils.isPrefRepeat())
-            startVideos(mVideos);
-        else {
-            if (null != mPlayerv) {
-                setPlayerViewTitle((TextView)mPlayerv.findViewById(R.id.music_player_title),
-                                    mRes.getText(R.string.msg_playing_done), false);
-            }
-            releaseLocks();
         }
     }
 
@@ -649,7 +651,7 @@ public class YTJSPlayer {
             @Override
             public void onClick(View v) {
                 ajsStop();
-                playPrev();
+                ytpPlayPrev();
                 disablePlayerViewControlButton(playerv);
             }
         });
@@ -659,7 +661,7 @@ public class YTJSPlayer {
             @Override
             public void onClick(View v) {
                 ajsStop();
-                playNext();
+                ytpPlayNext();
                 disablePlayerViewControlButton(playerv);
             }
         });
@@ -693,7 +695,7 @@ public class YTJSPlayer {
             && mVideoi >= 0
             && mVideoi < mVideos.length - 1) {
             ajsStop();
-            playNext();
+            ytpPlayNext();
         }
     }
 
@@ -835,17 +837,18 @@ public class YTJSPlayer {
 
     public Err
     init() {
-        File fScript = new File(Utils.getAppContext().getFilesDir().getAbsolutePath()
-                                + "/" + YTPLAYER_SCRIPT);
-        if (!fScript.exists())
-            Utils.copyAssetFile(YTPLAYER_SCRIPT);
+        File scriptFile = new File(WEBSERVER_ROOT + YTPLAYER_SCRIPT_FILE);
+        new File(scriptFile.getParent()).mkdirs();
+
+        if (!scriptFile.exists())
+            Utils.copyAssetFile(scriptFile.getAbsolutePath(), YTPLAYER_SCRIPT_ASSET);
 
         // NOTE
         // script for chromeless player should be loaded from webserver
         // (See youtube documentation for details.)
         // Start simple webserver
         try {
-            new NanoHTTPD(WEBSERVER_PORT, Utils.getAppContext().getFilesDir());
+            new NanoHTTPD(WEBSERVER_PORT, new File(WEBSERVER_ROOT));
         } catch (IOException e) {
             logI("Fail to start Nanohttpd");
         }
@@ -861,7 +864,7 @@ public class YTJSPlayer {
         wv.setWebChromeClient(new WCClient());
         setWebSettings(wv);
         mWv.addJavascriptInterface(this, "Android");
-        mWv.loadUrl("http://127.0.0.1:" + WEBSERVER_PORT + "/" + YTPLAYER_SCRIPT);
+        mWv.loadUrl("http://127.0.0.1:" + WEBSERVER_PORT + "/" + YTPLAYER_SCRIPT_FILE);
 
         return Err.NO_ERR;
     }
@@ -949,7 +952,7 @@ public class YTJSPlayer {
         mVideos = vs;
         mVideoi = 0;
 
-        playVideo(mVideos[mVideoi].videoId, mVideos[mVideoi].volume);
+        ytpPlayVideo(mVideos[mVideoi].videoId, mVideos[mVideoi].volume);
     }
 
     public void
