@@ -38,10 +38,8 @@ OnPlayerReadyListener {
         }, delay);
     }
 
-    @Override
-    public void
-    onPlayerReady(WebView wv) {
-        Utils.getUiHandler().removeCallbacks(mAppInitTimeOut);
+    private void
+    launchPlaylistActivity() {
         Intent i = new Intent(this, PlaylistActivity.class);
         startActivity(i);
         finish();
@@ -49,8 +47,21 @@ OnPlayerReadyListener {
 
     @Override
     public void
+    onPlayerReady(WebView wv) {
+        Utils.getUiHandler().removeCallbacks(mAppInitTimeOut);
+        launchPlaylistActivity();
+    }
+
+    @Override
+    public void
     onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if (YTJSPlayer.get().isPlayerReady()) {
+            // Player is already in ready.
+            launchPlaylistActivity();
+            return;
+        }
+
         setContentView(R.layout.main);
 
         ImageView progimg = (ImageView)findViewById(R.id.progressimg);
