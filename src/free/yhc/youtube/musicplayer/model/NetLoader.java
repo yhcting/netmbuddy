@@ -8,8 +8,6 @@ import java.net.URLConnection;
 
 
 public class NetLoader {
-    private static final int NET_RETRY = 5;
-
     private volatile boolean        cancelled = false;
     private volatile InputStream    istream = null; // Multi-thread access
 
@@ -56,12 +54,12 @@ public class NetLoader {
      */
     byte[]
     readData(URL url) throws YTMPException {
-        int              retry = NET_RETRY;
+        int              retry = Policy.Constants.NETOWRK_CONN_RETRY;
         try {
             while (0 < retry--) {
                 try {
                     URLConnection conn = url.openConnection();
-                    conn.setReadTimeout(1000);
+                    conn.setReadTimeout(Policy.Constants.NETWORK_CONN_TIMEOUT);
                     istream = conn.getInputStream();
 
                     // 256K is experimental value small enough to contains most feed text.
