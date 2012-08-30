@@ -27,13 +27,13 @@
                 android:clickable="true"
                 />
             <ImageView
-                android:id="@+id/recent_played"
+                android:id="@+id/recently_played"
                 android:layout_width="@dimen/toolbtn_width"
                 android:layout_height="match_parent"
                 android:layout_weight="1.0"
                 android:gravity="center"
                 android:scaleType="fitCenter"
-                android:src="@drawable/ic_recent_played"
+                android:src="@drawable/ic_recently_played"
                 android:clickable="true"
                 />
             <ImageView
@@ -86,6 +86,15 @@
         android:visibility="gone"
         >
         <include layout="@layout/music_player" />
+    </LinearLayout>
+    <LinearLayout
+        android:id="@+id/empty_list"
+        android:layout_width="match_parent"
+        android:layout_height="fill_parent"
+        android:layout_above="@id/player"
+        android:layout_alignParentTop="true"
+        >
+        <include layout="@layout/empty_playlist" />
     </LinearLayout>
     <ListView
         android:id="@+id/list"

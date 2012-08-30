@@ -40,6 +40,18 @@
     <string name="pref_repeat">Repeat</string>
     <string name="pref_repeat_desc">Set to On to play musics repeatedly.</string>
 
+    <string name="guide_title_first_playlist">Making my first playlist.</string>
+    <string name="guide_desc_first_playlist">Touching this icon to search Youbute with keywords\nThen, do long-touch one of list-item to make new playlist and add the item to the playlist.</string>
+    <string name="guide_title_tool_buttons">Tool buttons.</string>
+    <string name="guide_desc_playall">Plays all registered musics regardless of playlist.</string>
+    <string name="guide_desc_recently_played">Lists recently played musics.</string>
+    <string name="guide_desc_dbsearch">Searchs musics registered at local playlist with keywords.</string>
+    <string name="guide_desc_ytsearch">Searchs Youbute with keywords to register new music to local playlist.\nRegistered musics and not-registered musics are displayed with gray and yellow text, respectively. </string>
+    <string name="guide_desc_preference">Sets preference.</string>
+    <string name="guide_desc_more">Shows sub-menus those are not used often.</string>
+    <string name="guide_title_playlist_buttons">Tool buttons of each playlist.</string>
+    <string name="guide_desc_detaillist">Lists all musics belongs to the playlist.</string>
+
     <string name="report_opinion_title">[Youtube Music Player] Opinion</string>
 
     <string name="msg_not_implemented">Not implemented yet.</string>

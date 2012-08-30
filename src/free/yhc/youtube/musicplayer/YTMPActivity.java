@@ -7,7 +7,6 @@ import android.os.Bundle;
 import android.view.animation.AnimationUtils;
 import android.webkit.WebView;
 import android.widget.ImageView;
-import android.widget.TextView;
 import free.yhc.youtube.musicplayer.YTJSPlayer.OnPlayerReadyListener;
 import free.yhc.youtube.musicplayer.model.UiUtils;
 import free.yhc.youtube.musicplayer.model.Utils;
@@ -72,7 +71,6 @@ OnPlayerReadyListener {
             return;
         }
 
-        ((TextView)findViewById(R.id.message)).setText(R.string.msg_initialize_app);
         ((ImageView)findViewById(R.id.progressimg)).startAnimation(
                 AnimationUtils.loadAnimation(this, R.anim.rotate));
         final WebView wv = (WebView)findViewById(R.id.webview);

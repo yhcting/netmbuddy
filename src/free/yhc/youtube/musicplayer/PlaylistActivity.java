@@ -273,7 +273,7 @@ public class PlaylistActivity extends Activity {
             }
         });
 
-        ((ImageView)findViewById(R.id.recent_played)).setOnClickListener(new View.OnClickListener() {
+        ((ImageView)findViewById(R.id.recently_played)).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Intent i = new Intent(PlaylistActivity.this, MusicsActivity.class);
@@ -442,6 +442,7 @@ public class PlaylistActivity extends Activity {
             }
         });
         mListv.setAdapter(adapter);
+        mListv.setEmptyView(findViewById(R.id.empty_list));
         adapter.reloadCursorAsync();
 
     }
