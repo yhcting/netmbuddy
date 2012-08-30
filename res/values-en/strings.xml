@@ -34,9 +34,11 @@
     <string name="importing_db">Importing DB...</string>
     <string name="exporting_db">Exporting DB...</string>
 
-    <string name="pref_cat_operation">Setting operation</string>
+    <string name="pref_cat_operation">Playing music</string>
     <string name="pref_shuffle">Shuffle</string>
     <string name="pref_shuffle_desc">Set to On to play musics in random order.</string>
+    <string name="pref_repeat">Repeat</string>
+    <string name="pref_repeat_desc">Set to On to play musics repeatedly.</string>
 
     <string name="report_opinion_title">[Youtube Music Player] Opinion</string>
 

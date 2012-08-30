@@ -34,9 +34,11 @@
     <string name="importing_db">DB를 가져오는 중...</string>
     <string name="exporting_db">DB를 내보내는 중...</string>
 
-    <string name="pref_cat_operation">동작 방식 설정</string>
+    <string name="pref_cat_operation">재생 방식 설정</string>
     <string name="pref_shuffle">임의 순서로 재생</string>
     <string name="pref_shuffle_desc">이 기능을 "켜기"로 설정하면 음악 재생시 재생되는 곡의 순서가 무작위로 됩니다.</string>
+    <string name="pref_repeat">반복 재생</string>
+    <string name="pref_repeat_desc">이 기능을 "켜기"로 설정하면 계속해서 반복되어 음악이 재생 됩니다.</string>
 
     <string name="report_opinion_title">[유투브 뮤직 플레이어] 의견</string>
 

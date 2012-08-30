@@ -428,6 +428,10 @@ public class Utils {
         return sPrefs.getBoolean("shuffle", false);
     }
 
+    public static boolean
+    isPrefRepeat() {
+        return sPrefs.getBoolean("repeat", false);
+    }
     // ------------------------------------------------------------------------
     //
     // Misc

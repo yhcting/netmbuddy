@@ -430,11 +430,15 @@ public class YTJSPlayer {
     private void
     ytpPlayDone() {
         logD("VideoView - playDone");
-        if (null != mPlayerv) {
-            setPlayerViewTitle((TextView)mPlayerv.findViewById(R.id.music_player_title),
-                                mRes.getText(R.string.msg_playing_done), false);
+        if (Utils.isPrefRepeat())
+            startVideos(mVideos);
+        else {
+            if (null != mPlayerv) {
+                setPlayerViewTitle((TextView)mPlayerv.findViewById(R.id.music_player_title),
+                                    mRes.getText(R.string.msg_playing_done), false);
+            }
+            releaseLocks();
         }
-        releaseLocks();
     }
 
     // ========================================================================
@@ -861,6 +865,11 @@ public class YTJSPlayer {
         mWv.loadUrl("http://127.0.0.1:" + WEBSERVER_PORT + "/" + YTPLAYER_SCRIPT);
 
         return Err.NO_ERR;
+    }
+
+    public boolean
+    isPlayerReady() {
+        return null != mWv;
     }
 
     public Err
