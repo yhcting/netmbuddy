@@ -19,6 +19,7 @@
     <dimen name="seekbar_width">400px</dimen>
     <dimen name="guide_intercat_margin">10dip</dimen>
     <dimen name="guide_interitem_margin">3dip</dimen>
+
     <!-- =============================================
                              Color
          ============================================= -->
