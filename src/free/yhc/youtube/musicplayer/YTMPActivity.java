@@ -105,6 +105,7 @@ OnPlayerReadyListener {
     @Override
     public void
     onBackPressed() {
+        Utils.getUiHandler().removeCallbacks(mAppInitTimeOut);
         super.onBackPressed();
     }
 }
