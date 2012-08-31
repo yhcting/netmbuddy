@@ -135,6 +135,11 @@ YTSearchHelper.LoadThumbnailDoneReceiver {
         return mEntries[pos].media.videoId;
     }
 
+    public String
+    getItemPlaytime(int pos) {
+        return mEntries[pos].media.playTime;
+    }
+
     public void
     markEntryExist(int pos) {
         YTSearchApi.Entry e = mEntries[pos];

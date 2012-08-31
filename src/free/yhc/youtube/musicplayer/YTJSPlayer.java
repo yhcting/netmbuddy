@@ -132,9 +132,13 @@ public class YTJSPlayer {
         String   title;
         String   videoId;
         int      volume;
-        public Video(String aVideoId, String aTitle, int aVolume) {
+        int      playtime; // This is to workaround not-correct value returns from getDuration() function
+                           //   of youtube player.
+        public Video(String aVideoId, String aTitle,
+                     int aVolume, int aPlaytime) {
             videoId = aVideoId;
             title = aTitle;
+            playtime = aPlaytime;
             volume = aVolume;
         }
     }
@@ -155,6 +159,7 @@ public class YTJSPlayer {
     private class UpdateProgress {
         private ProgressBar progbar = null;
         private int         lastProgress = -1;
+        private int         duration = 0;
 
         void setProgbar(ProgressBar aProgbar) {
             eAssert(Utils.isUiThread());
@@ -167,15 +172,26 @@ public class YTJSPlayer {
             logI("Progress Start");
             progbar = aProgbar;
             lastProgress = -1;
+            duration = 0;
         }
 
         void end() {
             logI("Progress End");
             progbar = null;
             lastProgress = -1;
+            duration = 0;
         }
 
-        void update(int duration, int currentPos) {
+        // FIXME
+        // This is to workaround incorrect return value of youtube player's getDuration() function.
+        // So, if Youtube player gives right value, this function and all related codes should be removed.
+        void setDuration(int newDuration) {
+            duration = newDuration;
+        }
+
+        void update(int aDuration, int currentPos) {
+            // ignore aDuration.
+            // Sometimes youtube player returns incorrect duration value!
             logI("Progress Update(" + (null == progbar? "X": "O") + ") : " + currentPos + " / " + duration);
             if (null != progbar) {
                 int curProgress = (duration > 0)? currentPos * 100 / duration
@@ -346,7 +362,7 @@ public class YTJSPlayer {
 
     // ========================================================================
     //
-    // General Control
+    // Youtube player front end.
     //
     // ========================================================================
     private void
@@ -423,16 +439,20 @@ public class YTJSPlayer {
 
         switch (to) {
         case YTPSTATE_UNSTARTED:
+            ajsStopProgressReport();
             break;
 
         case YTPSTATE_ENDED:
+            ajsStopProgressReport();
             ytpPlayNext();
             break;
 
         case YTPSTATE_PLAYING:
+            ajsStartProgressReport();
             break;
 
         case YTPSTATE_PAUSED:
+            ajsStopProgressReport();
             break;
 
         case YTPSTATE_BUFFERING:
@@ -480,11 +500,8 @@ public class YTJSPlayer {
             return;
 
         CharSequence videoTitle = "";
-        if (null != mVideos
-            && 0 <= mVideoi
-            && mVideoi < mVideos.length) {
+        if (isVideoPlaying())
             videoTitle = mVideos[mVideoi].title;
-        }
 
         switch (to) {
         case YTPSTATE_BUFFERING: {
@@ -591,6 +608,8 @@ public class YTJSPlayer {
             break;
 
         case YTPSTATE_PLAYING:
+            if (isVideoPlaying())
+                mUpdateProg.setDuration(mVideos[mVideoi].playtime);
         case YTPSTATE_PAUSED:
         case YTPSTATE_BUFFERING:
             ; // do nothing progress is now under update..
@@ -608,9 +627,7 @@ public class YTJSPlayer {
             return; // nothing to do
 
         if ((YTPSTATE_UNSTARTED == to || YTPSTATE_VIDEO_CUED == to)
-            && (null == mVideos
-                || 0 > mVideoi
-                || mVideoi >= mVideos.length))
+            && !isVideoPlaying())
             mPlayerv.setVisibility(View.GONE);
         else
             mPlayerv.setVisibility(View.VISIBLE);
@@ -691,16 +708,14 @@ public class YTJSPlayer {
     private void
     onPlayerError(int errCode) {
         ytpSetState(YTPSTATE_ERROR);
-        if (null != mVideos
-            && mVideoi >= 0
-            && mVideoi < mVideos.length - 1) {
+        if (isVideoPlaying()) {
             ajsStop();
             ytpPlayNext();
         }
     }
 
     private void
-    onNotifyPlayerInfo(int videoDuration, int videoCurrentTime) {
+    onReportProgress(int videoDuration, int videoCurrentTime) {
         mUpdateProg.update(videoDuration, videoCurrentTime);
     }
 
@@ -775,12 +790,12 @@ public class YTJSPlayer {
     }
 
     public void
-    jsaOnNotifyPlayerInfo(final int videoDuration,
-                          final int videoCurrentTime) {
+    jsaOnReportProgress(final int videoDuration,
+                        final int videoCurrentTime) {
         Utils.getUiHandler().post(new Runnable() {
             @Override
             public void run() {
-                onNotifyPlayerInfo(videoDuration, videoCurrentTime);
+                onReportProgress(videoDuration, videoCurrentTime);
             }
         });
     }
@@ -815,6 +830,15 @@ public class YTJSPlayer {
         callJsFunction("setVideoVolume", "" + volume);
     }
 
+    private void
+    ajsStartProgressReport() {
+        callJsFunction("startProgressReport");
+    }
+
+    private void
+    ajsStopProgressReport() {
+        callJsFunction("stopProgressReport");
+    }
     // ========================================================================
     //
     // Public interface
@@ -840,7 +864,7 @@ public class YTJSPlayer {
         File scriptFile = new File(WEBSERVER_ROOT + YTPLAYER_SCRIPT_FILE);
         new File(scriptFile.getParent()).mkdirs();
 
-        if (!scriptFile.exists())
+        //if (!scriptFile.exists())
             Utils.copyAssetFile(scriptFile.getAbsolutePath(), YTPLAYER_SCRIPT_ASSET);
 
         // NOTE
@@ -904,7 +928,10 @@ public class YTJSPlayer {
     }
 
     private Video[]
-    getVideos(Cursor c, int coliTitle, int coliUrl, int coliVolume, boolean shuffle) {
+    getVideos(Cursor c,
+              int coliTitle,  int coliUrl,
+              int coliVolume, int coliPlaytime,
+              boolean shuffle) {
         if (!c.moveToFirst())
             return new Video[0];
 
@@ -915,7 +942,8 @@ public class YTJSPlayer {
             do {
                 vs[i++] = new Video(c.getString(coliUrl),
                                     c.getString(coliTitle),
-                                    c.getInt(coliVolume));
+                                    c.getInt(coliVolume),
+                                    c.getInt(coliPlaytime));
             } while (c.moveToNext());
             Arrays.sort(vs, sVideoTitleComparator);
         } else {
@@ -926,7 +954,8 @@ public class YTJSPlayer {
                 nes[i++] = new NrElem(r.nextInt(),
                                       new Video(c.getString(coliUrl),
                                                 c.getString(coliTitle),
-                                                c.getInt(coliVolume)));
+                                                c.getInt(coliVolume),
+                                                c.getInt(coliPlaytime)));
             } while (c.moveToNext());
             Arrays.sort(nes, sNrElemComparator);
             for (i = 0; i < nes.length; i++)
@@ -957,7 +986,8 @@ public class YTJSPlayer {
 
     public void
     startVideos(final Cursor c,
-                final int coliUrl, final int coliTitle, final int coliVolume,
+                final int coliUrl,      final int coliTitle,
+                final int coliVolume,   final int coliPlaytime,
                 final boolean shuffle) {
         eAssert(Utils.isUiThread());
         eAssert(null != mPlayerv);
@@ -965,7 +995,7 @@ public class YTJSPlayer {
         AsyncTask.execute(new Runnable() {
             @Override
             public void run() {
-                final Video[] vs = getVideos(c, coliTitle, coliUrl, coliVolume, shuffle);
+                final Video[] vs = getVideos(c, coliTitle, coliUrl, coliVolume, coliPlaytime, shuffle);
                 Utils.getUiHandler().post(new Runnable() {
                     @Override
                     public void run() {

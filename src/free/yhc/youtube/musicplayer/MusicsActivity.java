@@ -58,7 +58,8 @@ public class MusicsActivity extends Activity {
     onListItemClick(View view, int position, long itemId) {
         YTJSPlayer.Video vid = new YTJSPlayer.Video(getAdapter().getMusicYtid(position),
                                                     getAdapter().getMusicTitle(position),
-                                                    getAdapter().getMusicVolume(position));
+                                                    getAdapter().getMusicVolume(position),
+                                                    getAdapter().getMusicPlaytime(position));
         ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
         playerv.setVisibility(View.VISIBLE);
         mMp.setController(this, playerv);

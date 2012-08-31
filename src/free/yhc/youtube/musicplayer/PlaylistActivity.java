@@ -76,7 +76,7 @@ public class PlaylistActivity extends Activity {
         ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
         playerv.setVisibility(View.VISIBLE);
         mMp.setController(this, playerv);
-        mMp.startVideos(c, 0, 1, 2, Utils.isPrefSuffle());
+        mMp.startVideos(c, 0, 1, 2, 3, Utils.isPrefSuffle());
     }
 
     private void
@@ -102,7 +102,8 @@ public class PlaylistActivity extends Activity {
     playAllMusics(View anchor) {
         playMusics(mDb.queryVideos(new ColVideo[] { ColVideo.VIDEOID,
                                                     ColVideo.TITLE,
-                                                    ColVideo.VOLUME },
+                                                    ColVideo.VOLUME,
+                                                    ColVideo.PLAYTIME},
                                    null, false));
     }
 
@@ -383,7 +384,8 @@ public class PlaylistActivity extends Activity {
         playMusics(mDb.queryVideos(itemId,
                                    new ColVideo[] { ColVideo.VIDEOID,
                                                     ColVideo.TITLE,
-                                                    ColVideo.VOLUME },
+                                                    ColVideo.VOLUME,
+                                                    ColVideo.PLAYTIME},
                                    null, false));
     }
 
