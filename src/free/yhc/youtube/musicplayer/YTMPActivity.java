@@ -37,7 +37,8 @@ OnPlayerReadyListener {
     public void
     onPlayerReady(WebView wv) {
         Utils.getUiHandler().removeCallbacks(mAppInitTimeOut);
-        launchPlaylistActivity();
+        if (Utils.getCurrentTopActivity().equals(YTMPActivity.class.getName()))
+            launchPlaylistActivity();
     }
 
     @Override

@@ -10,12 +10,14 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import org.apache.http.impl.cookie.DateParseException;
 import org.apache.http.impl.cookie.DateUtils;
 
+import android.app.ActivityManager;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
@@ -172,6 +174,13 @@ public class Utils {
             return false;
     }
 
+    public static String
+    getCurrentTopActivity() {
+        ActivityManager am = (ActivityManager)getAppContext().getSystemService(Context.ACTIVITY_SERVICE);
+        List<ActivityManager.RunningTaskInfo> tasks = am.getRunningTasks(1);
+        ActivityManager.RunningTaskInfo ar = tasks.get(0);
+        return ar.topActivity.getClassName().toString();
+    }
     // ------------------------------------------------------------------------
     //
     // Image Handling
