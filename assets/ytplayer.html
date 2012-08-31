@@ -8,6 +8,7 @@
         // -------------------------------------------------------------
         var tag = document.createElement('script');
         tag.src = "//www.youtube.com/iframe_api";
+        //tag.src = "//www.youtube.com/player_api";
         var firstScriptTag = document.getElementsByTagName('script')[0];
         firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
@@ -62,7 +63,6 @@
             // Also check that at least one function exists since when IE unloads the
             // page, it will destroy the SWF before clearing the interval.
             if(ytplayer && ytplayer.getDuration && ytplayer.getCurrentTime) {
-                Android.jsaLog(ytplayer.getDuration() + "/" + ytplayer.getCurrentTime());
                 Android.jsaOnReportProgress(ytplayer.getDuration(), ytplayer.getCurrentTime());
             }
         }
@@ -124,6 +124,7 @@
 
         // This function is automatically called by the player once it loads
         function onPlayerReady(event) {
+            ytplayer = event.target;
             Android.jsaOnPlayerReady();
             // This causes the updatePlayerInfo function to be called every 1000ms to
             // get fresh data from the player
@@ -133,9 +134,15 @@
         }
 
         function onYouTubeIframeAPIReady() {
-            ytplayer = new YT.Player('player', {
+            new YT.Player('player', {
                 width: '640',
                 height: '390',
+                playerVars: {
+                    'playerapiid': 'ytplayerapi',
+                    'enablejsapi': 1,
+                    'autoplay': 0,
+                    'controls': 0
+                },
                 events: {
                     'onReady': onPlayerReady,
                     'onStateChange': onPlayerStateChange,

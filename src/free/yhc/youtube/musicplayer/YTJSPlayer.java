@@ -169,14 +169,14 @@ public class YTJSPlayer {
         }
 
         void start(ProgressBar aProgbar) {
-            logI("Progress Start");
+            //logI("Progress Start");
             progbar = aProgbar;
             lastProgress = -1;
             duration = 0;
         }
 
         void end() {
-            logI("Progress End");
+            //logI("Progress End");
             progbar = null;
             lastProgress = -1;
             duration = 0;
@@ -192,7 +192,7 @@ public class YTJSPlayer {
         void update(int aDuration, int currentPos) {
             // ignore aDuration.
             // Sometimes youtube player returns incorrect duration value!
-            logI("Progress Update(" + (null == progbar? "X": "O") + ") : " + currentPos + " / " + duration);
+            //logI("Progress Update(" + (null == progbar? "X": "O") + ") : " + currentPos + " / " + duration);
             if (null != progbar) {
                 int curProgress = (duration > 0)? currentPos * 100 / duration
                                                 : 0;
