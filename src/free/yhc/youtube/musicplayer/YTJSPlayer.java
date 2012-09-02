@@ -338,7 +338,10 @@ public class YTJSPlayer {
     // ========================================================================
     private void
     acquireLocks() {
-        eAssert(null == mWl && null == mWfl);
+        if (null != mWl)
+            return; // already locked nothing to do
+
+        eAssert(null == mWfl);
         mWl = ((PowerManager)Utils.getAppContext().getSystemService(Context.POWER_SERVICE))
                 .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, WLTAG);
         // Playing youtube requires high performance wifi for high quality media play.
@@ -350,11 +353,12 @@ public class YTJSPlayer {
 
     private void
     releaseLocks() {
-        if (null != mWl)
-                mWl.release();
+        if (null == mWl)
+            return;
 
-        if (null != mWfl)
-            mWfl.release();
+        eAssert(null != mWfl);
+        mWl.release();
+        mWfl.release();
 
         mWl = null;
         mWfl = null;
@@ -449,10 +453,13 @@ public class YTJSPlayer {
 
         case YTPSTATE_PLAYING:
             ajsStartProgressReport();
+            acquireLocks();
             break;
 
         case YTPSTATE_PAUSED:
             ajsStopProgressReport();
+            // User may pause music and back to homescreen.
+            releaseLocks();
             break;
 
         case YTPSTATE_BUFFERING:

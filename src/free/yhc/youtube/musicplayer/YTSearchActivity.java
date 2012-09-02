@@ -28,6 +28,7 @@ import free.yhc.youtube.musicplayer.model.DBHelper;
 import free.yhc.youtube.musicplayer.model.DBHelper.CheckExistArg;
 import free.yhc.youtube.musicplayer.model.Err;
 import free.yhc.youtube.musicplayer.model.Policy;
+import free.yhc.youtube.musicplayer.model.RTState;
 import free.yhc.youtube.musicplayer.model.UiUtils;
 import free.yhc.youtube.musicplayer.model.Utils;
 import free.yhc.youtube.musicplayer.model.YTSearchApi;
@@ -166,11 +167,13 @@ DBHelper.CheckExistDoneReceiver {
             @Override
             public void onOk(Dialog dialog, EditText edit) {
                 String word = edit.getText().toString();
+                RTState.get().setLastSearchWord(edit.getText().toString());
                 loadPage(word, 1);
             }
         };
         AlertDialog diag = UiUtils.buildOneLineEditTextDialog(this,
                                                               R.string.enter_search_word,
+                                                              RTState.get().getLastSearchWord(),
                                                               action);
         diag.show();
     }

@@ -357,6 +357,7 @@ public class PlaylistActivity extends Activity {
         };
         AlertDialog diag = UiUtils.buildOneLineEditTextDialog(this,
                                                               R.string.enter_new_name,
+                                                              getAdapter().getItemTitle(info.position),
                                                               action);
         diag.show();
     }

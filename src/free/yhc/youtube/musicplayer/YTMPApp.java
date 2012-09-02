@@ -3,6 +3,7 @@ package free.yhc.youtube.musicplayer;
 import android.app.Application;
 import android.content.res.Configuration;
 import free.yhc.youtube.musicplayer.model.DB;
+import free.yhc.youtube.musicplayer.model.RTState;
 import free.yhc.youtube.musicplayer.model.Utils;
 
 public class YTMPApp extends Application {
@@ -18,6 +19,7 @@ public class YTMPApp extends Application {
         super.onCreate();
         Utils.init(getApplicationContext());
         DB.get().open();
+        RTState.get();
         YTJSPlayer.get().init();
     }
 

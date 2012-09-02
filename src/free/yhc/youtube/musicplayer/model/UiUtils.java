@@ -83,7 +83,8 @@ public class UiUtils {
                        final CharSequence description,
                        final ConfirmAction action) {
         final AlertDialog dialog = createAlertDialog(context, R.drawable.ic_info, title, description);
-        dialog.setButton(context.getResources().getText(R.string.yes),
+        dialog.setButton(AlertDialog.BUTTON_POSITIVE,
+                         context.getResources().getText(R.string.yes),
                          new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface diag, int which) {
@@ -92,8 +93,9 @@ public class UiUtils {
             }
         });
 
-        dialog.setButton2(context.getResources().getText(R.string.no),
-                          new DialogInterface.OnClickListener() {
+        dialog.setButton(AlertDialog.BUTTON_NEGATIVE,
+                         context.getResources().getText(R.string.no),
+                         new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 dialog.dismiss();
@@ -131,12 +133,17 @@ public class UiUtils {
     }
 
     public static AlertDialog
-    buildOneLineEditTextDialog(final Context context, final CharSequence title, final EditTextAction action) {
+    buildOneLineEditTextDialog(final Context context,
+                               final CharSequence title,
+                               final CharSequence initText,
+                               final EditTextAction action) {
         // Create "Enter Url" dialog
         View layout = inflateLayout(context, R.layout.edittext_dialog);
         final AlertDialog dialog = createEditTextDialog(context, layout, title);
         // Set action for dialog.
         final EditText edit = (EditText)layout.findViewById(R.id.edit);
+        edit.setText(initText);
+        edit.setSelection(initText.length());
         edit.setOnKeyListener(new View.OnKeyListener() {
             @Override
             public boolean onKey(View v, int keyCode, KeyEvent event) {
@@ -152,7 +159,8 @@ public class UiUtils {
         });
         action.prepare(dialog, edit);
 
-        dialog.setButton(context.getResources().getText(R.string.ok),
+        dialog.setButton(AlertDialog.BUTTON_POSITIVE,
+                         context.getResources().getText(R.string.ok),
                          new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dia, int which) {
@@ -162,8 +170,9 @@ public class UiUtils {
             }
         });
 
-        dialog.setButton2(context.getResources().getText(R.string.cancel),
-                          new DialogInterface.OnClickListener() {
+        dialog.setButton(AlertDialog.BUTTON_NEGATIVE,
+                         context.getResources().getText(R.string.cancel),
+                         new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 dialog.dismiss();
@@ -173,7 +182,17 @@ public class UiUtils {
     }
 
     public static AlertDialog
-    buildOneLineEditTextDialog(final Context context, final int title, final EditTextAction action) {
+    buildOneLineEditTextDialog(Context context, CharSequence title, EditTextAction action) {
+        return buildOneLineEditTextDialog(context, title, "", action);
+    }
+
+    public static AlertDialog
+    buildOneLineEditTextDialog(Context context, int title, CharSequence initText, EditTextAction action) {
+        return buildOneLineEditTextDialog(context, context.getResources().getText(title), initText, action);
+    }
+
+    public static AlertDialog
+    buildOneLineEditTextDialog(Context context, int title, EditTextAction action) {
         return buildOneLineEditTextDialog(context, context.getResources().getText(title), action);
     }
 
