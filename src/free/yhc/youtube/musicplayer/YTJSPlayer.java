@@ -2,6 +2,7 @@ package free.yhc.youtube.musicplayer;
 
 import static free.yhc.youtube.musicplayer.model.Utils.eAssert;
 import static free.yhc.youtube.musicplayer.model.Utils.logD;
+import static free.yhc.youtube.musicplayer.model.Utils.logE;
 import static free.yhc.youtube.musicplayer.model.Utils.logI;
 import static free.yhc.youtube.musicplayer.model.Utils.logW;
 
@@ -124,9 +125,11 @@ public class YTJSPlayer {
     // ------------------------------------------------------------------------
     // Player Runtime Status
     // ------------------------------------------------------------------------
-    private OnPlayerReadyListener mPlayerReadyListener = null;
-    private Video[]               mVideos = null;
-    private int                   mVideoi = -1;
+    private OnPlayerReadyListener   mPlayerReadyListener = null;
+    private OnPlayerErrorListener   mPlayerErrorListener = null;
+    private Video[]                 mVideos = null;
+    private int                     mVideoi = -1;
+    private int                     mRetryOnError = Policy.Constants.YTPLAYER_RETRY_ON_ERROR;
 
     public static class Video {
         String   title;
@@ -154,6 +157,10 @@ public class YTJSPlayer {
 
     public interface OnPlayerReadyListener {
         void onPlayerReady(WebView wv);
+    }
+
+    public interface OnPlayerErrorListener {
+        void onPlayerError(WebView wv, int errcode, String videoId);
     }
 
     private class UpdateProgress {
@@ -468,9 +475,15 @@ public class YTJSPlayer {
         case YTPSTATE_VIDEO_CUED:
             break;
 
+        case YTPSTATE_ERROR:
+            break;
+
         default:
             eAssert(false);
         }
+
+        if (YTPSTATE_ERROR != to)
+            mRetryOnError = Policy.Constants.YTPLAYER_RETRY_ON_ERROR;
     }
 
     // ========================================================================
@@ -714,10 +727,22 @@ public class YTJSPlayer {
 
     private void
     onPlayerError(int errCode) {
-        ytpSetState(YTPSTATE_ERROR);
-        if (isVideoPlaying()) {
+        logW("YTJSPlayer error : " + errCode);
+        if (!isVideoPlaying()) {
+            logE("YTJSPlayer error but video is not playing... what happen!!!");
+            return;
+        }
+
+        if (mRetryOnError-- > 0) {
+            ajsStop();
+            // Try to play current video again.
+            ytpPlayVideo(mVideos[mVideoi].videoId, mVideos[mVideoi].volume);
+        } else {
+            ytpSetState(YTPSTATE_ERROR);
             ajsStop();
             ytpPlayNext();
+            if (null != mPlayerErrorListener)
+                mPlayerErrorListener.onPlayerError(mWv, errCode, mVideos[mVideoi].videoId);
         }
     }
 
@@ -1024,6 +1049,7 @@ public class YTJSPlayer {
     public void
     setVideoVolume(int vol) {
         eAssert(0 <= vol && vol <= 100);
+
         if (null != mWv)
             ajsSetVolume(vol);
     }

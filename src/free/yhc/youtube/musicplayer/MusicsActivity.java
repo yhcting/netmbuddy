@@ -142,6 +142,12 @@ public class MusicsActivity extends Activity {
         inflater.inflate(R.menu.musics_context, menu);
         //AdapterContextMenuInfo mInfo = (AdapterContextMenuInfo)menuInfo;
 
+        // NOTE
+        // IFrame Youtube player doens't support setVolume / mute functionality.
+        // (Only stream volume is available.)
+        // So, disable this 'volume' feature until other reasonable way is found.
+        menu.findItem(R.id.volume).setVisible(false);
+
         if (isUserPlaylist(mPlid)) {
             menu.findItem(R.id.plthumbnail).setVisible(true);
             menu.findItem(R.id.delete).setVisible(true);

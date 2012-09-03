@@ -19,6 +19,11 @@ public class Policy {
         public static final int     YTSEARCH_MAX_RESULTS    = 25; // 1 ~ 50
 
         // --------------------------------------------------------------------
+        // Youtube Player
+        // --------------------------------------------------------------------
+        public static final int     YTPLAYER_RETRY_ON_ERROR = 3;
+
+        // --------------------------------------------------------------------
         // Network access
         // --------------------------------------------------------------------
         public static final int     WEBSERVER_PORT          = 59923;
