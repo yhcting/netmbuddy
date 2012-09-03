@@ -493,14 +493,13 @@ public class YTJSPlayer {
     // ========================================================================
     private void
     disableButton(ImageView btn) {
-        btn.setClickable(false);
-        btn.setImageResource(R.drawable.ic_block);
+        btn.setVisibility(View.INVISIBLE);
     }
 
     private void
     enableButton(ImageView btn, int image) {
-        btn.setClickable(true);
         btn.setImageResource(image);
+        btn.setVisibility(View.VISIBLE);
     }
 
     private void
@@ -585,17 +584,15 @@ public class YTJSPlayer {
         }
 
         switch (to) {
-        case YTPSTATE_PAUSED: {
-            ImageView btn = (ImageView)controlv.findViewById(R.id.music_player_btnplay);
-            btn.setClickable(true);
-            btn.setImageResource(R.drawable.ic_media_play);
-        } break;
+        case YTPSTATE_PAUSED:
+            enableButton((ImageView)controlv.findViewById(R.id.music_player_btnplay),
+                         R.drawable.ic_media_play);
+            break;
 
-        case YTPSTATE_PLAYING: {
-            ImageView btn = (ImageView)controlv.findViewById(R.id.music_player_btnplay);
-            btn.setClickable(true);
-            btn.setImageResource(R.drawable.ic_media_pause);
-        } break;
+        case YTPSTATE_PLAYING:
+            enableButton((ImageView)controlv.findViewById(R.id.music_player_btnplay),
+                         R.drawable.ic_media_pause);
+            break;
 
         case YTPSTATE_BUFFERING:
             ; // ignore when buffering

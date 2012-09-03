@@ -105,20 +105,14 @@ DBHelper.CheckExistDoneReceiver {
         ImageView nextBtn = (ImageView)barv.findViewById(R.id.next);
         ImageView prevBtn = (ImageView)barv.findViewById(R.id.prev);
 
-        prevBtn.setClickable(true);
-        prevBtn.setImageResource(R.drawable.ic_prev);
-        nextBtn.setClickable(true);
-        nextBtn.setImageResource(R.drawable.ic_next);
+        prevBtn.setVisibility(View.VISIBLE);
+        nextBtn.setVisibility(View.VISIBLE);
 
-        if (1 == mCurPage) {
-            prevBtn.setClickable(false);
-            prevBtn.setImageResource(R.drawable.ic_block);
-        }
+        if (1 == mCurPage)
+            prevBtn.setVisibility(View.INVISIBLE);
 
-        if (lastPage == mCurPage) {
-            nextBtn.setClickable(false);
-            nextBtn.setImageResource(R.drawable.ic_block);
-        }
+        if (lastPage == mCurPage)
+            nextBtn.setVisibility(View.INVISIBLE);
     }
 
     /**
@@ -193,7 +187,7 @@ DBHelper.CheckExistDoneReceiver {
                 loadNext();
             }
         });
-        iv.setClickable(false);
+        iv.setVisibility(View.INVISIBLE);
 
         iv = (ImageView)barv.findViewById(R.id.prev);
         iv.setOnClickListener(new View.OnClickListener() {
@@ -202,7 +196,7 @@ DBHelper.CheckExistDoneReceiver {
                 loadPrev();
             }
         });
-        iv.setClickable(false);
+        iv.setVisibility(View.INVISIBLE);
 
 
         barv = barv.findViewById(R.id.toolbar);
