@@ -19,7 +19,6 @@ import android.graphics.Bitmap;
 import android.net.http.SslError;
 import android.net.wifi.WifiManager;
 import android.net.wifi.WifiManager.WifiLock;
-import android.os.AsyncTask;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.view.View;
@@ -353,7 +352,7 @@ public class YTJSPlayer {
                 .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, WLTAG);
         // Playing youtube requires high performance wifi for high quality media play.
         mWfl = ((WifiManager)Utils.getAppContext().getSystemService(Context.WIFI_SERVICE))
-                .createWifiLock(WifiManager.WIFI_MODE_FULL_HIGH_PERF, WLTAG);
+                .createWifiLock(WifiManager.WIFI_MODE_FULL, WLTAG);
         mWl.acquire();
         mWfl.acquire();
     }
@@ -562,6 +561,11 @@ public class YTJSPlayer {
             controlv.setVisibility(View.GONE);
             return;
         }
+
+        // '128' means 50% transparent
+        ((ImageView)controlv.findViewById(R.id.music_player_btnplay)).setAlpha(128);
+        ((ImageView)controlv.findViewById(R.id.music_player_btnnext)).setAlpha(128);
+        ((ImageView)controlv.findViewById(R.id.music_player_btnprev)).setAlpha(128);
 
         controlv.setVisibility(View.VISIBLE);
         switch (to) {
@@ -1024,7 +1028,7 @@ public class YTJSPlayer {
         eAssert(Utils.isUiThread());
         eAssert(null != mPlayerv);
 
-        AsyncTask.execute(new Runnable() {
+        new Thread() {
             @Override
             public void run() {
                 final Video[] vs = getVideos(c, coliTitle, coliUrl, coliVolume, coliPlaytime, shuffle);
@@ -1036,7 +1040,7 @@ public class YTJSPlayer {
                 });
                 c.close();
             }
-        });
+        }.start();
     }
 
     public void

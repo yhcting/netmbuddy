@@ -3,7 +3,7 @@
     package="free.yhc.youtube.musicplayer"
     android:versionCode="1"
     android:versionName="1.0" >
-    <uses-sdk android:minSdkVersion="15" />
+    <uses-sdk android:minSdkVersion="10" />
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
@@ -16,7 +16,7 @@
         android:name="free.yhc.youtube.musicplayer.YTMPApp" >
         <activity
             android:name=".YTMPActivity"
-            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:configChanges="orientation|keyboardHidden"
             android:theme="@android:style/Theme.NoTitleBar"
             >
             <intent-filter>
@@ -25,19 +25,19 @@
             </intent-filter>
         </activity>
         <activity android:name=".PlaylistActivity"
-                  android:configChanges="orientation|screenSize|keyboardHidden"
+                  android:configChanges="orientation|keyboardHidden"
                   android:theme="@android:style/Theme.NoTitleBar"
                   />
         <activity android:name=".MusicsActivity"
-                  android:configChanges="orientation|screenSize|keyboardHidden"
+                  android:configChanges="orientation|keyboardHidden"
                   android:theme="@android:style/Theme.NoTitleBar"
                   />
         <activity android:name=".YTSearchActivity"
-                  android:configChanges="orientation|screenSize|keyboardHidden"
+                  android:configChanges="orientation|keyboardHidden"
                   android:theme="@android:style/Theme.NoTitleBar"
                   />
         <activity android:name=".YTMPPreferenceActivity"
-                  android:configChanges="orientation|screenSize|keyboardHidden"
+                  android:configChanges="orientation|keyboardHidden"
                   android:theme="@android:style/Theme.NoTitleBar"
                   />
     </application>

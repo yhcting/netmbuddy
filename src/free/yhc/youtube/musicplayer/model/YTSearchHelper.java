@@ -20,7 +20,6 @@ import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
 import android.os.Process;
-import android.util.LruCache;
 
 public class YTSearchHelper {
     // TODO
@@ -30,8 +29,6 @@ public class YTSearchHelper {
 
     private static final int MSG_WHAT_SEARCH            = 0;
     private static final int MSG_WHAT_LOAD_THUMBNAIL    = 1;
-
-    private final LruCache<Integer, YTSearchApi.Entry> mEntryCache = new LruCache<Integer, YTSearchApi.Entry>(ENTRY_CACHE_SIZE);
 
     private BGHandler                   mBgHandler      = null;
     private SearchDoneReceiver          mSearchRcvr     = null;

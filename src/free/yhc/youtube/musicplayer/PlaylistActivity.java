@@ -8,6 +8,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.ActivityNotFoundException;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.database.Cursor;
@@ -23,7 +24,6 @@ import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
-import android.widget.PopupMenu;
 import free.yhc.youtube.musicplayer.PlaylistAdapter.ItemButton;
 import free.yhc.youtube.musicplayer.model.DB;
 import free.yhc.youtube.musicplayer.model.DB.ColVideo;
@@ -53,7 +53,9 @@ public class PlaylistActivity extends Activity {
         intent.putExtra(Intent.EXTRA_TEXT, text);
         intent.putExtra(Intent.EXTRA_SUBJECT, subject);
         intent.setType("message/rfc822");
-        intent = Intent.createChooser(intent, diagTitle);
+        // Using chooser leads to some unexpected error log - bug from Android framework.
+        // So, start activity directly without using chooser
+        // intent = Intent.createChooser(intent, diagTitle);
         try {
             startActivity(intent);
         } catch (ActivityNotFoundException e) {
@@ -266,6 +268,47 @@ public class PlaylistActivity extends Activity {
     }
 
     private void
+    onMenuMore(final View anchor) {
+        final int[] optStringIds = { R.string.app_info,
+                R.string.importdb,
+                R.string.exportdb,
+                R.string.feedback };
+
+        final CharSequence[] items = new CharSequence[optStringIds.length];
+        for (int i = 0; i < optStringIds.length; i++)
+            items[i] = getResources().getText(optStringIds[i]);
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setItems(items, new DialogInterface.OnClickListener() {
+            @Override
+            public void
+            onClick(DialogInterface dialog, int item) {
+                switch (optStringIds[item]) {
+                case R.string.feedback:
+                    onMenuMoreSendOpinion(anchor);
+                    break;
+
+                case R.string.exportdb:
+                    onMenuMoreExportDb(anchor);
+                    break;
+
+                case R.string.importdb:
+                    onMenuMoreImportDb(anchor);
+                    break;
+
+                case R.string.app_info:
+                    onMenuMoreAppInfo(anchor);
+                    break;
+
+                default:
+                    eAssert(false);
+                }
+            }
+        });
+        builder.create().show();
+    }
+
+    private void
     setupToolButtons() {
         ((ImageView)findViewById(R.id.playall)).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -309,36 +352,7 @@ public class PlaylistActivity extends Activity {
         ((ImageView)findViewById(R.id.more)).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(final View v) {
-                PopupMenu popup = new PopupMenu(PlaylistActivity.this, v);
-                popup.getMenuInflater().inflate(R.menu.playlist_more_popup, popup.getMenu());
-                popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
-                    @Override
-                    public boolean onMenuItemClick(MenuItem item) {
-                        switch (item.getItemId()) {
-                        case R.id.feedback:
-                            onMenuMoreSendOpinion(v);
-                            break;
-
-                        case R.id.exportdb:
-                            onMenuMoreExportDb(v);
-                            break;
-
-                        case R.id.importdb:
-                            onMenuMoreImportDb(v);
-                            break;
-
-                        case R.id.app_info:
-                            onMenuMoreAppInfo(v);
-                            break;
-
-                        default:
-                            eAssert(false);
-                        }
-                        return true;
-                    }
-                });
-                popup.show();
-
+                onMenuMore(v);
             }
         });
     }

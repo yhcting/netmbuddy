@@ -434,12 +434,12 @@ public class Utils {
     // ------------------------------------------------------------------------
     public static boolean
     isPrefSuffle() {
-        return sPrefs.getBoolean("shuffle", false);
+        return sPrefs.getString("shuffle", "off").equals("on");
     }
 
     public static boolean
     isPrefRepeat() {
-        return sPrefs.getBoolean("repeat", false);
+        return sPrefs.getString("repeat", "off").equals("on");
     }
     // ------------------------------------------------------------------------
     //

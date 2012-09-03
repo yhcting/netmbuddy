@@ -91,7 +91,7 @@ DialogInterface.OnClickListener
 
     @Override
     public void
-    onCancelled(Err result) {
+    onCancelled() {
         dialog.dismiss();
     }
 
