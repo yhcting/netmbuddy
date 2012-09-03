@@ -108,6 +108,8 @@ public class YTSearchApi {
         }
     }
 
+    static final String sQueryProjection = "fields=openSearch:totalResults,openSearch:startIndex,openSearch:itemsPerPage,"
+                                           + "entry(media:group(media:title,yt:videoid,media:thumbnail[@yt:name='default'](@url),yt:duration,yt:uploaded))";
     public static String
     getFeedUrl(String word, int start, int maxCount) {
         eAssert(0 < start && 0 < maxCount && maxCount <= Policy.Constants.YTSEARCH_MAX_RESULTS);
@@ -117,7 +119,8 @@ public class YTSearchApi {
                 + Uri.encode(word, "+")
                 + "&start-index=" + start
                 + "&max-results=" + maxCount
-                + "&client=ytapi-youtube-search&format=5&v=2";
+                + "&client=ytapi-youtube-search&format=5&v=2&"
+                + sQueryProjection;
     }
 
     /**
@@ -224,9 +227,10 @@ public class YTSearchApi {
         // Only "yt:name='default'" is used.
         NamedNodeMap nnm = n.getAttributes();
         Node nItem = nnm.getNamedItem("yt:name");
-        if (null == nItem || !"default".equals(nItem.getNodeValue()))
+        if (null != nItem && !"default".equals(nItem.getNodeValue()))
             return Err.NO_ERR; // ignore other thumbnails.
 
+        // If there is no 'yt:name' attribute, it is accepted.
         nItem = nnm.getNamedItem("url");
         if (null != nItem)
             en.thumbnailUrl = nItem.getNodeValue();
@@ -251,7 +255,6 @@ public class YTSearchApi {
         Node nItem = nnm.getNamedItem("seconds");
         if (null != nItem)
             en.playTime = nItem.getNodeValue();
-        logI("==> Duration : " + en.playTime);
         return Err.NO_ERR;
     }
 
@@ -259,6 +262,7 @@ public class YTSearchApi {
     parseEntryMedia(Node n, Entry.Media en) {
         n = n.getFirstChild();
         while (null != n) {
+            //logI("        - " + n.getNodeName());
             if ("yt:videoid".equals(n.getNodeName()))
                 en.videoId = getTextValue(n);
             else if ("yt:duration".equals(n.getNodeName()))
@@ -284,6 +288,7 @@ public class YTSearchApi {
         Entry en = new Entry();
         n = n.getFirstChild();
         while (null != n) {
+            //logI("    - " + n.getNodeName());
             if ("media:group".equals(n.getNodeName()))
                 parseEntryMedia(n, en.media);
             else if ("gd:rating".equals(n.getNodeName()))
@@ -314,6 +319,7 @@ public class YTSearchApi {
         res.header = new Header();
         Node n = root.getFirstChild();
         while (null != n) {
+            //logI("- " + n.getNodeName());
             if ("entry".equals(n.getNodeName()))
                 parseEntry(n, entryl);
             else if ("openSearch:totalResults".equals(n.getNodeName()))
