@@ -228,8 +228,8 @@ public class MusicsActivity extends Activity {
     @Override
     protected void
     onDestroy() {
+        mMp.unsetController(this);
         super.onDestroy();
-
     }
 
     @Override
@@ -253,7 +253,6 @@ public class MusicsActivity extends Activity {
     @Override
     public void
     onBackPressed() {
-        mMp.unsetController(this);
         super.onBackPressed();
     }
 }

@@ -231,11 +231,6 @@ public class YTJSPlayer {
         onLoadResource(WebView view, String url) {
             super.onLoadResource(view, url);
             logI("WebView : onLoadResource : " + url);
-            /*
-            if (url.startsWith("http://s.youtube.com/s")) {
-                logI("WebView : onLoadResource(Youtube contents?) : " + url);
-            }
-            */
         }
 
         @Override
@@ -518,6 +513,11 @@ public class YTJSPlayer {
         if (null == titlev)
             return;
 
+        if (!Utils.isNetworkAvailable()) {
+            setPlayerViewTitle(titlev, mRes.getText(R.string.msg_network_unavailable), false);
+            return;
+        }
+
         CharSequence videoTitle = "";
         if (isVideoPlaying())
             videoTitle = mVideos[mVideoi].title;
@@ -643,12 +643,6 @@ public class YTJSPlayer {
         if (null == playerv)
             return; // nothing to do
 
-        if ((YTPSTATE_UNSTARTED == to || YTPSTATE_VIDEO_CUED == to)
-            && !isVideoPlaying())
-            mPlayerv.setVisibility(View.GONE);
-        else
-            mPlayerv.setVisibility(View.VISIBLE);
-
         configurePlayerViewTitle((TextView)playerv.findViewById(R.id.music_player_title),
                                  from, to);
         configurePlayerViewProgressBar((ProgressBar)playerv.findViewById(R.id.music_player_progressbar),
@@ -720,6 +714,8 @@ public class YTJSPlayer {
     private void
     onPlayerStateChanged(int state) {
         ytpSetState(state);
+        if (!Utils.isNetworkAvailable())
+            stopVideos();
     }
 
     private void
@@ -727,6 +723,11 @@ public class YTJSPlayer {
         logW("YTJSPlayer error : " + errCode);
         if (!isVideoPlaying()) {
             logE("YTJSPlayer error but video is not playing... what happen!!!");
+            return;
+        }
+
+        if (!Utils.isNetworkAvailable()) {
+            stopVideos();
             return;
         }
 
@@ -948,12 +949,10 @@ public class YTJSPlayer {
 
     public void
     unsetController(Context context) {
-        if (null != mVContext && context != mVContext)
-            logW("YTJSPlayer : Unset Controller at different context...");
-
-        mPlayerv = null;
-        mVContext = null;
-
+        if (context == mVContext) {
+            mPlayerv = null;
+            mVContext = null;
+        }
     }
 
     private Video[]
