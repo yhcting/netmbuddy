@@ -40,5 +40,10 @@
                   android:configChanges="orientation|screenSize|keyboardHidden"
                   android:theme="@android:style/Theme.NoTitleBar"
                   />
+        <receiver android:name=".YTJSPlayer$NetworkMonitor">
+            <intent-filter>
+                <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>

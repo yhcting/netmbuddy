@@ -12,10 +12,14 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Random;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
 import android.content.res.Resources;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.http.SslError;
 import android.net.wifi.WifiManager;
 import android.net.wifi.WifiManager.WifiLock;
@@ -161,6 +165,31 @@ public class YTJSPlayer {
 
     public interface OnPlayerErrorListener {
         void onPlayerError(WebView wv, int errcode, String videoId);
+    }
+
+    // This class also for future use.
+    public static class NetworkMonitor extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (!action.equals(ConnectivityManager.CONNECTIVITY_ACTION))
+                return;
+
+            NetworkInfo networkInfo =
+                (NetworkInfo)intent.getParcelableExtra(ConnectivityManager.EXTRA_NETWORK_INFO);
+            if (networkInfo.isConnected()) {
+                logI("YTJSPlayer : Network connected : " + networkInfo.getType());
+                switch (networkInfo.getType()) {
+                case ConnectivityManager.TYPE_WIFI:
+                    logI("YTJSPlayer : Network connected : WIFI");
+                    break;
+                case ConnectivityManager.TYPE_MOBILE:
+                    logI("YTJSPlayer : Network connected : MOBILE");
+                    break;
+                }
+            } else
+                logI("YTJSPlayer : Network lost");
+        }
     }
 
     private class UpdateProgress {
