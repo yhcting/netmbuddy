@@ -613,6 +613,11 @@ public class YTJSPlayer {
         }
 
         switch (to) {
+        case YTPSTATE_BUFFERING:
+            enableButton((ImageView)controlv.findViewById(R.id.music_player_btnplay),
+                    R.drawable.ic_media_stop);
+            break;
+
         case YTPSTATE_PAUSED:
             enableButton((ImageView)controlv.findViewById(R.id.music_player_btnplay),
                          R.drawable.ic_media_play);
@@ -621,10 +626,6 @@ public class YTJSPlayer {
         case YTPSTATE_PLAYING:
             enableButton((ImageView)controlv.findViewById(R.id.music_player_btnplay),
                          R.drawable.ic_media_pause);
-            break;
-
-        case YTPSTATE_BUFFERING:
-            ; // ignore when buffering
             break;
 
         default:
@@ -694,6 +695,10 @@ public class YTJSPlayer {
                 case YTPSTATE_PLAYING:
                     ajsPause();
                     // prevent clickable during transition player state.
+                    break;
+
+                case YTPSTATE_BUFFERING:
+                    ajsStop();
                     break;
 
                 default:
