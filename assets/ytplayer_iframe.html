@@ -16,7 +16,8 @@
         // -------------------------------------------------------------
         // Main Code
         // -------------------------------------------------------------
-        // Some constants
+
+        // Constants
         var ST_UNSTARTED   = -1;
         var ST_ENDED       = 0;
         var ST_PLAYING     = 1;
@@ -119,6 +120,12 @@
         function prepareVideo(videoId) {
             if (ytplayer) {
                 ytplayer.cueVideoById(videoId, 0, "small");
+            }
+        }
+
+        function destroyPlayer() {
+            if (ytplayer) {
+                ytplayer.destroy();
             }
         }
 

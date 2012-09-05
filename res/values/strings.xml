@@ -51,13 +51,13 @@
     <string name="guide_desc_more">기타 자주 사용하지 않는 하위 메뉴들을 봅니다.</string>
     <string name="guide_title_playlist_buttons">재생목록 도구버튼 설명</string>
     <string name="guide_desc_detaillist">재생목록에 등록된 모든 곡의 목록을 보여줍니다.</string>
-    
+
     <string name="report_opinion_title">[유투브 뮤직 플레이어] 의견</string>
 
     <string name="msg_not_implemented">아직 개발 중인 기능입니다.</string>
     <string name="msg_ytplayer_err">재생에 실패했습니다.</string>
     <string name="msg_initialize_app">어플리케이션을 준비중입니다.</string>
-    <string name="msg_appinit_fail">어플리케이션을 초기화하는데 실패했습니다.\n네트워크 상태가 좋지 않거나 유투브 서비스에 이상이 있을 수 있습니다.\n잠시 후 어플리케이션을 종료합니다.</string>
+    <string name="msg_appinit_fail">어플리케이션을 초기화하는데 실패했습니다.\n네트워크 상태가 좋지 않거나 유투브 서비스에 이상이 있을 수 있습니다.\n장치에 따라서, Flash 플러그(ex. Adobe Flash Player)인이 필요할 수도 있습니다.\n잠시 후 어플리케이션을 종료합니다.</string>
     <string name="msg_appinit_network_unavailable">네트워크를 사용할 수 없습니다.\n잠시 후 어플리케이션을 종료합니다.</string>
     <string name="msg_unknown_format">알수 없는 형식의 유투브 비디오 입니다.</string>
     <string name="msg_no_thumbnail">이미지가 로드되기 전입니다.\n이미지가 로드된 후 다시 시도해 주세요.</string>

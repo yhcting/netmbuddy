@@ -15,6 +15,7 @@ import java.util.Random;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -26,6 +27,7 @@ import android.net.wifi.WifiManager.WifiLock;
 import android.os.AsyncTask;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
+import android.preference.PreferenceManager;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.JsResult;
@@ -58,11 +60,9 @@ public class YTJSPlayer {
 
     private static final int    WEBSERVER_PORT          = Policy.Constants.WEBSERVER_PORT;
     private static final String WEBSERVER_ROOT          = Utils.getAppContext().getFilesDir().getAbsolutePath() + "/";
-    private static final String YTPLAYER_SCRIPT_ASSET   = "ytplayer.html";
-    private static final int    YTPLAYER_SCRIPT_VERSION = 1;
-    private static final String YTPLAYER_SCRIPT_DIR     = "ytpscript/";
-    private static final String YTPLAYER_SCRIPT_FILE    = YTPLAYER_SCRIPT_DIR + "ytplayer"
-                                                          + YTPLAYER_SCRIPT_VERSION + ".html";
+    private static final int    SCRIPT_VERSION          = 1;
+    private static final String SCRIPT_FILE_IFRAME      = "ytplayer_iframe.html";
+    private static final String SCRIPT_VERSION_PREF_KEY = "ytpscriptver";
 
     private static final int YTPSTATE_UNSTARTED     = -1;
     private static final int YTPSTATE_ENDED         = 0;
@@ -78,7 +78,6 @@ public class YTJSPlayer {
     private static final int YTPERRCODE_NOT_FOUND       = 100;
     private static final int YTPERRCODE_NOT_ALLOWED     = 101;
     private static final int YTPERRCODE_NOT_ALLOWED2    = 150;
-
 
     private static final Comparator<NrElem> sNrElemComparator = new Comparator<NrElem>() {
             @Override
@@ -500,6 +499,7 @@ public class YTJSPlayer {
             break;
 
         case YTPSTATE_ERROR:
+        case YTPSTATE_INVALID:
             break;
 
         default:
@@ -865,6 +865,12 @@ public class YTJSPlayer {
     }
 
     private void
+    ajsDestroyPlayer() {
+        eAssert(null != mWv);
+        callJsFunction("destroyPlayer");
+    }
+
+    private void
     ajsPrepare(String videoId) {
         eAssert(null != mWv && null != mVContext);
         callJsFunction("prepareVideo", videoId);
@@ -903,6 +909,26 @@ public class YTJSPlayer {
     ajsStopProgressReport() {
         callJsFunction("stopProgressReport");
     }
+
+    // ========================================================================
+    //
+    // Script handling
+    //
+    // ========================================================================
+    private int
+    getInstalledScriptVersion() {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(Utils.getAppContext());
+        return prefs.getInt(SCRIPT_VERSION_PREF_KEY, 0);
+    }
+
+    private void
+    setInstalledScriptVersion(int version) {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(Utils.getAppContext());
+        SharedPreferences.Editor prefEditor = prefs.edit();
+        prefEditor.putInt(SCRIPT_VERSION_PREF_KEY, version);
+        prefEditor.commit();
+    }
+
     // ========================================================================
     //
     // Public interface
@@ -925,18 +951,20 @@ public class YTJSPlayer {
 
     public Err
     init() {
-        File scriptFile = new File(WEBSERVER_ROOT + YTPLAYER_SCRIPT_FILE);
-        new File(scriptFile.getParent()).mkdirs();
-
-        //if (!scriptFile.exists())
-            Utils.copyAssetFile(scriptFile.getAbsolutePath(), YTPLAYER_SCRIPT_ASSET);
+        File svrRoot = new File(WEBSERVER_ROOT);
+        svrRoot.mkdirs();
+        if (getInstalledScriptVersion() < SCRIPT_VERSION) {
+            Utils.removeFileRecursive(svrRoot, false);
+            Utils.copyAssetFile(svrRoot.getAbsolutePath() + "/" + SCRIPT_FILE_IFRAME, SCRIPT_FILE_IFRAME);
+            setInstalledScriptVersion(SCRIPT_VERSION);
+        }
 
         // NOTE
         // script for chromeless player should be loaded from webserver
         // (See youtube documentation for details.)
         // Start simple webserver
         try {
-            new NanoHTTPD(WEBSERVER_PORT, new File(WEBSERVER_ROOT));
+            new NanoHTTPD(WEBSERVER_PORT, svrRoot);
         } catch (IOException e) {
             logI("Fail to start Nanohttpd");
         }
@@ -946,15 +974,30 @@ public class YTJSPlayer {
     public Err
     prepare(WebView wv, OnPlayerReadyListener listener) {
         logI("YTJSPlayer : Prepare!!");
-        mWv = wv;
+        if (mWv != wv) {
+            mWv = wv;
+            wv.setWebViewClient(new WVClient());
+            wv.setWebChromeClient(new WCClient());
+            setWebSettings(wv);
+            mWv.addJavascriptInterface(this, "Android");
+        }
+
         mPlayerReadyListener = listener;
-        wv.setWebViewClient(new WVClient());
-        wv.setWebChromeClient(new WCClient());
-        setWebSettings(wv);
-        mWv.addJavascriptInterface(this, "Android");
-        mWv.loadUrl("http://127.0.0.1:" + WEBSERVER_PORT + "/" + YTPLAYER_SCRIPT_FILE);
+        mWv.loadUrl("http://127.0.0.1:" + WEBSERVER_PORT + "/" + SCRIPT_FILE_IFRAME);
 
         return Err.NO_ERR;
+    }
+
+    public void
+    destroy() {
+        stopVideos();
+        ajsDestroyPlayer();
+        Utils.getUiHandler().post(new Runnable() {
+            @Override
+            public void run() {
+                ytpSetState(YTPSTATE_INVALID);
+            }
+        });
     }
 
     public boolean

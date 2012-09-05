@@ -1,7 +1,6 @@
 package free.yhc.youtube.musicplayer.model;
 
 import static free.yhc.youtube.musicplayer.model.Utils.eAssert;
-import static free.yhc.youtube.musicplayer.model.Utils.logI;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -607,7 +606,10 @@ public class DB extends SQLiteOpenHelper {
             return Err.DB_INVALID;
         }
 
-        return DB.verifyDB(exDb);
+        Err err = DB.verifyDB(exDb);
+        exDb.close();
+
+        return err;
     }
 
     /**
@@ -634,8 +636,6 @@ public class DB extends SQLiteOpenHelper {
 
         if (!inDbf.renameTo(inDbfBackup))
             return Err.DB_UNKNOWN;
-
-        logI("--- " + inDbf.getPath());
 
         try {
             FileInputStream fis = new FileInputStream(exDbf);

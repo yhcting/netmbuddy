@@ -1,10 +1,12 @@
 package free.yhc.youtube.musicplayer;
 
+import static free.yhc.youtube.musicplayer.model.Utils.eAssert;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.animation.AnimationUtils;
 import android.webkit.WebView;
 import android.widget.ImageView;
@@ -15,6 +17,8 @@ import free.yhc.youtube.musicplayer.model.Utils;
 
 public class YTMPActivity extends Activity implements
 OnPlayerReadyListener {
+    private WebView mWv = null;
+
     private final Runnable mAppInitTimeOut = new Runnable() {
         @Override
         public void run() {
@@ -22,9 +26,37 @@ OnPlayerReadyListener {
             prog.clearAnimation();
             prog.setVisibility(View.GONE);
             UiUtils.showTextToast(YTMPActivity.this, R.string.msg_appinit_fail);
+            cancelPreparing();
             finish();
         }
     };
+
+    private void
+    cancelPreparing() {
+        Utils.getUiHandler().removeCallbacks(mAppInitTimeOut);
+        if (null != mWv) {
+            YTJSPlayer.get().destroy();
+            mWv.destroy();
+        }
+    }
+
+    private void
+    startPreparing() {
+        final ViewGroup wvHolder = (ViewGroup)findViewById(R.id.webview_holder);
+        mWv = new WebView(Utils.getAppContext());
+        mWv.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                                                      ViewGroup.LayoutParams.MATCH_PARENT));
+        eAssert(0 == wvHolder.getChildCount()
+                || 1 == wvHolder.getChildCount());
+        if (wvHolder.getChildCount() > 0) {
+            WebView v = (WebView)wvHolder.getChildAt(0);
+            wvHolder.removeAllViews();
+            v.destroy();
+        }
+        wvHolder.addView(mWv);
+        YTJSPlayer.get().prepare(mWv, this);
+        Utils.getUiHandler().postDelayed(mAppInitTimeOut, Policy.Constants.APPINIT_TIMEOUT);
+    }
 
     private void
     launchPlaylistActivity() {
@@ -36,6 +68,9 @@ OnPlayerReadyListener {
     @Override
     public void
     onPlayerReady(WebView wv) {
+        if (wv != mWv)
+            return;
+
         Utils.getUiHandler().removeCallbacks(mAppInitTimeOut);
         if (Utils.getCurrentTopActivity().equals(YTMPActivity.class.getName()))
             launchPlaylistActivity();
@@ -45,6 +80,7 @@ OnPlayerReadyListener {
     public void
     onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         if (YTJSPlayer.get().isPlayerReady()) {
             // Player is already in ready.
             launchPlaylistActivity();
@@ -61,9 +97,10 @@ OnPlayerReadyListener {
 
         ((ImageView)findViewById(R.id.progressimg)).startAnimation(
                 AnimationUtils.loadAnimation(this, R.anim.rotate));
-        final WebView wv = (WebView)findViewById(R.id.webview);
-        YTJSPlayer.get().prepare(wv, this);
-        Utils.getUiHandler().postDelayed(mAppInitTimeOut, Policy.Constants.APPINIT_TIMEOUT);
+
+        // Only IFrame API is supported.
+        // So, let's disable 'change_ytapi' button
+        startPreparing();
     }
 
     @Override
@@ -106,7 +143,7 @@ OnPlayerReadyListener {
     @Override
     public void
     onBackPressed() {
-        Utils.getUiHandler().removeCallbacks(mAppInitTimeOut);
+        cancelPreparing();
         super.onBackPressed();
     }
 }

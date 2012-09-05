@@ -57,7 +57,7 @@
     <string name="msg_not_implemented">Not implemented yet.</string>
     <string name="msg_ytplayer_err">Fail in playing.</string>
     <string name="msg_initialize_app">Preparing application.</string>
-    <string name="msg_appinit_fail">Fail in initializing application.\nNetwork or Youtube server might be unstable.\nApplication is going to be terminated after a while.</string>
+    <string name="msg_appinit_fail">Fail in initializing application.\nNetwork or Youtube server might be unstable.\nOr flash plugin(ex. Adobe Flash Player) may be required in case of some devices.\nApplication is going to be terminated after a while.</string>
     <string name="msg_appinit_network_unavailable">Network is unavailable.\nApplication is going to be terminated after a while.</string>
     <string name="msg_unknown_format">Video format is unknown.</string>
     <string name="msg_no_thumbnail">Thumbnail is not loaded yet.\nTry again after loading thumbnail is done.</string>

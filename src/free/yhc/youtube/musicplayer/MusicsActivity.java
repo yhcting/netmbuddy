@@ -143,10 +143,10 @@ public class MusicsActivity extends Activity {
         //AdapterContextMenuInfo mInfo = (AdapterContextMenuInfo)menuInfo;
 
         // NOTE
-        // IFrame Youtube player doens't support setVolume / mute functionality.
+        // Html5 Youtube player doens't support setVolume / mute functionality.
         // (Only stream volume is available.)
-        // So, disable this 'volume' feature until other reasonable way is found.
-        menu.findItem(R.id.volume).setVisible(false);
+        // But SWF player supports this.
+        // So, enable volume menu by default.
 
         if (isUserPlaylist(mPlid)) {
             menu.findItem(R.id.plthumbnail).setVisible(true);
