@@ -1,5 +1,6 @@
 package free.yhc.youtube.musicplayer.model;
 
+
 public class RTState {
     private static RTState sInstance = null;
 

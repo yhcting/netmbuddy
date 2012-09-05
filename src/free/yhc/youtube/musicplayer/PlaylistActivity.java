@@ -496,8 +496,8 @@ public class PlaylistActivity extends Activity {
     @Override
     protected void
     onDestroy() {
+        mMp.unsetController(this);
         super.onDestroy();
-
     }
 
     @Override
@@ -510,7 +510,6 @@ public class PlaylistActivity extends Activity {
     @Override
     public void
     onBackPressed() {
-        mMp.unsetController(this);
         super.onBackPressed();
     }
 }

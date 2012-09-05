@@ -472,6 +472,7 @@ DBHelper.CheckExistDoneReceiver {
     onDestroy() {
         mSearchHelper.close();
         mDbHelper.close();
+        mMp.unsetController(this);
         super.onDestroy();
     }
 
@@ -485,7 +486,6 @@ DBHelper.CheckExistDoneReceiver {
     @Override
     public void
     onBackPressed() {
-        mMp.unsetController(this);
         super.onBackPressed();
     }
 }

@@ -399,6 +399,28 @@ public class Utils {
             return false;
         }
     }
+
+    /**
+     * Remove file and directory recursively
+     * @param f
+     *   file or directory.
+     * @param bDeleteMe
+     *   'true' means delete given directory itself too.
+     * @return
+     *   false:  fail to full-delete
+     */
+    public static boolean
+    removeFileRecursive(File f, boolean bDeleteMe) {
+        boolean ret = true;
+        if (f.isDirectory()) {
+            for (File c : f.listFiles())
+                if (!removeFileRecursive(c, true))
+                    ret = false;
+        }
+        if (ret && bDeleteMe)
+            return f.delete();
+        return ret;
+    }
     // ------------------------------------------------------------------------
     //
     // Date
@@ -441,6 +463,7 @@ public class Utils {
     isPrefRepeat() {
         return sPrefs.getString("repeat", "off").equals("on");
     }
+
     // ------------------------------------------------------------------------
     //
     // Misc

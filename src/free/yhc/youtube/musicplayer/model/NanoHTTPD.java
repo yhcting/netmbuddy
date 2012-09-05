@@ -1076,9 +1076,26 @@ public class NanoHTTPD
 
 	private static int theBufferSize = 16 * 1024;
 
+	private static class NullPrintStream extends PrintStream {
+	    NullPrintStream() {
+	        super(System.out);
+	    }
+
+	    @Override
+	    public void write(byte[] b, int off, int len) { }
+	    @Override
+	    public void write(int b) { }
+	    @Override
+	    public void write(byte[] b) { }
+	    @Override
+	    public void flush() { }
+	    @Override
+	    public void close() { }
+	}
+
 	// Change these if you want to log to somewhere else than stdout
-	protected static PrintStream myOut = System.out;
-	protected static PrintStream myErr = System.err;
+	protected static PrintStream myOut = new NullPrintStream();
+	protected static PrintStream myErr = new NullPrintStream();
 
 	/**
 	 * GMT date formatter
