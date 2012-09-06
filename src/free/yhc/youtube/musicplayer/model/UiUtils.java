@@ -1,10 +1,14 @@
 package free.yhc.youtube.musicplayer.model;
 
 import static free.yhc.youtube.musicplayer.model.Utils.eAssert;
+
+import java.util.LinkedList;
+
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.view.Gravity;
@@ -12,6 +16,7 @@ import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
@@ -25,6 +30,11 @@ public class UiUtils {
 
     public interface ConfirmAction {
         void onOk(Dialog dialog);
+    }
+
+    public interface OnPlaylistSelectedListener {
+        void onNewPlaylist(Object user);
+        void onPlaylist(long plid, Object user);
     }
     // ========================================================================
     //
@@ -195,6 +205,68 @@ public class UiUtils {
     buildOneLineEditTextDialog(Context context, int title, EditTextAction action) {
         return buildOneLineEditTextDialog(context, context.getResources().getText(title), action);
     }
+
+    /**
+     *
+     * @param db
+     * @param context
+     * @param action
+     * @param excludedPlid
+     * @param user
+     * @return
+     */
+    public static AlertDialog
+    buildSelectPlaylistDialog(DB                                db,
+                              Context                           context,
+                              final OnPlaylistSelectedListener  action,
+                              long                              excludedPlid,
+                              final Object                      user) {
+        // Create menu list
+        final Cursor c = db.queryPlaylist(new DB.ColPlaylist[] { DB.ColPlaylist.ID,
+                                                                 DB.ColPlaylist.TITLE });
+
+        final int iTitle = c.getColumnIndex(DB.ColPlaylist.TITLE.getName());
+        final int iId    = c.getColumnIndex(DB.ColPlaylist.ID.getName());
+
+        LinkedList<String> menul = new LinkedList<String>();
+        LinkedList<Long>   idl   = new LinkedList<Long>();
+
+        // Add slot for 'new list' menu
+        menul.add(context.getResources().getText(R.string.new_playlist).toString());
+        idl.add(0L); // dummy value
+
+        if (c.moveToFirst()) {
+            do {
+                if (excludedPlid != c.getLong(iId)) {
+                    menul.add(c.getString(iTitle));
+                    idl.add(c.getLong(iId));
+                }
+            } while (c.moveToNext());
+        }
+        c.close();
+
+        final String[] menus = menul.toArray(new String[0]);
+        final long[]   ids   = Utils.convertArrayLongTolong(idl.toArray(new Long[0]));
+
+        AlertDialog.Builder bldr = new AlertDialog.Builder(context);
+        ArrayAdapter<String> adapter
+            = new ArrayAdapter<String>(context, android.R.layout.select_dialog_item, menus);
+        bldr.setAdapter(adapter, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                eAssert(which >= 0);
+                if (0 == which)
+                    action.onNewPlaylist(user);
+                else
+                    action.onPlaylist(ids[which], user);
+
+                dialog.cancel();
+            }
+        });
+        return bldr.create();
+    }
+
+
 
     public static void
     setThumbnailImageView(ImageView v, byte[] imgdata) {

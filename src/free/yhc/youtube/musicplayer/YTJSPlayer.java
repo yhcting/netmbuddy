@@ -1084,7 +1084,6 @@ public class YTJSPlayer {
         // Stop if player is already running.
         ajsStop();
 
-        releaseLocks();
         acquireLocks();
 
         mVideos = vs;

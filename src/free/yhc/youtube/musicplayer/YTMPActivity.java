@@ -36,7 +36,10 @@ OnPlayerReadyListener {
         Utils.getUiHandler().removeCallbacks(mAppInitTimeOut);
         if (null != mWv) {
             YTJSPlayer.get().destroy();
+            ViewGroup wvHolder = (ViewGroup)findViewById(R.id.webview_holder);
+            wvHolder.removeAllViews();
             mWv.destroy();
+            mWv = null;
         }
     }
 
@@ -45,7 +48,7 @@ OnPlayerReadyListener {
         final ViewGroup wvHolder = (ViewGroup)findViewById(R.id.webview_holder);
         mWv = new WebView(Utils.getAppContext());
         mWv.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
-                                                      ViewGroup.LayoutParams.MATCH_PARENT));
+                                                       ViewGroup.LayoutParams.MATCH_PARENT));
         eAssert(0 == wvHolder.getChildCount()
                 || 1 == wvHolder.getChildCount());
         if (wvHolder.getChildCount() > 0) {

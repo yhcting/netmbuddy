@@ -22,6 +22,7 @@
     <string name="enter_new_name">Enter new name</string>
     <string name="new_playlist">New playlist</string>
     <string name="add_to_playlist">Add to playlist</string>
+    <string name="move_to_playlist">Move to playlist</string>
     <string name="enter_playlist_title">Enter playlist title</string>
     <string name="recently_played">Recently played</string>
     <string name="set_to_plthumbnail">Set as playlist icon</string>

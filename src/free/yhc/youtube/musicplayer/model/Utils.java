@@ -29,7 +29,7 @@ import android.preference.PreferenceManager;
 import android.util.Log;
 
 public class Utils {
-    private static final boolean DBG = true;
+    private static final boolean DBG = false;
     private static final String  TAG = "[YoutubeMusicPlayer]";
 
     // This is only for debugging.
@@ -181,6 +181,20 @@ public class Utils {
         ActivityManager.RunningTaskInfo ar = tasks.get(0);
         return ar.topActivity.getClassName().toString();
     }
+
+    // ------------------------------------------------------------------------
+    //
+    //
+    //
+    // ------------------------------------------------------------------------
+    public static long[]
+    convertArrayLongTolong(Long[] L) {
+        long[] l = new long[L.length];
+        for (int i = 0; i < L.length; i++)
+            l[i] = L[i];
+        return l;
+    }
+
     // ------------------------------------------------------------------------
     //
     // Image Handling
