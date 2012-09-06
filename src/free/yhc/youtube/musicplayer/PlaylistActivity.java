@@ -403,6 +403,7 @@ public class PlaylistActivity extends Activity {
             onContextDelete(info);
             return true;
         }
+        eAssert(false);
         return false;
     }
 

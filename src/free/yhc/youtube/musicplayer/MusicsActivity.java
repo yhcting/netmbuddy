@@ -3,6 +3,7 @@ package free.yhc.youtube.musicplayer;
 import static free.yhc.youtube.musicplayer.model.Utils.eAssert;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Configuration;
@@ -15,18 +16,20 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.AdapterView.AdapterContextMenuInfo;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import free.yhc.youtube.musicplayer.model.DB;
+import free.yhc.youtube.musicplayer.model.Err;
 import free.yhc.youtube.musicplayer.model.UiUtils;
 import free.yhc.youtube.musicplayer.model.Utils;
 
 public class MusicsActivity extends Activity {
-    public static final long PLID_INVALID       = -100000;
-    public static final long PLID_RECENT_PLAYED = -1;
-    public static final long PLID_SEARCHED      = -2;
+    public static final long PLID_INVALID       = DB.INVALID_PLAYLIST_ID;
+    public static final long PLID_RECENT_PLAYED = PLID_INVALID - 1;
+    public static final long PLID_SEARCHED      = PLID_INVALID - 2;
 
     private final DB            mDb = DB.get();
     private final YTJSPlayer    mMp = YTJSPlayer.get();
@@ -43,6 +46,65 @@ public class MusicsActivity extends Activity {
     private MusicsAdapter
     getAdapter() {
         return (MusicsAdapter)mListv.getAdapter();
+    }
+
+    private void
+    addToNewPlaylist(final long mid, final boolean move) {
+        UiUtils.EditTextAction action = new UiUtils.EditTextAction() {
+            @Override
+            public void prepare(Dialog dialog, EditText edit) { }
+
+            @Override
+            public void onOk(Dialog dialog, EditText edit) {
+                String title = edit.getText().toString();
+                if (mDb.doesPlaylistExist(title)) {
+                    UiUtils.showTextToast(MusicsActivity.this, R.string.msg_existing_playlist);
+                    return;
+                }
+
+                long plid = mDb.insertPlaylist(title, "");
+                if (plid < 0) {
+                    UiUtils.showTextToast(MusicsActivity.this, R.string.err_db_unknown);
+                } else {
+                    addToPlaylist(plid, mid, move);
+                }
+            }
+        };
+        AlertDialog diag = UiUtils.buildOneLineEditTextDialog(this, R.string.enter_playlist_title, action);
+        diag.show();
+    }
+
+    private void
+    addToPlaylist(long plid, long mid, boolean move) {
+        eAssert(isUserPlaylist(plid));
+        Err err = mDb.insertVideoToPlaylist(plid, mid);
+        if (Err.NO_ERR != err)
+            UiUtils.showTextToast(MusicsActivity.this, err.getMessage());
+        else if (move) {
+            eAssert(isUserPlaylist(mPlid));
+            mDb.deleteVideoFromPlaylist(mPlid, mid);
+            getAdapter().reloadCursorAsync();
+        }
+    }
+
+    private void
+    onAddToPlaylist(final long musicId, final int itemPos, final boolean move) {
+        long plid = isUserPlaylist(mPlid)? mPlid: DB.INVALID_PLAYLIST_ID;
+        UiUtils.OnPlaylistSelectedListener action = new UiUtils.OnPlaylistSelectedListener() {
+            @Override
+            public void onPlaylist(long plid, Object user) {
+                addToPlaylist(plid, musicId, move);
+            }
+
+            @Override
+            public void onNewPlaylist(Object user) {
+                addToNewPlaylist(musicId, move);
+            }
+        };
+
+        // exclude current playlist
+        AlertDialog diag = UiUtils.buildSelectPlaylistDialog(mDb, this, action, plid, musicId);
+        diag.show();
     }
 
     private void
@@ -117,6 +179,14 @@ public class MusicsActivity extends Activity {
     onContextItemSelected(MenuItem mItem) {
         AdapterContextMenuInfo info = (AdapterContextMenuInfo)mItem.getMenuInfo();
         switch (mItem.getItemId()) {
+        case R.id.add_to_playlist:
+            onAddToPlaylist(info.id, info.position, false);
+            return true;
+
+        case R.id.move_to_playlist:
+            onAddToPlaylist(info.id, info.position, true);
+            return true;
+
         case R.id.delete:
             eAssert(isUserPlaylist(mPlid));
             mDb.deleteVideoFromPlaylist(mPlid, info.id);
@@ -131,6 +201,7 @@ public class MusicsActivity extends Activity {
             onContextMenuVolume(info.id, info.position);
             return true;
         }
+        eAssert(false);
         return false;
     }
 
@@ -149,9 +220,11 @@ public class MusicsActivity extends Activity {
         // So, enable volume menu by default.
 
         if (isUserPlaylist(mPlid)) {
+            menu.findItem(R.id.move_to_playlist).setVisible(true);
             menu.findItem(R.id.plthumbnail).setVisible(true);
             menu.findItem(R.id.delete).setVisible(true);
         } else {
+            menu.findItem(R.id.move_to_playlist).setVisible(false);
             menu.findItem(R.id.plthumbnail).setVisible(false);
             menu.findItem(R.id.delete).setVisible(false);
         }

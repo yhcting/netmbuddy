@@ -20,6 +20,8 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.provider.BaseColumns;
 
 public class DB extends SQLiteOpenHelper {
+    public static final long    INVALID_PLAYLIST_ID = -1;
+
     // ytmp : YouTubeMusicPlayer
     private static final String NAME            = "ytmp.db";
     private static final int    VERSION         = 1;
@@ -484,15 +486,15 @@ public class DB extends SQLiteOpenHelper {
     //
     // ----------------------------------------------------------------------
     private long
-    insertVideoRef(long plid, long mid) {
+    insertVideoRef(long plid, long vid) {
         ContentValues cvs = new ContentValues();
-        cvs.put(ColVideoRef.VIDEOID.getName(), mid);
+        cvs.put(ColVideoRef.VIDEOID.getName(), vid);
         long r = -1;
         mDb.beginTransaction();
         try {
             r = mDb.insert(getVideoRefTableName(plid), null, cvs);
             if (r >= 0) {
-                incVideoReference(mid);
+                incVideoReference(vid);
                 incPlaylistSize(plid);
             }
             mDb.setTransactionSuccessful();
@@ -503,10 +505,10 @@ public class DB extends SQLiteOpenHelper {
     }
 
     private boolean
-    doesVideoExist(long plid, long mid) {
+    doesVideoExist(long plid, long vid) {
         Cursor c = mDb.query(getVideoRefTableName(plid),
                              new String[] { ColVideoRef.ID.getName() },
-                             ColVideoRef.VIDEOID.getName() + " = " + mid,
+                             ColVideoRef.VIDEOID.getName() + " = " + vid,
                              null, null, null, null);
         boolean ret = c.getCount() > 0;
         c.close();
@@ -516,21 +518,21 @@ public class DB extends SQLiteOpenHelper {
     /**
      *
      * @param plid
-     * @param mid
+     * @param vid
      *   NOTE : This is video id (NOT video reference's id - primary key.
      * @return
      */
     private int
-    deleteVideoRef(long plid, long mid) {
+    deleteVideoRef(long plid, long vid) {
         int r = 0;
         try {
             mDb.beginTransaction();
             r =  mDb.delete(getVideoRefTableName(plid),
-                            ColVideoRef.VIDEOID.getName() + " = " + mid,
+                            ColVideoRef.VIDEOID.getName() + " = " + vid,
                             null);
             eAssert(0 == r || 1 == r);
             if (r > 0) {
-                decVideoReference(mid);
+                decVideoReference(vid);
                 decPlaylistSize(plid);
             }
             mDb.setTransactionSuccessful();
@@ -798,6 +800,17 @@ public class DB extends SQLiteOpenHelper {
         return r;
     }
 
+    public Err
+    insertVideoToPlaylist(long plid, long vid) {
+        if (doesVideoExist(plid, vid))
+            return Err.DB_DUPLICATED;
+
+        if (0 > insertVideoRef(plid, vid))
+            return Err.DB_UNKNOWN;
+
+        return Err.NO_ERR;
+    }
+
     /**
      *
      * @param plid
@@ -817,17 +830,17 @@ public class DB extends SQLiteOpenHelper {
                           byte[] thumbnail) {
         Cursor c = queryVideos(new ColVideo[] { ColVideo.ID }, ColVideo.VIDEOID, videoId);
         eAssert(0 == c.getCount() || 1 == c.getCount());
-        long mid;
+        long vid;
         if (c.getCount() <= 0) {
             // This is new video
             c.close();
             mDb.beginTransaction();
             try {
-                mid = insertVideo(title, desc, videoId, playtime, thumbnail);
-                if (mid < 0)
+                vid = insertVideo(title, desc, videoId, playtime, thumbnail);
+                if (vid < 0)
                     return Err.DB_UNKNOWN;
 
-                if (0 > insertVideoRef(plid, mid))
+                if (0 > insertVideoRef(plid, vid))
                     return Err.DB_UNKNOWN;
 
                 mDb.setTransactionSuccessful();
@@ -836,12 +849,12 @@ public class DB extends SQLiteOpenHelper {
             }
         } else {
             c.moveToFirst();
-            mid = c.getLong(0);
+            vid = c.getLong(0);
             c.close();
-            if (doesVideoExist(plid, mid))
+            if (doesVideoExist(plid, vid))
                 return Err.DB_DUPLICATED;
 
-            if (0 > insertVideoRef(plid, mid))
+            if (0 > insertVideoRef(plid, vid))
                 return Err.DB_UNKNOWN;
         }
         return Err.NO_ERR;
@@ -866,13 +879,13 @@ public class DB extends SQLiteOpenHelper {
     /**
      *
      * @param plid
-     * @param mid
+     * @param vid
      *   NOTE : Video id (NOT Video reference id).
      * @return
      */
     public int
-    deleteVideoFromPlaylist(long plid, long mid) {
-        return deleteVideoRef(plid, mid);
+    deleteVideoFromPlaylist(long plid, long vid) {
+        return deleteVideoRef(plid, vid);
     }
 
     public Cursor
@@ -904,11 +917,11 @@ public class DB extends SQLiteOpenHelper {
     }
 
     public Cursor
-    queryVideo(long mid, ColVideo[] cols) {
+    queryVideo(long vid, ColVideo[] cols) {
         eAssert(cols.length > 0);
         return mDb.query(TABLE_VIDEO,
                          getColNames(cols),
-                         ColVideo.ID.getName() + " = " + mid,
+                         ColVideo.ID.getName() + " = " + vid,
                          null, null, null, null);
     }
 

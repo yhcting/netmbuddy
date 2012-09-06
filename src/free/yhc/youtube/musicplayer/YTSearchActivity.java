@@ -4,9 +4,7 @@ import static free.yhc.youtube.musicplayer.model.Utils.eAssert;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
-import android.content.DialogInterface;
 import android.content.res.Configuration;
-import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.view.ContextMenu;
@@ -18,7 +16,6 @@ import android.view.ViewGroup;
 import android.view.animation.AnimationUtils;
 import android.widget.AdapterView;
 import android.widget.AdapterView.AdapterContextMenuInfo;
-import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
@@ -269,40 +266,18 @@ DBHelper.CheckExistDoneReceiver {
 
     private void
     onAddToPlaylist(final int position) {
-        // Create menu list
-        final Cursor c = mDb.queryPlaylist(new DB.ColPlaylist[] { DB.ColPlaylist.ID,
-                                                                  DB.ColPlaylist.TITLE });
-
-        final int iTitle = c.getColumnIndex(DB.ColPlaylist.TITLE.getName());
-        final int iId    = c.getColumnIndex(DB.ColPlaylist.ID.getName());
-
-        final String[] menus = new String[c.getCount() + 1]; // + 1 for 'new playlist'
-        final long[]   ids   = new long[menus.length];
-        menus[0] = getResources().getText(R.string.new_playlist).toString();
-        c.moveToFirst();
-        for (int i = 1; i < menus.length; i++) {
-            menus[i] = c.getString(iTitle);
-            ids[i] = c.getLong(iId);
-            c.moveToNext();
-        }
-        c.close();
-
-        AlertDialog.Builder bldr = new AlertDialog.Builder(this);
-        ArrayAdapter<String> adapter
-            = new ArrayAdapter<String>(this,android.R.layout.select_dialog_item, menus);
-        bldr.setAdapter(adapter, new DialogInterface.OnClickListener() {
+        UiUtils.OnPlaylistSelectedListener action = new UiUtils.OnPlaylistSelectedListener() {
             @Override
-            public void onClick(DialogInterface dialog, int which) {
-                eAssert(which >= 0);
-                if (0 == which)
-                    addToNewPlaylist(position);
-                else
-                    addToPlaylist(ids[which], position);
-
-                dialog.cancel();
+            public void onPlaylist(long plid, Object user) {
+                addToPlaylist(plid, (Integer)user);
             }
-        });
-        bldr.create().show();
+            @Override
+            public void onNewPlaylist(Object user) {
+                addToNewPlaylist((Integer)user);
+            }
+        };
+
+        UiUtils.buildSelectPlaylistDialog(mDb, this, action, DB.INVALID_PLAYLIST_ID, position).show();
     }
 
     private void
