@@ -209,6 +209,27 @@ public class MusicsActivity extends Activity {
         aDiag.show();
     }
 
+    private void
+    onContextMenuRename(final long itemId, final int itemPos) {
+        UiUtils.EditTextAction action = new UiUtils.EditTextAction() {
+            @Override
+            public void prepare(Dialog dialog, EditText edit) { }
+
+            @Override
+            public void onOk(Dialog dialog, EditText edit) {
+                mDb.updateVideo(DB.ColVideo.ID, itemId,
+                                DB.ColVideo.TITLE, edit.getText().toString());
+                getAdapter().reloadCursorAsync();
+            }
+        };
+        AlertDialog diag = UiUtils.buildOneLineEditTextDialog(this,
+                                                              R.string.rename,
+                                                              getAdapter().getMusicTitle(itemPos),
+                                                              action);
+        diag.show();
+
+    }
+
     @Override
     public boolean
     onContextItemSelected(MenuItem mItem) {
@@ -222,16 +243,20 @@ public class MusicsActivity extends Activity {
             onAddToPlaylist(info.id, info.position, true);
             return true;
 
-        case R.id.delete:
-            onDeleteMusic(info.id);
+        case R.id.volume:
+            onContextMenuVolume(info.id, info.position);
             return true;
 
         case R.id.plthumbnail:
             setToPlaylistThumbnail(info.id, info.position);
             return true;
 
-        case R.id.volume:
-            onContextMenuVolume(info.id, info.position);
+        case R.id.rename:
+            onContextMenuRename(info.id, info.position);
+            return true;
+
+        case R.id.delete:
+            onDeleteMusic(info.id);
             return true;
         }
         eAssert(false);
