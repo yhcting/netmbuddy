@@ -108,6 +108,41 @@ public class MusicsActivity extends Activity {
     }
 
     private void
+    onDeleteMusicCompletely(final long mid) {
+        SpinAsyncTask.Worker worker = new SpinAsyncTask.Worker() {
+            @Override
+            public void onPostExecute(SpinAsyncTask task, Err result) {
+                getAdapter().reloadCursorAsync();
+            }
+            @Override
+            public void onCancel(SpinAsyncTask task) {
+            }
+            @Override
+            public Err doBackgroundWork(SpinAsyncTask task, Object... objs) {
+                mDb.deleteVideoAndRefsCompletely(mid);
+                return Err.NO_ERR;
+            }
+        };
+        new SpinAsyncTask(this, worker, R.string.deleting, false).execute();
+    }
+
+    private void
+    onDeleteMusic(final long musicId) {
+        if (isUserPlaylist(mPlid)) {
+            mDb.deleteVideoFromPlaylist(mPlid, musicId);
+            getAdapter().reloadCursorAsync();
+        } else {
+            UiUtils.ConfirmAction action = new UiUtils.ConfirmAction() {
+                @Override
+                public void onOk(Dialog dialog) {
+                    onDeleteMusicCompletely(musicId);
+                }
+            };
+            UiUtils.buildConfirmDialog(this, R.string.delete, R.string.msg_delete_music, action).show();
+        }
+    }
+
+    private void
     setToPlaylistThumbnail(long musicId, int itemPos) {
         eAssert(isUserPlaylist(mPlid));
         byte[] data = getAdapter().getMusicThumbnail(itemPos);
@@ -188,9 +223,7 @@ public class MusicsActivity extends Activity {
             return true;
 
         case R.id.delete:
-            eAssert(isUserPlaylist(mPlid));
-            mDb.deleteVideoFromPlaylist(mPlid, info.id);
-            getAdapter().reloadCursorAsync();
+            onDeleteMusic(info.id);
             return true;
 
         case R.id.plthumbnail:
@@ -222,11 +255,9 @@ public class MusicsActivity extends Activity {
         if (isUserPlaylist(mPlid)) {
             menu.findItem(R.id.move_to_playlist).setVisible(true);
             menu.findItem(R.id.plthumbnail).setVisible(true);
-            menu.findItem(R.id.delete).setVisible(true);
         } else {
             menu.findItem(R.id.move_to_playlist).setVisible(false);
             menu.findItem(R.id.plthumbnail).setVisible(false);
-            menu.findItem(R.id.delete).setVisible(false);
         }
     }
 

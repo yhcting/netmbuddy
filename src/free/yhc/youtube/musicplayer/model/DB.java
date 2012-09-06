@@ -888,6 +888,29 @@ public class DB extends SQLiteOpenHelper {
         return deleteVideoRef(plid, vid);
     }
 
+    /**
+     * Delete video from all playlist
+     * @param vid
+     * @return
+     */
+    public int
+    deleteVideoAndRefsCompletely(long vid) {
+        Cursor c = queryPlaylist(new ColPlaylist[] { ColPlaylist.ID });
+        if (!c.moveToFirst()) {
+            c.close();
+            return 0;
+        }
+        // NOTE
+        // "deleteVideoFromPlaylist()" is very expensive operation.
+        // So, calling "deleteVideoFromPlaylist()" for all playlist table is very expensive.
+        int cnt = 0;
+        do {
+            cnt += deleteVideoFromPlaylist(c.getLong(0), vid);
+        } while (c.moveToNext());
+        c.close();
+        return cnt;
+    }
+
     public Cursor
     queryVideos(ColVideo[] cols, ColVideo colOrderBy, boolean asc) {
         return mDb.query(TABLE_VIDEO,

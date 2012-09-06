@@ -10,6 +10,7 @@
     <string name="delete">Delete</string>
     <string name="rename">Rename</string>
     <string name="loading">Loading</string>
+    <string name="deleting">Deleting</string>
     <string name="error">Error</string>
     <string name="buffering">Buffering</string>
     <string name="search_word">Search word</string>
@@ -73,6 +74,7 @@
     <string name="msg_network_unavailable">Network is unavailable.</string>
     <string name="msg_fail_find_app">Fail in finding appropriate application.</string>
     <string name="msg_fail_access_exdb">Fail in accessing external database file.</string>
+    <string name="msg_delete_music">Delete from all playlists.</string>
 
     <string name="err_no_err">Success.</string>
     <string name="err_unknown">Unknown error.</string>
