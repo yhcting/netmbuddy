@@ -1077,10 +1077,19 @@ public class DB extends SQLiteOpenHelper {
     }
 
     public Cursor
-    queryVideosSearchTitle(ColVideo[] cols, String titleLike) {
+    queryVideosSearchTitle(ColVideo[] cols, String[] titleLikes) {
+        String selection;
+        if (null == titleLikes || 0 == titleLikes.length)
+            selection = null;
+        else {
+            String lhv = ColVideo.TITLE.getName() + " LIKE ";
+            selection = lhv + DatabaseUtils.sqlEscapeString("%" + titleLikes[0] + "%");
+            for (int i = 1; i < titleLikes.length; i++)
+                selection += " AND " + lhv + DatabaseUtils.sqlEscapeString("%" + titleLikes[i] + "%");
+        }
         return mDb.query(TABLE_VIDEO,
                          getColNames(cols),
-                         ColVideo.TITLE.getName() + " LIKE " + DatabaseUtils.sqlEscapeString("%" + titleLike + "%"),
+                         selection,
                          null, null, null, buildSQLOrderBy(false, ColVideo.TITLE, true));
     }
 
