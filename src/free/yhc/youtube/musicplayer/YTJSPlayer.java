@@ -790,8 +790,6 @@ public class YTJSPlayer {
     // ========================================================================
     private void
     callJsFunction(String func, String... args) {
-        eAssert(null != mWv);
-
         if (null == mWv)
             return;
 

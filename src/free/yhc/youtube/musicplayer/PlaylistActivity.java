@@ -156,6 +156,15 @@ public class PlaylistActivity extends Activity {
     }
 
     private Err
+    mergeDbInBackground(File exDbf) {
+        // Actually, in case of merging DB, we don't need to stop DB access.
+        // But, just in case...
+        stopDbAccess();
+
+        return mDb.mergeDatabase(exDbf);
+    }
+
+    private Err
     exportDbInBackground(File exDbf) {
         stopDbAccess();
 
@@ -212,6 +221,45 @@ public class PlaylistActivity extends Activity {
                     }
                 };
                 new SpinAsyncTask(PlaylistActivity.this, worker, R.string.importing_db, false).execute(exDbf);
+            }
+        }).show();
+    }
+
+    private void
+    onMenuMoreMergeDb(View anchor) {
+        final File exDbf = new File(Policy.Constants.EXTERNAL_DBFILE);
+        // Actual import!
+        CharSequence title = getResources().getText(R.string.mergedb);
+        CharSequence msg = getResources().getText(R.string.database) + " <= " + exDbf.getAbsolutePath();
+        UiUtils.buildConfirmDialog(this, title, msg, new UiUtils.ConfirmAction() {
+            @Override
+            public void onOk(Dialog dialog) {
+                // Check external DB file.
+                if (!exDbf.canRead()) {
+                    UiUtils.showTextToast(PlaylistActivity.this, R.string.msg_fail_access_exdb);
+                    return;
+                }
+
+                SpinAsyncTask.Worker worker = new SpinAsyncTask.Worker() {
+                    @Override
+                    public void
+                    onPostExecute(SpinAsyncTask task, Err result) {
+                        if (Err.NO_ERR == result)
+                            getAdapter().reloadCursorAsync();
+                        else
+                            UiUtils.showTextToast(PlaylistActivity.this, result.getMessage());
+                    }
+
+                    @Override
+                    public void onCancel(SpinAsyncTask task) { }
+
+                    @Override
+                    public Err
+                    doBackgroundWork(SpinAsyncTask task, Object... objs) {
+                        return mergeDbInBackground(exDbf);
+                    }
+                };
+                new SpinAsyncTask(PlaylistActivity.this, worker, R.string.merging_db, false).execute(exDbf);
             }
         }).show();
     }
@@ -325,6 +373,10 @@ public class PlaylistActivity extends Activity {
 
                         case R.id.importdb:
                             onMenuMoreImportDb(v);
+                            break;
+
+                        case R.id.mergedb:
+                            onMenuMoreMergeDb(v);
                             break;
 
                         case R.id.app_info:

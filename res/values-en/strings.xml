@@ -29,11 +29,13 @@
     <string name="set_to_plthumbnail">Set as playlist icon</string>
     <string name="exportdb">Export DB</string>
     <string name="importdb">Import DB</string>
+    <string name="mergedb">Merge DB</string>
     <string name="app_info">App. infomation</string>
     <string name="feedback">Feedback</string>
     <string name="choose_app">Choose App.</string>
 
     <string name="importing_db">Importing DB</string>
+    <string name="merging_db">Merging DB</string>
     <string name="exporting_db">Exporting DB</string>
 
     <string name="pref_cat_operation">Playing music</string>

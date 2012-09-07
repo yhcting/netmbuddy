@@ -29,11 +29,13 @@
     <string name="set_to_plthumbnail">재생목록 아이콘으로 사용</string>
     <string name="exportdb">DB 내보내기</string>
     <string name="importdb">DB 가져오기</string>
+    <string name="mergedb">DB 합치기</string>
     <string name="app_info">어플 정보</string>
     <string name="feedback">의견 보내기</string>
     <string name="choose_app">어플리케이션 선택</string>
 
     <string name="importing_db">DB를 가져오는 중</string>
+    <string name="merging_db">DB를 합치는 중</string>
     <string name="exporting_db">DB를 내보내는 중</string>
 
     <string name="pref_cat_operation">재생 방식 설정</string>
