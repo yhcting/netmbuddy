@@ -22,7 +22,6 @@ import android.net.NetworkInfo;
 import android.net.Uri;
 import android.net.wifi.WifiManager;
 import android.net.wifi.WifiManager.WifiLock;
-import android.os.AsyncTask;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.view.View;
@@ -251,7 +250,7 @@ MediaPlayer.OnSeekCompleteListener {
                 .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, WLTAG);
         // Playing youtube requires high performance wifi for high quality media play.
         mWfl = ((WifiManager)Utils.getAppContext().getSystemService(Context.WIFI_SERVICE))
-                .createWifiLock(WifiManager.WIFI_MODE_FULL_HIGH_PERF, WLTAG);
+                .createWifiLock(WifiManager.WIFI_MODE_FULL, WLTAG);
         mWl.acquire();
         mWfl.acquire();
     }
@@ -871,7 +870,7 @@ MediaPlayer.OnSeekCompleteListener {
         eAssert(Utils.isUiThread());
         eAssert(null != mPlayerv);
 
-        AsyncTask.execute(new Runnable() {
+        new Thread(new Runnable() {
             @Override
             public void run() {
                 final Video[] vs = getVideos(c, coliTitle, coliUrl, coliVolume, coliPlaytime, shuffle);
@@ -883,7 +882,7 @@ MediaPlayer.OnSeekCompleteListener {
                 });
                 c.close();
             }
-        });
+        }).start();
     }
 
     public void

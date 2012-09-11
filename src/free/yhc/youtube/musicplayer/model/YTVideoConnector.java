@@ -283,7 +283,7 @@ public class YTVideoConnector extends AsyncTask<Void, Void, Err> {
 
     @Override
     public void
-    onCancelled(Err result) {
+    onCancelled() {
         mLoader.close();
         mListener.onConnCancelled(this, mYtvid, mUser);
     }

@@ -355,7 +355,7 @@ public class PlaylistActivity extends Activity {
                     break;
 
                 case R.string.mergedb:
-                    onMenuMoreMergeDb(v);
+                    onMenuMoreMergeDb(anchor);
                     break;
 
                 case R.string.app_info:

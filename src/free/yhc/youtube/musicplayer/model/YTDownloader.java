@@ -14,7 +14,6 @@ import java.net.URLDecoder;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
@@ -266,12 +265,14 @@ public class YTDownloader {
      */
     public void
     download(String proxy, String ytvid, File outf) {
+        /*
         AsyncTask.execute(new Runnable() {
             @Override
             public void run() {
                 doDownload("", "dHeqQu8a1h0", new File("/sdcard/testytdn.mp4"));
             }
         });
+        */
     }
 
     public void
