@@ -40,7 +40,8 @@ MediaPlayer.OnErrorListener,
 MediaPlayer.OnInfoListener,
 MediaPlayer.OnVideoSizeChangedListener,
 MediaPlayer.OnSeekCompleteListener {
-    private static final String WLTAG   = "YTPlayer";
+    private static final String WLTAG               = "YTPlayer";
+    private static final int    PLAYER_ERR_RETRY    = 3;
 
     private static final Comparator<NrElem> sNrElemComparator = new Comparator<NrElem>() {
         @Override
@@ -92,6 +93,7 @@ MediaPlayer.OnSeekCompleteListener {
     // ------------------------------------------------------------------------
     private Video[]                 mVideos = null;
     private int                     mVideoi = -1;
+    private int                     mErrRetry = PLAYER_ERR_RETRY;
 
     // see "http://developer.android.com/reference/android/media/MediaPlayer.html"
     private static enum MPState {
@@ -145,17 +147,17 @@ MediaPlayer.OnSeekCompleteListener {
             NetworkInfo networkInfo =
                 (NetworkInfo)intent.getParcelableExtra(ConnectivityManager.EXTRA_NETWORK_INFO);
             if (networkInfo.isConnected()) {
-                logI("YTJSPlayer : Network connected : " + networkInfo.getType());
+                logI("YTPlayer : Network connected : " + networkInfo.getType());
                 switch (networkInfo.getType()) {
                 case ConnectivityManager.TYPE_WIFI:
-                    logI("YTJSPlayer : Network connected : WIFI");
+                    logI("YTPlayer : Network connected : WIFI");
                     break;
                 case ConnectivityManager.TYPE_MOBILE:
-                    logI("YTJSPlayer : Network connected : MOBILE");
+                    logI("YTPlayer : Network connected : MOBILE");
                     break;
                 }
             } else
-                logI("YTJSPlayer : Network lost");
+                logI("YTPlayer : Network lost");
         }
     }
 
@@ -166,7 +168,7 @@ MediaPlayer.OnSeekCompleteListener {
         private TextView    curposv = null;
         private TextView    maxposv = null;
         private int         lastProgress = -1;
-        private int         lastProgress2 = -1;
+        private int         lastProgress2 = -1; // For secondary progress
 
         private String
         progressToTimeText(int progress) {
@@ -220,6 +222,10 @@ MediaPlayer.OnSeekCompleteListener {
             }
         }
 
+        /**
+         * Update secondary progress
+         * @param percent
+         */
         void update2(int percent) {
             // Update secondary progress
             if (null != seekbar) {
@@ -719,7 +725,18 @@ MediaPlayer.OnSeekCompleteListener {
 
     private void
     startVideo(final String videoId, int volume) {
+        startVideo(videoId, volume, false);
+    }
+
+
+    private void
+    startVideo(final String videoId, int volume, boolean recovery) {
         eAssert(0 <= volume && volume <= 100);
+
+        if (recovery)
+            mErrRetry--;
+        else
+            mErrRetry = PLAYER_ERR_RETRY;
 
         // Stop if player is already running.
         mpStop();
@@ -963,10 +980,12 @@ MediaPlayer.OnSeekCompleteListener {
     @Override
     public boolean
     onError(MediaPlayer mp, int what, int extra) {
+        boolean tryAgain = true;
         mpSetState(MPState.ERROR);
         switch (what) {
         case MediaPlayer.MEDIA_ERROR_NOT_VALID_FOR_PROGRESSIVE_PLAYBACK:
             logD("MPlayer - onError : NOT_VALID_FOR_PROGRESSIVE_PLAYBACK");
+            tryAgain = false;
             break;
 
         case MediaPlayer.MEDIA_ERROR_SERVER_DIED:
@@ -979,6 +998,13 @@ MediaPlayer.OnSeekCompleteListener {
 
         default:
             logD("MPlayer - onError");
+        }
+
+        if (tryAgain && mErrRetry-- > 0) {
+            logD("MPlayer - Try to recover!");
+            // Retry! Try to recover
+            if (null != mVideos)
+                startVideo(mVideos[mVideoi].videoId, mVideos[mVideoi].volume, true);
         }
 
         return true; // DO NOT call onComplete Listener.
