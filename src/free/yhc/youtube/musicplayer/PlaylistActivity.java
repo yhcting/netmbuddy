@@ -31,7 +31,6 @@ import free.yhc.youtube.musicplayer.model.Err;
 import free.yhc.youtube.musicplayer.model.Policy;
 import free.yhc.youtube.musicplayer.model.UiUtils;
 import free.yhc.youtube.musicplayer.model.Utils;
-import free.yhc.youtube.musicplayer.model.YTDownloader;
 import free.yhc.youtube.musicplayer.model.YTPlayer;
 
 public class PlaylistActivity extends Activity {
@@ -102,17 +101,11 @@ public class PlaylistActivity extends Activity {
 
     private void
     playAllMusics(View anchor) {
-        // For test
-        YTDownloader ytdnr = new YTDownloader();
-        ytdnr.open();
-        ytdnr.download("", "", new File(""));
-        /*
         playMusics(mDb.queryVideos(new ColVideo[] { ColVideo.VIDEOID,
                                                     ColVideo.TITLE,
                                                     ColVideo.VOLUME,
                                                     ColVideo.PLAYTIME},
                                    null, false));
-        */
     }
 
     // ------------------------------------------------------------------------

@@ -288,7 +288,7 @@ public class YTSearchApi {
         Entry en = new Entry();
         n = n.getFirstChild();
         while (null != n) {
-            logI("    - " + n.getNodeName());
+            //logI("    - " + n.getNodeName());
             if ("media:group".equals(n.getNodeName()))
                 parseEntryMedia(n, en.media);
             else if ("gd:rating".equals(n.getNodeName()))
@@ -319,7 +319,7 @@ public class YTSearchApi {
         res.header = new Header();
         Node n = root.getFirstChild();
         while (null != n) {
-            logI("- " + n.getNodeName());
+            //logI("- " + n.getNodeName());
             if ("entry".equals(n.getNodeName()))
                 parseEntry(n, entryl);
             else if ("openSearch:totalResults".equals(n.getNodeName()))
