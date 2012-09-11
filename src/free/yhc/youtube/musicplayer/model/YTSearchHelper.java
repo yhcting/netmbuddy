@@ -4,8 +4,10 @@ import static free.yhc.youtube.musicplayer.model.Utils.eAssert;
 import static free.yhc.youtube.musicplayer.model.Utils.logW;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
 
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -90,16 +92,27 @@ public class YTSearchHelper {
         }
 
         private byte[]
-        loadUrl(String url) throws YTMPException {
-            byte[] data;
+        loadUrl(String urlStr) throws YTMPException {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
             try {
-                data = new NetLoader().readData(new URL(url));
+                URL url = new URL(urlStr);
+                eAssert("http".equals(url.getProtocol().toLowerCase()));
+                NetLoader loader = new NetLoader().open(null);
+                loader.readHttpData(baos, url.toURI());
+                loader.close();
             } catch (MalformedURLException e) {
-                throw new YTMPException(Err.INVALID_URL);
+                eAssert(false);
+            } catch (URISyntaxException e) {
+                eAssert(false);
             }
 
-            if (null == data)
-                throw new YTMPException(Err.UNKNOWN);
+            byte[] data = baos.toByteArray();
+            try {
+                baos.close();
+            } catch (IOException e) {
+                throw new YTMPException(Err.IO_UNKNOWN);
+            }
+
             return data;
         }
 
@@ -209,7 +222,7 @@ public class YTSearchHelper {
 
     public void
     searchAsync(SearchArg arg) {
-        eAssert(0 < arg.starti && 0 < arg.max && arg.max <= Policy.Constants.YTSEARCH_MAX_RESULTS);
+        eAssert(0 < arg.starti && 0 < arg.max && arg.max <= Policy.YTSEARCH_MAX_RESULTS);
         Message msg = mBgHandler.obtainMessage(MSG_WHAT_SEARCH, arg);
         mBgHandler.sendMessage(msg);
     }

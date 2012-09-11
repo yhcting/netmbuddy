@@ -112,7 +112,7 @@ public class YTSearchApi {
                                            + "entry(media:group(media:title,yt:videoid,media:thumbnail[@yt:name='default'](@url),yt:duration,yt:uploaded))";
     public static String
     getFeedUrl(String word, int start, int maxCount) {
-        eAssert(0 < start && 0 < maxCount && maxCount <= Policy.Constants.YTSEARCH_MAX_RESULTS);
+        eAssert(0 < start && 0 < maxCount && maxCount <= Policy.YTSEARCH_MAX_RESULTS);
         // http://gdata.youtube.com/feeds/api/videos?q=김광석&start-index=1&max-results=50&client=ytapi-youtube-search&autoplay=1&format=5&v=2
         word = word.replaceAll("\\s+", "+");
         return "http://gdata.youtube.com/feeds/api/videos?q="
@@ -288,7 +288,7 @@ public class YTSearchApi {
         Entry en = new Entry();
         n = n.getFirstChild();
         while (null != n) {
-            //logI("    - " + n.getNodeName());
+            logI("    - " + n.getNodeName());
             if ("media:group".equals(n.getNodeName()))
                 parseEntryMedia(n, en.media);
             else if ("gd:rating".equals(n.getNodeName()))
@@ -319,7 +319,7 @@ public class YTSearchApi {
         res.header = new Header();
         Node n = root.getFirstChild();
         while (null != n) {
-            //logI("- " + n.getNodeName());
+            logI("- " + n.getNodeName());
             if ("entry".equals(n.getNodeName()))
                 parseEntry(n, entryl);
             else if ("openSearch:totalResults".equals(n.getNodeName()))

@@ -167,7 +167,7 @@ public class DB extends SQLiteOpenHelper {
             cvs.put(ColVideo.PLAYTIME.getName(), playtime);
             cvs.put(ColVideo.THUMBNAIL.getName(), thumbnail);
 
-            cvs.put(ColVideo.VOLUME.getName(), Policy.Constants.DEFAULT_VIDEO_VOLUME);
+            cvs.put(ColVideo.VOLUME.getName(), Policy.DEFAULT_VIDEO_VOLUME);
             cvs.put(ColVideo.RATE.getName(), 0);
             cvs.put(ColVideo.TIME_ADD.getName(), System.currentTimeMillis());
             cvs.put(ColVideo.TIME_PLAYED.getName(), System.currentTimeMillis());
@@ -193,9 +193,28 @@ public class DB extends SQLiteOpenHelper {
         public String getConstraint() { return constraint; }
     }
 
-    static int
+    private static int
     getVersion() {
         return VERSION;
+    }
+
+    private static ContentValues
+    copyContent(Cursor c, Col[] cols) {
+        ContentValues cvs = new ContentValues();
+        for (Col col : cols) {
+            if (BaseColumns._ID.equals(col.getName()))
+                    continue; // ID SHOULD NOT be copied.
+
+            if ("text".equals(col.getType())) {
+                cvs.put(col.getName(), c.getString(c.getColumnIndex(col.getName())));
+            } else if ("integer".equals(col.getType())) {
+                cvs.put(col.getName(), c.getLong(c.getColumnIndex(col.getName())));
+            } else if ("blob".equals(col.getType())) {
+                cvs.put(col.getName(), c.getBlob(c.getColumnIndex(col.getName())));
+            } else
+                eAssert(false);
+        }
+        return cvs;
     }
 
     /**
@@ -414,13 +433,18 @@ public class DB extends SQLiteOpenHelper {
     //
     // ----------------------------------------------------------------------
     private long
+    insertVideo(ContentValues cvs) {
+        return mDb.insert(TABLE_VIDEO, null, cvs);
+    }
+
+    private long
     insertVideo(String title, String desc,
                 String url, int playtime,
                 byte[] thumbnail) {
         ContentValues cvs = ColVideo.createContentValuesForInsert(title, desc,
                                                                   url, playtime,
                                                                   thumbnail);
-        return mDb.insert(TABLE_VIDEO, null, cvs);
+        return insertVideo(cvs);
     }
 
     private Cursor
@@ -548,6 +572,24 @@ public class DB extends SQLiteOpenHelper {
     //
     // ----------------------------------------------------------------------
     private long
+    insertPlaylist(ContentValues cvs) {
+        long id = -1;
+        mDb.beginTransaction();
+        try {
+            id = mDb.insert(TABLE_PLAYLIST, null, cvs);
+            if (id >= 0) {
+                mDb.execSQL(buildTableSQL(getVideoRefTableName(id), ColVideoRef.values()));
+                markBooleanWatcherChanged(mPlTblWM);
+            }
+            mDb.setTransactionSuccessful();
+        } finally {
+            mDb.endTransaction();
+        }
+
+        return id;
+    }
+
+    private long
     getPlaylistInfoLong(long plid, ColPlaylist col) {
         Cursor c = queryPlaylist(plid, col);
         if (!c.moveToFirst())
@@ -565,7 +607,7 @@ public class DB extends SQLiteOpenHelper {
                          null, null, null, null);
     }
 
-    public int
+    private int
     updatePlaylistSize(long plid, long size) {
         ContentValues cvs = new ContentValues();
         cvs.put(ColPlaylist.SIZE.getName(), size);
@@ -612,6 +654,123 @@ public class DB extends SQLiteOpenHelper {
         exDb.close();
 
         return err;
+    }
+
+    /**
+     * Extremely critical function.
+     * PREREQUISITE
+     *   All operations that might access DB, SHOULD BE STOPPED
+     *     before importing DB.
+     *   And that operation should be resumed after importing DB.
+     * @param exDbf
+     */
+    public Err
+    mergeDatabase(File exDbf) {
+        Err err = verifyExternalDBFile(exDbf);
+        if (err != Err.NO_ERR)
+            return err;
+
+        SQLiteDatabase exDb = null;
+        try {
+            exDb = SQLiteDatabase.openDatabase(exDbf.getAbsolutePath(), null, SQLiteDatabase.OPEN_READONLY);
+        } catch (SQLiteException e) {
+            return Err.DB_INVALID;
+        }
+        // Merging Algorithm
+        // -----------------
+        //
+        // * Merge playlist and reference tables
+        //   : [if] there is duplicated playlist
+        //     retry again and again with modified name - ex. title_#_
+        //
+        // * For each merged playlist, merge reference tables
+        //   : scan vidoes
+        //     - [if] there is duplicated video - based on Youtube video ID - in the DB
+        //         => reference to the video's DB ID (reference count of this video should be increased.)
+        //       [else] add the video to the current DB and reference to it.
+
+        // Merging SHOULD BE ONE-TRANSACTION!
+        mDb.beginTransaction();
+        try {
+            Cursor excPl = exDb.query(TABLE_PLAYLIST,
+                                      getColNames(ColPlaylist.values()),
+                                      null, null, null, null, null);
+            if (!excPl.moveToFirst()) {
+                // Empty DB.
+                // So, nothing to merge!
+                excPl.close();
+                return Err.NO_ERR;
+            }
+
+            final int plColiTitle = excPl.getColumnIndex(ColPlaylist.TITLE.getName());
+            final int plColiId = excPl.getColumnIndex(ColPlaylist.ID.getName());
+            do {
+                int i = 0;
+                String plTitle = excPl.getString(plColiTitle);
+                while (doesPlaylistExist(plTitle)) {
+                    i++;
+                    plTitle = excPl.getString(plColiTitle)+ "_" + i + "_";
+                }
+
+                // Playlist title is chosen.
+                ContentValues cvs = copyContent(excPl, ColPlaylist.values());
+                cvs.put(ColPlaylist.TITLE.getName(), plTitle);
+                cvs.put(ColPlaylist.SIZE.getName(), 0);
+                long inPlid = insertPlaylist(cvs);
+
+                // Scan all video references belongs to this playlist
+                Cursor excVref = exDb.query(getVideoRefTableName(excPl.getLong(plColiId)),
+                                            getColNames(new ColVideoRef[] { ColVideoRef.VIDEOID }),
+                                            null, null, null, null, null);
+
+                if (!excVref.moveToFirst()) {
+                    // Empty playlist! Let's move to next.
+                    excVref.close();
+                    continue;
+                }
+
+                do {
+                    // get Youtube video id string of external database.
+                    Cursor excV = exDb.query(TABLE_VIDEO,
+                                             getColNames(ColVideo.values()),
+                                             ColVideo.ID.getName() + " = " + excVref.getLong(0),
+                                             null, null, null, null);
+                    if (!excV.moveToFirst())
+                        eAssert(false);
+
+                    final int vColiVid = excV.getColumnIndex(ColVideo.VIDEOID.getName());
+
+                    long vid;
+                    // check that this video is already in internal DB or not.
+                    Cursor incV = mDb.query(TABLE_VIDEO,
+                                            getColNames(new ColVideo[] { ColVideo.ID }),
+                                            ColVideo.VIDEOID.getName() + " = " +
+                                                    DatabaseUtils.sqlEscapeString(excV.getString(vColiVid)),
+                                            null, null, null, null);
+                    if (incV.moveToFirst()) {
+                        // Already in internal DB
+                        vid = incV.getLong(0);
+                    } else {
+                        // This is new video!
+                        cvs = copyContent(excV, ColVideo.values());
+                        cvs.put(ColVideo.REFCOUNT.getName(), 0);
+                        vid = insertVideo(cvs);
+                    }
+                    incV.close();
+
+                    insertVideoRef(inPlid, vid);
+                } while (excVref.moveToNext());
+                excVref.close();
+            } while (excPl.moveToNext());
+            excPl.close();
+
+            mDb.setTransactionSuccessful();
+            markBooleanWatcherChanged(mPlTblWM);
+        } finally {
+            exDb.close();
+            mDb.endTransaction();
+        }
+        return Err.NO_ERR;
     }
 
     /**
@@ -695,9 +854,10 @@ public class DB extends SQLiteOpenHelper {
         open(); // open again.
         return Err.NO_ERR;
     }
+
     // ======================================================================
     //
-    // Operations (Public)
+    // Operations
     //
     // ======================================================================
     public boolean
@@ -720,22 +880,7 @@ public class DB extends SQLiteOpenHelper {
      */
     public long
     insertPlaylist(String title, String desc) {
-        // Inserting Playlist that has same 'title' is NOT allowed.
-        ContentValues cvs = ColPlaylist.createContentValuesForInsert(title, desc);
-        long id = -1;
-        mDb.beginTransaction();
-        try {
-            id = mDb.insert(TABLE_PLAYLIST, null, cvs);
-            if (id >= 0) {
-                mDb.execSQL(buildTableSQL(getVideoRefTableName(id), ColVideoRef.values()));
-                markBooleanWatcherChanged(mPlTblWM);
-            }
-            mDb.setTransactionSuccessful();
-        } finally {
-            mDb.endTransaction();
-        }
-
-        return id;
+        return insertPlaylist(ColPlaylist.createContentValuesForInsert(title, desc));
     }
 
     public int
@@ -888,6 +1033,29 @@ public class DB extends SQLiteOpenHelper {
         return deleteVideoRef(plid, vid);
     }
 
+    /**
+     * Delete video from all playlist
+     * @param vid
+     * @return
+     */
+    public int
+    deleteVideoAndRefsCompletely(long vid) {
+        Cursor c = queryPlaylist(new ColPlaylist[] { ColPlaylist.ID });
+        if (!c.moveToFirst()) {
+            c.close();
+            return 0;
+        }
+        // NOTE
+        // "deleteVideoFromPlaylist()" is very expensive operation.
+        // So, calling "deleteVideoFromPlaylist()" for all playlist table is very expensive.
+        int cnt = 0;
+        do {
+            cnt += deleteVideoFromPlaylist(c.getLong(0), vid);
+        } while (c.moveToNext());
+        c.close();
+        return cnt;
+    }
+
     public Cursor
     queryVideos(ColVideo[] cols, ColVideo colOrderBy, boolean asc) {
         return mDb.query(TABLE_VIDEO,
@@ -909,10 +1077,19 @@ public class DB extends SQLiteOpenHelper {
     }
 
     public Cursor
-    queryVideosSearchTitle(ColVideo[] cols, String titleLike) {
+    queryVideosSearchTitle(ColVideo[] cols, String[] titleLikes) {
+        String selection;
+        if (null == titleLikes || 0 == titleLikes.length)
+            selection = null;
+        else {
+            String lhv = ColVideo.TITLE.getName() + " LIKE ";
+            selection = lhv + DatabaseUtils.sqlEscapeString("%" + titleLikes[0] + "%");
+            for (int i = 1; i < titleLikes.length; i++)
+                selection += " AND " + lhv + DatabaseUtils.sqlEscapeString("%" + titleLikes[i] + "%");
+        }
         return mDb.query(TABLE_VIDEO,
                          getColNames(cols),
-                         ColVideo.TITLE.getName() + " LIKE " + DatabaseUtils.sqlEscapeString("%" + titleLike + "%"),
+                         selection,
                          null, null, null, buildSQLOrderBy(false, ColVideo.TITLE, true));
     }
 

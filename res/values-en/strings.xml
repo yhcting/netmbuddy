@@ -10,6 +10,7 @@
     <string name="delete">Delete</string>
     <string name="rename">Rename</string>
     <string name="loading">Loading</string>
+    <string name="deleting">Deleting</string>
     <string name="error">Error</string>
     <string name="buffering">Buffering</string>
     <string name="search_word">Search word</string>
@@ -28,12 +29,14 @@
     <string name="set_to_plthumbnail">Set as playlist icon</string>
     <string name="exportdb">Export DB</string>
     <string name="importdb">Import DB</string>
+    <string name="mergedb">Merge DB</string>
     <string name="app_info">App. infomation</string>
     <string name="feedback">Feedback</string>
     <string name="choose_app">Choose App.</string>
 
-    <string name="importing_db">Importing DB...</string>
-    <string name="exporting_db">Exporting DB...</string>
+    <string name="importing_db">Importing DB</string>
+    <string name="merging_db">Merging DB</string>
+    <string name="exporting_db">Exporting DB</string>
 
     <string name="pref_cat_operation">Playing music</string>
     <string name="pref_shuffle">Shuffle</string>
@@ -58,7 +61,7 @@
     <string name="msg_not_implemented">Not implemented yet.</string>
     <string name="msg_ytplayer_err">Fail in playing.</string>
     <string name="msg_initialize_app">Preparing application.</string>
-    <string name="msg_appinit_fail">Fail in initializing application.\nNetwork or Youtube server might be unstable.\nOr flash plugin(ex. Adobe Flash Player) may be required in case of some devices.\nApplication is going to be terminated after a while.</string>
+    <string name="msg_appinit_fail">Fail in initializing application.\nNetwork or Youtube server might be unstable.\nOr flash plugin(ex. Adobe Flash Player) may be required in case of some devices.</string>
     <string name="msg_appinit_network_unavailable">Network is unavailable.\nApplication is going to be terminated after a while.</string>
     <string name="msg_unknown_format">Video format is unknown.</string>
     <string name="msg_no_thumbnail">Thumbnail is not loaded yet.\nTry again after loading thumbnail is done.</string>
@@ -73,6 +76,7 @@
     <string name="msg_network_unavailable">Network is unavailable.</string>
     <string name="msg_fail_find_app">Fail in finding appropriate application.</string>
     <string name="msg_fail_access_exdb">Fail in accessing external database file.</string>
+    <string name="msg_delete_music">Delete from all playlists.</string>
 
     <string name="err_no_err">Success.</string>
     <string name="err_unknown">Unknown error.</string>

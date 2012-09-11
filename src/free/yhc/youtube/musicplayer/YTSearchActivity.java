@@ -28,16 +28,17 @@ import free.yhc.youtube.musicplayer.model.Policy;
 import free.yhc.youtube.musicplayer.model.RTState;
 import free.yhc.youtube.musicplayer.model.UiUtils;
 import free.yhc.youtube.musicplayer.model.Utils;
+import free.yhc.youtube.musicplayer.model.YTPlayer;
 import free.yhc.youtube.musicplayer.model.YTSearchApi;
 import free.yhc.youtube.musicplayer.model.YTSearchHelper;
 
 public class YTSearchActivity extends Activity implements
 YTSearchHelper.SearchDoneReceiver,
 DBHelper.CheckExistDoneReceiver {
-    private static final int NR_ENTRY_PER_PAGE = Policy.Constants.YTSEARCH_MAX_RESULTS;
+    private static final int NR_ENTRY_PER_PAGE = Policy.YTSEARCH_MAX_RESULTS;
 
     private final DB            mDb = DB.get();
-    private final YTJSPlayer    mMp = YTJSPlayer.get();
+    private final YTPlayer      mMp = YTPlayer.get();
 
     private YTSearchHelper  mSearchHelper;
     private DBHelper        mDbHelper;
@@ -290,13 +291,13 @@ DBHelper.CheckExistDoneReceiver {
             playtime = Integer.parseInt(getAdapter().getItemPlaytime(position));
         } catch (NumberFormatException e) { }
 
-        YTJSPlayer.Video v = new YTJSPlayer.Video(
+        YTPlayer.Video v = new YTPlayer.Video(
                 getAdapter().getItemVideoId(position),
                 getAdapter().getItemTitle(position),
-                Policy.Constants.DEFAULT_VIDEO_VOLUME,
+                Policy.DEFAULT_VIDEO_VOLUME,
                 playtime);
         mMp.setController(this, playerv);
-        mMp.startVideos(new YTJSPlayer.Video[] { v });
+        mMp.startVideos(new YTPlayer.Video[] { v });
     }
 
     @Override

@@ -29,7 +29,7 @@ import android.preference.PreferenceManager;
 import android.util.Log;
 
 public class Utils {
-    private static final boolean DBG = false;
+    private static final boolean DBG = true;
     private static final String  TAG = "[YoutubeMusicPlayer]";
 
     // This is only for debugging.
@@ -64,6 +64,9 @@ public class Utils {
         eAssert(!sInitialized);
         if (!sInitialized)
             sInitialized = true;
+
+        new File(Policy.APPDATA_DIR).mkdirs();
+        new File(Policy.APPDATA_TMPDIR).mkdirs();
 
         sAppContext = aAppContext;
         sUiHandler = new Handler();
@@ -507,6 +510,13 @@ public class Utils {
         int m = secs / 60;
         secs -= m * 60;
         return String.format("%02d:%02d:%02d", h, m, secs);
+    }
+
+    public static String
+    secsToMinSecText(int secs) {
+        int m = secs / 60;
+        secs -= m * 60;
+        return String.format("%02d:%02d", m, secs);
     }
 
     public static void

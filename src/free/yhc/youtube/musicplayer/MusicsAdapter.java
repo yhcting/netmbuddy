@@ -47,9 +47,9 @@ public class MusicsAdapter extends ResourceCursorAdapter {
     createCursor() {
         if (MusicsActivity.PLID_RECENT_PLAYED == mCurArg.plid)
             return DB.get().queryVideos(sQueryCols, DB.ColVideo.TIME_PLAYED, false);
-        else if (MusicsActivity.PLID_SEARCHED == mCurArg.plid)
-            return DB.get().queryVideosSearchTitle(sQueryCols, mCurArg.extra);
-        else
+        else if (MusicsActivity.PLID_SEARCHED == mCurArg.plid) {
+            return DB.get().queryVideosSearchTitle(sQueryCols, mCurArg.extra.split("\\s"));
+        } else
             return DB.get().queryVideos(mCurArg.plid, sQueryCols, DB.ColVideo.TITLE, true);
     }
 

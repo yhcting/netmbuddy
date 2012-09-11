@@ -31,10 +31,12 @@ import free.yhc.youtube.musicplayer.model.Err;
 import free.yhc.youtube.musicplayer.model.Policy;
 import free.yhc.youtube.musicplayer.model.UiUtils;
 import free.yhc.youtube.musicplayer.model.Utils;
+import free.yhc.youtube.musicplayer.model.YTDownloader;
+import free.yhc.youtube.musicplayer.model.YTPlayer;
 
 public class PlaylistActivity extends Activity {
     private final DB            mDb = DB.get();
-    private final YTJSPlayer    mMp = YTJSPlayer.get();
+    private final YTPlayer      mMp = YTPlayer.get();
 
     private ListView mListv;
 
@@ -49,7 +51,7 @@ public class PlaylistActivity extends Activity {
             return;
 
         Intent intent = new Intent(Intent.ACTION_SEND);
-        intent.putExtra(Intent.EXTRA_EMAIL, new String[] { Policy.Constants.REPORT_RECEIVER });
+        intent.putExtra(Intent.EXTRA_EMAIL, new String[] { Policy.REPORT_RECEIVER });
         intent.putExtra(Intent.EXTRA_TEXT, text);
         intent.putExtra(Intent.EXTRA_SUBJECT, subject);
         intent.setType("message/rfc822");
@@ -102,11 +104,17 @@ public class PlaylistActivity extends Activity {
 
     private void
     playAllMusics(View anchor) {
+        // For test
+        YTDownloader ytdnr = new YTDownloader();
+        ytdnr.open();
+        ytdnr.download("", "", new File(""));
+        /*
         playMusics(mDb.queryVideos(new ColVideo[] { ColVideo.VIDEOID,
                                                     ColVideo.TITLE,
                                                     ColVideo.VOLUME,
                                                     ColVideo.PLAYTIME},
                                    null, false));
+        */
     }
 
     // ------------------------------------------------------------------------
@@ -128,7 +136,7 @@ public class PlaylistActivity extends Activity {
                 // Stop/Pause all operations that might use DB before changing and reloading DB.
                 // At this moment, playing video is only operation accessing DB
                 // (Updating playtime)
-                YTJSPlayer.get().stopVideos();
+                YTPlayer.get().stopVideos();
                 synchronized (uiWait) {
                     uiWait.notifyAll();
                 }
@@ -158,6 +166,15 @@ public class PlaylistActivity extends Activity {
     }
 
     private Err
+    mergeDbInBackground(File exDbf) {
+        // Actually, in case of merging DB, we don't need to stop DB access.
+        // But, just in case...
+        stopDbAccess();
+
+        return mDb.mergeDatabase(exDbf);
+    }
+
+    private Err
     exportDbInBackground(File exDbf) {
         stopDbAccess();
 
@@ -181,7 +198,7 @@ public class PlaylistActivity extends Activity {
 
     private void
     onMenuMoreImportDb(View anchor) {
-        final File exDbf = new File(Policy.Constants.EXTERNAL_DBFILE);
+        final File exDbf = new File(Policy.EXTERNAL_DBFILE);
         // Actual import!
         CharSequence title = getResources().getText(R.string.importdb);
         CharSequence msg = getResources().getText(R.string.database) + " <= " + exDbf.getAbsolutePath();
@@ -219,8 +236,47 @@ public class PlaylistActivity extends Activity {
     }
 
     private void
+    onMenuMoreMergeDb(View anchor) {
+        final File exDbf = new File(Policy.EXTERNAL_DBFILE);
+        // Actual import!
+        CharSequence title = getResources().getText(R.string.mergedb);
+        CharSequence msg = getResources().getText(R.string.database) + " <= " + exDbf.getAbsolutePath();
+        UiUtils.buildConfirmDialog(this, title, msg, new UiUtils.ConfirmAction() {
+            @Override
+            public void onOk(Dialog dialog) {
+                // Check external DB file.
+                if (!exDbf.canRead()) {
+                    UiUtils.showTextToast(PlaylistActivity.this, R.string.msg_fail_access_exdb);
+                    return;
+                }
+
+                SpinAsyncTask.Worker worker = new SpinAsyncTask.Worker() {
+                    @Override
+                    public void
+                    onPostExecute(SpinAsyncTask task, Err result) {
+                        if (Err.NO_ERR == result)
+                            getAdapter().reloadCursorAsync();
+                        else
+                            UiUtils.showTextToast(PlaylistActivity.this, result.getMessage());
+                    }
+
+                    @Override
+                    public void onCancel(SpinAsyncTask task) { }
+
+                    @Override
+                    public Err
+                    doBackgroundWork(SpinAsyncTask task, Object... objs) {
+                        return mergeDbInBackground(exDbf);
+                    }
+                };
+                new SpinAsyncTask(PlaylistActivity.this, worker, R.string.merging_db, false).execute(exDbf);
+            }
+        }).show();
+    }
+
+    private void
     onMenuMoreExportDb(View anchor) {
-        final File exDbf = new File(Policy.Constants.EXTERNAL_DBFILE);
+        final File exDbf = new File(Policy.EXTERNAL_DBFILE);
         // Actual import!
         CharSequence title = getResources().getText(R.string.exportdb);
         CharSequence msg = getResources().getText(R.string.database) + " => " + exDbf.getAbsolutePath();
@@ -269,8 +325,10 @@ public class PlaylistActivity extends Activity {
 
     private void
     onMenuMore(final View anchor) {
-        final int[] optStringIds = { R.string.app_info,
+        final int[] optStringIds = {
+                R.string.app_info,
                 R.string.importdb,
+                R.string.mergedb,
                 R.string.exportdb,
                 R.string.feedback };
 
@@ -294,6 +352,10 @@ public class PlaylistActivity extends Activity {
 
                 case R.string.importdb:
                     onMenuMoreImportDb(anchor);
+                    break;
+
+                case R.string.mergedb:
+                    onMenuMoreMergeDb(v);
                     break;
 
                 case R.string.app_info:

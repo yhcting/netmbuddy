@@ -25,6 +25,7 @@ import free.yhc.youtube.musicplayer.model.DB;
 import free.yhc.youtube.musicplayer.model.Err;
 import free.yhc.youtube.musicplayer.model.UiUtils;
 import free.yhc.youtube.musicplayer.model.Utils;
+import free.yhc.youtube.musicplayer.model.YTPlayer;
 
 public class MusicsActivity extends Activity {
     public static final long PLID_INVALID       = DB.INVALID_PLAYLIST_ID;
@@ -32,7 +33,7 @@ public class MusicsActivity extends Activity {
     public static final long PLID_SEARCHED      = PLID_INVALID - 2;
 
     private final DB            mDb = DB.get();
-    private final YTJSPlayer    mMp = YTJSPlayer.get();
+    private final YTPlayer      mMp = YTPlayer.get();
 
     private long        mPlid   = PLID_INVALID;
     private ListView    mListv  = null;
@@ -108,6 +109,41 @@ public class MusicsActivity extends Activity {
     }
 
     private void
+    onDeleteMusicCompletely(final long mid) {
+        SpinAsyncTask.Worker worker = new SpinAsyncTask.Worker() {
+            @Override
+            public void onPostExecute(SpinAsyncTask task, Err result) {
+                getAdapter().reloadCursorAsync();
+            }
+            @Override
+            public void onCancel(SpinAsyncTask task) {
+            }
+            @Override
+            public Err doBackgroundWork(SpinAsyncTask task, Object... objs) {
+                mDb.deleteVideoAndRefsCompletely(mid);
+                return Err.NO_ERR;
+            }
+        };
+        new SpinAsyncTask(this, worker, R.string.deleting, false).execute();
+    }
+
+    private void
+    onDeleteMusic(final long musicId) {
+        if (isUserPlaylist(mPlid)) {
+            mDb.deleteVideoFromPlaylist(mPlid, musicId);
+            getAdapter().reloadCursorAsync();
+        } else {
+            UiUtils.ConfirmAction action = new UiUtils.ConfirmAction() {
+                @Override
+                public void onOk(Dialog dialog) {
+                    onDeleteMusicCompletely(musicId);
+                }
+            };
+            UiUtils.buildConfirmDialog(this, R.string.delete, R.string.msg_delete_music, action).show();
+        }
+    }
+
+    private void
     setToPlaylistThumbnail(long musicId, int itemPos) {
         eAssert(isUserPlaylist(mPlid));
         byte[] data = getAdapter().getMusicThumbnail(itemPos);
@@ -118,14 +154,14 @@ public class MusicsActivity extends Activity {
 
     private void
     onListItemClick(View view, int position, long itemId) {
-        YTJSPlayer.Video vid = new YTJSPlayer.Video(getAdapter().getMusicYtid(position),
-                                                    getAdapter().getMusicTitle(position),
-                                                    getAdapter().getMusicVolume(position),
-                                                    getAdapter().getMusicPlaytime(position));
+        YTPlayer.Video vid = new YTPlayer.Video(getAdapter().getMusicYtid(position),
+                                                getAdapter().getMusicTitle(position),
+                                                getAdapter().getMusicVolume(position),
+                                                getAdapter().getMusicPlaytime(position));
         ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
         playerv.setVisibility(View.VISIBLE);
         mMp.setController(this, playerv);
-        mMp.startVideos(new YTJSPlayer.Video[] { vid });
+        mMp.startVideos(new YTPlayer.Video[] { vid });
     }
 
     private void
@@ -174,6 +210,27 @@ public class MusicsActivity extends Activity {
         aDiag.show();
     }
 
+    private void
+    onContextMenuRename(final long itemId, final int itemPos) {
+        UiUtils.EditTextAction action = new UiUtils.EditTextAction() {
+            @Override
+            public void prepare(Dialog dialog, EditText edit) { }
+
+            @Override
+            public void onOk(Dialog dialog, EditText edit) {
+                mDb.updateVideo(DB.ColVideo.ID, itemId,
+                                DB.ColVideo.TITLE, edit.getText().toString());
+                getAdapter().reloadCursorAsync();
+            }
+        };
+        AlertDialog diag = UiUtils.buildOneLineEditTextDialog(this,
+                                                              R.string.rename,
+                                                              getAdapter().getMusicTitle(itemPos),
+                                                              action);
+        diag.show();
+
+    }
+
     @Override
     public boolean
     onContextItemSelected(MenuItem mItem) {
@@ -187,18 +244,20 @@ public class MusicsActivity extends Activity {
             onAddToPlaylist(info.id, info.position, true);
             return true;
 
-        case R.id.delete:
-            eAssert(isUserPlaylist(mPlid));
-            mDb.deleteVideoFromPlaylist(mPlid, info.id);
-            getAdapter().reloadCursorAsync();
+        case R.id.volume:
+            onContextMenuVolume(info.id, info.position);
             return true;
 
         case R.id.plthumbnail:
             setToPlaylistThumbnail(info.id, info.position);
             return true;
 
-        case R.id.volume:
-            onContextMenuVolume(info.id, info.position);
+        case R.id.rename:
+            onContextMenuRename(info.id, info.position);
+            return true;
+
+        case R.id.delete:
+            onDeleteMusic(info.id);
             return true;
         }
         eAssert(false);
@@ -222,11 +281,9 @@ public class MusicsActivity extends Activity {
         if (isUserPlaylist(mPlid)) {
             menu.findItem(R.id.move_to_playlist).setVisible(true);
             menu.findItem(R.id.plthumbnail).setVisible(true);
-            menu.findItem(R.id.delete).setVisible(true);
         } else {
             menu.findItem(R.id.move_to_playlist).setVisible(false);
             menu.findItem(R.id.plthumbnail).setVisible(false);
-            menu.findItem(R.id.delete).setVisible(false);
         }
     }
 

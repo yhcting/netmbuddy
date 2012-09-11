@@ -70,14 +70,41 @@
                  />
          </LinearLayout>
     </FrameLayout>
-    <ProgressBar
-        android:id="@+id/music_player_progressbar" 
-        android:layout_width="match_parent" 
-        android:layout_height="3dip"
-        style="?android:attr/progressBarStyleHorizontal"
-        android:progressDrawable="@drawable/progressbar"
-        android:max="100"
-        />    
+    <LinearLayout
+        android:id="@+id/music_player_progress"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:weightSum="1"
+        android:orientation="horizontal"
+        >
+        <TextView
+            android:id="@+id/music_player_curpos"
+            android:layout_width="40dip"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:textSize="@dimen/desc_text_size"
+            android:textColor="@color/desc_text_color"
+            />
+        <SeekBar
+            android:id="@+id/music_player_seekbar" 
+            android:layout_width="0dip" 
+            android:layout_height="22dip"
+            android:layout_weight="1"
+            android:max="100"
+            android:progressDrawable="@drawable/progressbar"
+            android:thumb="@drawable/seek_thumb"
+            />
+        <TextView
+            android:id="@+id/music_player_maxpos"
+            android:layout_width="40dip"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:textSize="@dimen/desc_text_size"
+            android:textColor="@color/desc_text_color"
+            />
+        </LinearLayout>    
     <ImageView
         android:layout_width="match_parent"
         android:layout_height="1dip"
