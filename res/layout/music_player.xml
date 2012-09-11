@@ -46,7 +46,6 @@
                  android:gravity="center"
                  android:scaleType="fitCenter"
                  android:src="@drawable/ic_media_prev"
-                 android:alpha="0.5"
                  android:clickable="true"
                  />
              <ImageView
@@ -57,7 +56,6 @@
                  android:gravity="center"
                  android:scaleType="fitCenter"
                  android:src="@drawable/ic_media_play"
-                 android:alpha="0.5"
                  android:clickable="true"
                  />
              <ImageView
@@ -68,7 +66,6 @@
                  android:gravity="center"
                  android:scaleType="fitCenter"
                  android:src="@drawable/ic_media_next"
-                 android:alpha="0.5"
                  android:clickable="true"
                  />
          </LinearLayout>
