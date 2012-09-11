@@ -31,10 +31,12 @@ import free.yhc.youtube.musicplayer.model.Err;
 import free.yhc.youtube.musicplayer.model.Policy;
 import free.yhc.youtube.musicplayer.model.UiUtils;
 import free.yhc.youtube.musicplayer.model.Utils;
+import free.yhc.youtube.musicplayer.model.YTDownloader;
+import free.yhc.youtube.musicplayer.model.YTPlayer;
 
 public class PlaylistActivity extends Activity {
     private final DB            mDb = DB.get();
-    private final YTJSPlayer    mMp = YTJSPlayer.get();
+    private final YTPlayer      mMp = YTPlayer.get();
 
     private ListView mListv;
 
@@ -49,7 +51,7 @@ public class PlaylistActivity extends Activity {
             return;
 
         Intent intent = new Intent(Intent.ACTION_SEND);
-        intent.putExtra(Intent.EXTRA_EMAIL, new String[] { Policy.Constants.REPORT_RECEIVER });
+        intent.putExtra(Intent.EXTRA_EMAIL, new String[] { Policy.REPORT_RECEIVER });
         intent.putExtra(Intent.EXTRA_TEXT, text);
         intent.putExtra(Intent.EXTRA_SUBJECT, subject);
         intent.setType("message/rfc822");
@@ -100,11 +102,17 @@ public class PlaylistActivity extends Activity {
 
     private void
     playAllMusics(View anchor) {
+        // For test
+        YTDownloader ytdnr = new YTDownloader();
+        ytdnr.open();
+        ytdnr.download("", "", new File(""));
+        /*
         playMusics(mDb.queryVideos(new ColVideo[] { ColVideo.VIDEOID,
                                                     ColVideo.TITLE,
                                                     ColVideo.VOLUME,
                                                     ColVideo.PLAYTIME},
                                    null, false));
+        */
     }
 
     // ------------------------------------------------------------------------
@@ -126,7 +134,7 @@ public class PlaylistActivity extends Activity {
                 // Stop/Pause all operations that might use DB before changing and reloading DB.
                 // At this moment, playing video is only operation accessing DB
                 // (Updating playtime)
-                YTJSPlayer.get().stopVideos();
+                YTPlayer.get().stopVideos();
                 synchronized (uiWait) {
                     uiWait.notifyAll();
                 }
@@ -188,7 +196,7 @@ public class PlaylistActivity extends Activity {
 
     private void
     onMenuMoreImportDb(View anchor) {
-        final File exDbf = new File(Policy.Constants.EXTERNAL_DBFILE);
+        final File exDbf = new File(Policy.EXTERNAL_DBFILE);
         // Actual import!
         CharSequence title = getResources().getText(R.string.importdb);
         CharSequence msg = getResources().getText(R.string.database) + " <= " + exDbf.getAbsolutePath();
@@ -227,7 +235,7 @@ public class PlaylistActivity extends Activity {
 
     private void
     onMenuMoreMergeDb(View anchor) {
-        final File exDbf = new File(Policy.Constants.EXTERNAL_DBFILE);
+        final File exDbf = new File(Policy.EXTERNAL_DBFILE);
         // Actual import!
         CharSequence title = getResources().getText(R.string.mergedb);
         CharSequence msg = getResources().getText(R.string.database) + " <= " + exDbf.getAbsolutePath();
@@ -266,7 +274,7 @@ public class PlaylistActivity extends Activity {
 
     private void
     onMenuMoreExportDb(View anchor) {
-        final File exDbf = new File(Policy.Constants.EXTERNAL_DBFILE);
+        final File exDbf = new File(Policy.EXTERNAL_DBFILE);
         // Actual import!
         CharSequence title = getResources().getText(R.string.exportdb);
         CharSequence msg = getResources().getText(R.string.database) + " => " + exDbf.getAbsolutePath();

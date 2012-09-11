@@ -5,6 +5,7 @@ import android.content.res.Configuration;
 import free.yhc.youtube.musicplayer.model.DB;
 import free.yhc.youtube.musicplayer.model.RTState;
 import free.yhc.youtube.musicplayer.model.Utils;
+import free.yhc.youtube.musicplayer.model.YTPlayer;
 
 public class YTMPApp extends Application {
     @Override
@@ -20,7 +21,7 @@ public class YTMPApp extends Application {
         Utils.init(getApplicationContext());
         DB.get().open();
         RTState.get();
-        YTJSPlayer.get().init();
+        YTPlayer.get();
     }
 
     @Override

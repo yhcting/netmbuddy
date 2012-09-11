@@ -5,8 +5,15 @@ public class RTState {
     private static RTState sInstance = null;
 
     private String  mLastSearchWord = "";
+    // TODO
+    // Proxy string should be changed if user changes proxy setting.
+    private String  mProxy          = "";
 
-    private RTState() { }
+    private RTState() {
+        mProxy = System.getenv("http_proxy");
+        if (null == mProxy)
+            mProxy = "";
+    }
 
     public static RTState
     get() {
@@ -23,5 +30,10 @@ public class RTState {
     public String
     getLastSearchWord() {
         return mLastSearchWord;
+    }
+
+    public String
+    getProxy() {
+        return mProxy;
     }
 }

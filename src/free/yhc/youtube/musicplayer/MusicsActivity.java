@@ -25,6 +25,7 @@ import free.yhc.youtube.musicplayer.model.DB;
 import free.yhc.youtube.musicplayer.model.Err;
 import free.yhc.youtube.musicplayer.model.UiUtils;
 import free.yhc.youtube.musicplayer.model.Utils;
+import free.yhc.youtube.musicplayer.model.YTPlayer;
 
 public class MusicsActivity extends Activity {
     public static final long PLID_INVALID       = DB.INVALID_PLAYLIST_ID;
@@ -32,7 +33,7 @@ public class MusicsActivity extends Activity {
     public static final long PLID_SEARCHED      = PLID_INVALID - 2;
 
     private final DB            mDb = DB.get();
-    private final YTJSPlayer    mMp = YTJSPlayer.get();
+    private final YTPlayer      mMp = YTPlayer.get();
 
     private long        mPlid   = PLID_INVALID;
     private ListView    mListv  = null;
@@ -153,14 +154,14 @@ public class MusicsActivity extends Activity {
 
     private void
     onListItemClick(View view, int position, long itemId) {
-        YTJSPlayer.Video vid = new YTJSPlayer.Video(getAdapter().getMusicYtid(position),
-                                                    getAdapter().getMusicTitle(position),
-                                                    getAdapter().getMusicVolume(position),
-                                                    getAdapter().getMusicPlaytime(position));
+        YTPlayer.Video vid = new YTPlayer.Video(getAdapter().getMusicYtid(position),
+                                                getAdapter().getMusicTitle(position),
+                                                getAdapter().getMusicVolume(position),
+                                                getAdapter().getMusicPlaytime(position));
         ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
         playerv.setVisibility(View.VISIBLE);
         mMp.setController(this, playerv);
-        mMp.startVideos(new YTJSPlayer.Video[] { vid });
+        mMp.startVideos(new YTPlayer.Video[] { vid });
     }
 
     private void

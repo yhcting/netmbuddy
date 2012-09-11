@@ -167,7 +167,7 @@ public class DB extends SQLiteOpenHelper {
             cvs.put(ColVideo.PLAYTIME.getName(), playtime);
             cvs.put(ColVideo.THUMBNAIL.getName(), thumbnail);
 
-            cvs.put(ColVideo.VOLUME.getName(), Policy.Constants.DEFAULT_VIDEO_VOLUME);
+            cvs.put(ColVideo.VOLUME.getName(), Policy.DEFAULT_VIDEO_VOLUME);
             cvs.put(ColVideo.RATE.getName(), 0);
             cvs.put(ColVideo.TIME_ADD.getName(), System.currentTimeMillis());
             cvs.put(ColVideo.TIME_PLAYED.getName(), System.currentTimeMillis());
