@@ -4,6 +4,10 @@ public class Policy {
     public static final String  REPORT_RECEIVER         = "yhcting77@gmail.com";
     public static final String  APPDATA_DIR             = "/sdcard/ytmplayer/";
     public static final String  APPDATA_TMPDIR          = APPDATA_DIR + "tmp/";
+    // High resolution video directory (For video)
+    public static final String  APPDATA_HRVID_DIR       = APPDATA_DIR + "hrvid/";
+    // Low resolution video directory (For music)
+    public static final String  APPDATA_LRVID_DIR       = APPDATA_DIR + "lrvid/";
     public static final String  EXTERNAL_DBFILE         = APPDATA_DIR + "ytmplayer.db";
 
     // --------------------------------------------------------------------

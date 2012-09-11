@@ -67,6 +67,8 @@ public class Utils {
 
         new File(Policy.APPDATA_DIR).mkdirs();
         new File(Policy.APPDATA_TMPDIR).mkdirs();
+        new File(Policy.APPDATA_HRVID_DIR).mkdirs();
+        new File(Policy.APPDATA_LRVID_DIR).mkdirs();
 
         sAppContext = aAppContext;
         sUiHandler = new Handler();
