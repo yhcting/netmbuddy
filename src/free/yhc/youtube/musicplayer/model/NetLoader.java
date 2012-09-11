@@ -115,8 +115,8 @@ public class NetLoader {
                 HttpHost httpTarget = new HttpHost(uri.getHost(), 80, "http");
 
                 logI("executing request: " + httpGet.getRequestLine().toString());
-                logI("uri: " + httpGet.getURI().toString());
-                logI("target: " + httpTarget.getHostName());
+                //logI("uri: " + httpGet.getURI().toString());
+                //logI("target: " + httpTarget.getHostName());
 
                 HttpResponse httpResp = mHttpClient.execute(httpTarget, httpGet);
                 logI("YTDownloader HTTP response status line : " + httpResp.getStatusLine().toString());

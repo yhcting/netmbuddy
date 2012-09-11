@@ -3,6 +3,7 @@ package free.yhc.youtube.musicplayer.model;
 import static free.yhc.youtube.musicplayer.model.Utils.eAssert;
 import static free.yhc.youtube.musicplayer.model.Utils.logD;
 import static free.yhc.youtube.musicplayer.model.Utils.logI;
+import static free.yhc.youtube.musicplayer.model.Utils.logW;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -28,7 +29,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.ProgressBar;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import free.yhc.youtube.musicplayer.R;
 
@@ -79,6 +80,7 @@ MediaPlayer.OnSeekCompleteListener {
     private WifiLock            mWfl        = null;
     private MediaPlayer         mMp         = null;
     private MPState             mMpS        = MPState.INVALID; // state of mMp;
+    private YTVideoConnector    mYtConn     = null;
 
     // ------------------------------------------------------------------------
     // UI Control.
@@ -159,51 +161,79 @@ MediaPlayer.OnSeekCompleteListener {
     }
 
 
-    private class UpdateProgress {
-        private ProgressBar progbar = null;
+
+    private class UpdateProgress implements Runnable {
+        private SeekBar     seekbar = null;
+        private TextView    curposv = null;
+        private TextView    maxposv = null;
         private int         lastProgress = -1;
-        private int         duration = 0;
+        private int         lastProgress2 = -1;
 
-        void setProgbar(ProgressBar aProgbar) {
+        private String
+        progressToTimeText(int progress) {
+            return Utils.secsToMinSecText(mpGetDuration() / 1000 * lastProgress / 100);
+        }
+
+        void setProgressView(ViewGroup progv) {
             eAssert(Utils.isUiThread());
-            progbar = aProgbar;
-            if (null != progbar)
-                progbar.setProgress(lastProgress);
+            eAssert(null != progv.findViewById(R.id.music_player_progress));
+            curposv = (TextView)progv.findViewById(R.id.music_player_curpos);
+            maxposv = (TextView)progv.findViewById(R.id.music_player_maxpos);
+            seekbar = (SeekBar)progv.findViewById(R.id.music_player_seekbar);
+            if (null != seekbar) {
+                seekbar.setProgress(lastProgress);
+                curposv.setText(progressToTimeText(lastProgress));
+                maxposv.setText(Utils.secsToMinSecText(mpGetDuration() / 1000));
+            }
         }
 
-        void start(ProgressBar aProgbar) {
+        void start() {
             //logI("Progress Start");
-            progbar = aProgbar;
             lastProgress = -1;
-            duration = 0;
+            lastProgress2 = -1;
+            if (null != seekbar) {
+                seekbar.setProgress(0);
+                curposv.setText(progressToTimeText(0));
+                maxposv.setText(Utils.secsToMinSecText(mpGetDuration() / 1000));
+            }
+            run();
         }
 
-        void end() {
+        void stop() {
             //logI("Progress End");
-            progbar = null;
+            Utils.getUiHandler().removeCallbacks(this);
             lastProgress = -1;
-            duration = 0;
+            lastProgress2 = -1;
         }
 
-        // FIXME
-        // This is to workaround incorrect return value of youtube player's getDuration() function.
-        // So, if Youtube player gives right value, this function and all related codes should be removed.
-        void setDuration(int newDuration) {
-            duration = newDuration;
-        }
-
-        void update(int aDuration, int currentPos) {
+        void update(int duration, int currentPos) {
             // ignore aDuration.
             // Sometimes youtube player returns incorrect duration value!
-            //logI("Progress Update(" + (null == progbar? "X": "O") + ") : " + currentPos + " / " + duration);
-            if (null != progbar) {
+            if (null != seekbar) {
                 int curProgress = (duration > 0)? currentPos * 100 / duration
                                                 : 0;
-                if (curProgress > lastProgress)
-                    progbar.setProgress(curProgress);
+                if (curProgress > lastProgress) {
+                    seekbar.setProgress(curProgress);
+                    curposv.setText(progressToTimeText(curProgress));
+                }
 
                 lastProgress = curProgress;
             }
+        }
+
+        void update2(int percent) {
+            // Update secondary progress
+            if (null != seekbar) {
+                if (lastProgress2 != percent)
+                    seekbar.setSecondaryProgress(percent);
+                lastProgress2 = percent;
+            }
+        }
+
+        @Override
+        public void run() {
+            update(mpGetDuration(), mpGetCurrentPosition());
+            Utils.getUiHandler().postDelayed(this, 1000);
         }
     }
     // ========================================================================
@@ -362,7 +392,12 @@ MediaPlayer.OnSeekCompleteListener {
         mpSetState(MPState.IDLE);
     }
 
-    public int
+    private void
+    mpSetVolume(int vol) {
+        mMp.setVolume(vol, vol);
+    }
+
+    private int
     mpGetCurrentPosition() {
         switch (mpGetState()) {
         case ERROR:
@@ -372,7 +407,7 @@ MediaPlayer.OnSeekCompleteListener {
         return mMp.getCurrentPosition();
     }
 
-    public int
+    private int
     mpGetDuration() {
         switch(mpGetState()) {
         case PREPARED:
@@ -385,33 +420,33 @@ MediaPlayer.OnSeekCompleteListener {
         return 0;
     }
 
-    public boolean
+    private boolean
     mpIsPlaying() {
         //logD("MPlayer - isPlaying");
         return mMp.isPlaying();
     }
 
-    public void
+    private void
     mpPause() {
         logD("MPlayer - pause");
         mMp.pause();
         mpSetState(MPState.PAUSED);
     }
 
-    public void
+    private void
     mpSeekTo(int pos) {
         logD("MPlayer - seekTo");
         mMp.seekTo(pos);
     }
 
-    public void
+    private void
     mpStart() {
         logD("MPlayer - start");
         mMp.start();
         mpSetState(MPState.STARTED);
     }
 
-    public void
+    private void
     mpStop() {
         if (null == mMp)
             return;
@@ -545,14 +580,14 @@ MediaPlayer.OnSeekCompleteListener {
     }
 
     private void
-    pvConfigureProgressBar(ProgressBar pbar, MPState from, MPState to) {
+    pvConfigureProgress(ViewGroup progressv, MPState from, MPState to) {
 
-        if (null == pbar)
+        if (null == progressv)
             return;
 
         switch (to) {
         case PREPARED:
-            mUpdateProg.start(pbar);
+            mUpdateProg.start();
             break;
 
         case PLAYBACK_COMPLETED:
@@ -562,17 +597,17 @@ MediaPlayer.OnSeekCompleteListener {
             mUpdateProg.update(1, 1);
             // Missing 'break' is intentional.
 
+        case INITIALIZED:
+        case PREPARING:
         case STARTED:
-            if (isVideoPlaying())
-                mUpdateProg.setDuration(mVideos[mVideoi].playtime);
         case PAUSED:
         case BUFFERING:
             ; // do nothing progress is now under update..
             break;
 
         default:
-            mUpdateProg.end();
-            pbar.setProgress(0);
+            mUpdateProg.stop();
+            mUpdateProg.update(1, 0);
         }
     }
 
@@ -583,8 +618,8 @@ MediaPlayer.OnSeekCompleteListener {
 
         pvConfigureTitle((TextView)playerv.findViewById(R.id.music_player_title),
                           from, to);
-        pvConfigureProgressBar((ProgressBar)playerv.findViewById(R.id.music_player_progressbar),
-                               from, to);
+        pvConfigureProgress((ViewGroup)playerv.findViewById(R.id.music_player_progress),
+                           from, to);
         pvConfigureControl((ViewGroup)playerv.findViewById(R.id.music_player_control),
                            from, to);
     }
@@ -612,7 +647,6 @@ MediaPlayer.OnSeekCompleteListener {
                 default:
                     ; // do nothing.
                 }
-                pvDisableControlButton(playerv);
             }
         });
 
@@ -639,7 +673,24 @@ MediaPlayer.OnSeekCompleteListener {
 
     private void
     pvInit(ViewGroup playerv) {
-        mUpdateProg.setProgbar((ProgressBar)playerv.findViewById(R.id.music_player_progressbar));
+        ViewGroup progv = (ViewGroup)playerv.findViewById(R.id.music_player_progress);
+        SeekBar sb = (SeekBar)progv.findViewById(R.id.music_player_seekbar);
+        sb.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                mpSeekTo(seekBar.getProgress() * mpGetDuration() / 100);
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress,
+                    boolean fromUser) {
+            }
+        });
+        mUpdateProg.setProgressView(progv);
         pvSetupControlButton(playerv);
         pvConfigureAll(playerv, MPState.INVALID, mpGetState());
     }
@@ -669,35 +720,47 @@ MediaPlayer.OnSeekCompleteListener {
     private void
     startVideo(final String videoId, int volume) {
         eAssert(0 <= volume && volume <= 100);
-        new Thread(new Runnable() {
+
+        // Stop if player is already running.
+        mpStop();
+        mpRelease();
+        mpNewInstance();
+        mpReset();
+        mpSetVolume(volume);
+
+        YTVideoConnector.YtVideoConnListener listener = new YTVideoConnector.YtVideoConnListener() {
             @Override
-            public void run() {
-                // Implement!!!!
-                YTVideoConnector.YtVideo ytv = null;
-                YTVideoConnector ytconn = new YTVideoConnector();
-                try {
-                    ytconn.connect(videoId);
-                    ytv = ytconn.getVideo(YTVideoConnector.YTQUALITY_SCORE_LOWEST);
-                } catch (YTMPException e) {
-                    eAssert(false);
+            public void
+            onPreConn(YTVideoConnector ytconn, String ytvid, Object user) {
+            }
+
+            @Override
+            public void
+            onPostConn(YTVideoConnector ytconn, Err result, String ytvid, Object user) {
+                mYtConn = null;
+
+                if (Err.NO_ERR != result) {
+                    logW("YTVideoConnector Fails : " + result.name());
+                    return;
                 }
 
-                final String vurl = ytv.url;
-                // Running media player is OK here???
-
-                Utils.getUiHandler().post(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            mpSetDataSource(Uri.parse(vurl));
-                        } catch (IOException e) {
-                            eAssert(false);
-                        }
-                        mpPrepareAsync();
-                    }
-                });
+                YTVideoConnector.YtVideo ytv = ytconn.getVideo(YTVideoConnector.YTQUALITY_SCORE_LOWEST);
+                try {
+                    mpSetDataSource(Uri.parse(ytv.url));
+                } catch (IOException e) {
+                    eAssert(false);
+                }
+                mpPrepareAsync();
             }
-        }).start();
+
+            @Override
+            public void
+            onConnCancelled(YTVideoConnector ytconn, String ytvid, Object user) {
+                mYtConn = null;
+            }
+        };
+        mYtConn = new YTVideoConnector(videoId, volume, listener);
+        mYtConn.execute();
     }
 
     private void
@@ -791,12 +854,6 @@ MediaPlayer.OnSeekCompleteListener {
         if (vs.length <= 0)
             return;
 
-        // Stop if player is already running.
-        mpStop();
-        mpRelease();
-        mpNewInstance();
-        mpReset();
-
         acquireLocks();
 
         mVideos = vs;
@@ -830,6 +887,9 @@ MediaPlayer.OnSeekCompleteListener {
 
     public void
     stopVideos() {
+        if (null != mYtConn)
+            mYtConn.forceCancel();
+
         mpStop();
         mVideos = null;
         mVideoi = -1;
@@ -839,7 +899,8 @@ MediaPlayer.OnSeekCompleteListener {
     setVideoVolume(int vol) {
         eAssert(0 <= vol && vol <= 100);
         // Implement this
-        eAssert(false);
+        if (isVideoPlaying())
+            mpSetVolume(vol);
     }
 
     // ============================================================================
@@ -865,8 +926,10 @@ MediaPlayer.OnSeekCompleteListener {
     @Override
     public void
     onBufferingUpdate (MediaPlayer mp, int percent) {
-        logD("MPlayer - onBufferingUpdate");
-        mpSetState(MPState.BUFFERING);
+        //logD("MPlayer - onBufferingUpdate : " + percent + " %");
+        // See comments aroudn MEDIA_INFO_BUFFERING_START in onInfo()
+        //mpSetState(MPState.BUFFERING);
+        mUpdateProg.update2(percent);
     }
 
     @Override
@@ -936,13 +999,19 @@ MediaPlayer.OnSeekCompleteListener {
             break;
 
         case MediaPlayer.MEDIA_INFO_BUFFERING_START:
-            mpSetState(MPState.BUFFERING);
+            // NOTE
+            // In case of progressive download, media player tries to buffering continuously.
+            // Even if media is playing, media info keep notifying 'buffering'
+            // This is not expected behavior of player.
+            // So, just ignore buffering state.
+            //mpSetState(MPState.BUFFERING);
             break;
 
         case MediaPlayer.MEDIA_INFO_BUFFERING_END:
             // TODO
             // Check is there any exceptional case regarding buffering???
-            mpSetState(MPState.STARTED);
+            //mpSetState(MPState.STARTED);
+            mUpdateProg.update2(100);
             break;
 
         case MediaPlayer.MEDIA_INFO_BAD_INTERLEAVING:

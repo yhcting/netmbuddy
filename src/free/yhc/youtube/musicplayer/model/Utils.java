@@ -512,6 +512,13 @@ public class Utils {
         return String.format("%02d:%02d:%02d", h, m, secs);
     }
 
+    public static String
+    secsToMinSecText(int secs) {
+        int m = secs / 60;
+        secs -= m * 60;
+        return String.format("%02d:%02d", m, secs);
+    }
+
     public static void
     copy(OutputStream os, InputStream is) throws IOException {
         byte buf[]=new byte[1024 * 16];

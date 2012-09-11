@@ -12,14 +12,22 @@ import java.net.URLDecoder;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import android.os.AsyncTask;
 
-public class YTVideoConnector {
+
+public class YTVideoConnector extends AsyncTask<Void, Void, Err> {
     public static final int     YTQUALITY_SCORE_HIGHEST     = 100;
     public static final int     YTQUALITY_SCORE_HIGH        = 80;
     public static final int     YTQUALITY_SCORE_MIDHIGH     = 60;
     public static final int     YTQUALITY_SCORE_MIDLOW      = 40;
     public static final int     YTQUALITY_SCORE_LOW         = 20;
     public static final int     YTQUALITY_SCORE_LOWEST      = 0;
+
+    public interface YtVideoConnListener {
+        public void onPreConn(YTVideoConnector ytconn, String ytvid, Object user);
+        public void onConnCancelled(YTVideoConnector ytconn, String ytvid, Object user);
+        public void onPostConn(YTVideoConnector ytconn, Err result, String ytvid, Object user);
+    }
 
     // See youtube api documentation.
     private static final int    YTVID_LENGTH = 11;
@@ -50,7 +58,14 @@ public class YTVideoConnector {
     private static final Pattern    sYtUrlStreamMapPattern
         = Pattern.compile(".*\"url_encoded_fmt_stream_map\": \"([^\"]+)\".*");
 
-    private YtVideoHtmlResult mYtr = null;
+    private final NetLoader     mLoader = new NetLoader();
+    private final String        mYtvid;
+    private final Object        mUser;
+    private final YtVideoConnListener mListener;
+
+    private YtVideoHtmlResult   mYtr = null;
+    private boolean             mCancelled = false;
+
 
     public static class YtVideo {
         public final String   url;
@@ -193,24 +208,17 @@ public class YTVideoConnector {
         return result;
     }
 
-    public YTVideoConnector() {
+    public YTVideoConnector(String ytvid, Object user,
+                            YtVideoConnListener connListener) {
+        mYtvid = ytvid;
+        mUser = user;
+        mListener = connListener;
     }
 
     public void
-    connect(String ytvid)
-        throws YTMPException {
-        NetLoader loader = new NetLoader().open();
-        NetLoader.HttpRespContent content;
-        try {
-            // Read and parse html web page of video.
-            content = loader.getHttpContent(new URI("http://" + getYtHost() + "/" + getYtUri(ytvid)), true);
-            eAssert(content.type.toLowerCase().startsWith("text/html"));
-            mYtr = parseYtVideoHtml(new BufferedReader(new InputStreamReader(content.stream)));
-            eAssert(mYtr.vids.length > 0);
-            loader.close();
-        } catch (URISyntaxException e) {
-            throw new YTMPException(Err.UNKNOWN);
-        }
+    forceCancel() {
+        mCancelled = true;
+        mLoader.close();
     }
 
     public YtVideo
@@ -236,5 +244,47 @@ public class YTVideoConnector {
         }
         eAssert(null != ve);
         return new YtVideo(ve.url, ve.type);
+    }
+
+    @Override
+    protected void
+    onPreExecute() {
+        mLoader.open();
+        mListener.onPreConn(this, mYtvid, mUser);
+    }
+
+    @Override
+    protected Err
+    doInBackground(Void... dummy) {
+        NetLoader.HttpRespContent content;
+        try {
+            // Read and parse html web page of video.
+            content = mLoader.getHttpContent(new URI("http://" + getYtHost() + "/" + getYtUri(mYtvid)), true);
+            eAssert(content.type.toLowerCase().startsWith("text/html"));
+            mYtr = parseYtVideoHtml(new BufferedReader(new InputStreamReader(content.stream)));
+            eAssert(mYtr.vids.length > 0);
+        } catch (URISyntaxException e) {
+            return Err.UNKNOWN;
+        } catch (YTMPException e) {
+            return e.getError();
+        }
+        return Err.NO_ERR;
+    }
+
+    @Override
+    protected void
+    onPostExecute(Err result) {
+        mLoader.close();
+        if (mCancelled)
+            mListener.onConnCancelled(this, mYtvid, mUser);
+        else
+            mListener.onPostConn(this, result, mYtvid, mUser);
+    }
+
+    @Override
+    public void
+    onCancelled(Err result) {
+        mLoader.close();
+        mListener.onConnCancelled(this, mYtvid, mUser);
     }
 }
