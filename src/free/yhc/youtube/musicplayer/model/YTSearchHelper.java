@@ -223,11 +223,15 @@ public class YTSearchHelper {
         mBgHandler.sendMessage(msg);
     }
 
-    public void
+    public Err
     searchAsync(SearchArg arg) {
         eAssert(0 < arg.starti && 0 < arg.max && arg.max <= Policy.YTSEARCH_MAX_RESULTS);
-        Message msg = mBgHandler.obtainMessage(MSG_WHAT_SEARCH, arg);
-        mBgHandler.sendMessage(msg);
+        if (Utils.isNetworkAvailable()) {
+            Message msg = mBgHandler.obtainMessage(MSG_WHAT_SEARCH, arg);
+            mBgHandler.sendMessage(msg);
+            return Err.NO_ERR;
+        }
+        return Err.NETWORK_UNAVAILABLE;
     }
 
     public void

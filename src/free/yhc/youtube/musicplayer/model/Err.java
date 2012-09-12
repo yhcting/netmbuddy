@@ -8,6 +8,7 @@ public enum Err {
     INTERRUPTED                 (R.string.err_interrupted),
     CANCELLED                   (R.string.err_cancelled),
     MULTITHREADING              (R.string.err_unknown),
+    NETWORK_UNAVAILABLE         (R.string.err_network_unavailable),
     IO_NET                      (R.string.err_io_net),
     IO_FILE                     (R.string.err_io_file),
     IO_UNKNOWN                  (R.string.err_io_unknown),

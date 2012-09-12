@@ -183,8 +183,11 @@ DBHelper.CheckExistDoneReceiver {
                                            word,
                                            getStarti(pageNumber),
                                            NR_ENTRY_PER_PAGE);
-        showLoadingLookAndFeel();
-        mSearchHelper.searchAsync(arg);
+        Err err = mSearchHelper.searchAsync(arg);
+        if (Err.NO_ERR == err)
+            showLoadingLookAndFeel();
+        else
+            UiUtils.showTextToast(this, err.getMessage());
     }
 
     private void

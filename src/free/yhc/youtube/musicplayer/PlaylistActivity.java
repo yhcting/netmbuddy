@@ -305,7 +305,7 @@ public class PlaylistActivity extends Activity {
     private void
     onMenuMoreSendOpinion(View anchor) {
         if (!Utils.isNetworkAvailable()) {
-            UiUtils.showTextToast(this, R.string.msg_network_unavailable);
+            UiUtils.showTextToast(this, R.string.err_network_unavailable);
             return;
         }
         sendMail(getResources().getText(R.string.choose_app),
