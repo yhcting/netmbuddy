@@ -9,6 +9,7 @@ import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
+import android.view.Gravity;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -16,8 +17,10 @@ import android.view.ViewGroup;
 import android.view.animation.AnimationUtils;
 import android.widget.AdapterView;
 import android.widget.AdapterView.AdapterContextMenuInfo;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 import free.yhc.youtube.musicplayer.model.DB;
@@ -49,6 +52,15 @@ DBHelper.CheckExistDoneReceiver {
     private int     mCurPage       = -1; // current page number
     private int     mTotalResults  = -1;
 
+    private Button[]  mPageBtnHolder;
+    private LinearLayout.LayoutParams mPageBtnLPHolder;
+    private View.OnClickListener mPageOnClick = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            int page = (Integer)v.getTag();
+            loadPage(mCurSearchWord, page);
+        }
+    };
 
     private int
     getStarti(int pageNum) {
@@ -65,6 +77,20 @@ DBHelper.CheckExistDoneReceiver {
     private YTSearchAdapter
     getAdapter() {
         return (YTSearchAdapter)mListv.getAdapter();
+    }
+
+    private void
+    preparePageButtons() {
+        mPageBtnHolder = new Button[Policy.YTSEARCH_NR_PAGE_INDEX];
+        mPageBtnLPHolder =
+                new LinearLayout.LayoutParams(getResources().getDimensionPixelSize(R.dimen.ytsearch_idxbtn_width),
+                                              getResources().getDimensionPixelSize(R.dimen.ytsearch_idxbtn_height));
+        mPageBtnLPHolder.gravity = Gravity.CENTER_VERTICAL;
+        for (int i = 0; i < mPageBtnHolder.length; i++) {
+            mPageBtnHolder[i] = new Button(this);
+            mPageBtnHolder[i].setTag(i);
+            mPageBtnHolder[i].setOnClickListener(mPageOnClick);
+        }
     }
 
     private void
@@ -111,6 +137,27 @@ DBHelper.CheckExistDoneReceiver {
 
         if (lastPage == mCurPage)
             nextBtn.setVisibility(View.INVISIBLE);
+
+        // Setup index buttons.
+        LinearLayout ll = (LinearLayout)findViewById(R.id.indexgroup);
+        ll.removeAllViews();
+        int nrPages = mTotalResults / NR_ENTRY_PER_PAGE + 1;
+        int mini = mCurPage - (Policy.YTSEARCH_NR_PAGE_INDEX / 2);
+        if (mini < 1)
+            mini = 1;
+
+        int maxi = mini + Policy.YTSEARCH_NR_PAGE_INDEX - 1;
+        if (maxi > nrPages)
+            maxi = nrPages;
+
+        for (int i = mini; i <= maxi; i++) {
+            int bi = i - mini;
+            mPageBtnHolder[bi].setText("" + i);
+            mPageBtnHolder[bi].setTag(i);
+            mPageBtnHolder[bi].setBackgroundResource(R.drawable.btnbg_normal);
+            ll.addView(mPageBtnHolder[bi], mPageBtnLPHolder);
+        }
+        mPageBtnHolder[mCurPage - mini].setBackgroundResource(R.drawable.btnbg_focused);
     }
 
     /**
@@ -328,7 +375,6 @@ DBHelper.CheckExistDoneReceiver {
                                                       arg.ents);
         mListv.setAdapter(adapter);
         adjustPageUserAction();
-
     }
 
     @Override
@@ -412,6 +458,7 @@ DBHelper.CheckExistDoneReceiver {
         mDbHelper.setCheckExistDoneReceiver(this);
         mDbHelper.open();
 
+        preparePageButtons();
         setupTopBar();
         setupBottomBar();
         doNewSearch();

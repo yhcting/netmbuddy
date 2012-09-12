@@ -40,11 +40,28 @@
             android:layout_alignParentBottom="true"
             android:layout_alignParentLeft="true"
             >
+            <LinearLayout
+                android:id="@+id/toolbar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:orientation="horizontal"
+                >
+                <ImageView
+                    android:id="@+id/search"
+                    android:layout_width="@dimen/toolbtn_width"
+                    android:layout_height="@dimen/toolbtn_height"
+                    android:gravity="center"
+                    android:scaleType="fitCenter"
+                    android:clickable="true"
+                    android:src="@drawable/ic_ytsearch"
+                    />
+            </LinearLayout>
             <ImageView
                 android:id="@+id/prev"
                 android:layout_width="@dimen/toolbtn_width"
                 android:layout_height="@dimen/toolbtn_height"
-                android:layout_alignParentLeft="true"
+                android:layout_toRightOf="@id/toolbar"
                 android:gravity="center"
                 android:scaleType="fitCenter"
                 android:clickable="true"
@@ -60,26 +77,24 @@
                 android:clickable="true"
                 android:src="@drawable/ic_next"
                 />
-            <LinearLayout
-                android:id="@+id/toolbar"
+            <HorizontalScrollView
+                android:id="@+id/indexbar"
                 android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="@dimen/toolbtn_height"
                 android:layout_toRightOf="@id/prev"
                 android:layout_toLeftOf="@id/next"
-                android:weightSum="1.0"
-                android:orientation="horizontal"
+                android:fillViewport="true"
                 >
-                <ImageView
-                    android:id="@+id/search"
-                    android:layout_width="@dimen/toolbtn_width"
-                    android:layout_height="@dimen/toolbtn_height"
-                    android:layout_weight="1.0"
-                    android:gravity="center"
-                    android:scaleType="fitCenter"
-                    android:clickable="true"
-                    android:src="@drawable/ic_ytsearch"
-                    />
-            </LinearLayout>
+                <LinearLayout
+                    android:id="@+id/indexgroup"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical"
+                    android:layout_gravity="center_vertical"
+                    android:orientation="horizontal"
+                    >
+                </LinearLayout>
+            </HorizontalScrollView>
         </RelativeLayout>
         <LinearLayout
             android:id="@+id/player"

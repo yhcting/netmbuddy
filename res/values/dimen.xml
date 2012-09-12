@@ -4,18 +4,20 @@
                             Dimension
          ============================================= -->
     <dimen name="ytentry_row_height">60dip</dimen>
-         
+
     <!-- Youtube thumbnail's "width:height = 4:3". So, keep this rate for thumbnail width:height --> 
     <dimen name="thumbnail_width">60dip</dimen>
     <dimen name="thumbnail_height">45dip</dimen>
-    
+
     <dimen name="toolbtn_width">45dip</dimen>
     <dimen name="toolbtn_height">45dip</dimen>
+    <dimen name="ytsearch_idxbtn_width">40dip</dimen>
+    <dimen name="ytsearch_idxbtn_height">35dip</dimen>
 
     <dimen name="large_text_size">25dip</dimen>
     <dimen name="title_text_size">14dip</dimen>
     <dimen name="desc_text_size">11dip</dimen>
-    
+
     <dimen name="seekbar_width">400px</dimen>
     <dimen name="guide_intercat_margin">10dip</dimen>
     <dimen name="guide_interitem_margin">3dip</dimen>
@@ -28,5 +30,5 @@
     <color name="desc_text_color">#fffafa</color>
     <color name="white">#ffffff</color>
     <color name="black">#000000</color>
-    
+
 </resources>
