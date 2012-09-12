@@ -176,36 +176,38 @@ MediaPlayer.OnSeekCompleteListener {
             return Utils.secsToMinSecText(mpGetDuration() / 1000 * lastProgress / 100);
         }
 
+        private void
+        resetProgressView() {
+            if (null != seekbar) {
+                maxposv.setText(Utils.secsToMinSecText(mpGetDuration() / 1000));
+                update(1, 0);
+                update2(0);
+            }
+            lastProgress = -1;
+            lastProgress2 = -1;
+        }
+
         void setProgressView(ViewGroup progv) {
             eAssert(Utils.isUiThread());
             eAssert(null != progv.findViewById(R.id.music_player_progress));
             curposv = (TextView)progv.findViewById(R.id.music_player_curpos);
             maxposv = (TextView)progv.findViewById(R.id.music_player_maxpos);
             seekbar = (SeekBar)progv.findViewById(R.id.music_player_seekbar);
-            if (null != seekbar) {
-                seekbar.setProgress(lastProgress);
-                curposv.setText(progressToTimeText(lastProgress));
-                maxposv.setText(Utils.secsToMinSecText(mpGetDuration() / 1000));
-            }
+            resetProgressView();
         }
 
         void start() {
             //logI("Progress Start");
-            lastProgress = -1;
-            lastProgress2 = -1;
-            if (null != seekbar) {
-                seekbar.setProgress(0);
-                curposv.setText(progressToTimeText(0));
-                maxposv.setText(Utils.secsToMinSecText(mpGetDuration() / 1000));
-            }
+            maxposv.setText(Utils.secsToMinSecText(mpGetDuration() / 1000));
+            update(mpGetDuration(), lastProgress);
+            update2(lastProgress2);
             run();
         }
 
         void stop() {
             //logI("Progress End");
             Utils.getUiHandler().removeCallbacks(this);
-            lastProgress = -1;
-            lastProgress2 = -1;
+            resetProgressView();
         }
 
         void update(int duration, int currentPos) {
@@ -389,6 +391,7 @@ MediaPlayer.OnSeekCompleteListener {
             mMp.stop();
 
         mMp.release();
+        mMp = null;
         mpSetState(MPState.END);
     }
 
@@ -648,7 +651,6 @@ MediaPlayer.OnSeekCompleteListener {
                     break;
 
                 case BUFFERING:
-                    mpStop();
                     break;
 
                 default:
@@ -661,7 +663,6 @@ MediaPlayer.OnSeekCompleteListener {
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mpStop();
                 startPrev();
                 pvDisableControlButton(playerv);
             }
@@ -671,7 +672,6 @@ MediaPlayer.OnSeekCompleteListener {
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mpStop();
                 startNext();
                 pvDisableControlButton(playerv);
             }
@@ -789,7 +789,7 @@ MediaPlayer.OnSeekCompleteListener {
         mVideoi++;
         if (mVideoi >= mVideos.length) {
             mVideoi = mVideos.length;
-            playDone();
+            playDone(false);
         } else
             startVideo(mVideos[mVideoi].videoId, mVideos[mVideoi].volume);
     }
@@ -802,22 +802,32 @@ MediaPlayer.OnSeekCompleteListener {
         mVideoi--;
         if (mVideoi < 0) {
             mVideoi = -1;
-            playDone();
+            playDone(false);
         } else
             startVideo(mVideos[mVideoi].videoId, mVideos[mVideoi].volume);
     }
 
     private void
-    playDone() {
-        logD("VideoView - playDone");
-        if (Utils.isPrefRepeat())
+    playDone(boolean forceStop) {
+        logD("VideoView - playDone : forceStop (" + forceStop + ")");
+
+        if (!forceStop && Utils.isPrefRepeat()) {
             startVideos(mVideos);
-        else {
-            if (null != mPlayerv) {
+            return;
+        }
+
+        mpStop();
+        mpRelease();
+        releaseLocks();
+        mVideos = null;
+        mVideoi = -1;
+        if (null != mPlayerv) {
+            if (forceStop)
+                pvSetTitle((TextView)mPlayerv.findViewById(R.id.music_player_title),
+                        mRes.getText(R.string.msg_playing_stopped), false);
+            else
                 pvSetTitle((TextView)mPlayerv.findViewById(R.id.music_player_title),
                             mRes.getText(R.string.msg_playing_done), false);
-            }
-            releaseLocks();
         }
     }
 
@@ -908,9 +918,7 @@ MediaPlayer.OnSeekCompleteListener {
         if (null != mYtConn)
             mYtConn.forceCancel();
 
-        mpStop();
-        mVideos = null;
-        mVideoi = -1;
+        playDone(true);
     }
 
     public void
@@ -1001,12 +1009,18 @@ MediaPlayer.OnSeekCompleteListener {
             logD("MPlayer - onError");
         }
 
+        boolean unrecoverable = true;
         if (tryAgain && mErrRetry-- > 0) {
             logD("MPlayer - Try to recover!");
             // Retry! Try to recover
-            if (null != mVideos)
+            if (null != mVideos) {
+                unrecoverable = false;
                 startVideo(mVideos[mVideoi].videoId, mVideos[mVideoi].volume, true);
+            }
         }
+
+        if (unrecoverable)
+            playDone(true);
 
         return true; // DO NOT call onComplete Listener.
     }
