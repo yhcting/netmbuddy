@@ -163,7 +163,7 @@ public class YTVideoConnector extends AsyncTask<Void, Void, Err> {
     }
 
     private static class YtVideoHtmlResult {
-        YtVideoElem[]  vids;
+        YtVideoElem[]  vids = new YtVideoElem[0];
     }
 
     private static String
@@ -206,6 +206,11 @@ public class YTVideoConnector extends AsyncTask<Void, Void, Err> {
             }
         }
         return result;
+    }
+
+    public static String
+    getYtVideoPageUrl(String videoId) {
+        return "http://" + getYtHost() + "/" + getYtUri(videoId);
     }
 
     public YTVideoConnector(String ytvid, Object user,
@@ -259,10 +264,11 @@ public class YTVideoConnector extends AsyncTask<Void, Void, Err> {
         NetLoader.HttpRespContent content;
         try {
             // Read and parse html web page of video.
-            content = mLoader.getHttpContent(new URI("http://" + getYtHost() + "/" + getYtUri(mYtvid)), true);
+            content = mLoader.getHttpContent(new URI(getYtVideoPageUrl(mYtvid)), true);
             eAssert(content.type.toLowerCase().startsWith("text/html"));
             mYtr = parseYtVideoHtml(new BufferedReader(new InputStreamReader(content.stream)));
-            eAssert(mYtr.vids.length > 0);
+            if (mYtr.vids.length <= 0)
+                return Err.UNKNOWN;
         } catch (URISyntaxException e) {
             return Err.UNKNOWN;
         } catch (YTMPException e) {

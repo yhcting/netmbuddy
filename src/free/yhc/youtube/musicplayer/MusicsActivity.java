@@ -4,9 +4,11 @@ import static free.yhc.youtube.musicplayer.model.Utils.eAssert;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.content.ActivityNotFoundException;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Configuration;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
@@ -26,6 +28,7 @@ import free.yhc.youtube.musicplayer.model.Err;
 import free.yhc.youtube.musicplayer.model.UiUtils;
 import free.yhc.youtube.musicplayer.model.Utils;
 import free.yhc.youtube.musicplayer.model.YTPlayer;
+import free.yhc.youtube.musicplayer.model.YTVideoConnector;
 
 public class MusicsActivity extends Activity {
     public static final long PLID_INVALID       = DB.INVALID_PLAYLIST_ID;
@@ -231,6 +234,17 @@ public class MusicsActivity extends Activity {
 
     }
 
+    private void
+    onContextMenuPlayVideo(final long itemId, final int itemPos) {
+        Intent i = new Intent(Intent.ACTION_VIEW,
+                              Uri.parse(YTVideoConnector.getYtVideoPageUrl(getAdapter().getMusicYtid(itemPos))));
+        try {
+            startActivity(i);
+        } catch (ActivityNotFoundException e) {
+            UiUtils.showTextToast(this, R.string.msg_fail_find_app);
+        }
+    }
+
     @Override
     public boolean
     onContextItemSelected(MenuItem mItem) {
@@ -254,6 +268,10 @@ public class MusicsActivity extends Activity {
 
         case R.id.rename:
             onContextMenuRename(info.id, info.position);
+            return true;
+
+        case R.id.play_video:
+            onContextMenuPlayVideo(info.id, info.position);
             return true;
 
         case R.id.delete:

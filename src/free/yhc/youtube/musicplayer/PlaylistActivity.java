@@ -54,9 +54,6 @@ public class PlaylistActivity extends Activity {
         intent.putExtra(Intent.EXTRA_TEXT, text);
         intent.putExtra(Intent.EXTRA_SUBJECT, subject);
         intent.setType("message/rfc822");
-        // Using chooser leads to some unexpected error log - bug from Android framework.
-        // So, start activity directly without using chooser
-        // intent = Intent.createChooser(intent, diagTitle);
         try {
             startActivity(intent);
         } catch (ActivityNotFoundException e) {

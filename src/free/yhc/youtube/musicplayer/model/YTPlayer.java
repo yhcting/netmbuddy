@@ -91,8 +91,7 @@ MediaPlayer.OnSeekCompleteListener {
     // ------------------------------------------------------------------------
     // Player Runtime Status
     // ------------------------------------------------------------------------
-    private Video[]                 mVideos = null;
-    private int                     mVideoi = -1;
+    private VideoListManager        mVlm    = new VideoListManager();
     private int                     mErrRetry = PLAYER_ERR_RETRY;
 
     // see "http://developer.android.com/reference/android/media/MediaPlayer.html"
@@ -109,6 +108,13 @@ MediaPlayer.OnSeekCompleteListener {
         END,
         BUFFERING, // Not in mediaplayer state but useful
         ERROR
+    }
+
+    private static enum StopState {
+        DONE,
+        FORCE_STOPPED,
+        NETWORK_UNAVAILABLE,
+        UNKNOWN_ERROR
     }
 
     public static class Video {
@@ -175,36 +181,38 @@ MediaPlayer.OnSeekCompleteListener {
             return Utils.secsToMinSecText(mpGetDuration() / 1000 * lastProgress / 100);
         }
 
+        private void
+        resetProgressView() {
+            if (null != seekbar) {
+                maxposv.setText(Utils.secsToMinSecText(mpGetDuration() / 1000));
+                update(1, 0);
+                update2(0);
+            }
+            lastProgress = -1;
+            lastProgress2 = -1;
+        }
+
         void setProgressView(ViewGroup progv) {
             eAssert(Utils.isUiThread());
             eAssert(null != progv.findViewById(R.id.music_player_progress));
             curposv = (TextView)progv.findViewById(R.id.music_player_curpos);
             maxposv = (TextView)progv.findViewById(R.id.music_player_maxpos);
             seekbar = (SeekBar)progv.findViewById(R.id.music_player_seekbar);
-            if (null != seekbar) {
-                seekbar.setProgress(lastProgress);
-                curposv.setText(progressToTimeText(lastProgress));
-                maxposv.setText(Utils.secsToMinSecText(mpGetDuration() / 1000));
-            }
+            resetProgressView();
         }
 
         void start() {
             //logI("Progress Start");
-            lastProgress = -1;
-            lastProgress2 = -1;
-            if (null != seekbar) {
-                seekbar.setProgress(0);
-                curposv.setText(progressToTimeText(0));
-                maxposv.setText(Utils.secsToMinSecText(mpGetDuration() / 1000));
-            }
+            maxposv.setText(Utils.secsToMinSecText(mpGetDuration() / 1000));
+            update(mpGetDuration(), lastProgress);
+            update2(lastProgress2);
             run();
         }
 
         void stop() {
             //logI("Progress End");
             Utils.getUiHandler().removeCallbacks(this);
-            lastProgress = -1;
-            lastProgress2 = -1;
+            resetProgressView();
         }
 
         void update(int duration, int currentPos) {
@@ -241,6 +249,71 @@ MediaPlayer.OnSeekCompleteListener {
             Utils.getUiHandler().postDelayed(this, 1000);
         }
     }
+
+    private static class VideoListManager {
+        private Video[]     vs  = null; // video array
+        private int         vi  = -1; // video index
+
+        boolean hasActiveVideo() {
+            return null != getActiveVideo();
+        }
+
+        boolean hasNextVideo() {
+            return hasActiveVideo()
+                   && vi < (vs.length - 1);
+        }
+
+        boolean hasPrevVideo() {
+            return hasActiveVideo() && 0 < vi;
+        }
+
+        void reset() {
+            vs = null;
+            vi = -1;
+        }
+
+        void setVideoList(Video[] aVs) {
+            vs = aVs;
+            if (null == vs || 0 >= vs.length)
+                reset();
+            else if(vs.length > 0)
+                vi = 0;
+        }
+
+        Video getActiveVideo() {
+            if (null != vs && 0 <= vi && vi < vs.length)
+                return vs[vi];
+            return null;
+        }
+
+        boolean moveToFist() {
+            if (hasActiveVideo()) {
+                    vi = 0;
+                    return true;
+            }
+            return false;
+        }
+
+        boolean moveToNext() {
+            if (hasActiveVideo()
+                && vi < (vs.length - 1)) {
+                vi++;
+                return true;
+            }
+            return false;
+        }
+
+        boolean moveToPrev() {
+            if (hasActiveVideo()
+                && vi > 0) {
+                vi--;
+                return true;
+            }
+            return false;
+        }
+    }
+
+
     // ========================================================================
     //
     //
@@ -357,7 +430,6 @@ MediaPlayer.OnSeekCompleteListener {
     private void
     mpNewInstance() {
         mMp = new MediaPlayer();
-        mpSetState(MPState.INVALID);
         initMediaPlayer(mMp);
     }
 
@@ -388,6 +460,7 @@ MediaPlayer.OnSeekCompleteListener {
             mMp.stop();
 
         mMp.release();
+        mMp = null;
         mpSetState(MPState.END);
     }
 
@@ -459,8 +532,8 @@ MediaPlayer.OnSeekCompleteListener {
 
         logD("MPlayer - stop");
         mMp.stop();
+        mpSetState(MPState.STOPPED);
     }
-
 
     // ========================================================================
     //
@@ -495,13 +568,18 @@ MediaPlayer.OnSeekCompleteListener {
             return;
 
         if (!Utils.isNetworkAvailable()) {
-            pvSetTitle(titlev, mRes.getText(R.string.msg_network_unavailable), false);
+            Utils.getUiHandler().post(new Runnable() {
+                @Override
+                public void run() {
+                    stopPlay(StopState.NETWORK_UNAVAILABLE);
+                }
+            });
             return;
         }
 
         CharSequence videoTitle = "";
-        if (isVideoPlaying())
-            videoTitle = mVideos[mVideoi].title;
+        if (mVlm.hasActiveVideo())
+            videoTitle = mVlm.getActiveVideo().title;
 
         switch (to) {
         case BUFFERING: {
@@ -539,48 +617,60 @@ MediaPlayer.OnSeekCompleteListener {
         if (null == controlv)
             return;
 
-        if (null == mVideos) {
+        if (!mVlm.hasActiveVideo()) {
             controlv.setVisibility(View.GONE);
             return;
         }
 
         controlv.setVisibility(View.VISIBLE);
+        ImageView nextv = (ImageView)controlv.findViewById(R.id.music_player_btnnext);
+        ImageView prevv = (ImageView)controlv.findViewById(R.id.music_player_btnprev);
+        ImageView playv = (ImageView)controlv.findViewById(R.id.music_player_btnplay);
+
         switch (to) {
         case BUFFERING:
         case PAUSED:
         case STARTED:
-            if (mVideos.length - 1 <= mVideoi)
-                pvDisableButton((ImageView)controlv.findViewById(R.id.music_player_btnnext));
+            if (mVlm.hasNextVideo())
+                pvEnableButton(nextv, R.drawable.ic_media_next);
             else
-                pvEnableButton((ImageView)controlv.findViewById(R.id.music_player_btnnext),
-                               R.drawable.ic_media_next);
+                pvDisableButton(nextv);
 
-            if (0 >= mVideoi)
-                pvDisableButton((ImageView)controlv.findViewById(R.id.music_player_btnprev));
+            if (mVlm.hasPrevVideo())
+                pvEnableButton(prevv, R.drawable.ic_media_prev);
             else
-                pvEnableButton((ImageView)controlv.findViewById(R.id.music_player_btnprev),
-                               R.drawable.ic_media_prev);
-            break;
-        }
-
-        switch (to) {
-        case BUFFERING:
-            pvEnableButton((ImageView)controlv.findViewById(R.id.music_player_btnplay),
-                    R.drawable.ic_media_stop);
-            break;
-
-        case PREPARED:
-        case PAUSED:
-            pvEnableButton((ImageView)controlv.findViewById(R.id.music_player_btnplay),
-                           R.drawable.ic_media_play);
-            break;
-
-        case STARTED:
-            pvEnableButton((ImageView)controlv.findViewById(R.id.music_player_btnplay),
-                           R.drawable.ic_media_pause);
+                pvDisableButton(prevv);
             break;
 
         default:
+            pvDisableButton(prevv);
+            pvDisableButton(nextv);
+        }
+
+        switch (to) {
+        case PREPARED:
+        case PAUSED:
+            pvEnableButton(playv, R.drawable.ic_media_play);
+            // Set next state be moved to on click as 'Tag'
+            playv.setTag(MPState.STARTED);
+            break;
+
+        case STARTED:
+            pvEnableButton(playv, R.drawable.ic_media_pause);
+            // Set next state be moved to on click as 'Tag'
+            playv.setTag(MPState.PAUSED);
+            break;
+
+        case BUFFERING:
+        case INITIALIZED:
+        case PREPARING:
+            pvEnableButton(playv, R.drawable.ic_media_stop);
+            // Set next state be moved to on click as 'Tag'
+            playv.setTag(MPState.STOPPED);
+            break;
+
+        default:
+            playv.setTag(null);
             controlv.setVisibility(View.GONE);
         }
     }
@@ -636,18 +726,25 @@ MediaPlayer.OnSeekCompleteListener {
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                switch (mpGetState()) {
-                case PAUSED:
+                // See pvConfigControl() for details.
+                MPState nextst = (MPState)v.getTag();
+                if (null == nextst)
+                    return; // Nothing to do.
+
+                switch (nextst) {
+                case STARTED:
                     mpStart();
                     break;
 
-                case STARTED:
+                case PAUSED:
                     mpPause();
                     // prevent clickable during transition player state.
                     break;
 
-                case BUFFERING:
-                    mpStop();
+                case STOPPED:
+                    // This doesn't means "Stop only this video",
+                    //   but means stop playing vidoes - previous user request.
+                    stopVideos();
                     break;
 
                 default:
@@ -660,7 +757,6 @@ MediaPlayer.OnSeekCompleteListener {
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mpStop();
                 startPrev();
                 pvDisableControlButton(playerv);
             }
@@ -670,7 +766,6 @@ MediaPlayer.OnSeekCompleteListener {
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mpStop();
                 startNext();
                 pvDisableControlButton(playerv);
             }
@@ -706,6 +801,7 @@ MediaPlayer.OnSeekCompleteListener {
     // General Control
     //
     // ========================================================================
+
     private void
     onMpStateChanged(MPState from, MPState to) {
         if (from == to)
@@ -714,6 +810,7 @@ MediaPlayer.OnSeekCompleteListener {
         pvConfigureAll(mPlayerv, from, to);
         switch (to) {
         case PAUSED:
+        case INVALID:
             releaseLocks();
             break;
 
@@ -724,18 +821,22 @@ MediaPlayer.OnSeekCompleteListener {
     }
 
     private void
-    startVideo(final String videoId, int volume) {
-        startVideo(videoId, volume, false);
+    startVideo(Video v, boolean recovery) {
+        if (null != v)
+            startVideo(v.videoId, v.volume, recovery);
     }
-
 
     private void
     startVideo(final String videoId, int volume, boolean recovery) {
         eAssert(0 <= volume && volume <= 100);
 
-        if (recovery)
+        if (recovery) {
             mErrRetry--;
-        else
+            if (mErrRetry <= 0) {
+                stopPlay(StopState.UNKNOWN_ERROR);
+                return;
+            }
+        } else
             mErrRetry = PLAYER_ERR_RETRY;
 
         // Stop if player is already running.
@@ -758,6 +859,7 @@ MediaPlayer.OnSeekCompleteListener {
 
                 if (Err.NO_ERR != result) {
                     logW("YTVideoConnector Fails : " + result.name());
+                    startVideo(mVlm.getActiveVideo(), true);
                     return;
                 }
 
@@ -782,41 +884,70 @@ MediaPlayer.OnSeekCompleteListener {
 
     private void
     startNext() {
-        if (null == mVideos)
+        if (!mVlm.hasActiveVideo())
             return; // do nothing
 
-        mVideoi++;
-        if (mVideoi >= mVideos.length) {
-            mVideoi = mVideos.length;
-            playDone();
-        } else
-            startVideo(mVideos[mVideoi].videoId, mVideos[mVideoi].volume);
+        if (mVlm.moveToNext())
+            startVideo(mVlm.getActiveVideo(), false);
+        else
+            stopPlay(StopState.DONE);
     }
 
     private void
     startPrev() {
-        if (null == mVideos)
+        if (!mVlm.hasActiveVideo())
             return; // do nothing
 
-        mVideoi--;
-        if (mVideoi < 0) {
-            mVideoi = -1;
-            playDone();
-        } else
-            startVideo(mVideos[mVideoi].videoId, mVideos[mVideoi].volume);
+        if (mVlm.moveToPrev())
+            startVideo(mVlm.getActiveVideo(), false);
+        else
+            stopPlay(StopState.DONE);
     }
 
     private void
-    playDone() {
-        logD("VideoView - playDone");
-        if (Utils.isPrefRepeat())
-            startVideos(mVideos);
-        else {
-            if (null != mPlayerv) {
-                pvSetTitle((TextView)mPlayerv.findViewById(R.id.music_player_title),
-                            mRes.getText(R.string.msg_playing_done), false);
+    stopPlay(StopState st) {
+        logD("VideoView - playDone : forceStop (" + st.name() + ")");
+        if (null != mYtConn)
+            mYtConn.forceCancel();
+
+        if (StopState.DONE == st
+            && Utils.isPrefRepeat()) {
+            if (mVlm.moveToFist()) {
+                startVideo(mVlm.getActiveVideo(), false);
+                return;
             }
-            releaseLocks();
+        }
+
+        mpStop();
+        mpRelease();
+        releaseLocks();
+        mVlm.reset();
+        mErrRetry = PLAYER_ERR_RETRY;
+
+        // This should be called before changing title because
+        //   title may be changed in onMpStateChanged().
+        // We need to overwrite title message.
+        mpSetState(MPState.INVALID);
+
+        TextView titlev = (TextView)mPlayerv.findViewById(R.id.music_player_title);
+        if (null != mPlayerv) {
+            switch (st) {
+            case DONE:
+                pvSetTitle(titlev, mRes.getText(R.string.msg_playing_done), false);
+                break;
+
+            case FORCE_STOPPED:
+                pvSetTitle(titlev, mRes.getText(R.string.msg_playing_stopped), false);
+                break;
+
+            case NETWORK_UNAVAILABLE:
+                pvSetTitle(titlev, mRes.getText(R.string.msg_network_unavailable), false);
+                break;
+
+            case UNKNOWN_ERROR:
+                pvSetTitle(titlev, mRes.getText(R.string.msg_playing_err_unknown), false);
+                break;
+            }
         }
     }
 
@@ -868,15 +999,14 @@ MediaPlayer.OnSeekCompleteListener {
         eAssert(Utils.isUiThread());
         eAssert(null != mPlayerv);
 
-        if (vs.length <= 0)
+        if (null == vs || vs.length <= 0)
             return;
 
         acquireLocks();
 
-        mVideos = vs;
-        mVideoi = 0;
-
-        startVideo(mVideos[mVideoi].videoId, mVideos[mVideoi].volume);
+        mVlm.setVideoList(vs);
+        if (mVlm.moveToFist())
+            startVideo(mVlm.getActiveVideo(), false);
     }
 
     public void
@@ -904,12 +1034,7 @@ MediaPlayer.OnSeekCompleteListener {
 
     public void
     stopVideos() {
-        if (null != mYtConn)
-            mYtConn.forceCancel();
-
-        mpStop();
-        mVideos = null;
-        mVideoi = -1;
+        stopPlay(StopState.FORCE_STOPPED);
     }
 
     public void
@@ -928,11 +1053,7 @@ MediaPlayer.OnSeekCompleteListener {
 
     public boolean
     isVideoPlaying() {
-        if (null != mVideos
-            && 0 <= mVideoi
-            && mVideoi < mVideos.length)
-            return true;
-        return false;
+        return mVlm.hasActiveVideo();
     }
 
     // ============================================================================
@@ -1000,12 +1121,11 @@ MediaPlayer.OnSeekCompleteListener {
             logD("MPlayer - onError");
         }
 
-        if (tryAgain && mErrRetry-- > 0) {
+        if (tryAgain && mVlm.hasActiveVideo()) {
             logD("MPlayer - Try to recover!");
-            // Retry! Try to recover
-            if (null != mVideos)
-                startVideo(mVideos[mVideoi].videoId, mVideos[mVideoi].volume, true);
-        }
+            startVideo(mVlm.getActiveVideo(), true);
+        } else
+            stopPlay(StopState.UNKNOWN_ERROR);
 
         return true; // DO NOT call onComplete Listener.
     }
