@@ -422,13 +422,13 @@ MediaPlayer.OnSeekCompleteListener {
     initMediaPlayer(MediaPlayer mp) {
         mp.setOnBufferingUpdateListener(this);
         mp.setOnCompletionListener(this);
-        mp.setOnPreparedListener(this);
         mp.setOnVideoSizeChangedListener(this);
         mp.setOnSeekCompleteListener(this);
         mp.setOnErrorListener(this);
         mp.setOnInfoListener(this);
         mp.setScreenOnWhilePlaying(false);
         mp.setAudioStreamType(AudioManager.STREAM_MUSIC);
+        mp.setOnPreparedListener(this);
     }
 
     private void
@@ -837,7 +837,7 @@ MediaPlayer.OnSeekCompleteListener {
     }
 
     private void
-    startVideo(final String videoId, int volume, boolean recovery) {
+    startVideo(final String videoId, final int volume, boolean recovery) {
         eAssert(0 <= volume && volume <= 100);
 
         if (recovery) {
@@ -865,11 +865,23 @@ MediaPlayer.OnSeekCompleteListener {
             @Override
             public void
             onPostConn(YTVideoConnector ytconn, Err result, String ytvid, Object user) {
+                if (mYtConn != ytconn) {
+                    // Another try is already done.
+                    // So, this response should be ignored.
+                    logD("YTPlayer Old Youtube connection is finished. Ignored");
+                    return;
+                }
+
                 mYtConn = null;
 
                 if (Err.NO_ERR != result) {
-                    logW("YTVideoConnector Fails : " + result.name());
-                    startVideo(mVlm.getActiveVideo(), true);
+                    logW("YTPlayer YTVideoConnector Fails : " + result.name());
+                    Utils.getUiHandler().post(new Runnable() {
+                        @Override
+                        public void run() {
+                            startVideo(mVlm.getActiveVideo(), true);
+                        }
+                    });
                     return;
                 }
 
@@ -877,18 +889,42 @@ MediaPlayer.OnSeekCompleteListener {
                 try {
                     mpSetDataSource(Uri.parse(ytv.url));
                 } catch (IOException e) {
-                    eAssert(false);
+                    logW("YTPlayer SetDataSource IOException : " + e.getMessage());
+                    Utils.getUiHandler().post(new Runnable() {
+                        @Override
+                        public void run() {
+                            startVideo(mVlm.getActiveVideo(), true);
+                        }
+                    });
+                    return;
                 }
+
+                // Update DB at this moment.
+                // It's not perfectly right moment but it's fair enough
+                // But, this case can be ignored.
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        mDb.updateVideo(DB.ColVideo.VIDEOID, videoId,
+                                        DB.ColVideo.TIME_PLAYED, System.currentTimeMillis());
+                    }
+
+                }).start();
                 mpPrepareAsync();
             }
 
             @Override
             public void
             onConnCancelled(YTVideoConnector ytconn, String ytvid, Object user) {
+                if (mYtConn != ytconn) {
+                    logD("Old Youtube connection is cancelled. Ignored");
+                    return;
+                }
+
                 mYtConn = null;
             }
         };
-        mYtConn = new YTVideoConnector(videoId, volume, listener);
+        mYtConn = new YTVideoConnector(videoId, null, listener);
         mYtConn.execute();
     }
 
@@ -1091,6 +1127,17 @@ MediaPlayer.OnSeekCompleteListener {
     @Override
     public void
     onPrepared(MediaPlayer mp) {
+        // OnPreparedListener is very difficult to handle because of it's async-nature.
+        // We may request some other works to media player even in "preparing" state
+        //   - ex. Stop and start new preparation after create new media player instance.
+        // Especially, in this case, player should be able to tell that which callback is for which request.
+        // To do this, ytplayer should compare that current media player is prepared one or not.
+        if (mp != mpGet()) {
+            // ignore.
+            logD("MPlayer - old invalid player is prepared.");
+            return;
+        }
+
         logD("MPlayer - onPrepared");
         mpSetState(MPState.PREPARED);
         mpStart(); // auto start
