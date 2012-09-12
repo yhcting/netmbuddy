@@ -183,8 +183,11 @@ DBHelper.CheckExistDoneReceiver {
                                            word,
                                            getStarti(pageNumber),
                                            NR_ENTRY_PER_PAGE);
-        showLoadingLookAndFeel();
-        mSearchHelper.searchAsync(arg);
+        Err err = mSearchHelper.searchAsync(arg);
+        if (Err.NO_ERR == err)
+            showLoadingLookAndFeel();
+        else
+            UiUtils.showTextToast(this, err.getMessage());
     }
 
     private void
@@ -469,13 +472,11 @@ DBHelper.CheckExistDoneReceiver {
     onResume() {
         super.onResume();
         ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
-        if (mMp.isVideoPlaying()) {
+        mMp.setController(this, playerv);
+        if (mMp.isVideoPlaying())
             playerv.setVisibility(View.VISIBLE);
-            mMp.setController(this, playerv);
-        } else {
+        else
             playerv.setVisibility(View.GONE);
-            mMp.setController(this, null);
-        }
     }
 
     @Override

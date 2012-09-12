@@ -305,7 +305,7 @@ public class PlaylistActivity extends Activity {
     private void
     onMenuMoreSendOpinion(View anchor) {
         if (!Utils.isNetworkAvailable()) {
-            UiUtils.showTextToast(this, R.string.msg_network_unavailable);
+            UiUtils.showTextToast(this, R.string.err_network_unavailable);
             return;
         }
         sendMail(getResources().getText(R.string.choose_app),
@@ -522,10 +522,10 @@ public class PlaylistActivity extends Activity {
     onResume() {
         super.onResume();
         ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
-        if (mMp.isVideoPlaying()) {
+        mMp.setController(this, playerv);
+        if (mMp.isVideoPlaying())
             playerv.setVisibility(View.VISIBLE);
-            mMp.setController(this, playerv);
-        } else
+        else
             playerv.setVisibility(View.GONE);
 
         if (mDb.isRegisteredToPlaylistTableWatcher(this)

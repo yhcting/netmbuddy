@@ -941,7 +941,7 @@ MediaPlayer.OnSeekCompleteListener {
                 break;
 
             case NETWORK_UNAVAILABLE:
-                pvSetTitle(titlev, mRes.getText(R.string.msg_network_unavailable), false);
+                pvSetTitle(titlev, mRes.getText(R.string.err_network_unavailable), false);
                 break;
 
             case UNKNOWN_ERROR:

@@ -163,7 +163,6 @@ public class MusicsActivity extends Activity {
                                                 getAdapter().getMusicPlaytime(position));
         ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
         playerv.setVisibility(View.VISIBLE);
-        mMp.setController(this, playerv);
         mMp.startVideos(new YTPlayer.Video[] { vid });
     }
 
@@ -351,14 +350,12 @@ public class MusicsActivity extends Activity {
     protected void
     onResume() {
         super.onResume();
-
         ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
-        if (mMp.isVideoPlaying()) {
+        mMp.setController(this, playerv);
+        if (mMp.isVideoPlaying())
             playerv.setVisibility(View.VISIBLE);
-            mMp.setController(this, playerv);
-        } else {
+        else
             playerv.setVisibility(View.GONE);
-        }
     }
 
     @Override
