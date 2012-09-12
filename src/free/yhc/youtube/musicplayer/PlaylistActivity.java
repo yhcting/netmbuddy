@@ -54,7 +54,6 @@ public class PlaylistActivity extends Activity {
         intent.putExtra(Intent.EXTRA_TEXT, text);
         intent.putExtra(Intent.EXTRA_SUBJECT, subject);
         intent.setType("message/rfc822");
-        intent = Intent.createChooser(intent, diagTitle);
         try {
             startActivity(intent);
         } catch (ActivityNotFoundException e) {
