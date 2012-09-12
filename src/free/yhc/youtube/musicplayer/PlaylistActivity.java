@@ -508,10 +508,10 @@ public class PlaylistActivity extends Activity {
     onResume() {
         super.onResume();
         ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
-        if (mMp.isVideoPlaying()) {
+        mMp.setController(this, playerv);
+        if (mMp.isVideoPlaying())
             playerv.setVisibility(View.VISIBLE);
-            mMp.setController(this, playerv);
-        } else
+        else
             playerv.setVisibility(View.GONE);
 
         if (mDb.isRegisteredToPlaylistTableWatcher(this)
