@@ -104,6 +104,11 @@ public class NetLoader {
     public HttpRespContent
     getHttpContent(URI uri, boolean source)
             throws YTMPException  {
+        if (null == mHttpClient) {
+            logI("NetLoader Fail to get HttpClient");
+            throw new YTMPException(Err.YTHTTPGET);
+        }
+
         String uriString = uri.toString();
         if (source)
             uriString = uriString.replace(uri.getScheme() + "://" + uri.getHost(), "");
@@ -119,30 +124,30 @@ public class NetLoader {
                 //logI("target: " + httpTarget.getHostName());
 
                 HttpResponse httpResp = mHttpClient.execute(httpTarget, httpGet);
-                logI("YTDownloader HTTP response status line : " + httpResp.getStatusLine().toString());
+                logI("NetLoader HTTP response status line : " + httpResp.getStatusLine().toString());
 
                 // TODO
                 // Need more case-handling-code.
                 // Ex. Redirection etc.
                 if (HttpUtils.SC_OK != httpResp.getStatusLine().getStatusCode()) {
-                    logW("YTDownloader Unexpected Response  status code : " + httpResp.getStatusLine().getStatusCode());
+                    logW("NetLoader Unexpected Response  status code : " + httpResp.getStatusLine().getStatusCode());
                     throw new YTMPException(Err.YTHTTPGET);
                 }
 
                 HttpEntity httpEntity = httpResp.getEntity();
 
                 if (null == httpEntity) {
-                    logW("YTDownloader Unexpected NULL entity");
+                    logW("NetLoader Unexpected NULL entity");
                     throw new YTMPException(Err.YTHTTPGET);
                 }
 
                 return new HttpRespContent(httpEntity.getContent(),
                                            httpResp.getFirstHeader("Content-Type").getValue().toLowerCase());
             } catch (ClientProtocolException e) {
-                logI("YTDownloader ClientProtocolException : " + e.getMessage());
+                logI("NetLoader ClientProtocolException : " + e.getMessage());
                 throw new YTMPException(Err.YTHTTPGET);
             } catch (UnknownHostException e) {
-                logI("YTDownloader UnknownHostException : Maybe timeout?" + e.getMessage());
+                logI("NetLoader UnknownHostException : Maybe timeout?" + e.getMessage());
                 if (mUserClose)
                     throw new YTMPException(Err.CANCELLED);
 
@@ -160,10 +165,10 @@ public class NetLoader {
                 }
                 throw new YTMPException(Err.YTHTTPGET);
             } catch (IOException e) {
-                logI("YTDownloader IOException : " + e.getMessage());
+                logI("NetLoader IOException : " + e.getMessage());
                 throw new YTMPException(Err.YTHTTPGET);
             } catch (IllegalStateException e) {
-                logI("YTDownloader IllegalStateException : " + e.getMessage());
+                logI("NetLoader IllegalStateException : " + e.getMessage());
                 throw new YTMPException(Err.YTHTTPGET);
             }
         }

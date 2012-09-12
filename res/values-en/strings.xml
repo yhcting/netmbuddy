@@ -72,8 +72,7 @@
     <string name="msg_preparing_mplayer">Preparing for playing musics.</string>
     <string name="msg_playing_done">Playing is done.</string>
     <string name="msg_playing_stopped">Playing is stopped.</string>
-    <string name="msg_mplayer_err_unknown">Unknown error during playing.</string>
-    <string name="msg_mplayer_err_not_allowed">Not allowed operation at the moment.</string>
+    <string name="msg_playing_err_unknown">Unknown error during playing.</string>
     <string name="msg_empty_playlist">Playlist is empty.</string>
     <string name="msg_network_unavailable">Network is unavailable.</string>
     <string name="msg_fail_find_app">Fail in finding appropriate application.</string>
