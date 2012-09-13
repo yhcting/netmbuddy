@@ -5,7 +5,6 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.ActivityNotFoundException;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.net.Uri;
@@ -21,7 +20,6 @@ import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
-import android.widget.SeekBar;
 import android.widget.TextView;
 import free.yhc.youtube.musicplayer.model.DB;
 import free.yhc.youtube.musicplayer.model.Err;
@@ -168,48 +166,8 @@ public class MusicsActivity extends Activity {
 
     private void
     onContextMenuVolume(final long itemId, final int itemPos) {
-        final int oldVolume = getAdapter().getMusicVolume(itemPos);
-
-        ViewGroup diagv = (ViewGroup)UiUtils.inflateLayout(this, R.layout.set_volume_dialog);
-        AlertDialog.Builder bldr = new AlertDialog.Builder(this);
-        bldr.setView(diagv);
-        bldr.setTitle(R.string.volume);
-        final AlertDialog aDiag = bldr.create();
-
-        final SeekBar sbar = (SeekBar)diagv.findViewById(R.id.seekbar);
-        sbar.setMax(100);
-        sbar.setProgress(getAdapter().getMusicVolume(itemPos));
-        sbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void
-            onStopTrackingTouch(SeekBar seekBar) { }
-            @Override
-            public void
-            onStartTrackingTouch(SeekBar seekBar) { }
-            @Override
-            public void
-            onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                mMp.setVideoVolume(progress);
-            }
-        });
-
-        aDiag.setOnDismissListener(new DialogInterface.OnDismissListener() {
-            @Override
-            public void
-            onDismiss(DialogInterface dialog) {
-                int newVolume = sbar.getProgress();
-                if (oldVolume == newVolume)
-                    return;
-                // Save to database and update adapter
-                // NOTE
-                // Should I consider about performance?
-                // Not yet. do something when performance is issued.
-                mDb.updateVideo(DB.ColVideo.ID, itemId, DB.ColVideo.VOLUME, sbar.getProgress());
-                getAdapter().reloadCursor();
-            }
-        });
-
-        aDiag.show();
+        YTPlayer.get().changeVideoVolume(getAdapter().getMusicTitle(itemPos),
+                                         getAdapter().getMusicYtid(itemPos));
     }
 
     private void

@@ -9,12 +9,6 @@ public class Policy {
     public static final String  EXTERNAL_DBFILE         = APPDATA_DIR + "ytmplayer.db";
 
     // --------------------------------------------------------------------
-    // Initialize App.
-    // --------------------------------------------------------------------
-    public static final int     APPINIT_TIMEOUT         = 15000; // 15 sec
-
-
-    // --------------------------------------------------------------------
     // Youtube
     // --------------------------------------------------------------------
     public static final int     DEFAULT_VIDEO_VOLUME    = 50;

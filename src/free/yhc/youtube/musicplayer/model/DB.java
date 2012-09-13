@@ -21,6 +21,7 @@ import android.provider.BaseColumns;
 
 public class DB extends SQLiteOpenHelper {
     public static final long    INVALID_PLAYLIST_ID = -1;
+    public static final int     INVALID_VOLUME      = -1;
 
     // ytmp : YouTubeMusicPlayer
     private static final String NAME            = "ytmp.db";
@@ -153,7 +154,7 @@ public class DB extends SQLiteOpenHelper {
         static ContentValues
         createContentValuesForInsert(String title, String desc,
                                      String videoId, int playtime,
-                                     byte[] thumbnail) {
+                                     byte[] thumbnail, int volume) {
             eAssert(null != title && null != videoId);
             if (null == desc)
                 desc = "";
@@ -167,7 +168,9 @@ public class DB extends SQLiteOpenHelper {
             cvs.put(ColVideo.PLAYTIME.getName(), playtime);
             cvs.put(ColVideo.THUMBNAIL.getName(), thumbnail);
 
-            cvs.put(ColVideo.VOLUME.getName(), Policy.DEFAULT_VIDEO_VOLUME);
+            if (INVALID_VOLUME == volume)
+                volume = Policy.DEFAULT_VIDEO_VOLUME;
+            cvs.put(ColVideo.VOLUME.getName(), volume);
             cvs.put(ColVideo.RATE.getName(), 0);
             cvs.put(ColVideo.TIME_ADD.getName(), System.currentTimeMillis());
             cvs.put(ColVideo.TIME_PLAYED.getName(), System.currentTimeMillis());
@@ -429,6 +432,24 @@ public class DB extends SQLiteOpenHelper {
 
     // ----------------------------------------------------------------------
     //
+    // Common
+    //
+    // ----------------------------------------------------------------------
+    private Object
+    getCursorVal(Cursor c, Col col) {
+        int i = c.getColumnIndex(col.getName());
+        if ("text".equals(col.getType()))
+            return c.getString(i);
+        else if ("integer".equals(col.getType()))
+            return c.getLong(i);
+        else if ("blob".equals(col.getType()))
+            return c.getBlob(i);
+        else
+            return null;
+    }
+
+    // ----------------------------------------------------------------------
+    //
     // For TABLE_VIDEO
     //
     // ----------------------------------------------------------------------
@@ -440,10 +461,10 @@ public class DB extends SQLiteOpenHelper {
     private long
     insertVideo(String title, String desc,
                 String url, int playtime,
-                byte[] thumbnail) {
+                byte[] thumbnail, int volume) {
         ContentValues cvs = ColVideo.createContentValuesForInsert(title, desc,
                                                                   url, playtime,
-                                                                  thumbnail);
+                                                                  thumbnail, volume);
         return insertVideo(cvs);
     }
 
@@ -965,6 +986,7 @@ public class DB extends SQLiteOpenHelper {
      * @param url
      * @param playtime
      * @param thumbnail
+     * @param volume
      * @return
      *   -1 for error (ex. already exist)
      */
@@ -972,7 +994,7 @@ public class DB extends SQLiteOpenHelper {
     insertVideoToPlaylist(long plid,
                           String title, String desc,
                           String videoId, int playtime,
-                          byte[] thumbnail) {
+                          byte[] thumbnail, int volume) {
         Cursor c = queryVideos(new ColVideo[] { ColVideo.ID }, ColVideo.VIDEOID, videoId);
         eAssert(0 == c.getCount() || 1 == c.getCount());
         long vid;
@@ -981,7 +1003,7 @@ public class DB extends SQLiteOpenHelper {
             c.close();
             mDb.beginTransaction();
             try {
-                vid = insertVideo(title, desc, videoId, playtime, thumbnail);
+                vid = insertVideo(title, desc, videoId, playtime, thumbnail, volume);
                 if (vid < 0)
                     return Err.DB_UNKNOWN;
 
@@ -1100,6 +1122,23 @@ public class DB extends SQLiteOpenHelper {
                          getColNames(cols),
                          ColVideo.ID.getName() + " = " + vid,
                          null, null, null, null);
+    }
+
+    public Object
+    getVideoInfo(String ytvid, ColVideo col) {
+        Cursor c = mDb.query(TABLE_VIDEO,
+                             getColNames(new ColVideo[] { col }),
+                             ColVideo.VIDEOID + " = " + DatabaseUtils.sqlEscapeString(ytvid),
+                             null, null, null, null);
+        eAssert(0 == c.getCount() || 1 == c.getCount());
+        try {
+            if (c.moveToFirst())
+                return getCursorVal(c, col);
+            else
+                return null;
+        } finally {
+            c.close();
+        }
     }
 
     // ----------------------------------------------------------------------

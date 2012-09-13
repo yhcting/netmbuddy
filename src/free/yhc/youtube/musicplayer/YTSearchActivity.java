@@ -274,10 +274,20 @@ DBHelper.CheckExistDoneReceiver {
             return;
         }
 
+        int volume = DB.INVALID_VOLUME;
+        YTPlayer ytp = YTPlayer.get();
+        String runningYtVid = ytp.getPlayVideoYtId();
+        if (null != runningYtVid
+            && runningYtVid.equals(getAdapter().getItemVideoId(position)))
+            volume = ytp.getVideoVolume();
+
+        if (DB.INVALID_VOLUME == volume)
+            volume = Policy.DEFAULT_VIDEO_VOLUME;
+
         Err err = mDb.insertVideoToPlaylist(plid,
                                             entry.media.title, entry.media.description,
                                             entry.media.videoId, playtm,
-                                            Utils.compressBitmap(bm));
+                                            Utils.compressBitmap(bm), volume);
         if (Err.NO_ERR != err) {
             if (Err.DB_DUPLICATED == err)
                 UiUtils.showTextToast(this, R.string.msg_existing_muisc);
