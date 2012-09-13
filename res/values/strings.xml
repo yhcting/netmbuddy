@@ -13,11 +13,12 @@
     <string name="deleting">삭제 중</string>
     <string name="error">에러</string>
     <string name="buffering">버퍼링</string>
-    <string name="search_word">검색어</string>
+    <string name="keyword">검색어</string>
+    <string name="author">제작자</string>
     <string name="volume">볼륨</string>
     <string name="database">데이타베이스</string>
 
-    <string name="enter_search_word">검색어 입력</string>
+    <string name="enter_keyword">검색어 입력</string>
     <string name="new_search">새로 검색하기</string>
     <string name="detail_list">상세 목록 보기</string>
     <string name="enter_new_name">새 이름 입력</string>
@@ -34,6 +35,7 @@
     <string name="feedback">의견 보내기</string>
     <string name="choose_app">어플리케이션 선택</string>
     <string name="play_video">비디오 재생</string>
+    <string name="videos_of_this_author">제작자의 다른 비디오들</string>
 
     <string name="importing_db">DB를 가져오는 중</string>
     <string name="merging_db">DB를 합치는 중</string>

@@ -23,6 +23,9 @@ import android.net.Uri;
 //     //P <= comment out for performance.
 //
 public class YTSearchApi {
+    static final String sQueryProjection = "fields=openSearch:totalResults,openSearch:startIndex,openSearch:itemsPerPage,"
+            + "entry(author(name),media:group(media:title,yt:videoid,media:thumbnail[@yt:name='default'](@url),yt:duration,yt:uploaded))";
+
     // For debugging
     private String mDbgQuery = "";
     private String mDbgXml   = "";
@@ -47,10 +50,17 @@ public class YTSearchApi {
 
         public boolean      available   = true; // available for this App.
 
+        public Author       author      = new Author();
         public Media        media       = new Media();
         public Statistics   stat        = new Statistics();
         public GDRating     gdRating    = new GDRating();
         public YTRating     ytRating    = new YTRating();
+
+        public class Author {
+            public String   name            = "";
+            public String   uri             = "";
+            public String   ytUserId        = "";
+        }
 
         public class Media {
             public String   title           = "";
@@ -108,10 +118,8 @@ public class YTSearchApi {
         }
     }
 
-    static final String sQueryProjection = "fields=openSearch:totalResults,openSearch:startIndex,openSearch:itemsPerPage,"
-                                           + "entry(media:group(media:title,yt:videoid,media:thumbnail[@yt:name='default'](@url),yt:duration,yt:uploaded))";
     public static String
-    getFeedUrl(String word, int start, int maxCount) {
+    getFeedUrlByKeyword(String word, int start, int maxCount) {
         eAssert(0 < start && 0 < maxCount && maxCount <= Policy.YTSEARCH_MAX_RESULTS);
         // http://gdata.youtube.com/feeds/api/videos?q=김광석&start-index=1&max-results=50&client=ytapi-youtube-search&autoplay=1&format=5&v=2
         word = word.replaceAll("\\s+", "+");
@@ -120,6 +128,17 @@ public class YTSearchApi {
                 + "&start-index=" + start
                 + "&max-results=" + maxCount
                 + "&client=ytapi-youtube-search&format=5&v=2&"
+                + sQueryProjection;
+    }
+
+    public static String
+    getFeedUrlByAuthor(String author, int start, int maxCount) {
+        return "http://gdata.youtube.com/feeds/api/users/"
+                + Uri.encode(author, null)
+                + "/uploads?format=5&v=2"
+                + "&start-index=" + start
+                + "&max-results=" + maxCount
+                + "&client=ytapi-youtube-search&"
                 + sQueryProjection;
     }
 
@@ -170,6 +189,23 @@ public class YTSearchApi {
         if (null != t)
             text = t.getNodeValue();
         return text;
+    }
+
+    private static Err
+    parseEntryAuthor(Node n, Entry.Author en) {
+        n = n.getFirstChild();
+        while (null != n) {
+            //logI("        - " + n.getNodeName());
+            if ("name".equals(n.getNodeName()))
+                en.name = getTextValue(n);
+            else if ("uri".equals(n.getNodeName()))
+                en.uri = getTextValue(n);
+            else if ("yt:userId".equals(n.getNodeName()))
+                en.ytUserId = getTextValue(n);
+
+            n = n.getNextSibling();
+        }
+        return Err.NO_ERR;
     }
 
     private static Err
@@ -291,6 +327,8 @@ public class YTSearchApi {
             //logI("    - " + n.getNodeName());
             if ("media:group".equals(n.getNodeName()))
                 parseEntryMedia(n, en.media);
+            else if ("author".equals(n.getNodeName()))
+                parseEntryAuthor(n, en.author);
             else if ("gd:rating".equals(n.getNodeName()))
                 parseEntryGDRating(n, en.gdRating);
             else if ("yt:rating".equals(n.getNodeName()))

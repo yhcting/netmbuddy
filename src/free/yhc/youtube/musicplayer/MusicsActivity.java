@@ -243,14 +243,9 @@ public class MusicsActivity extends Activity {
         // (Only stream volume is available.)
         // But SWF player supports this.
         // So, enable volume menu by default.
-
-        if (isUserPlaylist(mPlid)) {
-            menu.findItem(R.id.move_to_playlist).setVisible(true);
-            menu.findItem(R.id.plthumbnail).setVisible(true);
-        } else {
-            menu.findItem(R.id.move_to_playlist).setVisible(false);
-            menu.findItem(R.id.plthumbnail).setVisible(false);
-        }
+        boolean visible = isUserPlaylist(mPlid)? true: false;
+        menu.findItem(R.id.move_to_playlist).setVisible(visible);
+        menu.findItem(R.id.plthumbnail).setVisible(visible);
     }
 
     @Override
@@ -275,7 +270,7 @@ public class MusicsActivity extends Activity {
         } else if (PLID_SEARCHED == mPlid) {
             String word = getIntent().getStringExtra("word");
             searchWord = (null == word)? "": word;
-            String title = Utils.getAppContext().getResources().getText(R.string.search_word) + " : " + word;
+            String title = Utils.getAppContext().getResources().getText(R.string.keyword) + " : " + word;
             ((TextView)findViewById(R.id.title)).setText(title);
             ((ImageView)findViewById(R.id.thumbnail)).setImageResource(R.drawable.ic_search_list_up);
         }
