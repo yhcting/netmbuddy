@@ -48,9 +48,7 @@ DBHelper.CheckExistDoneReceiver {
     private ListView        mListv;     // viewHolder for ListView
 
     // Variable to store current activity state.
-    private String  mCurSearchWord = "";
-    private int     mCurPage       = -1; // current page number
-    private int     mTotalResults  = -1;
+    private YtSearchState   mSearchSt   = new YtSearchState();
 
     private Button[]  mPageBtnHolder;
     private LinearLayout.LayoutParams mPageBtnLPHolder;
@@ -58,9 +56,16 @@ DBHelper.CheckExistDoneReceiver {
         @Override
         public void onClick(View v) {
             int page = (Integer)v.getTag();
-            loadPage(mCurSearchWord, page);
+            loadPage(mSearchSt.type, mSearchSt.text, page);
         }
     };
+
+    private static class YtSearchState {
+        YTSearchHelper.SearchType   type            = YTSearchHelper.SearchType.KEYWORD;
+        String                      text            = "";
+        int                         curPage         = -1;
+        int                         totalResults    = -1;
+    }
 
     private int
     getStarti(int pageNum) {
@@ -70,7 +75,7 @@ DBHelper.CheckExistDoneReceiver {
 
     private int
     getLastPage() {
-        int page = (mTotalResults - 1) / NR_ENTRY_PER_PAGE + 1;
+        int page = (mSearchSt.totalResults - 1) / NR_ENTRY_PER_PAGE + 1;
         return page < 1? 1: page;
     }
 
@@ -123,7 +128,7 @@ DBHelper.CheckExistDoneReceiver {
     private void
     adjustPageUserAction() {
         int lastPage = getLastPage();
-        eAssert(mCurPage >= 1 && mCurPage <= lastPage);
+        eAssert(mSearchSt.curPage >= 1 && mSearchSt.curPage <= lastPage);
 
         View barv = findViewById(R.id.bottombar);
         ImageView nextBtn = (ImageView)barv.findViewById(R.id.next);
@@ -132,17 +137,17 @@ DBHelper.CheckExistDoneReceiver {
         prevBtn.setVisibility(View.VISIBLE);
         nextBtn.setVisibility(View.VISIBLE);
 
-        if (1 == mCurPage)
+        if (1 == mSearchSt.curPage)
             prevBtn.setVisibility(View.INVISIBLE);
 
-        if (lastPage == mCurPage)
+        if (lastPage == mSearchSt.curPage)
             nextBtn.setVisibility(View.INVISIBLE);
 
         // Setup index buttons.
         LinearLayout ll = (LinearLayout)findViewById(R.id.indexgroup);
         ll.removeAllViews();
-        int nrPages = mTotalResults / NR_ENTRY_PER_PAGE + 1;
-        int mini = mCurPage - (Policy.YTSEARCH_NR_PAGE_INDEX / 2);
+        int nrPages = mSearchSt.totalResults / NR_ENTRY_PER_PAGE + 1;
+        int mini = mSearchSt.curPage - (Policy.YTSEARCH_NR_PAGE_INDEX / 2);
         if (mini < 1)
             mini = 1;
 
@@ -157,7 +162,7 @@ DBHelper.CheckExistDoneReceiver {
             mPageBtnHolder[bi].setBackgroundResource(R.drawable.btnbg_normal);
             ll.addView(mPageBtnHolder[bi], mPageBtnLPHolder);
         }
-        mPageBtnHolder[mCurPage - mini].setBackgroundResource(R.drawable.btnbg_focused);
+        mPageBtnHolder[mSearchSt.curPage - mini].setBackgroundResource(R.drawable.btnbg_focused);
     }
 
     /**
@@ -166,7 +171,7 @@ DBHelper.CheckExistDoneReceiver {
      *   1-based page number
      */
     private void
-    loadPage(String word, int pageNumber) {
+    loadPage(YTSearchHelper.SearchType type, String text, int pageNumber) {
         if (pageNumber < 1
             || pageNumber > getLastPage()) {
             UiUtils.showTextToast(this, R.string.err_ytsearch);
@@ -180,7 +185,8 @@ DBHelper.CheckExistDoneReceiver {
         mSearchHelper.open();
         YTSearchHelper.SearchArg arg
             = new YTSearchHelper.SearchArg(pageNumber,
-                                           word,
+                                           type,
+                                           text,
                                            getStarti(pageNumber),
                                            NR_ENTRY_PER_PAGE);
         Err err = mSearchHelper.searchAsync(arg);
@@ -192,17 +198,17 @@ DBHelper.CheckExistDoneReceiver {
 
     private void
     loadNext() {
-        loadPage(mCurSearchWord, mCurPage + 1);
+        loadPage(mSearchSt.type, mSearchSt.text, mSearchSt.curPage + 1);
     }
 
     private void
     loadPrev() {
-        eAssert(mCurPage > 1);
-        loadPage(mCurSearchWord, mCurPage - 1);
+        eAssert(mSearchSt.curPage > 1);
+        loadPage(mSearchSt.type, mSearchSt.text, mSearchSt.curPage - 1);
     }
 
     private void
-    doNewSearch() {
+    doNewKeywordSearch() {
         UiUtils.EditTextAction action = new UiUtils.EditTextAction() {
             @Override
             public void prepare(Dialog dialog, EditText edit) { }
@@ -210,11 +216,11 @@ DBHelper.CheckExistDoneReceiver {
             public void onOk(Dialog dialog, EditText edit) {
                 String word = edit.getText().toString();
                 RTState.get().setLastSearchWord(edit.getText().toString());
-                loadPage(word, 1);
+                loadPage(YTSearchHelper.SearchType.KEYWORD, word, 1);
             }
         };
         AlertDialog diag = UiUtils.buildOneLineEditTextDialog(this,
-                                                              R.string.enter_search_word,
+                                                              R.string.enter_keyword,
                                                               RTState.get().getLastSearchWord(),
                                                               action);
         diag.show();
@@ -252,7 +258,7 @@ DBHelper.CheckExistDoneReceiver {
         iv.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                doNewSearch();
+                doNewKeywordSearch();
             }
         });
     }
@@ -274,10 +280,20 @@ DBHelper.CheckExistDoneReceiver {
             return;
         }
 
+        int volume = DB.INVALID_VOLUME;
+        YTPlayer ytp = YTPlayer.get();
+        String runningYtVid = ytp.getPlayVideoYtId();
+        if (null != runningYtVid
+            && runningYtVid.equals(getAdapter().getItemVideoId(position)))
+            volume = ytp.getVideoVolume();
+
+        if (DB.INVALID_VOLUME == volume)
+            volume = Policy.DEFAULT_VIDEO_VOLUME;
+
         Err err = mDb.insertVideoToPlaylist(plid,
                                             entry.media.title, entry.media.description,
                                             entry.media.videoId, playtm,
-                                            Utils.compressBitmap(bm));
+                                            Utils.compressBitmap(bm), volume);
         if (Err.NO_ERR != err) {
             if (Err.DB_DUPLICATED == err)
                 UiUtils.showTextToast(this, R.string.msg_existing_muisc);
@@ -332,6 +348,16 @@ DBHelper.CheckExistDoneReceiver {
     }
 
     private void
+    onPlayVideo(final int position) {
+        UiUtils.playAsVideo(this, getAdapter().getItemVideoId(position));
+    }
+
+    private void
+    onVideosOfThisAuthor(final int position) {
+        loadPage(YTSearchHelper.SearchType.AUTHOR, getAdapter().getItemAuthor(position), 1);
+    }
+
+    private void
     onListItemClick(View view, int position, long itemId) {
         ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
         playerv.setVisibility(View.VISIBLE);
@@ -360,8 +386,23 @@ DBHelper.CheckExistDoneReceiver {
             return;
         }
 
-        mCurSearchWord = (String)arg.tag;
-        String titleText = getResources().getText(R.string.search_word) + " : " + mCurSearchWord;
+        YTSearchHelper.SearchArg sarg = (YTSearchHelper.SearchArg)arg.tag;
+        mSearchSt.type = sarg.type;
+        mSearchSt.text = sarg.text;
+        String titleText = "";
+        switch (mSearchSt.type) {
+        case KEYWORD:
+            titleText += getResources().getText(R.string.keyword);
+            break;
+
+        case AUTHOR:
+            titleText += getResources().getText(R.string.author);
+            break;
+
+        default:
+            eAssert(false);
+        }
+        titleText += " : " + mSearchSt.text;
         ((TextView)findViewById(R.id.title)).setText(titleText);
 
         // First request is done!
@@ -391,16 +432,16 @@ DBHelper.CheckExistDoneReceiver {
                 break;
             }
 
-            mCurPage = (Integer)arg.tag;
+            mSearchSt.curPage = (Integer)arg.tag;
 
             if (result.enties.length <= 0
-                && 1 == mCurPage) {
+                && 1 == mSearchSt.curPage) {
                 r = Err.NO_MATCH;
                 break;
             }
 
             try {
-                mTotalResults = Integer.parseInt(result.header.totalResults);
+                mSearchSt.totalResults = Integer.parseInt(result.header.totalResults);
             } catch (NumberFormatException e) {
                 r = Err.YTSEARCH;
                 break;
@@ -413,7 +454,7 @@ DBHelper.CheckExistDoneReceiver {
             return;
         }
 
-        mDbHelper.checkExistAsync(new DBHelper.CheckExistArg(arg.word, result.enties));
+        mDbHelper.checkExistAsync(new DBHelper.CheckExistArg(arg, result.enties));
     }
 
     @Override
@@ -425,6 +466,13 @@ DBHelper.CheckExistDoneReceiver {
             onAddToPlaylist(info.position);
             return true;
 
+        case R.id.play_video:
+            onPlayVideo(info.position);
+            return true;
+
+        case R.id.videos_of_this_author:
+            onVideosOfThisAuthor(info.position);
+            return true;
         }
         return false;
     }
@@ -436,6 +484,8 @@ DBHelper.CheckExistDoneReceiver {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.ytsearch_context, menu);
         // AdapterContextMenuInfo mInfo = (AdapterContextMenuInfo)menuInfo;
+        boolean visible = (YTSearchHelper.SearchType.AUTHOR == mSearchSt.type)? false: true;
+        menu.findItem(R.id.videos_of_this_author).setVisible(visible);
     }
 
     @Override
@@ -464,7 +514,7 @@ DBHelper.CheckExistDoneReceiver {
         preparePageButtons();
         setupTopBar();
         setupBottomBar();
-        doNewSearch();
+        doNewKeywordSearch();
     }
 
     @Override

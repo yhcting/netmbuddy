@@ -46,16 +46,22 @@ public class YTSearchHelper {
                                Bitmap bm, Err err);
     }
 
-
+    public static enum SearchType {
+        KEYWORD,
+        AUTHOR
+    }
 
     public static class SearchArg {
-        public Object   tag;   // user data tag
-        public String   word;  // search word
-        public int      starti;// start index
-        public int      max;   // max size to search
-        public SearchArg(Object aTag, String aWord, int aStarti, int aMax) {
+        public Object       tag;   // user data tag
+        public SearchType   type;
+        public String       text;  //
+        public int          starti;// start index
+        public int          max;   // max size to search
+        public SearchArg(Object aTag, SearchType aType, String aText,
+                         int aStarti, int aMax) {
             tag = aTag;
-            word = aWord;
+            type = aType;
+            text = aText;
             starti = aStarti;
             max = aMax;
         }
@@ -139,9 +145,20 @@ public class YTSearchHelper {
 
         private void
         handleSearch(SearchArg arg) {
-            YTSearchApi.Result r;
+            YTSearchApi.Result r = null;
             try {
-                r = parseFeed(loadUrl(YTSearchApi.getFeedUrl(arg.word, arg.starti, arg.max)));
+                switch (arg.type) {
+                case KEYWORD:
+                    r = parseFeed(loadUrl(YTSearchApi.getFeedUrlByKeyword(arg.text, arg.starti, arg.max)));
+                    break;
+
+                case AUTHOR:
+                    r = parseFeed(loadUrl(YTSearchApi.getFeedUrlByAuthor(arg.text, arg.starti, arg.max)));
+                    break;
+
+                default:
+                    eAssert(false);
+                }
             } catch (YTMPException e) {
                 eAssert(Err.NO_ERR != e.getError());
                 sendSearchDone(arg, null, e.getError());

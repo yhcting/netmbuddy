@@ -34,10 +34,20 @@
              android:layout_width="match_parent"
              android:layout_height="wrap_content"
              android:gravity="center_vertical"
-             android:weightSum="3"
+             android:weightSum="4"
              android:orientation="horizontal"
              android:visibility="gone"
              >
+             <ImageView
+                 android:id="@+id/music_player_btnvol"
+                 android:layout_width="@dimen/toolbtn_width"
+                 android:layout_height="@dimen/toolbtn_height"
+                 android:layout_weight="1"
+                 android:gravity="center"
+                 android:scaleType="fitCenter"
+                 android:src="@drawable/ic_media_volume"
+                 android:clickable="true"
+                 />
              <ImageView
                  android:id="@+id/music_player_btnprev"
                  android:layout_width="@dimen/toolbtn_width"

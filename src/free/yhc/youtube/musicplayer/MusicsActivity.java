@@ -4,11 +4,8 @@ import static free.yhc.youtube.musicplayer.model.Utils.eAssert;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
-import android.content.ActivityNotFoundException;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Configuration;
-import android.net.Uri;
 import android.os.Bundle;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
@@ -21,14 +18,12 @@ import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
-import android.widget.SeekBar;
 import android.widget.TextView;
 import free.yhc.youtube.musicplayer.model.DB;
 import free.yhc.youtube.musicplayer.model.Err;
 import free.yhc.youtube.musicplayer.model.UiUtils;
 import free.yhc.youtube.musicplayer.model.Utils;
 import free.yhc.youtube.musicplayer.model.YTPlayer;
-import free.yhc.youtube.musicplayer.model.YTVideoConnector;
 
 public class MusicsActivity extends Activity {
     public static final long PLID_INVALID       = DB.INVALID_PLAYLIST_ID;
@@ -168,48 +163,8 @@ public class MusicsActivity extends Activity {
 
     private void
     onContextMenuVolume(final long itemId, final int itemPos) {
-        final int oldVolume = getAdapter().getMusicVolume(itemPos);
-
-        ViewGroup diagv = (ViewGroup)UiUtils.inflateLayout(this, R.layout.set_volume_dialog);
-        AlertDialog.Builder bldr = new AlertDialog.Builder(this);
-        bldr.setView(diagv);
-        bldr.setTitle(R.string.volume);
-        final AlertDialog aDiag = bldr.create();
-
-        final SeekBar sbar = (SeekBar)diagv.findViewById(R.id.seekbar);
-        sbar.setMax(100);
-        sbar.setProgress(getAdapter().getMusicVolume(itemPos));
-        sbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void
-            onStopTrackingTouch(SeekBar seekBar) { }
-            @Override
-            public void
-            onStartTrackingTouch(SeekBar seekBar) { }
-            @Override
-            public void
-            onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                mMp.setVideoVolume(progress);
-            }
-        });
-
-        aDiag.setOnDismissListener(new DialogInterface.OnDismissListener() {
-            @Override
-            public void
-            onDismiss(DialogInterface dialog) {
-                int newVolume = sbar.getProgress();
-                if (oldVolume == newVolume)
-                    return;
-                // Save to database and update adapter
-                // NOTE
-                // Should I consider about performance?
-                // Not yet. do something when performance is issued.
-                mDb.updateVideo(DB.ColVideo.ID, itemId, DB.ColVideo.VOLUME, sbar.getProgress());
-                getAdapter().reloadCursor();
-            }
-        });
-
-        aDiag.show();
+        YTPlayer.get().changeVideoVolume(getAdapter().getMusicTitle(itemPos),
+                                         getAdapter().getMusicYtid(itemPos));
     }
 
     private void
@@ -235,13 +190,7 @@ public class MusicsActivity extends Activity {
 
     private void
     onContextMenuPlayVideo(final long itemId, final int itemPos) {
-        Intent i = new Intent(Intent.ACTION_VIEW,
-                              Uri.parse(YTVideoConnector.getYtVideoPageUrl(getAdapter().getMusicYtid(itemPos))));
-        try {
-            startActivity(i);
-        } catch (ActivityNotFoundException e) {
-            UiUtils.showTextToast(this, R.string.msg_fail_find_app);
-        }
+        UiUtils.playAsVideo(this, getAdapter().getMusicYtid(itemPos));
     }
 
     @Override
@@ -294,14 +243,9 @@ public class MusicsActivity extends Activity {
         // (Only stream volume is available.)
         // But SWF player supports this.
         // So, enable volume menu by default.
-
-        if (isUserPlaylist(mPlid)) {
-            menu.findItem(R.id.move_to_playlist).setVisible(true);
-            menu.findItem(R.id.plthumbnail).setVisible(true);
-        } else {
-            menu.findItem(R.id.move_to_playlist).setVisible(false);
-            menu.findItem(R.id.plthumbnail).setVisible(false);
-        }
+        boolean visible = isUserPlaylist(mPlid)? true: false;
+        menu.findItem(R.id.move_to_playlist).setVisible(visible);
+        menu.findItem(R.id.plthumbnail).setVisible(visible);
     }
 
     @Override
@@ -326,7 +270,7 @@ public class MusicsActivity extends Activity {
         } else if (PLID_SEARCHED == mPlid) {
             String word = getIntent().getStringExtra("word");
             searchWord = (null == word)? "": word;
-            String title = Utils.getAppContext().getResources().getText(R.string.search_word) + " : " + word;
+            String title = Utils.getAppContext().getResources().getText(R.string.keyword) + " : " + word;
             ((TextView)findViewById(R.id.title)).setText(title);
             ((ImageView)findViewById(R.id.thumbnail)).setImageResource(R.drawable.ic_search_list_up);
         }

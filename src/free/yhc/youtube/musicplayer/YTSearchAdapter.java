@@ -101,7 +101,7 @@ YTSearchHelper.LoadThumbnailDoneReceiver {
 
         String playtmtext = "?";
         try {
-            playtmtext = Utils.secsToTimeText(Integer.parseInt(e.media.playTime));
+            playtmtext = Utils.secsToMinSecText(Integer.parseInt(e.media.playTime));
         } catch (NumberFormatException ex) { }
         ((TextView)v.findViewById(R.id.playtime)).setText(playtmtext);
 
@@ -112,9 +112,10 @@ YTSearchHelper.LoadThumbnailDoneReceiver {
 
         if (null != date)
             dateText = DateFormat.getDateTimeInstance(DateFormat.MEDIUM,
-                                                      DateFormat.MEDIUM,
+                                                      DateFormat.SHORT,
                                                       Locale.getDefault())
                                  .format(date);
+
         ((TextView)v.findViewById(R.id.uploadedtime)).setText("< " + dateText + " >");
 
         v.setTag(VTAGKEY_VALID, true);
@@ -138,6 +139,11 @@ YTSearchHelper.LoadThumbnailDoneReceiver {
     public String
     getItemPlaytime(int pos) {
         return mEntries[pos].media.playTime;
+    }
+
+    public String
+    getItemAuthor(int pos) {
+        return mEntries[pos].author.name;
     }
 
     public void

@@ -93,7 +93,7 @@ public class PlaylistActivity extends Activity {
             }
         };
         AlertDialog diag = UiUtils.buildOneLineEditTextDialog(this,
-                                                              R.string.enter_search_word,
+                                                              R.string.enter_keyword,
                                                               action);
         diag.show();
     }

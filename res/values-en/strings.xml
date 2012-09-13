@@ -13,11 +13,12 @@
     <string name="deleting">Deleting</string>
     <string name="error">Error</string>
     <string name="buffering">Buffering</string>
-    <string name="search_word">Search word</string>
+    <string name="keyword">Search word</string>
+    <string name="author">Author</string>
     <string name="volume">Volume</string>
     <string name="database">Database</string>
 
-    <string name="enter_search_word">Enter search word</string>
+    <string name="enter_keyword">Enter search keyword</string>
     <string name="new_search">New search</string>
     <string name="detail_list">Detail list</string>
     <string name="enter_new_name">Enter new name</string>
@@ -34,6 +35,7 @@
     <string name="feedback">Feedback</string>
     <string name="choose_app">Choose App.</string>
     <string name="play_video">Play video</string>
+    <string name="videos_of_this_author">Videos of this author</string>
 
     <string name="importing_db">Importing DB</string>
     <string name="merging_db">Merging DB</string>

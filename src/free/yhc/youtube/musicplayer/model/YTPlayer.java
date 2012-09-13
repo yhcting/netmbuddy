@@ -10,8 +10,10 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Random;
 
+import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.database.Cursor;
@@ -31,6 +33,7 @@ import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import free.yhc.youtube.musicplayer.R;
+import free.yhc.youtube.musicplayer.model.DB.ColVideo;
 
 public class YTPlayer implements
 MediaPlayer.OnBufferingUpdateListener,
@@ -80,6 +83,7 @@ MediaPlayer.OnSeekCompleteListener {
     private WifiLock            mWfl        = null;
     private MediaPlayer         mMp         = null;
     private MPState             mMpS        = MPState.INVALID; // state of mMp;
+    private int                 mMpVol      = Policy.DEFAULT_VIDEO_VOLUME; // Current volume of media player.
     private YTVideoConnector    mYtConn     = null;
 
     // ------------------------------------------------------------------------
@@ -434,6 +438,7 @@ MediaPlayer.OnSeekCompleteListener {
     private void
     mpNewInstance() {
         mMp = new MediaPlayer();
+        mMpVol = Policy.DEFAULT_VIDEO_VOLUME;
         initMediaPlayer(mMp);
     }
 
@@ -477,7 +482,19 @@ MediaPlayer.OnSeekCompleteListener {
     private void
     mpSetVolume(int vol) {
         float volf = vol/100.0f;
+        mMpVol = vol;
         mMp.setVolume(volf, volf);
+    }
+
+    private int
+    mpGetVolume() {
+        switch(mMpS) {
+        case END:
+        case ERROR:
+        case PREPARING:
+            return Policy.DEFAULT_VIDEO_VOLUME;
+        }
+        return mMpVol;
     }
 
     private int
@@ -557,7 +574,8 @@ MediaPlayer.OnSeekCompleteListener {
 
     private void
     pvEnableButton(ImageView btn, int image) {
-        btn.setImageResource(image);
+        if (0 != image)
+            btn.setImageResource(image);
         btn.setVisibility(View.VISIBLE);
     }
 
@@ -620,6 +638,7 @@ MediaPlayer.OnSeekCompleteListener {
         pvDisableButton((ImageView)playerv.findViewById(R.id.music_player_btnplay));
         pvDisableButton((ImageView)playerv.findViewById(R.id.music_player_btnnext));
         pvDisableButton((ImageView)playerv.findViewById(R.id.music_player_btnprev));
+        pvDisableButton((ImageView)playerv.findViewById(R.id.music_player_btnvol));
     }
 
     private void
@@ -636,23 +655,27 @@ MediaPlayer.OnSeekCompleteListener {
         ImageView nextv = (ImageView)controlv.findViewById(R.id.music_player_btnnext);
         ImageView prevv = (ImageView)controlv.findViewById(R.id.music_player_btnprev);
         ImageView playv = (ImageView)controlv.findViewById(R.id.music_player_btnplay);
+        ImageView volv  = (ImageView)controlv.findViewById(R.id.music_player_btnvol);
 
         switch (to) {
         case BUFFERING:
         case PAUSED:
         case STARTED:
+            pvEnableButton(volv, 0);
+
             if (mVlm.hasNextVideo())
-                pvEnableButton(nextv, R.drawable.ic_media_next);
+                pvEnableButton(nextv, 0);
             else
                 pvDisableButton(nextv);
 
             if (mVlm.hasPrevVideo())
-                pvEnableButton(prevv, R.drawable.ic_media_prev);
+                pvEnableButton(prevv, 0);
             else
                 pvDisableButton(prevv);
             break;
 
         default:
+            pvDisableButton(volv);
             pvDisableButton(prevv);
             pvDisableButton(nextv);
         }
@@ -780,6 +803,18 @@ MediaPlayer.OnSeekCompleteListener {
                 pvDisableControlButton(playerv);
             }
         });
+
+        btn = (ImageView)playerv.findViewById(R.id.music_player_btnvol);
+        btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (!mVlm.hasActiveVideo())
+                    return;
+                changeVideoVolume(mVlm.getActiveVideo().title,
+                                  mVlm.getActiveVideo().videoId);
+            }
+        });
+
     }
 
     private void
@@ -1084,11 +1119,97 @@ MediaPlayer.OnSeekCompleteListener {
     }
 
     public void
+    changeVideoVolume(final String title, final String videoId) {
+        if (null == mVContext)
+            return;
+
+        final boolean runningVideo;
+        // Retrieve current volume
+        int curvol = Policy.DEFAULT_VIDEO_VOLUME;
+        if (isVideoPlaying()
+            && mVlm.getActiveVideo().videoId.equals(videoId)) {
+            runningVideo = true;
+            curvol = mpGetVolume();
+        } else {
+            runningVideo = false;
+            Long i = (Long)mDb.getVideoInfo(videoId, ColVideo.VOLUME);
+            if (null != i)
+                curvol = i.intValue();
+        }
+
+        ViewGroup diagv = (ViewGroup)UiUtils.inflateLayout(mVContext, R.layout.music_player_volume_dialog);
+        AlertDialog.Builder bldr = new AlertDialog.Builder(mVContext);
+        bldr.setView(diagv);
+        bldr.setTitle(Utils.getAppContext().getResources().getText(R.string.volume)
+                      + " : " + title);
+        final AlertDialog aDiag = bldr.create();
+
+        final SeekBar sbar = (SeekBar)diagv.findViewById(R.id.seekbar);
+        sbar.setMax(100);
+        sbar.setProgress(curvol);
+        sbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void
+            onStopTrackingTouch(SeekBar seekBar) { }
+            @Override
+            public void
+            onStartTrackingTouch(SeekBar seekBar) { }
+            @Override
+            public void
+            onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (runningVideo)
+                    mpSetVolume(progress);
+            }
+        });
+
+        final int oldVolume = curvol;
+        aDiag.setOnDismissListener(new DialogInterface.OnDismissListener() {
+            @Override
+            public void
+            onDismiss(DialogInterface dialog) {
+                int newVolume = sbar.getProgress();
+                if (oldVolume == newVolume)
+                    return;
+                // Save to database and update adapter
+                // NOTE
+                // Should I consider about performance?
+                // Not yet. do something when performance is issued.
+                mDb.updateVideo(DB.ColVideo.VIDEOID, videoId,
+                                DB.ColVideo.VOLUME, newVolume);
+            }
+        });
+        aDiag.show();
+    }
+
+    public String
+    getPlayVideoYtId() {
+        if (isVideoPlaying())
+            return mVlm.getActiveVideo().videoId;
+        return null;
+    }
+
+    /**
+     * Set volume of video-on-play
+     * @param vol
+     */
+    public void
     setVideoVolume(int vol) {
         eAssert(0 <= vol && vol <= 100);
         // Implement this
         if (isVideoPlaying())
             mpSetVolume(vol);
+    }
+
+    /**
+     * Get volume of video-on-play
+     * @return
+     *   -1 : for error
+     */
+    public int
+    getVideoVolume() {
+        if (isVideoPlaying())
+            return mpGetVolume();
+        return DB.INVALID_VOLUME;
     }
 
     // ============================================================================
@@ -1099,7 +1220,10 @@ MediaPlayer.OnSeekCompleteListener {
 
     public boolean
     isVideoPlaying() {
-        return mVlm.hasActiveVideo();
+        return mVlm.hasActiveVideo()
+               && MPState.ERROR != mMpS
+               && MPState.END != mMpS
+               && MPState.PREPARING != mMpS;
     }
 
     // ============================================================================
