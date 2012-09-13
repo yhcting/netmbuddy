@@ -6,11 +6,14 @@ import java.util.LinkedList;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -266,8 +269,6 @@ public class UiUtils {
         return bldr.create();
     }
 
-
-
     public static void
     setThumbnailImageView(ImageView v, byte[] imgdata) {
         Bitmap thumbnailBm = null;
@@ -278,5 +279,16 @@ public class UiUtils {
             v.setImageResource(R.drawable.ic_unknown_image);
         else
             v.setImageBitmap(thumbnailBm);
+    }
+
+    public static void
+    playAsVideo(Context context, String ytvid) {
+        Intent i = new Intent(Intent.ACTION_VIEW,
+                Uri.parse(YTVideoConnector.getYtVideoPageUrl(ytvid)));
+        try {
+            context.startActivity(i);
+        } catch (ActivityNotFoundException e) {
+            UiUtils.showTextToast(context, R.string.msg_fail_find_app);
+        }
     }
 }

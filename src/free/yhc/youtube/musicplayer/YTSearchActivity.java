@@ -342,6 +342,11 @@ DBHelper.CheckExistDoneReceiver {
     }
 
     private void
+    onPlayVideo(final int position) {
+        UiUtils.playAsVideo(this, getAdapter().getItemVideoId(position));
+    }
+
+    private void
     onListItemClick(View view, int position, long itemId) {
         ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
         playerv.setVisibility(View.VISIBLE);
@@ -435,6 +440,9 @@ DBHelper.CheckExistDoneReceiver {
             onAddToPlaylist(info.position);
             return true;
 
+        case R.id.play_video:
+            onPlayVideo(info.position);
+            return true;
         }
         return false;
     }
