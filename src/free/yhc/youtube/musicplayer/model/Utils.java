@@ -4,13 +4,18 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.text.DateFormat;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Locale;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -29,11 +34,15 @@ import android.preference.PreferenceManager;
 import android.util.Log;
 
 public class Utils {
-    private static final boolean DBG = false;
-    private static final String  TAG = "[YoutubeMusicPlayer]";
+    private static final boolean DBG    = true;
+    private static final boolean LOGF   = false;
+    private static final String  TAG    = "[YoutubeMusicPlayer]";
 
     // This is only for debugging.
     private static boolean  sInitialized = false;
+
+    // For debugging
+    private static PrintWriter  sLogWriter  = null;
 
     // Even if these two varaibles are not 'final', those should be handled like 'final'
     //   because those are set only at init() function, and SHOULD NOT be changed.
@@ -68,6 +77,22 @@ public class Utils {
         new File(Policy.APPDATA_DIR).mkdirs();
         new File(Policy.APPDATA_TMPDIR).mkdirs();
         new File(Policy.APPDATA_VID_DIR).mkdirs();
+
+        if (LOGF) {
+            new File(Policy.APPDATA_LOG_DIR).mkdirs();
+            String dateText = DateFormat
+                                .getDateTimeInstance(DateFormat.MEDIUM,
+                                                     DateFormat.MEDIUM,
+                                                     Locale.ENGLISH)
+                                .format(new Date(System.currentTimeMillis()));
+            dateText = dateText.replace(' ', '_');
+            File logF = new File(Policy.APPDATA_LOG_DIR + dateText + ".log");
+            try {
+                sLogWriter = new PrintWriter(new OutputStreamWriter(new FileOutputStream(logF)));
+            } catch (FileNotFoundException e) {
+                eAssert(false);
+            }
+        }
 
         sAppContext = aAppContext;
         sUiHandler = new Handler();
@@ -108,13 +133,18 @@ public class Utils {
         if (!DBG || null == msg)
             return;
 
-        switch(lv) {
-        case V: Log.v(TAG, msg); break;
-        case D: Log.d(TAG, msg); break;
-        case I: Log.i(TAG, msg); break;
-        case W: Log.w(TAG, msg); break;
-        case E: Log.e(TAG, msg); break;
-        case F: Log.wtf(TAG, msg); break;
+        if (!LOGF) {
+            switch(lv) {
+            case V: Log.v(TAG, msg); break;
+            case D: Log.d(TAG, msg); break;
+            case I: Log.i(TAG, msg); break;
+            case W: Log.w(TAG, msg); break;
+            case E: Log.e(TAG, msg); break;
+            case F: Log.wtf(TAG, msg); break;
+            }
+        } else {
+            sLogWriter.print("[" + lv.name() + "] " + msg);
+            sLogWriter.flush();
         }
     }
 
