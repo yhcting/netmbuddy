@@ -123,17 +123,10 @@ public class YTVideoConnector extends AsyncTask<Void, Void, Err> {
         static YtVideoElem
         parse(String ytString) {
             YtVideoElem ve = new YtVideoElem();
-            // Url encoded value of 'youtube video element url string'
-            //   may use nested encoding.
-            // So, nested decoding is required.
-            // From experimental data, 2 is enough as nesting depth.
-            int nestDepth = 2;
-            while (nestDepth-- > 0) {
-                try {
-                    ytString = URLDecoder.decode(ytString, "UTF-8");
-                } catch (UnsupportedEncodingException e) {
-                    eAssert(false);
-                }
+            try {
+                ytString = URLDecoder.decode(ytString, "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                eAssert(false);
             }
 
             String[] elems = ytString.split("\\\\u0026");
