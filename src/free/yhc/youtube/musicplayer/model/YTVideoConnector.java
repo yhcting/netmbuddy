@@ -128,6 +128,7 @@ public class YTVideoConnector extends AsyncTask<Void, Void, Err> {
             } catch (UnsupportedEncodingException e) {
                 eAssert(false);
             }
+
             String[] elems = ytString.split("\\\\u0026");
             for (String e : elems) {
                 if (e.startsWith("itag="))
