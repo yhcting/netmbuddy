@@ -440,7 +440,7 @@ MediaPlayer.OnSeekCompleteListener {
                 if (mYtDnr != downloader)
                     return;
 
-                if (Err.YTHTTPGET == err
+                if (Err.NO_ERR != err
                     && Utils.isNetworkAvailable()) {
                     // retry.
                     int retryTag = (Integer)downloader.getTag();
