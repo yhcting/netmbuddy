@@ -80,7 +80,6 @@ MediaPlayer.OnSeekCompleteListener {
     //
     // ------------------------------------------------------------------------
     private final UpdateProgress    mUpdateProg = new UpdateProgress();
-    private final YTDownloader      mYtDnr      = new YTDownloader();
 
     // ------------------------------------------------------------------------
     //
@@ -93,6 +92,8 @@ MediaPlayer.OnSeekCompleteListener {
     private int                 mMpVol      = Policy.DEFAULT_VIDEO_VOLUME; // Current volume of media player.
     private YTHacker            mYtHack     = null;
     private NetLoader           mLoader     = null;
+    // assign dummy instance to remove "if (null != mYtDnr)"
+    private YTDownloader        mYtDnr      = new YTDownloader();
 
     // ------------------------------------------------------------------------
     // UI Control.
@@ -426,30 +427,29 @@ MediaPlayer.OnSeekCompleteListener {
     }
 
     private void
-    prepareNext() {
-        if (!mVlm.hasNextVideo())
-            return;
-
+    cachingVideo(final String vid) {
         mYtDnr.close();
 
-        final String vid = mVlm.getNextVideo().videoId;
+        mYtDnr = new YTDownloader();
         YTDownloader.DownloadDoneReceiver rcvr = new DownloadDoneReceiver() {
             @Override
             public void
             downloadDone(YTDownloader downloader, DnArg arg, Err err) {
-                if (mYtDnr != downloader)
+                if (mYtDnr != downloader) {
+                    downloader.close();
                     return;
-
-                if (Err.NO_ERR != err
-                    && Utils.isNetworkAvailable()) {
-                    // retry.
-                    int retryTag = (Integer)downloader.getTag();
-                    if (retryTag > 0) {
-                        retryTag--;
-                        downloader.setTag(retryTag);
-                        downloader.download(vid, getCachedVideo(vid));
-                    }
                 }
+
+                int retryTag = (Integer)downloader.getTag();
+                if (Err.NO_ERR != err
+                    && Utils.isNetworkAvailable()
+                    && retryTag > 0) {
+                    // retry.
+                    retryTag--;
+                    downloader.setTag(retryTag);
+                    downloader.download(vid, getCachedVideo(vid));
+                } else
+                    downloader.close();
                 // Ignore other cases even if it is fails.
             }
         };
@@ -461,6 +461,14 @@ MediaPlayer.OnSeekCompleteListener {
         // Only mp4 is supported at YTHacker!
         // So, YTDownloader also supports only mpeg4
         mYtDnr.download(vid, getCachedVideo(vid));
+    }
+
+    private void
+    prepareNext() {
+        if (!mVlm.hasNextVideo())
+            return;
+
+        cachingVideo(mVlm.getNextVideo().videoId);
     }
 
     // ========================================================================
@@ -1379,7 +1387,8 @@ MediaPlayer.OnSeekCompleteListener {
         //logD("MPlayer - onBufferingUpdate : " + percent + " %");
         // See comments aroudn MEDIA_INFO_BUFFERING_START in onInfo()
         //mpSetState(MPState.BUFFERING);
-        if (mUpdateProg.getProgress2() < percent && 100 <= percent)
+        if (mUpdateProg.getProgress2() < Policy.YTPLAYER_CACHING_TRIGGER_POINT
+            && Policy.YTPLAYER_CACHING_TRIGGER_POINT <= percent)
             // This is the first moment that buffering is reached to 100%
             prepareNext();
 

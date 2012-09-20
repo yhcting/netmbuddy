@@ -21,6 +21,8 @@ public class Policy {
     // Youtube Player
     // --------------------------------------------------------------------
     public static final int     YTPLAYER_RETRY_ON_ERROR = 3;
+    // caching-ahead next video will started if current buffering reaches this value.
+    public static final int     YTPLAYER_CACHING_TRIGGER_POINT = 80; // percent.
 
     // --------------------------------------------------------------------
     // Network access
