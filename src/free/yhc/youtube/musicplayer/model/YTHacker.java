@@ -7,12 +7,11 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import android.net.Uri;
 import android.os.AsyncTask;
 
 //
@@ -246,7 +245,7 @@ public class YTHacker {
         try {
             do {
                 // Read and parse html web page of video.
-                content = mLoader.getHttpContent(new URI(getYtVideoPageUrl(mYtvid)), true);
+                content = mLoader.getHttpContent(Uri.parse(getYtVideoPageUrl(mYtvid)), true);
                 eAssert(content.type.toLowerCase().startsWith("text/html"));
                 mYtr = parseYtVideoHtml(new BufferedReader(new InputStreamReader(content.stream)));
                 if (mYtr.vids.length <= 0) {
@@ -257,12 +256,10 @@ public class YTHacker {
                 // NOTE
                 // HACK youtube protocol!
                 // Do dummy 'GET' request with generate_204 url.
-                content = mLoader.getHttpContent(new URI(mYtr.generate_204_url), false);
+                content = mLoader.getHttpContent(Uri.parse(mYtr.generate_204_url), false);
                 eAssert(HttpUtils.SC_NO_CONTENT == content.stcode);
                 // Now all are ready to download!
             } while (false);
-        } catch (URISyntaxException e) {
-            err = Err.UNKNOWN;
         } catch (YTMPException e) {
             err = e.getError();
         }

@@ -206,12 +206,12 @@ public class StreamProxy implements Runnable {
     StringBuilder httpString = new StringBuilder();
     httpString.append(response.getStatusLine().toString());
 
-    httpString.append("\n");
+    httpString.append("\r\n");
     for (Header h : response.getAllHeaders()) {
       httpString.append(h.getName()).append(": ").append(h.getValue()).append(
-          "\n");
+          "\r\n");
     }
-    httpString.append("\n");
+    httpString.append("\r\n");
     logD(LOG_TAG + "headers done");
 
     try {

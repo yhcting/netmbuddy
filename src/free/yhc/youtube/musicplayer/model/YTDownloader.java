@@ -6,9 +6,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 
+import android.net.Uri;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
@@ -96,7 +95,7 @@ public class YTDownloader {
                 loader = hack.getNetLoader();
                 YTHacker.YtVideo vid = hack.getVideo(arg.qscore);
                 eAssert(null != vid);
-                NetLoader.HttpRespContent content = loader.getHttpContent(new URI(vid.url), false);
+                NetLoader.HttpRespContent content = loader.getHttpContent(Uri.parse(vid.url), false);
                 if (HttpUtils.SC_NO_CONTENT == content.stcode) {
                     sendResult(arg, Err.YTHTTPGET);
                     return;
@@ -113,8 +112,6 @@ public class YTDownloader {
                 sendResult(arg, Err.IO_FILE);
             } catch (IOException e) {
                 sendResult(arg, Err.IO_FILE);
-            } catch (URISyntaxException e) {
-                sendResult(arg, Err.UNKNOWN);
             } catch (YTMPException e) {
                 sendResult(arg, e.getError());
             } finally {

@@ -7,7 +7,6 @@ import static free.yhc.youtube.musicplayer.model.Utils.logW;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.URI;
 import java.net.UnknownHostException;
 
 import org.apache.http.HttpEntity;
@@ -22,6 +21,8 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.params.HttpProtocolParams;
+
+import android.net.Uri;
 
 
 public class NetLoader {
@@ -91,7 +92,7 @@ public class NetLoader {
     }
 
     public void
-    readHttpData(OutputStream outs, URI uri)
+    readHttpData(OutputStream outs, Uri uri)
             throws YTMPException {
         eAssert(null != mHttpClient);
         // Proxy is not supported yet.
@@ -109,7 +110,7 @@ public class NetLoader {
     }
 
     public HttpRespContent
-    getHttpContent(URI uri, boolean source)
+    getHttpContent(Uri uri, boolean source)
             throws YTMPException  {
         if (null == mHttpClient) {
             logI("NetLoader Fail to get HttpClient");

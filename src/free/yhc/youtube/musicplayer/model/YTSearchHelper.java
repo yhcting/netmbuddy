@@ -6,9 +6,6 @@ import static free.yhc.youtube.musicplayer.model.Utils.logW;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
-import java.net.URL;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -17,6 +14,7 @@ import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
@@ -100,17 +98,10 @@ public class YTSearchHelper {
         private byte[]
         loadUrl(String urlStr) throws YTMPException {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            try {
-                URL url = new URL(urlStr);
-                eAssert("http".equals(url.getProtocol().toLowerCase()));
-                NetLoader loader = new NetLoader().open(null);
-                loader.readHttpData(baos, url.toURI());
-                loader.close();
-            } catch (MalformedURLException e) {
-                eAssert(false);
-            } catch (URISyntaxException e) {
-                eAssert(false);
-            }
+            Uri uri = Uri.parse(urlStr);
+            NetLoader loader = new NetLoader().open(null);
+            loader.readHttpData(baos, uri);
+            loader.close();
 
             byte[] data = baos.toByteArray();
             try {
