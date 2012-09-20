@@ -16,9 +16,12 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.params.ClientPNames;
+import org.apache.http.client.params.CookiePolicy;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
+import org.apache.http.params.HttpProtocolParams;
 
 
 public class NetLoader {
@@ -26,9 +29,11 @@ public class NetLoader {
     private HttpClient      mHttpClient = null;
 
     public static class HttpRespContent {
+        public int         stcode; // status code
         public InputStream stream;
         public String      type;
-        HttpRespContent(InputStream aStream, String aType) {
+        HttpRespContent(int aStcode, InputStream aStream, String aType) {
+            stcode = aStcode;
             stream = aStream;
             type = aType;
         }
@@ -51,6 +56,8 @@ public class NetLoader {
         HttpParams params = hc.getParams();
         HttpConnectionParams.setConnectionTimeout(params, Policy.NETWORK_CONN_TIMEOUT);
         HttpConnectionParams.setSoTimeout(params, Policy.NETWORK_CONN_TIMEOUT);
+        HttpProtocolParams.setUserAgent(hc.getParams(), Policy.HTTP_UASTRING);
+        params.setParameter(ClientPNames.COOKIE_POLICY, CookiePolicy.RFC_2109);
         return hc;
     }
 
@@ -117,7 +124,7 @@ public class NetLoader {
         while (0 < retry--) {
             try {
                 HttpGet httpGet = new HttpGet(uriString);
-                HttpHost httpTarget = new HttpHost(uri.getHost(), 80, "http");
+                HttpHost httpTarget = new HttpHost(uri.getHost());
 
                 logI("executing request: " + httpGet.getRequestLine().toString());
                 //logI("uri: " + httpGet.getURI().toString());
@@ -129,20 +136,35 @@ public class NetLoader {
                 // TODO
                 // Need more case-handling-code.
                 // Ex. Redirection etc.
-                if (HttpUtils.SC_OK != httpResp.getStatusLine().getStatusCode()) {
+                int statusCode = httpResp.getStatusLine().getStatusCode();
+                switch (statusCode) {
+                case HttpUtils.SC_OK:
+                case HttpUtils.SC_NO_CONTENT:
+                    ;// expected response. let's move forward
+                    break;
+
+                default:
+                    // Unexpected response
                     logW("NetLoader Unexpected Response  status code : " + httpResp.getStatusLine().getStatusCode());
                     throw new YTMPException(Err.YTHTTPGET);
                 }
 
-                HttpEntity httpEntity = httpResp.getEntity();
+                InputStream contentStream = null;
+                String      contentType = null;
+                if (HttpUtils.SC_NO_CONTENT == statusCode) {
+                    ;
+                } else {
+                    HttpEntity httpEntity = httpResp.getEntity();
 
-                if (null == httpEntity) {
-                    logW("NetLoader Unexpected NULL entity");
-                    throw new YTMPException(Err.YTHTTPGET);
+                    if (null == httpEntity) {
+                        logW("NetLoader Unexpected NULL entity");
+                        throw new YTMPException(Err.YTHTTPGET);
+                    }
+                    contentStream = httpEntity.getContent();
+                    contentType = httpResp.getFirstHeader("Content-Type").getValue().toLowerCase();
                 }
 
-                return new HttpRespContent(httpEntity.getContent(),
-                                           httpResp.getFirstHeader("Content-Type").getValue().toLowerCase());
+                return new HttpRespContent(statusCode, contentStream, contentType);
             } catch (ClientProtocolException e) {
                 logI("NetLoader ClientProtocolException : " + e.getMessage());
                 throw new YTMPException(Err.YTHTTPGET);

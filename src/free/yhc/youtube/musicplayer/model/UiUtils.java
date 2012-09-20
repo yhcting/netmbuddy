@@ -284,7 +284,7 @@ public class UiUtils {
     public static void
     playAsVideo(Context context, String ytvid) {
         Intent i = new Intent(Intent.ACTION_VIEW,
-                Uri.parse(YTVideoConnector.getYtVideoPageUrl(ytvid)));
+                Uri.parse(YTHacker.getYtVideoPageUrl(ytvid)));
         try {
             context.startActivity(i);
         } catch (ActivityNotFoundException e) {

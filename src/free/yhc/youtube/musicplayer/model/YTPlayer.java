@@ -84,7 +84,8 @@ MediaPlayer.OnSeekCompleteListener {
     private MediaPlayer         mMp         = null;
     private MPState             mMpS        = MPState.INVALID; // state of mMp;
     private int                 mMpVol      = Policy.DEFAULT_VIDEO_VOLUME; // Current volume of media player.
-    private YTVideoConnector    mYtConn     = null;
+    private YTHacker            mYtHack     = null;
+    private NetLoader           mLoader     = null;
 
     // ------------------------------------------------------------------------
     // UI Control.
@@ -862,6 +863,11 @@ MediaPlayer.OnSeekCompleteListener {
         case STARTED:
             acquireLocks();
             break;
+
+        case STOPPED:
+            if (null != mLoader)
+                mLoader.close();
+            break;
         }
     }
 
@@ -891,23 +897,28 @@ MediaPlayer.OnSeekCompleteListener {
         mpReset();
         mpSetVolume(volume);
 
-        YTVideoConnector.YtVideoConnListener listener = new YTVideoConnector.YtVideoConnListener() {
+        YTHacker.YtHackListener listener = new YTHacker.YtHackListener() {
             @Override
             public void
-            onPreConn(YTVideoConnector ytconn, String ytvid, Object user) {
+            onPreHack(YTHacker ythack, String ytvid, Object user) {
             }
 
             @Override
             public void
-            onPostConn(YTVideoConnector ytconn, Err result, String ytvid, Object user) {
-                if (mYtConn != ytconn) {
+            onPostHack(final YTHacker ythack, Err result, final NetLoader loader,
+                       String ytvid, Object user) {
+                if (mYtHack != ythack) {
                     // Another try is already done.
                     // So, this response should be ignored.
                     logD("YTPlayer Old Youtube connection is finished. Ignored");
+                    loader.close();
                     return;
                 }
 
-                mYtConn = null;
+                mYtHack = null;
+                if (null != mLoader)
+                    mLoader.close();
+                mLoader = loader;
 
                 if (Err.NO_ERR != result) {
                     logW("YTPlayer YTVideoConnector Fails : " + result.name());
@@ -920,7 +931,7 @@ MediaPlayer.OnSeekCompleteListener {
                     return;
                 }
 
-                YTVideoConnector.YtVideo ytv = ytconn.getVideo(YTVideoConnector.YTQUALITY_SCORE_LOWEST);
+                YTHacker.YtVideo ytv = ythack.getVideo(YTHacker.YTQUALITY_SCORE_LOWEST);
                 try {
                     mpSetDataSource(Uri.parse(ytv.url));
                 } catch (IOException e) {
@@ -950,17 +961,17 @@ MediaPlayer.OnSeekCompleteListener {
 
             @Override
             public void
-            onConnCancelled(YTVideoConnector ytconn, String ytvid, Object user) {
-                if (mYtConn != ytconn) {
+            onHackCancelled(YTHacker ythack, String ytvid, Object user) {
+                if (mYtHack != ythack) {
                     logD("Old Youtube connection is cancelled. Ignored");
                     return;
                 }
 
-                mYtConn = null;
+                mYtHack = null;
             }
         };
-        mYtConn = new YTVideoConnector(videoId, null, listener);
-        mYtConn.execute();
+        mYtHack = new YTHacker(videoId, null, listener);
+        mYtHack.execute();
     }
 
     private void
@@ -988,8 +999,8 @@ MediaPlayer.OnSeekCompleteListener {
     private void
     stopPlay(StopState st) {
         logD("VideoView - playDone : forceStop (" + st.name() + ")");
-        if (null != mYtConn)
-            mYtConn.forceCancel();
+        if (null != mYtHack)
+            mYtHack.forceCancel();
 
         if (StopState.DONE == st
             && Utils.isPrefRepeat()) {

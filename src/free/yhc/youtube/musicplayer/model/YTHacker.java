@@ -1,6 +1,7 @@
 package free.yhc.youtube.musicplayer.model;
 
 import static free.yhc.youtube.musicplayer.model.Utils.eAssert;
+import static free.yhc.youtube.musicplayer.model.Utils.logW;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -14,8 +15,10 @@ import java.util.regex.Pattern;
 
 import android.os.AsyncTask;
 
-
-public class YTVideoConnector extends AsyncTask<Void, Void, Err> {
+//
+// This is main class for HACKING Youtube protocol.
+//
+public class YTHacker extends AsyncTask<Void, Void, Err> {
     public static final int     YTQUALITY_SCORE_HIGHEST     = 100;
     public static final int     YTQUALITY_SCORE_HIGH        = 80;
     public static final int     YTQUALITY_SCORE_MIDHIGH     = 60;
@@ -23,10 +26,10 @@ public class YTVideoConnector extends AsyncTask<Void, Void, Err> {
     public static final int     YTQUALITY_SCORE_LOW         = 20;
     public static final int     YTQUALITY_SCORE_LOWEST      = 0;
 
-    public interface YtVideoConnListener {
-        public void onPreConn(YTVideoConnector ytconn, String ytvid, Object user);
-        public void onConnCancelled(YTVideoConnector ytconn, String ytvid, Object user);
-        public void onPostConn(YTVideoConnector ytconn, Err result, String ytvid, Object user);
+    public interface YtHackListener {
+        public void onPreHack(YTHacker ythack, String ytvid, Object user);
+        public void onHackCancelled(YTHacker ythack, String ytvid, Object user);
+        public void onPostHack(YTHacker ythack, Err result, NetLoader loader, String ytvid, Object user);
     }
 
     // See youtube api documentation.
@@ -58,10 +61,13 @@ public class YTVideoConnector extends AsyncTask<Void, Void, Err> {
     private static final Pattern    sYtUrlStreamMapPattern
         = Pattern.compile(".*\"url_encoded_fmt_stream_map\": \"([^\"]+)\".*");
 
-    private final NetLoader     mLoader = new NetLoader();
+    private static final Pattern    sYtUrlGenerate204Pattern
+        = Pattern.compile(".*\\(\"(http\\:.+\\/generate_204\\?[^)]+)\"\\).*");
+
+    private final NetLoader     mLoader = new NetLoader();;
     private final String        mYtvid;
     private final Object        mUser;
-    private final YtVideoConnListener mListener;
+    private final YtHackListener mListener;
 
     private YtVideoHtmlResult   mYtr = null;
     private boolean             mCancelled = false;
@@ -129,6 +135,7 @@ public class YTVideoConnector extends AsyncTask<Void, Void, Err> {
                 eAssert(false);
             }
 
+            String   sig = null;
             String[] elems = ytString.split("\\\\u0026");
             for (String e : elems) {
                 if (e.startsWith("itag="))
@@ -143,11 +150,17 @@ public class YTVideoConnector extends AsyncTask<Void, Void, Err> {
                     ve.type = type;
                 } else if (e.startsWith("quality="))
                     ve.quality = e.substring("quality=".length());
+                else if (e.startsWith("sig="))
+                    sig = e.substring("sig=".length());
             }
             eAssert(!ve.url.isEmpty()
                     && !ve.tag.isEmpty()
                     && !ve.type.isEmpty()
                     && !ve.quality.isEmpty());
+            if (null != sig)
+                ve.url += "&signature=" + sig;
+            else
+                logW("NO SIGNATURE in URL STRING!!!");
             ve.qscore = getQuailityScore(ve.tag);
             return ve;
         }
@@ -164,6 +177,7 @@ public class YTVideoConnector extends AsyncTask<Void, Void, Err> {
     }
 
     private static class YtVideoHtmlResult {
+        String         generate_204_url = ""; // url including generate 204
         YtVideoElem[]  vids = new YtVideoElem[0];
     }
 
@@ -193,7 +207,16 @@ public class YTVideoConnector extends AsyncTask<Void, Void, Err> {
             if (null == line)
                 break;
 
-            if (line.contains("\"url_encoded_fmt_stream_map\":")) {
+            if (line.contains("/generate_204?")) {
+                Matcher m = sYtUrlGenerate204Pattern.matcher(line);
+                if (!m.matches())
+                    eAssert(false);
+
+                line = m.group(1);
+                line = line.replaceAll("\\\\u0026", "&");
+                line = line.replaceAll("\\\\", "");
+                result.generate_204_url = line;
+            } else if (line.contains("\"url_encoded_fmt_stream_map\":")) {
                 Matcher m = sYtUrlStreamMapPattern.matcher(line);
                 if (!m.matches())
                     eAssert(false);
@@ -214,11 +237,12 @@ public class YTVideoConnector extends AsyncTask<Void, Void, Err> {
         return "http://" + getYtHost() + "/" + getYtUri(videoId);
     }
 
-    public YTVideoConnector(String ytvid, Object user,
-                            YtVideoConnListener connListener) {
+    public YTHacker(String ytvid, Object user,
+                    YtHackListener hackListener) {
+        // loader should "opened loader"
         mYtvid = ytvid;
         mUser = user;
-        mListener = connListener;
+        mListener = hackListener;
     }
 
     public void
@@ -231,6 +255,7 @@ public class YTVideoConnector extends AsyncTask<Void, Void, Err> {
     getVideo(int quality) {
         eAssert(null != mYtr);
         eAssert(0 <= quality && quality <= 100);
+
         // Select video that has closest quality score
         YtVideoElem ve = null;
         int qgap = -1;
@@ -256,7 +281,7 @@ public class YTVideoConnector extends AsyncTask<Void, Void, Err> {
     protected void
     onPreExecute() {
         mLoader.open();
-        mListener.onPreConn(this, mYtvid, mUser);
+        mListener.onPreHack(this, mYtvid, mUser);
     }
 
     @Override
@@ -270,28 +295,38 @@ public class YTVideoConnector extends AsyncTask<Void, Void, Err> {
             mYtr = parseYtVideoHtml(new BufferedReader(new InputStreamReader(content.stream)));
             if (mYtr.vids.length <= 0)
                 return Err.UNKNOWN;
+
+            // NOTE
+            // HACK youtube protocol!
+            // Do dummy 'GET' request with generate_204 url.
+            content = mLoader.getHttpContent(new URI(mYtr.generate_204_url), false);
+            eAssert(HttpUtils.SC_NO_CONTENT == content.stcode);
+            // Now all are ready to download!
         } catch (URISyntaxException e) {
             return Err.UNKNOWN;
         } catch (YTMPException e) {
             return e.getError();
-        }
+        } catch (Exception e) {}
         return Err.NO_ERR;
     }
 
     @Override
     protected void
     onPostExecute(Err result) {
-        mLoader.close();
-        if (mCancelled)
-            mListener.onConnCancelled(this, mYtvid, mUser);
-        else
-            mListener.onPostConn(this, result, mYtvid, mUser);
+        if (mCancelled) {
+            mLoader.close();
+            mListener.onHackCancelled(this, mYtvid, mUser);
+        } else {
+            if (Err.NO_ERR != result)
+                mLoader.close();
+            mListener.onPostHack(this, result, mLoader, mYtvid, mUser);
+        }
     }
 
     @Override
     public void
     onCancelled() {
         mLoader.close();
-        mListener.onConnCancelled(this, mYtvid, mUser);
+        mListener.onHackCancelled(this, mYtvid, mUser);
     }
 }
