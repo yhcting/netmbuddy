@@ -34,7 +34,7 @@ import android.preference.PreferenceManager;
 import android.util.Log;
 
 public class Utils {
-    private static final boolean DBG    = false;
+    private static final boolean DBG    = true;
     private static final boolean LOGF   = false;
     private static final String  TAG    = "[YoutubeMusicPlayer]";
 
@@ -77,6 +77,10 @@ public class Utils {
         new File(Policy.APPDATA_DIR).mkdirs();
         new File(Policy.APPDATA_TMPDIR).mkdirs();
         new File(Policy.APPDATA_VIDDIR).mkdirs();
+        File cacheF = new File(Policy.APPDATA_CACHEDIR);
+        // Clear cache!
+        removeFileRecursive(cacheF, false);
+        cacheF.mkdirs();
 
         if (LOGF) {
             new File(Policy.APPDATA_LOGDIR).mkdirs();
@@ -97,6 +101,7 @@ public class Utils {
         sAppContext = aAppContext;
         sUiHandler = new Handler();
         sPrefs = PreferenceManager.getDefaultSharedPreferences(getAppContext());
+
     }
 
     // ========================================================================

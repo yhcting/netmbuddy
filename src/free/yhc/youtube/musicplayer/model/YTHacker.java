@@ -18,19 +18,13 @@ import android.os.AsyncTask;
 //
 // This is main class for HACKING Youtube protocol.
 //
-public class YTHacker extends AsyncTask<Void, Void, Err> {
+public class YTHacker {
     public static final int     YTQUALITY_SCORE_HIGHEST     = 100;
     public static final int     YTQUALITY_SCORE_HIGH        = 80;
     public static final int     YTQUALITY_SCORE_MIDHIGH     = 60;
     public static final int     YTQUALITY_SCORE_MIDLOW      = 40;
     public static final int     YTQUALITY_SCORE_LOW         = 20;
     public static final int     YTQUALITY_SCORE_LOWEST      = 0;
-
-    public interface YtHackListener {
-        public void onPreHack(YTHacker ythack, String ytvid, Object user);
-        public void onHackCancelled(YTHacker ythack, String ytvid, Object user);
-        public void onPostHack(YTHacker ythack, Err result, NetLoader loader, String ytvid, Object user);
-    }
 
     // See youtube api documentation.
     private static final int    YTVID_LENGTH = 11;
@@ -69,9 +63,15 @@ public class YTHacker extends AsyncTask<Void, Void, Err> {
     private final Object        mUser;
     private final YtHackListener mListener;
 
+    private AsyncTask<Void, Void, Err> mBgTask = null;
     private YtVideoHtmlResult   mYtr = null;
     private boolean             mCancelled = false;
 
+    public interface YtHackListener {
+        public void onPreHack(YTHacker ythack, String ytvid, Object user);
+        public void onHackCancelled(YTHacker ythack, String ytvid, Object user);
+        public void onPostHack(YTHacker ythack, Err result, NetLoader loader, String ytvid, Object user);
+    }
 
     public static class YtVideo {
         public final String   url;
@@ -232,9 +232,71 @@ public class YTHacker extends AsyncTask<Void, Void, Err> {
         return result;
     }
 
+    private void
+    preExecute() {
+        mLoader.open();
+        if (null != mListener)
+            mListener.onPreHack(this, mYtvid, mUser);
+    }
+
+    private Err
+    doMainWork() {
+        NetLoader.HttpRespContent content;
+        Err err = Err.NO_ERR;
+        try {
+            do {
+                // Read and parse html web page of video.
+                content = mLoader.getHttpContent(new URI(getYtVideoPageUrl(mYtvid)), true);
+                eAssert(content.type.toLowerCase().startsWith("text/html"));
+                mYtr = parseYtVideoHtml(new BufferedReader(new InputStreamReader(content.stream)));
+                if (mYtr.vids.length <= 0) {
+                    err = Err.UNKNOWN;
+                    break;
+                }
+
+                // NOTE
+                // HACK youtube protocol!
+                // Do dummy 'GET' request with generate_204 url.
+                content = mLoader.getHttpContent(new URI(mYtr.generate_204_url), false);
+                eAssert(HttpUtils.SC_NO_CONTENT == content.stcode);
+                // Now all are ready to download!
+            } while (false);
+        } catch (URISyntaxException e) {
+            err = Err.UNKNOWN;
+        } catch (YTMPException e) {
+            err = e.getError();
+        }
+        if (Err.NO_ERR != err && null != mLoader)
+            mLoader.close();
+
+        if (null != mBgTask)
+            mBgTask = null;
+
+        return err;
+    }
+
+    private void
+    postExecute(Err result) {
+        if (mCancelled) {
+            mLoader.close();
+
+            if (null != mListener)
+                mListener.onHackCancelled(this, mYtvid, mUser);
+        } else {
+            if (null != mListener)
+                mListener.onPostHack(this, result, mLoader, mYtvid, mUser);
+        }
+    }
+
     public static String
     getYtVideoPageUrl(String videoId) {
         return "http://" + getYtHost() + "/" + getYtUri(videoId);
+    }
+
+    public YTHacker(String ytvid) {
+        mYtvid = ytvid;
+        mUser = null;
+        mListener = null;
     }
 
     public YTHacker(String ytvid, Object user,
@@ -245,10 +307,9 @@ public class YTHacker extends AsyncTask<Void, Void, Err> {
         mListener = hackListener;
     }
 
-    public void
-    forceCancel() {
-        mCancelled = true;
-        mLoader.close();
+    public NetLoader
+    getNetLoader() {
+        return mLoader;
     }
 
     public YtVideo
@@ -277,56 +338,51 @@ public class YTHacker extends AsyncTask<Void, Void, Err> {
         return new YtVideo(ve.url, ve.type);
     }
 
-    @Override
-    protected void
-    onPreExecute() {
-        mLoader.open();
-        mListener.onPreHack(this, mYtvid, mUser);
+    public Err
+    start() {
+        preExecute();
+        Err result = doMainWork();
+        postExecute(result);
+        return result;
     }
 
-    @Override
-    protected Err
-    doInBackground(Void... dummy) {
-        NetLoader.HttpRespContent content;
-        try {
-            // Read and parse html web page of video.
-            content = mLoader.getHttpContent(new URI(getYtVideoPageUrl(mYtvid)), true);
-            eAssert(content.type.toLowerCase().startsWith("text/html"));
-            mYtr = parseYtVideoHtml(new BufferedReader(new InputStreamReader(content.stream)));
-            if (mYtr.vids.length <= 0)
-                return Err.UNKNOWN;
-
-            // NOTE
-            // HACK youtube protocol!
-            // Do dummy 'GET' request with generate_204 url.
-            content = mLoader.getHttpContent(new URI(mYtr.generate_204_url), false);
-            eAssert(HttpUtils.SC_NO_CONTENT == content.stcode);
-            // Now all are ready to download!
-        } catch (URISyntaxException e) {
-            return Err.UNKNOWN;
-        } catch (YTMPException e) {
-            return e.getError();
-        } catch (Exception e) {}
-        return Err.NO_ERR;
-    }
-
-    @Override
-    protected void
-    onPostExecute(Err result) {
-        if (mCancelled) {
-            mLoader.close();
-            mListener.onHackCancelled(this, mYtvid, mUser);
-        } else {
-            if (Err.NO_ERR != result)
-                mLoader.close();
-            mListener.onPostHack(this, result, mLoader, mYtvid, mUser);
-        }
-    }
-
-    @Override
     public void
-    onCancelled() {
+    startAsync() {
+        mBgTask = new AsyncTask<Void, Void, Err>() {
+            @Override
+            protected void
+            onPreExecute() {
+                preExecute();
+            }
+
+            @Override
+            protected Err
+            doInBackground(Void... dummy) {
+                return doMainWork();
+            }
+
+            @Override
+            protected void
+            onPostExecute(Err result) {
+                postExecute(result);
+            }
+
+            @Override
+            public void
+            onCancelled() {
+                if (null != mListener)
+                    mListener.onHackCancelled(YTHacker.this, mYtvid, mUser);
+            }
+        };
+        mBgTask.execute();
+    }
+
+    public void
+    forceCancel() {
+        mCancelled = true;
         mLoader.close();
-        mListener.onHackCancelled(this, mYtvid, mUser);
+        if (null != mBgTask)
+            mBgTask.cancel(true);
+        mBgTask = null;
     }
 }

@@ -399,6 +399,15 @@ MediaPlayer.OnSeekCompleteListener {
         return vs;
     }
 
+    private void
+    prepareNext() {
+        if (!mVlm.hasNextVideo())
+            return;
+
+
+
+    }
+
     // ========================================================================
     //
     // Media Player Interfaces
@@ -971,7 +980,7 @@ MediaPlayer.OnSeekCompleteListener {
             }
         };
         mYtHack = new YTHacker(videoId, null, listener);
-        mYtHack.execute();
+        mYtHack.startAsync();
     }
 
     private void

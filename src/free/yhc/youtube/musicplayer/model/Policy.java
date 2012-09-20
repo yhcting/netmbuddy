@@ -5,6 +5,7 @@ public class Policy {
     public static final String  APPDATA_DIR             = "/sdcard/ytmplayer/";
     public static final String  APPDATA_TMPDIR          = APPDATA_DIR + "tmp/";
     public static final String  APPDATA_LOGDIR          = APPDATA_DIR + "logs/";
+    public static final String  APPDATA_CACHEDIR        = APPDATA_DIR + "cache/";
     // Downloaded video directory
     public static final String  APPDATA_VIDDIR          = APPDATA_DIR + "videos/";
     public static final String  EXTERNAL_DBFILE         = APPDATA_DIR + "ytmplayer.db";

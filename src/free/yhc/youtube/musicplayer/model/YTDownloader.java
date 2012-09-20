@@ -2,17 +2,12 @@ package free.yhc.youtube.musicplayer.model;
 
 import static free.yhc.youtube.musicplayer.model.Utils.eAssert;
 
-import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URLDecoder;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -22,121 +17,34 @@ import android.os.Process;
 
 
 public class YTDownloader {
-    // See youtube api documentation.
-    private static final int    YTVID_LENGTH = 11;
+    private static final int MSG_WHAT_DOWNLOAD  = 0;
 
-    private static final int    YTQSCORE_INVALID        = -1;
+    private String                      mProxy      = null;
+    private DownloadDoneReceiver        mDnDoneRcvr = null;
+    private BGHandler                   mBgHandler  = null;
 
-    // TODO
-    // This is from experimental result and hacking script code.
-    // Need to verify below tags again!
-    private static final int    YTSTREAMTAG_INVALID     = -1;
+    private YTHacker                    mYtHack     = null;
 
-    private static final int    YTSTREAMTAG_MPEG_1080p  = 37;
-    private static final int    YTSTREAMTAG_MPEG_720p   = 22;
-    private static final int    YTSTREAMTAG_MPEG_480p   = 35;
-    private static final int    YTSTREAMTAG_MPEG_360p   = 18;
-
-    private static final int    YTSTREAMTAG_3GPP_240p   = 36;
-    private static final int    YTSTREAMTAG_3GPP_144p   = 17;
-
-    private static final int    YTSTREAMTAG_WEBM_1080p  = 46;
-    private static final int    YTSTREAMTAG_WEBM_720p   = 45;
-    private static final int    YTSTREAMTAG_WEBM_480p   = 44;
-    private static final int    YTSTREAMTAG_WEBM_360p   = 43;
-
-    private static final int    YTSTREAMTAG_FLV_360p    = 34;
-    private static final int    YTSTREAMTAG_FLV_240p    = 5;
-
-    private static final Pattern    sYtUrlStreamMapPattern
-        = Pattern.compile(".*\"url_encoded_fmt_stream_map\": \"([^\"]+)\".*");
-
-    private BGHandler mBgHandler      = null;
-
-    private static class YtVideoElem {
-        String  url         = "";
-        String  tag         = "";
-        String  type        = "";
-        String  quality     = "";
-        // Quality score of this video
-        // This value is guesses from 'tag'
-        // -1 means "invalid, so, DO NOT use this video".
-        int     qscore      = YTQSCORE_INVALID;
-
-        private YtVideoElem() {} // DO NOT CREATE DIRECTLY
-
-        private static int
-        getQuailityScore(String tag) {
-            int v = -1;
-            try {
-                v = Integer.parseInt(tag);
-            } catch (NumberFormatException e) {
-                eAssert(false);
-            }
-
-            switch (v) {
-            case YTSTREAMTAG_MPEG_1080p:
-                return 100;
-            case YTSTREAMTAG_MPEG_720p:
-                return 70;
-            case YTSTREAMTAG_MPEG_480p:
-                return 50;
-            case YTSTREAMTAG_MPEG_360p:
-                return 30;
-            case YTSTREAMTAG_3GPP_240p:
-                return 20;
-            case YTSTREAMTAG_3GPP_144p:
-                return 10;
-            default:
-                // TODO
-                // Check it!
-                // Webm and Flv should be considered here?
-                // Webm and Flv format is NOT used!
-                return YTQSCORE_INVALID;
-            }
-        }
-
-
-        static YtVideoElem
-        parse(String ytString) {
-            YtVideoElem ve = new YtVideoElem();
-            try {
-                ytString = URLDecoder.decode(ytString, "UTF-8");
-            } catch (UnsupportedEncodingException e) {
-                eAssert(false);
-            }
-            String[] elems = ytString.split("\\\\u0026");
-            for (String e : elems) {
-                if (e.startsWith("itag="))
-                    ve.tag = e.substring("itag=".length());
-                else if (e.startsWith("url="))
-                    ve.url = e.substring("url=".length());
-                else if (e.startsWith("type="))
-                    ve.type = e.substring("type=".length());
-                else if (e.startsWith("quality="))
-                    ve.quality = e.substring("quality=".length());
-            }
-            eAssert(!ve.url.isEmpty()
-                    && !ve.tag.isEmpty()
-                    && !ve.type.isEmpty()
-                    && !ve.quality.isEmpty());
-            ve.qscore = getQuailityScore(ve.tag);
-            return ve;
-        }
-
-        static String
-        dump(YtVideoElem e) {
-            return "[Video Elem]\n"
-                    + "  itag=" + e.tag + "\n"
-                    + "  url=" + e.url + "\n"
-                    + "  type=" + e.type + "\n"
-                    + "  quality=" + e.quality + "\n"
-                    + "  qscore=" + e.qscore;
-        }
+    public interface DownloadDoneReceiver {
+        void downloadDone(YTDownloader downloader, DnArg arg, Err err);
     }
 
-    private static class YtVideoHtmlResult {
-        YtVideoElem[]  vids;
+    public static class DnArg {
+        String  ytvid;
+        File    outf;
+        int     qscore;
+        public DnArg(String aYtvid, File aOutf) {
+            ytvid = aYtvid;
+            outf = aOutf;
+            // default is lowest quality.
+            qscore = YTHacker.YTQUALITY_SCORE_LOWEST;
+        }
+
+        public DnArg(String aYtvid, File aOutf, int aQscore) {
+            ytvid = aYtvid;
+            outf = aOutf;
+            qscore = aQscore;
+        }
     }
 
     private class BGThread extends HandlerThread {
@@ -151,109 +59,84 @@ public class YTDownloader {
     }
 
     private class BGHandler extends Handler {
+        private File    mTmpF = null;
         BGHandler(Looper looper) {
             super(looper);
+        }
+
+        private void
+        sendResult(final DnArg arg, final Err result) {
+            if (null == mDnDoneRcvr)
+                return;
+
+            Utils.getUiHandler().post(new Runnable() {
+                @Override
+                public void run() {
+                    if (null != mDnDoneRcvr)
+                        mDnDoneRcvr.downloadDone(YTDownloader.this, arg, result);
+                }
+            });
+        }
+
+        // This is synchronous function.
+        // That is, ONLY one file can be download in one YTDownloader instance at a time.
+        private void
+        handleDownload(DnArg arg) {
+            if (null != mTmpF)
+                mTmpF.delete();
+
+            YTHacker hack = new YTHacker(arg.ytvid);
+            NetLoader loader = null;
+            try {
+                Err result = hack.start();
+                if (Err.NO_ERR != result) {
+                    sendResult(arg, result);
+                    return;
+                }
+                loader = hack.getNetLoader();
+                YTHacker.YtVideo vid = hack.getVideo(arg.qscore);
+                eAssert(null != vid);
+                NetLoader.HttpRespContent content = loader.getHttpContent(new URI(vid.url), false);
+                if (HttpUtils.SC_NO_CONTENT == content.stcode) {
+                    sendResult(arg, Err.YTHTTPGET);
+                    return;
+                }
+
+                // Download to temp file.
+                mTmpF = File.createTempFile(arg.ytvid, null, new File(Policy.APPDATA_TMPDIR));
+                FileOutputStream fos = new FileOutputStream(mTmpF);
+                Utils.copy(fos, content.stream);
+                // file returned by YTHacker is mpeg format!
+                mTmpF.renameTo(arg.outf);
+                sendResult(arg, Err.NO_ERR);
+            } catch (FileNotFoundException e) {
+                sendResult(arg, Err.IO_FILE);
+            } catch (IOException e) {
+                sendResult(arg, Err.IO_FILE);
+            } catch (URISyntaxException e) {
+                sendResult(arg, Err.UNKNOWN);
+            } catch (YTMPException e) {
+                sendResult(arg, e.getError());
+            } finally {
+                if (null != loader)
+                    loader.close();
+
+                if (null != mTmpF)
+                    mTmpF.delete();
+            }
         }
 
         @Override
         public void
         handleMessage(Message msg) {
             switch (msg.what) {
-            }
-        }
-    }
-
-    private static String
-    getYtUri(String ytvid) {
-        eAssert(YTVID_LENGTH == ytvid.length());
-        return "watch?v=" + ytvid;
-    }
-
-    private static String
-    getYtHost() {
-        return "www.youtube.com";
-    }
-
-    private static YtVideoHtmlResult
-    parseYtVideoHtml(BufferedReader brdr)
-            throws YTMPException {
-        YtVideoHtmlResult result = new YtVideoHtmlResult();
-        String line = "";
-        while (null != line) {
-            try {
-                line = brdr.readLine();
-            } catch (IOException e) {
-                throw new YTMPException(Err.IO_UNKNOWN);
-            }
-
-            if (null == line)
+            case MSG_WHAT_DOWNLOAD:
+                handleDownload((DnArg)msg.obj);
                 break;
-
-            if (line.contains("\"url_encoded_fmt_stream_map\":")) {
-                Matcher m = sYtUrlStreamMapPattern.matcher(line);
-                if (!m.matches())
-                    eAssert(false);
-
-                line = m.group(1);
-                String[] vidElemUrls = line.split(",");
-                result.vids = new YtVideoElem[vidElemUrls.length];
-                int i = 0;
-                for (String s : vidElemUrls)
-                    result.vids[i++] = YtVideoElem.parse(s);
             }
         }
-        return result;
     }
 
-    private Err
-    doDownload(String proxy, String ytvid, File outf) {
-        NetLoader loader = new NetLoader().open(proxy);
-        NetLoader.HttpRespContent content;
-        try {
-            // Read and parse html web page of video.
-            content = loader.getHttpContent(new URI("http://" + getYtHost() + "/" + getYtUri(ytvid)), true);
-            eAssert(content.type.toLowerCase().startsWith("text/html"));
-            YtVideoHtmlResult ytr = parseYtVideoHtml(new BufferedReader(new InputStreamReader(content.stream)));
-            loader.close();
-
-            // Do real download - poorest quaility for testing!
-            eAssert(ytr.vids.length > 0);
-            YtVideoElem ve = null;
-            for (YtVideoElem e : ytr.vids) {
-                if (YTQSCORE_INVALID != e.qscore) {
-                    if (null == ve)
-                        ve = e;
-                    else if (e.qscore < ve.qscore)
-                        ve = e;
-                }
-            }
-            eAssert(null != ve);
-
-            loader.open(proxy);
-            content = loader.getHttpContent(new URI(ve.url), true);
-            try {
-                File f = new File("/sdcard/ytdntest.mp4");
-    //            Long iBytesMax = Long.parseLong(mResponse.getFirstHeader("Content-Length").getValue());
-                FileOutputStream fos = new FileOutputStream(f);
-                byte[] bytes = new byte[4*4096];
-                Integer iBytesRead = 1;
-
-                while (iBytesRead>0) {
-                    iBytesRead = content.stream.read(bytes);
-                    try {fos.write(bytes,0,iBytesRead);} catch (IndexOutOfBoundsException ioob) {}
-                } // while
-                fos.close();
-            } catch (Exception e) {
-                eAssert(false);
-            }
-            loader.close();
-        } catch (URISyntaxException e) {
-            eAssert(false); //Should not happened
-        } catch (YTMPException e) {
-            return e.getError();
-        }
-        return Err.NO_ERR;
-    }
 
     public YTDownloader() {
     }
@@ -263,20 +146,39 @@ public class YTDownloader {
      * @param ytvid
      *   11-character-long youtube video id
      */
-    public void
-    download(String proxy, String ytvid, File outf) {
-        /*
-        AsyncTask.execute(new Runnable() {
-            @Override
-            public void run() {
-                doDownload("", "dHeqQu8a1h0", new File("/sdcard/testytdn.mp4"));
+    public Err
+    download(final String ytvid, final File outf) {
+        eAssert(Utils.isUiThread());
+
+        if (outf.exists()) {
+            if (null != mDnDoneRcvr) {
+                // already downloaded.
+                Utils.getUiHandler().post(new Runnable() {
+                    @Override
+                    public void run() {
+                        mDnDoneRcvr.downloadDone(YTDownloader.this,
+                                                 new DnArg(ytvid, outf),
+                                                 Err.NO_ERR);
+                    }
+                });
             }
-        });
-        */
+            return Err.NO_ERR;
+        }
+
+        if (Utils.isNetworkAvailable()) {
+            Message msg = mBgHandler.obtainMessage(MSG_WHAT_DOWNLOAD,
+                                                   new DnArg(ytvid, outf));
+            mBgHandler.sendMessage(msg);
+            return Err.NO_ERR;
+        }
+        return Err.NETWORK_UNAVAILABLE;
     }
 
     public void
-    open() {
+    open(String proxy, DownloadDoneReceiver dnDoneRcvr) {
+        mProxy = proxy;
+        mDnDoneRcvr = dnDoneRcvr;
+
         HandlerThread hThread = new BGThread();
         hThread.start();
         mBgHandler = new BGHandler(hThread.getLooper());
