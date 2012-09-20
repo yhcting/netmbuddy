@@ -1,6 +1,7 @@
 package free.yhc.youtube.musicplayer.model;
 
 import static free.yhc.youtube.musicplayer.model.Utils.eAssert;
+import static free.yhc.youtube.musicplayer.model.Utils.logI;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -22,7 +23,10 @@ public class YTDownloader {
     private DownloadDoneReceiver        mDnDoneRcvr = null;
     private BGHandler                   mBgHandler  = null;
 
-    private YTHacker                    mYtHack     = null;
+    // Initialize with dummy NetLoader instance.
+    private NetLoader                   mLoader     = new NetLoader();
+
+    private Object                      mUserTag    = null; // user tag value
 
     public interface DownloadDoneReceiver {
         void downloadDone(YTDownloader downloader, DnArg arg, Err err);
@@ -58,7 +62,7 @@ public class YTDownloader {
     }
 
     private class BGHandler extends Handler {
-        private File    mTmpF = null;
+        private File    tmpF = null;
         BGHandler(Looper looper) {
             super(looper);
         }
@@ -81,45 +85,57 @@ public class YTDownloader {
         // That is, ONLY one file can be download in one YTDownloader instance at a time.
         private void
         handleDownload(DnArg arg) {
-            if (null != mTmpF)
-                mTmpF.delete();
+            if (null != tmpF)
+                tmpF.delete();
 
+            logI("YTDownloader : Start Download : " + arg.ytvid + " => " + arg.outf.getAbsolutePath());
             YTHacker hack = new YTHacker(arg.ytvid);
-            NetLoader loader = null;
+            FileOutputStream fos = null;
             try {
                 Err result = hack.start();
                 if (Err.NO_ERR != result) {
                     sendResult(arg, result);
                     return;
                 }
-                loader = hack.getNetLoader();
+                mLoader = hack.getNetLoader();
                 YTHacker.YtVideo vid = hack.getVideo(arg.qscore);
                 eAssert(null != vid);
-                NetLoader.HttpRespContent content = loader.getHttpContent(Uri.parse(vid.url), false);
+                NetLoader.HttpRespContent content = mLoader.getHttpContent(Uri.parse(vid.url), false);
                 if (HttpUtils.SC_NO_CONTENT == content.stcode) {
                     sendResult(arg, Err.YTHTTPGET);
                     return;
                 }
 
                 // Download to temp file.
-                mTmpF = File.createTempFile(arg.ytvid, null, new File(Policy.APPDATA_TMPDIR));
-                FileOutputStream fos = new FileOutputStream(mTmpF);
+                tmpF = File.createTempFile(arg.ytvid, null, new File(Policy.APPDATA_TMPDIR));
+                fos = new FileOutputStream(tmpF);
                 Utils.copy(fos, content.stream);
+                fos.close();
+                fos = null;
                 // file returned by YTHacker is mpeg format!
-                mTmpF.renameTo(arg.outf);
+                tmpF.renameTo(arg.outf);
                 sendResult(arg, Err.NO_ERR);
+                logI("YTDownloader : Download Done : " + arg.ytvid);
             } catch (FileNotFoundException e) {
                 sendResult(arg, Err.IO_FILE);
+            } catch (InterruptedException e) {
+                logI("YTDownloader : Download Interrupted!");
+                sendResult(arg, Err.INTERRUPTED);
             } catch (IOException e) {
+                logI("YTDownloader : Download IOException!");
                 sendResult(arg, Err.IO_FILE);
             } catch (YTMPException e) {
                 sendResult(arg, e.getError());
             } finally {
-                if (null != loader)
-                    loader.close();
+                mLoader.close();
 
-                if (null != mTmpF)
-                    mTmpF.delete();
+                if (null != fos)
+                    try {
+                        fos.close();
+                    } catch (IOException e) {}
+
+                if (null != tmpF)
+                    tmpF.delete();
             }
         }
 
@@ -136,6 +152,16 @@ public class YTDownloader {
 
 
     public YTDownloader() {
+    }
+
+    public void
+    setTag(Object tag) {
+        mUserTag = tag;
+    }
+
+    public Object
+    getTag() {
+        return mUserTag;
     }
 
     /**
@@ -183,12 +209,14 @@ public class YTDownloader {
 
     public void
     close() {
+        mLoader.close();
         // TODO
         // Stop running thread!
         // Need to check that below code works as expected perfectly.
         // "interrupting thread" is quite annoying and unpredictable job!
         if (null != mBgHandler) {
             mBgHandler.getLooper().getThread().interrupt();
+            mBgHandler.removeMessages(MSG_WHAT_DOWNLOAD);
         }
     }
 }

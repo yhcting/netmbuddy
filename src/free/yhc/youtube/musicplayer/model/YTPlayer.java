@@ -5,9 +5,11 @@ import static free.yhc.youtube.musicplayer.model.Utils.logD;
 import static free.yhc.youtube.musicplayer.model.Utils.logI;
 import static free.yhc.youtube.musicplayer.model.Utils.logW;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Random;
 
 import android.app.AlertDialog;
@@ -34,6 +36,8 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 import free.yhc.youtube.musicplayer.R;
 import free.yhc.youtube.musicplayer.model.DB.ColVideo;
+import free.yhc.youtube.musicplayer.model.YTDownloader.DnArg;
+import free.yhc.youtube.musicplayer.model.YTDownloader.DownloadDoneReceiver;
 
 public class YTPlayer implements
 MediaPlayer.OnBufferingUpdateListener,
@@ -65,6 +69,8 @@ MediaPlayer.OnSeekCompleteListener {
         }
     };
 
+    private static File     sCacheDir = new File(Policy.APPDATA_CACHEDIR);
+
     private static YTPlayer sInstance = null;
 
     private final Resources     mRes        = Utils.getAppContext().getResources();
@@ -73,7 +79,8 @@ MediaPlayer.OnSeekCompleteListener {
     // ------------------------------------------------------------------------
     //
     // ------------------------------------------------------------------------
-    private final UpdateProgress        mUpdateProg = new UpdateProgress();
+    private final UpdateProgress    mUpdateProg = new UpdateProgress();
+    private final YTDownloader      mYtDnr      = new YTDownloader();
 
     // ------------------------------------------------------------------------
     //
@@ -197,6 +204,14 @@ MediaPlayer.OnSeekCompleteListener {
             lastProgress2 = -1;
         }
 
+        int getProgress() {
+            return lastProgress;
+        }
+
+        int getProgress2() {
+            return lastProgress2;
+        }
+
         void setProgressView(ViewGroup progv) {
             eAssert(Utils.isUiThread());
             eAssert(null != progv.findViewById(R.id.music_player_progress));
@@ -295,6 +310,12 @@ MediaPlayer.OnSeekCompleteListener {
             return null;
         }
 
+        Video getNextVideo() {
+            if (!hasNextVideo())
+                return null;
+            return vs[vi + 1];
+        }
+
         boolean moveToFist() {
             if (hasActiveVideo()) {
                     vi = 0;
@@ -362,6 +383,11 @@ MediaPlayer.OnSeekCompleteListener {
     //
     //
     // ============================================================================
+    private File
+    getCachedVideo(String ytvid) {
+        return new File(Policy.APPDATA_CACHEDIR + ytvid + ".mp4");
+    }
+
     private Video[]
     getVideos(Cursor c,
               int coliTitle,  int coliUrl,
@@ -404,8 +430,37 @@ MediaPlayer.OnSeekCompleteListener {
         if (!mVlm.hasNextVideo())
             return;
 
+        mYtDnr.close();
 
+        final String vid = mVlm.getNextVideo().videoId;
+        YTDownloader.DownloadDoneReceiver rcvr = new DownloadDoneReceiver() {
+            @Override
+            public void
+            downloadDone(YTDownloader downloader, DnArg arg, Err err) {
+                if (mYtDnr != downloader)
+                    return;
 
+                if (Err.YTHTTPGET == err
+                    && Utils.isNetworkAvailable()) {
+                    // retry.
+                    int retryTag = (Integer)downloader.getTag();
+                    if (retryTag > 0) {
+                        retryTag--;
+                        downloader.setTag(retryTag);
+                        downloader.download(vid, getCachedVideo(vid));
+                    }
+                }
+                // Ignore other cases even if it is fails.
+            }
+        };
+
+        mYtDnr.open("", rcvr);
+        // to retry in case of YTHTTPGET.
+        mYtDnr.setTag(Policy.NETOWRK_CONN_RETRY);
+        // NOTE
+        // Only mp4 is supported at YTHacker!
+        // So, YTDownloader also supports only mpeg4
+        mYtDnr.download(vid, getCachedVideo(vid));
     }
 
     // ========================================================================
@@ -460,6 +515,12 @@ MediaPlayer.OnSeekCompleteListener {
     private void
     mpSetDataSource(Uri uri) throws IOException {
         mMp.setDataSource(Utils.getAppContext(), uri);
+        mpSetState(MPState.INITIALIZED);
+    }
+
+    private void
+    mpSetDataSource(String path) throws IOException {
+        mMp.setDataSource(path);
         mpSetState(MPState.INITIALIZED);
     }
 
@@ -881,31 +942,27 @@ MediaPlayer.OnSeekCompleteListener {
     }
 
     private void
-    startVideo(Video v, boolean recovery) {
-        if (null != v)
-            startVideo(v.videoId, v.volume, recovery);
+    cleanCache(boolean allClear) {
+        if (!mVlm.hasActiveVideo())
+            return;
+
+        HashSet<String> skipSet = new HashSet<String>();
+        if (!allClear) {
+            // delete all cached videos except for
+            //   current and next video.
+            // DO NOT delete cache directory itself!
+            skipSet.add(sCacheDir.getAbsolutePath());
+            skipSet.add(getCachedVideo(mVlm.getActiveVideo().videoId).getAbsolutePath());
+            Video nextVid = mVlm.getNextVideo();
+            if (null != nextVid)
+                skipSet.add(getCachedVideo(nextVid.videoId).getAbsolutePath());
+        }
+        Utils.removeFileRecursive(sCacheDir, skipSet);
     }
 
     private void
-    startVideo(final String videoId, final int volume, boolean recovery) {
-        eAssert(0 <= volume && volume <= 100);
-
-        if (recovery) {
-            mErrRetry--;
-            if (mErrRetry <= 0) {
-                stopPlay(StopState.UNKNOWN_ERROR);
-                return;
-            }
-        } else
-            mErrRetry = PLAYER_ERR_RETRY;
-
-        // Stop if player is already running.
-        mpStop();
-        mpRelease();
-        mpNewInstance();
-        mpReset();
-        mpSetVolume(volume);
-
+    prepareVideoStreaming(final String videoId) {
+        logI("Prepare Video Streaming : " + videoId);
         YTHacker.YtHackListener listener = new YTHacker.YtHackListener() {
             @Override
             public void
@@ -984,6 +1041,70 @@ MediaPlayer.OnSeekCompleteListener {
     }
 
     private void
+    prepareCachedVideo(File cachedVid) {
+        logI("Prepare Cached video: " + cachedVid.getAbsolutePath());
+        // We have cached one.
+        // So play in local!
+        try {
+            mpSetDataSource(cachedVid.getAbsolutePath());
+        } catch (IOException e) {
+            // Something wrong at cached file.
+            // Clean cache and try again - next time as streaming!
+            cleanCache(true);
+            logW("YTPlayer SetDataSource to Cached File IOException : " + e.getMessage());
+            Utils.getUiHandler().post(new Runnable() {
+                @Override
+                public void run() {
+                    startVideo(mVlm.getActiveVideo(), true);
+                }
+            });
+        }
+        mpPrepareAsync();
+
+        // In this case, player doens't need to buffering video.
+        // So, player doens't need to wait until buffering is 100% done.
+        // Therefore let's prepare next video immediately.
+        prepareNext();
+    }
+
+    private void
+    startVideo(Video v, boolean recovery) {
+        if (null != v)
+            startVideo(v.videoId, v.volume, recovery);
+    }
+
+    private void
+    startVideo(final String videoId, final int volume, boolean recovery) {
+        eAssert(0 <= volume && volume <= 100);
+
+        // Whenever start videos, try to clean cache.
+        cleanCache(false);
+
+        if (recovery) {
+            mErrRetry--;
+            if (mErrRetry <= 0) {
+                stopPlay(StopState.UNKNOWN_ERROR);
+                return;
+            }
+        } else
+            mErrRetry = PLAYER_ERR_RETRY;
+
+        // Stop if player is already running.
+        mpStop();
+        mpRelease();
+        mpNewInstance();
+        mpReset();
+        mpSetVolume(volume);
+
+        File cachedVid = getCachedVideo(videoId);
+        if (cachedVid.exists() && cachedVid.canRead())
+            prepareCachedVideo(cachedVid);
+        else
+            prepareVideoStreaming(videoId);
+
+    }
+
+    private void
     startNext() {
         if (!mVlm.hasActiveVideo())
             return; // do nothing
@@ -1023,6 +1144,7 @@ MediaPlayer.OnSeekCompleteListener {
         mpRelease();
         releaseLocks();
         mVlm.reset();
+        mYtDnr.close();
         mErrRetry = PLAYER_ERR_RETRY;
 
         // This should be called before changing title because
@@ -1257,6 +1379,10 @@ MediaPlayer.OnSeekCompleteListener {
         //logD("MPlayer - onBufferingUpdate : " + percent + " %");
         // See comments aroudn MEDIA_INFO_BUFFERING_START in onInfo()
         //mpSetState(MPState.BUFFERING);
+        if (mUpdateProg.getProgress2() < percent && 100 <= percent)
+            // This is the first moment that buffering is reached to 100%
+            prepareNext();
+
         mUpdateProg.update2(percent, false);
     }
 

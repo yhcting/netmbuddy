@@ -825,9 +825,12 @@ public class DB extends SQLiteOpenHelper {
             Utils.copy(fos, fis);
             fis.close();
             fos.close();
-        } catch (FileNotFoundException e0) {
+        } catch (FileNotFoundException e) {
             err = Err.IO_FILE;
-        } catch (IOException e1) {
+        } catch (InterruptedException e) {
+            // Unexpected interrupt!!
+            err = Err.UNKNOWN;
+        } catch (IOException e) {
             err = Err.IO_FILE;
         } finally {
             if (Err.NO_ERR != err) {
@@ -861,9 +864,12 @@ public class DB extends SQLiteOpenHelper {
             Utils.copy(fos, fis);
             fis.close();
             fos.close();
-        } catch (FileNotFoundException e0) {
+        } catch (FileNotFoundException e) {
             err = Err.IO_FILE;
-        } catch (IOException e1) {
+        } catch (InterruptedException e) {
+            // Unexpected interrupt!!
+            err = Err.UNKNOWN;
+        } catch (IOException e) {
             err = Err.IO_FILE;
         } finally {
             if (Err.NO_ERR != err) {

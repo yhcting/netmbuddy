@@ -14,6 +14,7 @@ import java.io.PrintWriter;
 import java.text.DateFormat;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.zip.ZipEntry;
@@ -79,7 +80,7 @@ public class Utils {
         new File(Policy.APPDATA_VIDDIR).mkdirs();
         File cacheF = new File(Policy.APPDATA_CACHEDIR);
         // Clear cache!
-        removeFileRecursive(cacheF, false);
+        removeFileRecursive(cacheF, cacheF);
         cacheF.mkdirs();
 
         if (LOGF) {
@@ -444,36 +445,50 @@ public class Utils {
         try {
             InputStream is = Utils.getAppContext().getAssets().open(assetFile);
             FileOutputStream os = new FileOutputStream(new File(dest));
-            Utils.copy(os, is);
+            copy(os, is);
             is.close();
             os.close();
             return true;
+        } catch (InterruptedException e) {
+            return false;
         } catch (IOException e) {
             return false;
         }
     }
 
-    /**
-     * Remove file and directory recursively
-     * @param f
-     *   file or directory.
-     * @param bDeleteMe
-     *   'true' means delete given directory itself too.
-     * @return
-     *   false:  fail to full-delete
-     */
     public static boolean
-    removeFileRecursive(File f, boolean bDeleteMe) {
+    removeFileRecursive(File f, HashSet<String> skips) {
         boolean ret = true;
         if (f.isDirectory()) {
             for (File c : f.listFiles())
-                if (!removeFileRecursive(c, true))
+                if (!removeFileRecursive(c, skips))
                     ret = false;
         }
-        if (ret && bDeleteMe)
+
+        if (ret && !skips.contains(f.getAbsolutePath()))
             return f.delete();
         return ret;
     }
+
+    public static boolean
+    removeFileRecursive(File f, File[] skips) {
+        HashSet<String> skipSets = new HashSet<String>();
+        for (File skf : skips)
+            skipSets.add(skf.getAbsolutePath());
+
+        return removeFileRecursive(f, skipSets);
+    }
+
+    public static boolean
+    removeFileRecursive(File f, File skip) {
+        return removeFileRecursive(f, new File[] { skip });
+    }
+
+    public static boolean
+    removeFileRecursive(File f) {
+        return removeFileRecursive(f, new File[0]);
+    }
+
     // ------------------------------------------------------------------------
     //
     // Date
@@ -556,10 +571,13 @@ public class Utils {
     }
 
     public static void
-    copy(OutputStream os, InputStream is) throws IOException {
+    copy(OutputStream os, InputStream is) throws IOException, InterruptedException {
         byte buf[]=new byte[1024 * 16];
         int len;
-        while((len = is.read(buf)) > 0)
+        while((len = is.read(buf)) > 0) {
+            if (Thread.currentThread().isInterrupted())
+                throw new InterruptedException();
             os.write(buf, 0, len);
+        }
     }
 }
