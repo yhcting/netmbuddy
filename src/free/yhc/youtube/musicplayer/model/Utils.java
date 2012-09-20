@@ -76,17 +76,17 @@ public class Utils {
 
         new File(Policy.APPDATA_DIR).mkdirs();
         new File(Policy.APPDATA_TMPDIR).mkdirs();
-        new File(Policy.APPDATA_VID_DIR).mkdirs();
+        new File(Policy.APPDATA_VIDDIR).mkdirs();
 
         if (LOGF) {
-            new File(Policy.APPDATA_LOG_DIR).mkdirs();
+            new File(Policy.APPDATA_LOGDIR).mkdirs();
             String dateText = DateFormat
                                 .getDateTimeInstance(DateFormat.MEDIUM,
                                                      DateFormat.MEDIUM,
                                                      Locale.ENGLISH)
                                 .format(new Date(System.currentTimeMillis()));
             dateText = dateText.replace(' ', '_');
-            File logF = new File(Policy.APPDATA_LOG_DIR + dateText + ".log");
+            File logF = new File(Policy.APPDATA_LOGDIR + dateText + ".log");
             try {
                 sLogWriter = new PrintWriter(new OutputStreamWriter(new FileOutputStream(logF)));
             } catch (FileNotFoundException e) {
