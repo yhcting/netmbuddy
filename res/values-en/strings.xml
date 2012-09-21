@@ -63,6 +63,7 @@
     <string name="guide_desc_preference">Sets preference.</string>
     <string name="guide_desc_more">Shows sub-menus those are not used often.</string>
     <string name="guide_title_playlist_buttons">Tool buttons of each playlist.</string>
+    <string name="guide_desc_playlist_row">Play all musics belonging to the playlist by touching row at the list.</string>
     <string name="guide_desc_detaillist">Lists all musics belongs to the playlist.</string>
 
     <string name="report_opinion_title">[Youtube Music Player] Opinion</string>

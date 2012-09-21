@@ -63,6 +63,7 @@
     <string name="guide_desc_preference">어플리케이션 동작을 설정합니다.</string>
     <string name="guide_desc_more">기타 자주 사용하지 않는 하위 메뉴들을 봅니다.</string>
     <string name="guide_title_playlist_buttons">재생목록 도구버튼 설명</string>
+    <string name="guide_desc_playlist_row">리스트의 항목을 터치하면, 재생목록에 등록된 음악 전체를 재생합니다.</string>
     <string name="guide_desc_detaillist">재생목록에 등록된 모든 곡의 목록을 보여줍니다.</string>
 
     <string name="report_opinion_title">[유투브 뮤직 플레이어] 의견</string>
