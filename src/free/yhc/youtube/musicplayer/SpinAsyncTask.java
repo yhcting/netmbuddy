@@ -1,7 +1,7 @@
 /*****************************************************************************
  *    Copyright (C) 2012 Younghyung Cho. <yhcting77@gmail.com>
  *
- *    This file is part of Feeder.
+ *    This file is part of YTMPlayer.
  *
  *    This program is free software: you can redistribute it and/or modify
  *    it under the terms of the GNU Lesser General Public License as

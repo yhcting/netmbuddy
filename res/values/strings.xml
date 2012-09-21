@@ -43,9 +43,9 @@
 
     <string name="pref_cat_operation">재생 방식 설정</string>
     <string name="pref_shuffle">임의 순서로 재생</string>
-    <string name="pref_shuffle_desc">이 기능을 "켜기"로 설정하면 음악 재생시 재생되는 곡의 순서가 무작위로 됩니다.</string>
+    <string name="pref_shuffle_desc">음악 재생시 재생되는 곡의 순서가 무작위로 됩니다.</string>
     <string name="pref_repeat">반복 재생</string>
-    <string name="pref_repeat_desc">이 기능을 "켜기"로 설정하면 계속해서 반복되어 음악이 재생 됩니다.</string>
+    <string name="pref_repeat_desc">계속해서 반복되어 음악이 재생 됩니다.</string>
 
     <string name="guide_title_first_playlist">첫번째 재생목록 만들기</string>
     <string name="guide_desc_first_playlist">아이콘을 터치해서 원하는 검색어로 유투브를 검색합니다.\n검색이 완료되면, 검색된 유튜브 목록 중 하나를 길게 터치해서 새 재생목록을 만들어서 곡을 추가합니다.</string>

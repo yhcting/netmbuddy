@@ -1,3 +1,23 @@
+/*****************************************************************************
+ *    Copyright (C) 2012 Younghyung Cho. <yhcting77@gmail.com>
+ *
+ *    This file is part of YTMPlayer.
+ *
+ *    This program is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU Lesser General Public License as
+ *    published by the Free Software Foundation either version 3 of the
+ *    License, or (at your option) any later version.
+ *
+ *    This program is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU Lesser General Public License
+ *    (<http://www.gnu.org/licenses/lgpl.html>) for more details.
+ *
+ *    You should have received a copy of the GNU General Public License
+ *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *****************************************************************************/
+
 package free.yhc.youtube.musicplayer.model;
 
 import static free.yhc.youtube.musicplayer.model.Utils.eAssert;
@@ -54,6 +74,13 @@ public class YTHacker {
     private static final Pattern    sYtUrlStreamMapPattern
         = Pattern.compile(".*\"url_encoded_fmt_stream_map\": \"([^\"]+)\".*");
 
+    // [ Small talk... ]
+    // Why "generate_204"?
+    // 204 is http response code that means "No Content".
+    // Interestingly, if GET is requested to url that includes "generate_204",
+    //   204 (No Content) response comes.
+    // So, this URL is a kind of special URL that creates 204 response
+    //   and notify to server that preparing real-contents.
     private static final Pattern    sYtUrlGenerate204Pattern
         = Pattern.compile(".*\\(\"(http\\:.+\\/generate_204\\?[^)]+)\"\\).*");
 
@@ -102,6 +129,8 @@ public class YTHacker {
                 eAssert(false);
             }
 
+            // WebM and Flv is not supported directly in Android's MediaPlayer.
+            // So, Mpeg is only option we can choose.
             switch (v) {
             case YTSTREAMTAG_MPEG_1080p:
                 return YTQUALITY_SCORE_HIGHEST;
