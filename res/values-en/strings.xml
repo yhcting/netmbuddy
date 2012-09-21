@@ -47,7 +47,7 @@
     <string name="pref_repeat">Repeat</string>
     <string name="pref_repeat_desc">Play musics repeatedly.</string>
     <string name="pref_autostop">Auto-stop</string>
-    <string name="pref_autostop_desc">Play will be stopped after given time.\nUseful when sleep with listening musics.</string>
+    <string name="pref_autostop_desc">Play will be stopped after given time from starting musics.\nChanging in the middle of playing does not effective at current playing session.\nUseful when sleep with listening musics.</string>
 
     <string name="pref_autostop_30m">30 minutes</string>
     <string name="pref_autostop_1h">1 hour</string>

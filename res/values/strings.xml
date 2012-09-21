@@ -47,7 +47,7 @@
     <string name="pref_repeat">반복 재생</string>
     <string name="pref_repeat_desc">계속해서 반복되어 음악이 재생 됩니다.</string>
     <string name="pref_autostop">자동정지</string>
-    <string name="pref_autostop_desc">일정 시간 후 재생이 자동으로 중단됩니다.\n음악 들으면서 잠들때 유용합니다.</string>
+    <string name="pref_autostop_desc">재생이 시작되는 시점부터 일정 시간 후 재생이 자동으로 중단됩니다.\n따라서, 재생 중에 이 값을 바꿀 경우, 현재의 재생시간에는 영향을 주지 않습니다.\n음악 들으면서 잠들때 유용합니다.</string>
 
     <string name="pref_autostop_30m">30분</string>
     <string name="pref_autostop_1h">1시간</string>
