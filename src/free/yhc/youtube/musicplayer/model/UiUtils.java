@@ -33,6 +33,8 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.view.Gravity;
 import android.view.KeyEvent;
@@ -291,14 +293,32 @@ public class UiUtils {
 
     public static void
     setThumbnailImageView(ImageView v, byte[] imgdata) {
-        Bitmap thumbnailBm = null;
-        if (null == imgdata || imgdata.length > 0)
+        // NOTE
+        // Why Bitmap instance is created even if R.drawable.ic_unknown_image?
+        // ImageView has BitmapDrawable to draw it's canvas, and every input-drawble
+        //   - resource, uri etc - is converted to BitmapDrawable eventually.
+        // But, ImageView.setImageResource() doesn't update drawable if current image resource
+        //   is same with new one - See "ImageView.java for details"
+        // In this case, ImageView may try to use recycled BitmapDrawable.
+        // To avoid this, Bitmap instance is used in all cases.
+        Bitmap thumbnailBm;
+        if (null != imgdata && imgdata.length > 0)
             thumbnailBm = BitmapFactory.decodeByteArray(imgdata, 0, imgdata.length);
-
-        if (null == thumbnailBm)
-            v.setImageResource(R.drawable.ic_unknown_image);
         else
-            v.setImageBitmap(thumbnailBm);
+            thumbnailBm = BitmapFactory.decodeResource(Utils.getAppContext().getResources(),
+                                                       R.drawable.ic_unknown_image);
+
+        // This assumes that input of thumbnail ImageView is image resource or uri.
+        // Recycle old Bitmap
+        Drawable drawable = v.getDrawable();
+        if (drawable instanceof BitmapDrawable) { // to make sure.
+            BitmapDrawable bmd = (BitmapDrawable)drawable;
+            Bitmap bitmap = bmd.getBitmap();
+            bitmap.recycle();
+        }
+
+        // change to new one.
+        v.setImageBitmap(thumbnailBm);
     }
 
     public static void

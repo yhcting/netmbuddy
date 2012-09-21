@@ -157,5 +157,4 @@ public class MusicsAdapter extends ResourceCursorAdapter {
         playtmv.setText(Utils.secsToTimeText(cur.getInt(COLI_PLAYTIME)));
         UiUtils.setThumbnailImageView(thumbnailv, cur.getBlob(COLI_THUMBNAIL));
     }
-
 }
