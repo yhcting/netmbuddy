@@ -308,7 +308,9 @@ public class UiUtils {
             thumbnailBm = BitmapFactory.decodeResource(Utils.getAppContext().getResources(),
                                                        R.drawable.ic_unknown_image);
 
-        // This assumes that input of thumbnail ImageView is image resource or uri.
+        // This assumes that Drawable of ImageView is set only by this function.
+        // => Setting drawable directly through ImageView interface may lead to exception
+        // (Exception : try to used recycled bitmap)
         // Recycle old Bitmap
         Drawable drawable = v.getDrawable();
         if (drawable instanceof BitmapDrawable) { // to make sure.
