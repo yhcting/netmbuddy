@@ -948,6 +948,9 @@ MediaPlayer.OnSeekCompleteListener {
                     // retry.
                     retryTag--;
                     downloader.setTag(retryTag);
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException e) {}
                     downloader.download(vid, getCachedVideo(vid));
                 } else
                     downloader.close();
