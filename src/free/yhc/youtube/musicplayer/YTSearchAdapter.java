@@ -141,6 +141,19 @@ YTSearchHelper.LoadThumbnailDoneReceiver {
         v.setTag(VTAGKEY_VALID, true);
     }
 
+    /**
+     * This should be called when adapter is no more used.
+     * Adapter caching each music icons.
+     * So, it occupies lots of memory.
+     * To free those memories before GC, calling cleanup might be useful.
+     */
+    public void
+    cleanup() {
+        for (Bitmap bm : mThumbnails)
+            if (null != bm)
+                bm.recycle();
+    }
+
     public Bitmap
     getItemThumbnail(int pos) {
         return mThumbnails[pos];

@@ -437,7 +437,11 @@ DBHelper.CheckExistDoneReceiver {
         YTSearchAdapter adapter = new YTSearchAdapter(this,
                                                       mSearchHelper,
                                                       arg.ents);
+        YTSearchAdapter oldAdapter = getAdapter();
         mListv.setAdapter(adapter);
+        // Cleanup before as soon as possible to secure memories.
+        if (null != oldAdapter)
+            oldAdapter.cleanup();
         adjustPageUserAction();
     }
 
