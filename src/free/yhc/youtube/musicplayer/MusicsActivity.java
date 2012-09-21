@@ -107,7 +107,7 @@ public class MusicsActivity extends Activity {
     }
 
     private void
-    onAddToPlaylist(final long musicId, final int itemPos, final boolean move) {
+    onAddTo(final long musicId, final int itemPos, final boolean move) {
         long plid = isUserPlaylist(mPlid)? mPlid: DB.INVALID_PLAYLIST_ID;
         UiUtils.OnPlaylistSelectedListener action = new UiUtils.OnPlaylistSelectedListener() {
             @Override
@@ -218,12 +218,12 @@ public class MusicsActivity extends Activity {
     onContextItemSelected(MenuItem mItem) {
         AdapterContextMenuInfo info = (AdapterContextMenuInfo)mItem.getMenuInfo();
         switch (mItem.getItemId()) {
-        case R.id.add_to_playlist:
-            onAddToPlaylist(info.id, info.position, false);
+        case R.id.add_to:
+            onAddTo(info.id, info.position, false);
             return true;
 
-        case R.id.move_to_playlist:
-            onAddToPlaylist(info.id, info.position, true);
+        case R.id.move_to:
+            onAddTo(info.id, info.position, true);
             return true;
 
         case R.id.volume:
@@ -264,7 +264,7 @@ public class MusicsActivity extends Activity {
         // But SWF player supports this.
         // So, enable volume menu by default.
         boolean visible = isUserPlaylist(mPlid)? true: false;
-        menu.findItem(R.id.move_to_playlist).setVisible(visible);
+        menu.findItem(R.id.move_to).setVisible(visible);
         menu.findItem(R.id.plthumbnail).setVisible(visible);
     }
 

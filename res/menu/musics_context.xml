@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android" >
-    <item android:id="@+id/add_to_playlist"     android:title="@string/add_to_playlist"></item>
-    <item android:id="@+id/move_to_playlist"    android:title="@string/move_to_playlist"></item>
+    <item android:id="@+id/add_to"              android:title="@string/add_to"></item>
+    <item android:id="@+id/move_to"             android:title="@string/move_to"></item>
     <item android:id="@+id/rename"              android:title="@string/rename"></item>
     <item android:id="@+id/plthumbnail"         android:title="@string/set_to_plthumbnail"></item>
     <item android:id="@+id/volume"              android:title="@string/volume"></item>

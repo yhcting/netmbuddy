@@ -352,7 +352,7 @@ DBHelper.CheckExistDoneReceiver {
     }
 
     private void
-    onAddToPlaylist(final int position) {
+    onAddTo(final int position) {
         UiUtils.OnPlaylistSelectedListener action = new UiUtils.OnPlaylistSelectedListener() {
             @Override
             public void onPlaylist(long plid, Object user) {
@@ -486,8 +486,8 @@ DBHelper.CheckExistDoneReceiver {
     onContextItemSelected(MenuItem mItem) {
         AdapterContextMenuInfo info = (AdapterContextMenuInfo)mItem.getMenuInfo();
         switch (mItem.getItemId()) {
-        case R.id.add_to_playlist:
-            onAddToPlaylist(info.position);
+        case R.id.add_to:
+            onAddTo(info.position);
             return true;
 
         case R.id.play_video:
