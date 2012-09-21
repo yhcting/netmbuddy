@@ -17,5 +17,13 @@
             android:entries="@array/strarr_on_off_entry"
             android:entryValues="@array/strarr_on_off_value"
             />
+        <ListPreference
+            android:title="@string/pref_autostop"
+            android:summary="@string/pref_autostop_desc"
+            android:key="autostop"
+            android:defaultValue="0"
+            android:entries="@array/strarr_pref_autostop_entry"
+            android:entryValues="@array/strarr_pref_autostop_value"
+            />
     </PreferenceCategory>
 </PreferenceScreen>

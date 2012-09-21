@@ -100,6 +100,7 @@ MediaPlayer.OnSeekCompleteListener {
     //
     // ------------------------------------------------------------------------
     private final UpdateProgress    mUpdateProg = new UpdateProgress();
+    private final AutoStop          mAutoStop   = new AutoStop();
 
     // ------------------------------------------------------------------------
     //
@@ -200,7 +201,12 @@ MediaPlayer.OnSeekCompleteListener {
         }
     }
 
-
+    private class AutoStop implements Runnable {
+        @Override
+        public void run() {
+            stopVideos();
+        }
+    }
 
     private class UpdateProgress implements Runnable {
         private SeekBar     seekbar = null;
@@ -396,102 +402,6 @@ MediaPlayer.OnSeekCompleteListener {
 
         mWl = null;
         mWfl = null;
-    }
-
-
-    // ============================================================================
-    //
-    //
-    //
-    // ============================================================================
-    private File
-    getCachedVideo(String ytvid) {
-        // Only mp4 is supported by YTHacker.
-        // WebM and Flv is not supported directly in Android's MediaPlayer.
-        // So, Mpeg is only option we can choose.
-        return new File(Policy.APPDATA_CACHEDIR + ytvid + ".mp4");
-    }
-
-    private Video[]
-    getVideos(Cursor c,
-              int coliTitle,  int coliUrl,
-              int coliVolume, int coliPlaytime,
-              boolean shuffle) {
-        if (!c.moveToFirst())
-            return new Video[0];
-
-        Video[] vs = new Video[c.getCount()];
-
-        int i = 0;
-        if (!shuffle) {
-            do {
-                vs[i++] = new Video(c.getString(coliUrl),
-                                    c.getString(coliTitle),
-                                    c.getInt(coliVolume),
-                                    c.getInt(coliPlaytime));
-            } while (c.moveToNext());
-            Arrays.sort(vs, sVideoTitleComparator);
-        } else {
-            // This is shuffled case!
-            Random r = new Random(System.currentTimeMillis());
-            NrElem[] nes = new NrElem[c.getCount()];
-            do {
-                nes[i++] = new NrElem(r.nextInt(),
-                                      new Video(c.getString(coliUrl),
-                                                c.getString(coliTitle),
-                                                c.getInt(coliVolume),
-                                                c.getInt(coliPlaytime)));
-            } while (c.moveToNext());
-            Arrays.sort(nes, sNrElemComparator);
-            for (i = 0; i < nes.length; i++)
-                vs[i] = (Video)nes[i].tag;
-        }
-        return vs;
-    }
-
-    private void
-    cachingVideo(final String vid) {
-        mYtDnr.close();
-
-        mYtDnr = new YTDownloader();
-        YTDownloader.DownloadDoneReceiver rcvr = new DownloadDoneReceiver() {
-            @Override
-            public void
-            downloadDone(YTDownloader downloader, DnArg arg, Err err) {
-                if (mYtDnr != downloader) {
-                    downloader.close();
-                    return;
-                }
-
-                int retryTag = (Integer)downloader.getTag();
-                if (Err.NO_ERR != err
-                    && Utils.isNetworkAvailable()
-                    && retryTag > 0) {
-                    // retry.
-                    retryTag--;
-                    downloader.setTag(retryTag);
-                    downloader.download(vid, getCachedVideo(vid));
-                } else
-                    downloader.close();
-                // Ignore other cases even if it is fails.
-            }
-        };
-
-        mYtDnr.open("", rcvr);
-        // to retry in case of YTHTTPGET.
-        mYtDnr.setTag(Policy.NETOWRK_CONN_RETRY);
-        // NOTE
-        // Only mp4 is supported at YTHacker!
-        // So, YTDownloader also supports only mpeg4
-        mYtDnr.download(vid, getCachedVideo(vid));
-    }
-
-    private void
-    prepareNext() {
-        if (!mVlm.hasNextVideo())
-            return;
-
-        cachingVideo(mVlm.getNextVideo().videoId);
     }
 
     // ========================================================================
@@ -972,6 +882,88 @@ MediaPlayer.OnSeekCompleteListener {
         }
     }
 
+    private File
+    getCachedVideo(String ytvid) {
+        // Only mp4 is supported by YTHacker.
+        // WebM and Flv is not supported directly in Android's MediaPlayer.
+        // So, Mpeg is only option we can choose.
+        return new File(Policy.APPDATA_CACHEDIR + ytvid + ".mp4");
+    }
+
+    private Video[]
+    getVideos(Cursor c,
+              int coliTitle,  int coliUrl,
+              int coliVolume, int coliPlaytime,
+              boolean shuffle) {
+        if (!c.moveToFirst())
+            return new Video[0];
+
+        Video[] vs = new Video[c.getCount()];
+
+        int i = 0;
+        if (!shuffle) {
+            do {
+                vs[i++] = new Video(c.getString(coliUrl),
+                                    c.getString(coliTitle),
+                                    c.getInt(coliVolume),
+                                    c.getInt(coliPlaytime));
+            } while (c.moveToNext());
+            Arrays.sort(vs, sVideoTitleComparator);
+        } else {
+            // This is shuffled case!
+            Random r = new Random(System.currentTimeMillis());
+            NrElem[] nes = new NrElem[c.getCount()];
+            do {
+                nes[i++] = new NrElem(r.nextInt(),
+                                      new Video(c.getString(coliUrl),
+                                                c.getString(coliTitle),
+                                                c.getInt(coliVolume),
+                                                c.getInt(coliPlaytime)));
+            } while (c.moveToNext());
+            Arrays.sort(nes, sNrElemComparator);
+            for (i = 0; i < nes.length; i++)
+                vs[i] = (Video)nes[i].tag;
+        }
+        return vs;
+    }
+
+    private void
+    cachingVideo(final String vid) {
+        mYtDnr.close();
+
+        mYtDnr = new YTDownloader();
+        YTDownloader.DownloadDoneReceiver rcvr = new DownloadDoneReceiver() {
+            @Override
+            public void
+            downloadDone(YTDownloader downloader, DnArg arg, Err err) {
+                if (mYtDnr != downloader) {
+                    downloader.close();
+                    return;
+                }
+
+                int retryTag = (Integer)downloader.getTag();
+                if (Err.NO_ERR != err
+                    && Utils.isNetworkAvailable()
+                    && retryTag > 0) {
+                    // retry.
+                    retryTag--;
+                    downloader.setTag(retryTag);
+                    downloader.download(vid, getCachedVideo(vid));
+                } else
+                    downloader.close();
+                // Ignore other cases even if it is fails.
+            }
+        };
+
+        mYtDnr.open("", rcvr);
+        // to retry in case of YTHTTPGET.
+        mYtDnr.setTag(Policy.NETOWRK_CONN_RETRY);
+        // NOTE
+        // Only mp4 is supported at YTHacker!
+        // So, YTDownloader also supports only mpeg4
+        mYtDnr.download(vid, getCachedVideo(vid));
+    }
+
     private void
     cleanCache(boolean allClear) {
         if (!mVlm.hasActiveVideo())
@@ -989,6 +981,26 @@ MediaPlayer.OnSeekCompleteListener {
                 skipSet.add(getCachedVideo(nextVid.videoId).getAbsolutePath());
         }
         Utils.removeFileRecursive(sCacheDir, skipSet);
+    }
+
+    /**
+     * player will be stopped after 'millis'
+     * @param millis
+     *   0 for disable autostop
+     */
+    private void
+    setAutoStop(long millis) {
+        Utils.getUiHandler().removeCallbacks(mAutoStop);
+        if (millis > 0)
+            Utils.getUiHandler().postDelayed(mAutoStop, millis);
+    }
+
+    private void
+    prepareNext() {
+        if (!mVlm.hasNextVideo())
+            return;
+
+        cachingVideo(mVlm.getNextVideo().videoId);
     }
 
     private void
@@ -1170,6 +1182,9 @@ MediaPlayer.OnSeekCompleteListener {
                 return;
             }
         }
+        // Play is already stopped.
+        // So, auto stop should be inactive here.
+        setAutoStop(0);
 
         mpStop();
         mpRelease();
@@ -1257,6 +1272,7 @@ MediaPlayer.OnSeekCompleteListener {
             return;
 
         acquireLocks();
+        setAutoStop(Utils.getPrefAutoStopMillis());
 
         mVlm.setVideoList(vs);
         if (mVlm.moveToFist())

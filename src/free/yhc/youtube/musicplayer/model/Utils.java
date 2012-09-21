@@ -552,6 +552,17 @@ public class Utils {
         return sPrefs.getString("repeat", "off").equals("on");
     }
 
+    public static long
+    getPrefAutoStopMillis() {
+        String minStr = sPrefs.getString("autostop", "0");
+        long min = 0;
+        try {
+            min = Long.parseLong(minStr);
+        } catch (NumberFormatException e) {
+            eAssert(false);
+        }
+        return min * 60 * 1000;
+    }
     // ------------------------------------------------------------------------
     //
     // Misc

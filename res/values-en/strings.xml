@@ -46,6 +46,12 @@
     <string name="pref_shuffle_desc">Play musics in random order.</string>
     <string name="pref_repeat">Repeat</string>
     <string name="pref_repeat_desc">Play musics repeatedly.</string>
+    <string name="pref_autostop">Auto-stop</string>
+    <string name="pref_autostop_desc">Play will be stopped after given time.\nUseful when sleep with listening musics.</string>
+
+    <string name="pref_autostop_30m">30 minutes</string>
+    <string name="pref_autostop_1h">1 hour</string>
+    <string name="pref_autostop_2h">2 hours</string>
 
     <string name="guide_title_first_playlist">Making my first playlist.</string>
     <string name="guide_desc_first_playlist">Touching this icon to search Youbute with keywords\nThen, do long-touch one of list-item to make new playlist and add the item to the playlist.</string>
