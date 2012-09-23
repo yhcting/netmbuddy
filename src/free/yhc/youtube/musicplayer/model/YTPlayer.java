@@ -541,12 +541,18 @@ MediaPlayer.OnSeekCompleteListener {
     private boolean
     mpIsPlaying() {
         //logD("MPlayer - isPlaying");
+        if (null == mMp)
+            return false;
+
         return mMp.isPlaying();
     }
 
     private void
     mpPause() {
         logD("MPlayer - pause");
+        if (null == mMp)
+            return;
+
         mMp.pause();
         mpSetState(MPState.PAUSED);
     }
@@ -554,12 +560,18 @@ MediaPlayer.OnSeekCompleteListener {
     private void
     mpSeekTo(int pos) {
         logD("MPlayer - seekTo");
+        if (null == mMp)
+            return;
+
         mMp.seekTo(pos);
     }
 
     private void
     mpStart() {
         logD("MPlayer - start");
+        if (null == mMp)
+            return;
+
         mMp.start();
         mpSetState(MPState.STARTED);
     }
@@ -1201,8 +1213,8 @@ MediaPlayer.OnSeekCompleteListener {
         // We need to overwrite title message.
         mpSetState(MPState.INVALID);
 
-        TextView titlev = (TextView)mPlayerv.findViewById(R.id.music_player_title);
         if (null != mPlayerv) {
+            TextView titlev = (TextView)mPlayerv.findViewById(R.id.music_player_title);
             switch (st) {
             case DONE:
                 pvSetTitle(titlev, mRes.getText(R.string.msg_playing_done), false);
