@@ -17,7 +17,6 @@
             android:layout_gravity="center_vertical"
             android:gravity="center"
             android:scaleType="fitCenter"
-            android:src="@drawable/ic_unknown_image"
             />
         <TextView
             android:id="@+id/title"
