@@ -15,21 +15,19 @@
             android:layout_height="wrap_content"
             android:layout_alignParentTop="true"
             android:layout_alignParentLeft="true"
-            android:weightSum="1.0"
             android:orientation="horizontal"
             >
             <TextView
                 android:id="@+id/title"
                 android:layout_marginLeft="3dip"
                 android:layout_marginRight="3dip"
-                android:layout_width="0dip"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1.0"
                 android:textSize="@dimen/large_text_size"
                 android:textColor="@color/title_text_color_new"
                 android:text="@string/new_search"
                 android:gravity="center_vertical"
-                android:maxLines="1"
+                android:singleLine="true"
                 android:ellipsize="end"
                 />
         </LinearLayout>
@@ -48,13 +46,12 @@
                 android:orientation="horizontal"
                 >
                 <ImageView
-                    android:id="@+id/search"
+                    android:id="@+id/toolbtn"
                     android:layout_width="@dimen/toolbtn_width"
                     android:layout_height="@dimen/toolbtn_height"
                     android:gravity="center"
                     android:scaleType="fitCenter"
                     android:clickable="true"
-                    android:src="@drawable/ic_ytsearch"
                     />
             </LinearLayout>
             <ImageView

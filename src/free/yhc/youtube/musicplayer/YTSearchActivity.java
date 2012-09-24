@@ -22,71 +22,60 @@ package free.yhc.youtube.musicplayer;
 
 import static free.yhc.youtube.musicplayer.model.Utils.eAssert;
 import android.app.Activity;
-import android.app.AlertDialog;
-import android.app.Dialog;
 import android.content.res.Configuration;
-import android.graphics.Bitmap;
 import android.os.Bundle;
-import android.view.ContextMenu;
-import android.view.ContextMenu.ContextMenuInfo;
 import android.view.Gravity;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.AnimationUtils;
-import android.widget.AdapterView;
-import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
-import free.yhc.youtube.musicplayer.model.DB;
-import free.yhc.youtube.musicplayer.model.DBHelper;
-import free.yhc.youtube.musicplayer.model.DBHelper.CheckExistArg;
 import free.yhc.youtube.musicplayer.model.Err;
 import free.yhc.youtube.musicplayer.model.Policy;
-import free.yhc.youtube.musicplayer.model.RTState;
 import free.yhc.youtube.musicplayer.model.UiUtils;
-import free.yhc.youtube.musicplayer.model.Utils;
+import free.yhc.youtube.musicplayer.model.YTFeed;
 import free.yhc.youtube.musicplayer.model.YTPlayer;
-import free.yhc.youtube.musicplayer.model.YTSearchApi;
 import free.yhc.youtube.musicplayer.model.YTSearchHelper;
 
-public class YTSearchActivity extends Activity implements
-YTSearchHelper.SearchDoneReceiver,
-DBHelper.CheckExistDoneReceiver {
+public abstract class YTSearchActivity extends Activity implements
+YTSearchHelper.SearchDoneReceiver {
     private static final int NR_ENTRY_PER_PAGE = Policy.YTSEARCH_MAX_RESULTS;
 
-    private final DB            mDb = DB.get();
-    private final YTPlayer      mMp = YTPlayer.get();
+    protected   final YTPlayer  mMp = YTPlayer.get();
 
-    private YTSearchHelper  mSearchHelper;
-    private DBHelper        mDbHelper;
-    private ListView        mListv;     // viewHolder for ListView
+    protected   YTSearchHelper  mSearchHelper;
+    protected   ListView        mListv;     // viewHolder for ListView
 
     // Variable to store current activity state.
-    private YtSearchState   mSearchSt   = new YtSearchState();
+    private     YtSearchState   mSearchSt   = new YtSearchState();
 
-    private Button[]  mPageBtnHolder;
-    private LinearLayout.LayoutParams mPageBtnLPHolder;
-    private View.OnClickListener mPageOnClick = new View.OnClickListener() {
+    private     Button[]        mPageBtnHolder;
+    private     LinearLayout.LayoutParams mPageBtnLPHolder;
+    private     View.OnClickListener mPageOnClick = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
             int page = (Integer)v.getTag();
-            loadPage(mSearchSt.type, mSearchSt.text, page);
+            loadPage(mSearchSt.type, mSearchSt.text, mSearchSt.title, page);
         }
     };
 
     private static class YtSearchState {
-        YTSearchHelper.SearchType   type            = YTSearchHelper.SearchType.KEYWORD;
+        YTSearchHelper.SearchType   type            = YTSearchHelper.SearchType.VID_KEYWORD;
         String                      text            = "";
+        String                      title           = "";
         int                         curPage         = -1;
         int                         totalResults    = -1;
     }
 
+
+    // ========================================================================
+    //
+    //
+    //
+    // ========================================================================
     private int
     getStarti(int pageNum) {
         int starti = (pageNum - 1) * NR_ENTRY_PER_PAGE + 1;
@@ -97,11 +86,6 @@ DBHelper.CheckExistDoneReceiver {
     getLastPage() {
         int page = (mSearchSt.totalResults - 1) / NR_ENTRY_PER_PAGE + 1;
         return page < 1? 1: page;
-    }
-
-    private YTSearchAdapter
-    getAdapter() {
-        return (YTSearchAdapter)mListv.getAdapter();
     }
 
     private void
@@ -116,33 +100,6 @@ DBHelper.CheckExistDoneReceiver {
             mPageBtnHolder[i].setTag(i);
             mPageBtnHolder[i].setOnClickListener(mPageOnClick);
         }
-    }
-
-    private void
-    showLoadingLookAndFeel() {
-        View contentv = findViewById(R.id.content);
-        View infov = findViewById(R.id.infolayout);
-
-        ImageView iv = (ImageView)infov.findViewById(R.id.infoimg);
-        TextView  tv = (TextView)infov.findViewById(R.id.infomsg);
-        tv.setText(R.string.loading);
-        infov.setVisibility(View.VISIBLE);
-        contentv.setVisibility(View.GONE);
-        iv.startAnimation(AnimationUtils.loadAnimation(YTSearchActivity.this, R.anim.rotate));
-    }
-
-    private void
-    stopLoadingLookAndFeel() {
-        View contentv = findViewById(R.id.content);
-        View infov = findViewById(R.id.infolayout);
-
-        ImageView iv = (ImageView)infov.findViewById(R.id.infoimg);
-        if (null != iv.getAnimation()) {
-            iv.getAnimation().cancel();
-            iv.getAnimation().reset();
-        }
-        infov.setVisibility(View.GONE);
-        contentv.setVisibility(View.VISIBLE);
     }
 
     private void
@@ -191,7 +148,7 @@ DBHelper.CheckExistDoneReceiver {
      *   1-based page number
      */
     private void
-    loadPage(YTSearchHelper.SearchType type, String text, int pageNumber) {
+    loadPage(YTSearchHelper.SearchType type, String text, String title, int pageNumber) {
         if (pageNumber < 1
             || pageNumber > getLastPage()) {
             UiUtils.showTextToast(this, R.string.err_ytsearch);
@@ -207,6 +164,7 @@ DBHelper.CheckExistDoneReceiver {
             = new YTSearchHelper.SearchArg(pageNumber,
                                            type,
                                            text,
+                                           title,
                                            getStarti(pageNumber),
                                            NR_ENTRY_PER_PAGE);
         Err err = mSearchHelper.searchAsync(arg);
@@ -218,41 +176,35 @@ DBHelper.CheckExistDoneReceiver {
 
     private void
     loadNext() {
-        loadPage(mSearchSt.type, mSearchSt.text, mSearchSt.curPage + 1);
+        loadPage(mSearchSt.type, mSearchSt.text, mSearchSt.title, mSearchSt.curPage + 1);
     }
 
     private void
     loadPrev() {
         eAssert(mSearchSt.curPage > 1);
-        loadPage(mSearchSt.type, mSearchSt.text, mSearchSt.curPage - 1);
+        loadPage(mSearchSt.type, mSearchSt.text, mSearchSt.title, mSearchSt.curPage - 1);
     }
 
-    private void
-    doNewKeywordSearch() {
-        UiUtils.EditTextAction action = new UiUtils.EditTextAction() {
-            @Override
-            public void prepare(Dialog dialog, EditText edit) { }
-            @Override
-            public void onOk(Dialog dialog, EditText edit) {
-                String word = edit.getText().toString();
-                RTState.get().setLastSearchWord(edit.getText().toString());
-                loadPage(YTSearchHelper.SearchType.KEYWORD, word, 1);
-            }
-        };
-        AlertDialog diag = UiUtils.buildOneLineEditTextDialog(this,
-                                                              R.string.enter_keyword,
-                                                              RTState.get().getLastSearchWord(),
-                                                              action);
-        diag.show();
+
+    // ========================================================================
+    //
+    //
+    //
+    // ========================================================================
+    protected YTSearchHelper.SearchType
+    getSearchType() {
+        return mSearchSt.type;
     }
 
-    private void
-    setupTopBar() {
-        //View barv = findViewById(R.id.topbar);
+    protected void
+    saveSearchArg(YTSearchHelper.SearchType type, String text) {
+        mSearchSt.type = type;
+        mSearchSt.text = text;
     }
 
-    private void
-    setupBottomBar() {
+    protected void
+    setupToolBtn(int toolBtnDrawable,
+                 View.OnClickListener onYtSearch) {
         View barv = findViewById(R.id.bottombar);
         ImageView iv = (ImageView)barv.findViewById(R.id.next);
         iv.setOnClickListener(new View.OnClickListener() {
@@ -274,181 +226,56 @@ DBHelper.CheckExistDoneReceiver {
 
 
         barv = barv.findViewById(R.id.toolbar);
-        iv = (ImageView)barv.findViewById(R.id.search);
-        iv.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                doNewKeywordSearch();
-            }
-        });
-    }
-
-    private void
-    addToPlaylist(long plid, int position) {
-        eAssert(plid >= 0);
-        Bitmap bm = getAdapter().getItemThumbnail(position);
-        if (null == bm) {
-            UiUtils.showTextToast(this, R.string.msg_no_thumbnail);
-            return;
+        iv = (ImageView)barv.findViewById(R.id.toolbtn);
+        if (toolBtnDrawable <= 0 || null == onYtSearch) {
+            iv.setVisibility(View.GONE);
+            iv.setOnClickListener(null);
+        } else {
+            iv.setImageResource(toolBtnDrawable);
+            iv.setVisibility(View.VISIBLE);
+            iv.setOnClickListener(onYtSearch);
         }
-        final YTSearchApi.Entry entry = (YTSearchApi.Entry)getAdapter().getItem(position);
-        int playtm = 0;
-        try {
-             playtm = Integer.parseInt(entry.media.playTime);
-        } catch (NumberFormatException ex) {
-            UiUtils.showTextToast(this, R.string.msg_unknown_format);
-            return;
+    }
+
+    protected void
+    showLoadingLookAndFeel() {
+        View contentv = findViewById(R.id.content);
+        View infov = findViewById(R.id.infolayout);
+
+        ImageView iv = (ImageView)infov.findViewById(R.id.infoimg);
+        TextView  tv = (TextView)infov.findViewById(R.id.infomsg);
+        tv.setText(R.string.loading);
+        infov.setVisibility(View.VISIBLE);
+        contentv.setVisibility(View.GONE);
+        iv.startAnimation(AnimationUtils.loadAnimation(YTSearchActivity.this, R.anim.rotate));
+    }
+
+    protected void
+    stopLoadingLookAndFeel() {
+        View contentv = findViewById(R.id.content);
+        View infov = findViewById(R.id.infolayout);
+
+        ImageView iv = (ImageView)infov.findViewById(R.id.infoimg);
+        if (null != iv.getAnimation()) {
+            iv.getAnimation().cancel();
+            iv.getAnimation().reset();
         }
-
-        int volume = DB.INVALID_VOLUME;
-        YTPlayer ytp = YTPlayer.get();
-        String runningYtVid = ytp.getPlayVideoYtId();
-        if (null != runningYtVid
-            && runningYtVid.equals(getAdapter().getItemVideoId(position)))
-            volume = ytp.getVideoVolume();
-
-        if (DB.INVALID_VOLUME == volume)
-            volume = Policy.DEFAULT_VIDEO_VOLUME;
-
-        Err err = mDb.insertVideoToPlaylist(plid,
-                                            entry.media.title, entry.media.description,
-                                            entry.media.videoId, playtm,
-                                            Utils.compressBitmap(bm), volume);
-        if (Err.NO_ERR != err) {
-            if (Err.DB_DUPLICATED == err)
-                UiUtils.showTextToast(this, R.string.msg_existing_muisc);
-            else
-                UiUtils.showTextToast(this, err.getMessage());
-            return;
-        }
-
-        getAdapter().markEntryExist(position);
+        infov.setVisibility(View.GONE);
+        contentv.setVisibility(View.VISIBLE);
     }
 
-    private void
-    addToNewPlaylist(final int position) {
-        UiUtils.EditTextAction action = new UiUtils.EditTextAction() {
-            @Override
-            public void prepare(Dialog dialog, EditText edit) { }
-
-            @Override
-            public void onOk(Dialog dialog, EditText edit) {
-                String title = edit.getText().toString();
-                if (mDb.doesPlaylistExist(title)) {
-                    UiUtils.showTextToast(YTSearchActivity.this, R.string.msg_existing_playlist);
-                    return;
-                }
-
-                long plid = mDb.insertPlaylist(title, "");
-                if (plid < 0) {
-                    UiUtils.showTextToast(YTSearchActivity.this, R.string.err_db_unknown);
-                } else {
-                    addToPlaylist(plid, position);
-                }
-            }
-        };
-        AlertDialog diag = UiUtils.buildOneLineEditTextDialog(this, R.string.enter_playlist_title, action);
-        diag.show();
-    }
-
-    private void
-    onAddTo(final int position) {
-        UiUtils.OnPlaylistSelectedListener action = new UiUtils.OnPlaylistSelectedListener() {
-            @Override
-            public void onPlaylist(long plid, Object user) {
-                addToPlaylist(plid, (Integer)user);
-            }
-            @Override
-            public void onNewPlaylist(Object user) {
-                addToNewPlaylist((Integer)user);
-            }
-        };
-
-        UiUtils.buildSelectPlaylistDialog(mDb, this, action, DB.INVALID_PLAYLIST_ID, position).show();
-    }
-
-    private void
-    onPlayVideo(final int position) {
-        UiUtils.playAsVideo(this, getAdapter().getItemVideoId(position));
-    }
-
-    private void
-    onVideosOfThisAuthor(final int position) {
-        loadPage(YTSearchHelper.SearchType.AUTHOR, getAdapter().getItemAuthor(position), 1);
-    }
-
-    private void
-    onListItemClick(View view, int position, long itemId) {
-        ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
-        playerv.setVisibility(View.VISIBLE);
-
-        int playtime = 0;
-        try {
-            playtime = Integer.parseInt(getAdapter().getItemPlaytime(position));
-        } catch (NumberFormatException e) { }
-
-        YTPlayer.Video v = new YTPlayer.Video(
-                getAdapter().getItemVideoId(position),
-                getAdapter().getItemTitle(position),
-                Policy.DEFAULT_VIDEO_VOLUME,
-                playtime);
-        mMp.setController(this, playerv);
-        mMp.startVideos(new YTPlayer.Video[] { v });
-    }
-
-    @Override
-    public void
-    checkExistDone(DBHelper helper, CheckExistArg arg,
-                   boolean[] results, Err err) {
-        stopLoadingLookAndFeel();
-        if (Err.NO_ERR != err || results.length != arg.ents.length) {
-            UiUtils.showTextToast(this, R.string.err_db_unknown);
-            return;
-        }
-
-        YTSearchHelper.SearchArg sarg = (YTSearchHelper.SearchArg)arg.tag;
-        mSearchSt.type = sarg.type;
-        mSearchSt.text = sarg.text;
-        String titleText = "";
-        switch (mSearchSt.type) {
-        case KEYWORD:
-            titleText += getResources().getText(R.string.keyword);
-            break;
-
-        case AUTHOR:
-            titleText += getResources().getText(R.string.author);
-            break;
-
-        default:
-            eAssert(false);
-        }
-        titleText += " : " + mSearchSt.text;
-        ((TextView)findViewById(R.id.title)).setText(titleText);
-
-        // First request is done!
-        // Now we know total Results.
-        // Let's build adapter and enable list.
-        for (int i = 0; i < results.length; i++)
-            arg.ents[i].uflag = results[i]?
-                                YTSearchAdapter.FENT_EXIST_DUP:
-                                YTSearchAdapter.FENT_EXIST_NEW;
-
-        // helper's event receiver is changed to adapter in adapter's constructor.
-        YTSearchAdapter adapter = new YTSearchAdapter(this,
-                                                      mSearchHelper,
-                                                      arg.ents);
-        YTSearchAdapter oldAdapter = getAdapter();
-        mListv.setAdapter(adapter);
-        // Cleanup before as soon as possible to secure memories.
-        if (null != oldAdapter)
-            oldAdapter.cleanup();
-        adjustPageUserAction();
-    }
-
-    @Override
-    public void
-    searchDone(YTSearchHelper helper, YTSearchHelper.SearchArg arg,
-               YTSearchApi.Result result, Err err) {
+    /**
+     *
+     * @param helper
+     * @param arg
+     * @param result
+     * @param err
+     * @return
+     *   false : there is error in search, otherwise true.
+     */
+    protected boolean
+    handleSearchResult(YTSearchHelper helper, YTSearchHelper.SearchArg arg,
+                       YTFeed.Result result, Err err) {
         Err r = Err.NO_ERR;
         do {
             if (Err.NO_ERR != err) {
@@ -458,7 +285,7 @@ DBHelper.CheckExistDoneReceiver {
 
             mSearchSt.curPage = (Integer)arg.tag;
 
-            if (result.enties.length <= 0
+            if (result.entries.length <= 0
                 && 1 == mSearchSt.curPage) {
                 r = Err.NO_MATCH;
                 break;
@@ -475,41 +302,16 @@ DBHelper.CheckExistDoneReceiver {
         if (Err.NO_ERR != r) {
             stopLoadingLookAndFeel();
             UiUtils.showTextToast(this, r.getMessage());
-            return;
+            return false;
         }
 
-        mDbHelper.checkExistAsync(new DBHelper.CheckExistArg(arg, result.enties));
+        adjustPageUserAction();
+        return true;
     }
 
-    @Override
-    public boolean
-    onContextItemSelected(MenuItem mItem) {
-        AdapterContextMenuInfo info = (AdapterContextMenuInfo)mItem.getMenuInfo();
-        switch (mItem.getItemId()) {
-        case R.id.add_to:
-            onAddTo(info.position);
-            return true;
-
-        case R.id.play_video:
-            onPlayVideo(info.position);
-            return true;
-
-        case R.id.videos_of_this_author:
-            onVideosOfThisAuthor(info.position);
-            return true;
-        }
-        return false;
-    }
-
-    @Override
-    public void
-    onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
-        super.onCreateContextMenu(menu, v, menuInfo);
-        MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.ytsearch_context, menu);
-        // AdapterContextMenuInfo mInfo = (AdapterContextMenuInfo)menuInfo;
-        boolean visible = (YTSearchHelper.SearchType.AUTHOR == mSearchSt.type)? false: true;
-        menu.findItem(R.id.videos_of_this_author).setVisible(visible);
+    protected void
+    loadFirstPage(YTSearchHelper.SearchType type, String text, String title) {
+        loadPage(type, text, title, 1);
     }
 
     @Override
@@ -520,25 +322,10 @@ DBHelper.CheckExistDoneReceiver {
         mListv = (ListView)findViewById(R.id.list);
         mListv.setEmptyView(UiUtils.inflateLayout(this, R.layout.ytsearch_empty_list));
         registerForContextMenu(mListv);
-        mListv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void
-            onItemClick(AdapterView<?> parent, View view, int position, long itemId) {
-                onListItemClick(view, position, itemId);
-            }
-        });
-
         mSearchHelper = new YTSearchHelper();
         mSearchHelper.setSearchDoneRecevier(this);
 
-        mDbHelper = new DBHelper();
-        mDbHelper.setCheckExistDoneReceiver(this);
-        mDbHelper.open();
-
         preparePageButtons();
-        setupTopBar();
-        setupBottomBar();
-        doNewKeywordSearch();
     }
 
     @Override
@@ -569,7 +356,6 @@ DBHelper.CheckExistDoneReceiver {
     protected void
     onDestroy() {
         mSearchHelper.close();
-        mDbHelper.close();
         mMp.unsetController(this);
         super.onDestroy();
     }

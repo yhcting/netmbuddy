@@ -42,8 +42,8 @@ public class DBHelper {
 
     public static class CheckExistArg {
         public final Object                 tag;
-        public final YTSearchApi.Entry[]    ents;
-        public CheckExistArg(Object aTag, YTSearchApi.Entry[] aEnts) {
+        public final YTVideoFeed.Entry[]    ents;
+        public CheckExistArg(Object aTag, YTVideoFeed.Entry[] aEnts) {
             tag = aTag;
             ents = aEnts;
         }
@@ -67,7 +67,7 @@ public class DBHelper {
         }
 
         private boolean[]
-        checkExist(YTSearchApi.Entry[] entries) throws YTMPException {
+        checkExist(YTVideoFeed.Entry[] entries) throws YTMPException {
             // TODO
             // Should I check "entries[i].available" flag???
             boolean[] r = new boolean[entries.length];

@@ -32,7 +32,11 @@
                   android:configChanges="orientation|keyboardHidden"
                   android:theme="@android:style/Theme.NoTitleBar"
                   />
-        <activity android:name=".YTSearchActivity"
+        <activity android:name=".YTVideoSearchActivity"
+                  android:configChanges="orientation|keyboardHidden"
+                  android:theme="@android:style/Theme.NoTitleBar"
+                  />
+        <activity android:name=".YTPlaylistSearchActivity"
                   android:configChanges="orientation|keyboardHidden"
                   android:theme="@android:style/Theme.NoTitleBar"
                   />

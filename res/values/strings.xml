@@ -15,6 +15,7 @@
     <string name="buffering">Buffering</string>
     <string name="keyword">Search word</string>
     <string name="author">Author</string>
+    <string name="playlist">Playlist</string>
     <string name="volume">Volume</string>
     <string name="database">Database</string>
     <string name="export">Export</string>
@@ -25,18 +26,23 @@
     <string name="new_search">New search</string>
     <string name="detail_list">Detail list</string>
     <string name="enter_new_name">Enter new name</string>
+    <string name="enter_user_name">Enter user name</string>
     <string name="new_playlist">New playlist</string>
     <string name="add_to">Add to</string>
     <string name="move_to">Move to</string>
     <string name="enter_playlist_title">Enter playlist title</string>
     <string name="recently_played">Recently played</string>
     <string name="set_to_plthumbnail">Set as playlist icon</string>
-    <string name="dbmore">Database =&gt;</string>
+    <string name="dbmore">Database -&gt;</string>
+    <string name="ytsearchmore">Search Youtube -&gt;</string>
     <string name="app_info">App. infomation</string>
     <string name="feedback">Feedback</string>
     <string name="choose_app">Choose App.</string>
     <string name="play_video">Play video</string>
     <string name="videos_of_this_author">Videos of this author</string>
+    <string name="ytsearch_author">Search with author</string>
+    <string name="ytsearch_playlist">Search user playlist</string>
+    <string name="user_playlist_title_suffix">\'s playlists</string>
 
     <string name="importing_db">Importing DB</string>
     <string name="merging_db">Merging DB</string>
@@ -102,6 +108,7 @@
     <string name="err_no_match">No matching result.</string>
     <string name="err_ytsearch">Fail in searching Youtube.</string>
     <string name="err_ytprotocol">Error in communication between Youtube.</string>
+    <string name="err_ytinvalid_param">Invalid Youtube parameter.</string>
     <string name="err_network_unavailable">Network is unavailable.</string>
     <string name="err_end_of_data">End of data.</string>
 

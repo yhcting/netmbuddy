@@ -1,30 +1,4 @@
-/*****************************************************************************
- *    Copyright (C) 2012 Younghyung Cho. <yhcting77@gmail.com>
- *
- *    This file is part of YTMPlayer.
- *
- *    This program is free software: you can redistribute it and/or modify
- *    it under the terms of the GNU Lesser General Public License as
- *    published by the Free Software Foundation either version 3 of the
- *    License, or (at your option) any later version.
- *
- *    This program is distributed in the hope that it will be useful,
- *    but WITHOUT ANY WARRANTY; without even the implied warranty of
- *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *    GNU Lesser General Public License
- *    (<http://www.gnu.org/licenses/lgpl.html>) for more details.
- *
- *    You should have received a copy of the GNU General Public License
- *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *****************************************************************************/
-
 package free.yhc.youtube.musicplayer;
-
-import static free.yhc.youtube.musicplayer.model.Utils.eAssert;
-
-import java.text.DateFormat;
-import java.util.Date;
-import java.util.Locale;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -32,52 +6,41 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
-import android.widget.TextView;
 import free.yhc.youtube.musicplayer.model.Err;
 import free.yhc.youtube.musicplayer.model.UiUtils;
 import free.yhc.youtube.musicplayer.model.Utils;
-import free.yhc.youtube.musicplayer.model.YTSearchApi;
+import free.yhc.youtube.musicplayer.model.YTFeed;
 import free.yhc.youtube.musicplayer.model.YTSearchHelper;
 
-// ===========================================================================
-//
-// Maximum size of this adapter is YTSearchApi.NR_SEARCH_MAX (50)
-// So, the adapter doens't need to reuse view - 50 is small enough.
-// For convenience and performance reason, view is not reused here.
-//
-// ===========================================================================
-public class YTSearchAdapter extends BaseAdapter implements
+public abstract class YTSearchAdapter extends BaseAdapter implements
 YTSearchHelper.LoadThumbnailDoneReceiver {
-    // Flags
-    public static final long FENT_EXIST_NEW = 0x0;
-    public static final long FENT_EXIST_DUP = 0x1;
-    public static final long MENT_EXIST     = 0x1;
-
     // So, assign one of them as view tag's key value.
-    private static final int VTAGKEY_POS        = R.id.title;
-    private static final int VTAGKEY_VALID      = R.id.content;
+    protected static final int VTAGKEY_POS        = R.id.title;
+    protected static final int VTAGKEY_VALID      = R.id.content;
 
-    private final Context           mCxt;
-    private final YTSearchHelper    mHelper;
-
+    protected final Context         mCxt;
     // View holder for each item
-    private View[]                  mItemViews;
+    protected View[]                mItemViews;
+    protected YTFeed.Entry[]        mEntries;
+
     private Bitmap[]                mThumbnails;
-    private YTSearchApi.Entry[]     mEntries;
+    private final YTSearchHelper    mHelper;
 
     YTSearchAdapter(Context context,
                     YTSearchHelper helper,
-                    YTSearchApi.Entry[] entries) {
+                    int rowLayout,
+                    YTFeed.Entry[] entries) {
         super();
         mCxt = context;
         mHelper = helper;
+
         mEntries = entries;
         mItemViews = new View[mEntries.length];
         mThumbnails = new Bitmap[mEntries.length];
 
         mHelper.setLoadThumbnailDoneRecevier(this);
         for (int i = 0; i < mItemViews.length; i++) {
-            mItemViews[i] = UiUtils.inflateLayout(Utils.getAppContext(), R.layout.ytsearch_row);
+            mItemViews[i] = UiUtils.inflateLayout(Utils.getAppContext(), rowLayout);
             markViewInvalid(i);
             YTSearchHelper.LoadThumbnailArg arg
                 = new YTSearchHelper.LoadThumbnailArg(i,
@@ -89,57 +52,24 @@ YTSearchHelper.LoadThumbnailDoneReceiver {
         }
     }
 
-    private int
+
+    protected int
     pos2index(int pos) {
         return pos + 1;
     }
 
-    private void
+    protected void
     markViewInvalid(int pos) {
         mItemViews[pos].setTag(VTAGKEY_VALID, false);
     }
 
-    private boolean
+    protected boolean
     isViewValid(int pos) {
         return (Boolean)mItemViews[pos].getTag(VTAGKEY_VALID);
     }
 
-    private void
-    setItemView(View v, YTSearchApi.Entry e) {
-        eAssert(null != v);
-
-        if (!e.available) {
-            v.setVisibility(View.INVISIBLE);
-        }
-
-        TextView titlev = (TextView)v.findViewById(R.id.title);
-        titlev.setText(e.media.title);
-        if (Utils.bitIsSet(e.uflag, FENT_EXIST_DUP, MENT_EXIST))
-            titlev.setTextColor(Utils.getAppContext().getResources().getColor(R.color.title_text_color_existing));
-        else
-            titlev.setTextColor(Utils.getAppContext().getResources().getColor(R.color.title_text_color_new));
-
-        String playtmtext = "?";
-        try {
-            playtmtext = Utils.secsToMinSecText(Integer.parseInt(e.media.playTime));
-        } catch (NumberFormatException ex) { }
-        ((TextView)v.findViewById(R.id.playtime)).setText(playtmtext);
-
-        String dateText;
-        dateText = e.media.uploadedTime;
-        Date date = Utils.parseDateString(dateText);
-
-
-        if (null != date)
-            dateText = DateFormat.getDateTimeInstance(DateFormat.MEDIUM,
-                                                      DateFormat.SHORT,
-                                                      Locale.getDefault())
-                                 .format(date);
-
-        ((TextView)v.findViewById(R.id.uploadedtime)).setText("< " + dateText + " >");
-
-        v.setTag(VTAGKEY_VALID, true);
-    }
+    protected abstract void
+    setItemView(View v, YTFeed.Entry e);
 
     /**
      * This should be called when adapter is no more used.
@@ -159,33 +89,6 @@ YTSearchHelper.LoadThumbnailDoneReceiver {
         return mThumbnails[pos];
     }
 
-    public String
-    getItemTitle(int pos) {
-        return mEntries[pos].media.title;
-    }
-
-    public String
-    getItemVideoId(int pos) {
-        return mEntries[pos].media.videoId;
-    }
-
-    public String
-    getItemPlaytime(int pos) {
-        return mEntries[pos].media.playTime;
-    }
-
-    public String
-    getItemAuthor(int pos) {
-        return mEntries[pos].author.name;
-    }
-
-    public void
-    markEntryExist(int pos) {
-        YTSearchApi.Entry e = mEntries[pos];
-        e.uflag = Utils.bitSet(e.uflag, FENT_EXIST_DUP, MENT_EXIST);
-        markViewInvalid(pos);
-        notifyDataSetChanged();
-    }
 
     @Override
     public void
@@ -202,6 +105,7 @@ YTSearchHelper.LoadThumbnailDoneReceiver {
             iv.setImageBitmap(bm);
         }
     }
+
 
     @Override
     public int
@@ -229,7 +133,7 @@ YTSearchHelper.LoadThumbnailDoneReceiver {
         if (isViewValid(position))
             return v;
 
-        YTSearchApi.Entry e = mEntries[position];
+        YTFeed.Entry e = mEntries[position];
         setItemView(v, e);
         return v;
     }

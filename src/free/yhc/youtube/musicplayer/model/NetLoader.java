@@ -167,7 +167,7 @@ public class NetLoader {
                 default:
                     // Unexpected response
                     logW("NetLoader Unexpected Response  status code : " + httpResp.getStatusLine().getStatusCode());
-                    throw new YTMPException(Err.YTHTTPGET);
+                    throw new YTMPException(Err.YTHTTPGET, statusCode);
                 }
 
                 InputStream contentStream = null;

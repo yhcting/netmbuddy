@@ -52,6 +52,7 @@ import free.yhc.youtube.musicplayer.model.Policy;
 import free.yhc.youtube.musicplayer.model.UiUtils;
 import free.yhc.youtube.musicplayer.model.Utils;
 import free.yhc.youtube.musicplayer.model.YTPlayer;
+import free.yhc.youtube.musicplayer.model.YTSearchHelper;
 
 public class PlaylistActivity extends Activity {
     private final DB            mDb = DB.get();
@@ -361,6 +362,52 @@ public class PlaylistActivity extends Activity {
     }
 
     private void
+    onMenuMoreYtSearchAuthor(final View anchor) {
+        Intent i = new Intent(this, YTVideoSearchActivity.class);
+        i.putExtra(YTVideoSearchActivity.INTENT_KEY_SEARCH_TYPE,
+                   YTSearchHelper.SearchType.VID_AUTHOR.name());
+        startActivity(i);
+    }
+
+    private void
+    onMenuMoreYtSearchPlaylist(final View anchor) {
+        Intent i = new Intent(PlaylistActivity.this, YTPlaylistSearchActivity.class);
+        startActivity(i);
+    }
+
+    private void
+    onMenuMoreYtSearch(final View anchor) {
+        final int[] optStringIds = {
+                R.string.ytsearch_author,
+                R.string.ytsearch_playlist };
+
+        final CharSequence[] items = new CharSequence[optStringIds.length];
+        for (int i = 0; i < optStringIds.length; i++)
+            items[i] = getResources().getText(optStringIds[i]);
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle(R.string.database);
+        builder.setItems(items, new DialogInterface.OnClickListener() {
+            @Override
+            public void
+            onClick(DialogInterface dialog, int item) {
+                switch (optStringIds[item]) {
+                case R.string.ytsearch_author:
+                    onMenuMoreYtSearchAuthor(anchor);
+                    break;
+
+                case R.string.ytsearch_playlist:
+                    onMenuMoreYtSearchPlaylist(anchor);
+                    break;
+                default:
+                    eAssert(false);
+                }
+            }
+        });
+        builder.create().show();
+    }
+
+    private void
     onMenuMoreSendOpinion(View anchor) {
         if (!Utils.isNetworkAvailable()) {
             UiUtils.showTextToast(this, R.string.err_network_unavailable);
@@ -376,6 +423,7 @@ public class PlaylistActivity extends Activity {
         final int[] optStringIds = {
                 R.string.app_info,
                 R.string.dbmore,
+                R.string.ytsearchmore,
                 R.string.feedback };
 
         final CharSequence[] items = new CharSequence[optStringIds.length];
@@ -394,6 +442,10 @@ public class PlaylistActivity extends Activity {
 
                 case R.string.dbmore:
                     onMenuMoreDB(anchor);
+                    break;
+
+                case R.string.ytsearchmore:
+                    onMenuMoreYtSearch(anchor);
                     break;
 
                 case R.string.app_info:
@@ -436,7 +488,9 @@ public class PlaylistActivity extends Activity {
         ((ImageView)findViewById(R.id.ytsearch)).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent i = new Intent(PlaylistActivity.this, YTSearchActivity.class);
+                Intent i = new Intent(PlaylistActivity.this, YTVideoSearchActivity.class);
+                i.putExtra(YTVideoSearchActivity.INTENT_KEY_SEARCH_TYPE,
+                        YTSearchHelper.SearchType.VID_KEYWORD.name());
                 startActivity(i);
             }
         });

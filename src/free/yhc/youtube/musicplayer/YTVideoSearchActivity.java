@@ -1,0 +1,384 @@
+package free.yhc.youtube.musicplayer;
+
+import static free.yhc.youtube.musicplayer.model.Utils.eAssert;
+import android.app.AlertDialog;
+import android.app.Dialog;
+import android.content.res.Configuration;
+import android.graphics.Bitmap;
+import android.os.Bundle;
+import android.view.ContextMenu;
+import android.view.ContextMenu.ContextMenuInfo;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.AdapterView.AdapterContextMenuInfo;
+import android.widget.EditText;
+import android.widget.TextView;
+import free.yhc.youtube.musicplayer.model.DB;
+import free.yhc.youtube.musicplayer.model.DBHelper;
+import free.yhc.youtube.musicplayer.model.DBHelper.CheckExistArg;
+import free.yhc.youtube.musicplayer.model.Err;
+import free.yhc.youtube.musicplayer.model.Policy;
+import free.yhc.youtube.musicplayer.model.RTState;
+import free.yhc.youtube.musicplayer.model.UiUtils;
+import free.yhc.youtube.musicplayer.model.Utils;
+import free.yhc.youtube.musicplayer.model.YTFeed;
+import free.yhc.youtube.musicplayer.model.YTPlayer;
+import free.yhc.youtube.musicplayer.model.YTSearchHelper;
+import free.yhc.youtube.musicplayer.model.YTVideoFeed;
+
+public class YTVideoSearchActivity extends YTSearchActivity implements
+YTSearchHelper.SearchDoneReceiver,
+DBHelper.CheckExistDoneReceiver {
+    public static final String  INTENT_KEY_SEARCH_TYPE  = "searchtype";
+    public static final String  INTENT_KEY_SEARCH_TEXT  = "searchtext";
+    public static final String  INTENT_KEY_SEARCH_TITLE = "searchtitle";
+
+    private final DB        mDb = DB.get();
+
+    private DBHelper        mDbHelper;
+
+
+    private YTVideoSearchAdapter
+    getAdapter() {
+        return (YTVideoSearchAdapter)mListv.getAdapter();
+    }
+
+    private void
+    doNewSearch(final YTSearchHelper.SearchType type, int title) {
+        UiUtils.EditTextAction action = new UiUtils.EditTextAction() {
+            @Override
+            public void prepare(Dialog dialog, EditText edit) { }
+            @Override
+            public void onOk(Dialog dialog, EditText edit) {
+                String word = edit.getText().toString();
+                RTState.get().setLastSearchWord(edit.getText().toString());
+                loadFirstPage(type, word, word);
+            }
+        };
+        AlertDialog diag = UiUtils.buildOneLineEditTextDialog(this,
+                                                              title,
+                                                              RTState.get().getLastSearchWord(),
+                                                              action);
+        diag.show();
+    }
+
+    private void
+    addToPlaylist(long plid, int position) {
+        eAssert(plid >= 0);
+        Bitmap bm = getAdapter().getItemThumbnail(position);
+        if (null == bm) {
+            UiUtils.showTextToast(this, R.string.msg_no_thumbnail);
+            return;
+        }
+        final YTVideoFeed.Entry entry = (YTVideoFeed.Entry)getAdapter().getItem(position);
+        int playtm = 0;
+        try {
+             playtm = Integer.parseInt(entry.media.playTime);
+        } catch (NumberFormatException ex) {
+            UiUtils.showTextToast(this, R.string.msg_unknown_format);
+            return;
+        }
+
+        int volume = DB.INVALID_VOLUME;
+        YTPlayer ytp = YTPlayer.get();
+        String runningYtVid = ytp.getPlayVideoYtId();
+        if (null != runningYtVid
+            && runningYtVid.equals(getAdapter().getItemVideoId(position)))
+            volume = ytp.getVideoVolume();
+
+        if (DB.INVALID_VOLUME == volume)
+            volume = Policy.DEFAULT_VIDEO_VOLUME;
+
+        Err err = mDb.insertVideoToPlaylist(plid,
+                                            entry.media.title, entry.media.description,
+                                            entry.media.videoId, playtm,
+                                            Utils.compressBitmap(bm), volume);
+        if (Err.NO_ERR != err) {
+            if (Err.DB_DUPLICATED == err)
+                UiUtils.showTextToast(this, R.string.msg_existing_muisc);
+            else
+                UiUtils.showTextToast(this, err.getMessage());
+            return;
+        }
+
+        getAdapter().markEntryExist(position);
+    }
+
+    private void
+    addToNewPlaylist(final int position) {
+        UiUtils.EditTextAction action = new UiUtils.EditTextAction() {
+            @Override
+            public void prepare(Dialog dialog, EditText edit) { }
+
+            @Override
+            public void onOk(Dialog dialog, EditText edit) {
+                String title = edit.getText().toString();
+                if (mDb.doesPlaylistExist(title)) {
+                    UiUtils.showTextToast(YTVideoSearchActivity.this, R.string.msg_existing_playlist);
+                    return;
+                }
+
+                long plid = mDb.insertPlaylist(title, "");
+                if (plid < 0) {
+                    UiUtils.showTextToast(YTVideoSearchActivity.this, R.string.err_db_unknown);
+                } else {
+                    addToPlaylist(plid, position);
+                }
+            }
+        };
+        AlertDialog diag = UiUtils.buildOneLineEditTextDialog(this, R.string.enter_playlist_title, action);
+        diag.show();
+    }
+
+    private void
+    onAddTo(final int position) {
+        UiUtils.OnPlaylistSelectedListener action = new UiUtils.OnPlaylistSelectedListener() {
+            @Override
+            public void onPlaylist(long plid, Object user) {
+                addToPlaylist(plid, (Integer)user);
+            }
+            @Override
+            public void onNewPlaylist(Object user) {
+                addToNewPlaylist((Integer)user);
+            }
+        };
+
+        UiUtils.buildSelectPlaylistDialog(mDb, this, action, DB.INVALID_PLAYLIST_ID, position).show();
+    }
+
+    private void
+    onPlayVideo(final int position) {
+        UiUtils.playAsVideo(this, getAdapter().getItemVideoId(position));
+    }
+
+    private void
+    onVideosOfThisAuthor(final int position) {
+        loadFirstPage(YTSearchHelper.SearchType.VID_AUTHOR,
+                      getAdapter().getItemAuthor(position),
+                      getAdapter().getItemAuthor(position));
+    }
+
+    private void
+    onListItemClick(View view, int position, long itemId) {
+        ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
+        playerv.setVisibility(View.VISIBLE);
+
+        int playtime = 0;
+        try {
+            playtime = Integer.parseInt(getAdapter().getItemPlaytime(position));
+        } catch (NumberFormatException e) { }
+
+        YTPlayer.Video v = new YTPlayer.Video(
+                getAdapter().getItemVideoId(position),
+                getAdapter().getItemTitle(position),
+                Policy.DEFAULT_VIDEO_VOLUME,
+                playtime);
+        mMp.setController(this, playerv);
+        mMp.startVideos(new YTPlayer.Video[] { v });
+    }
+
+    @Override
+    public void
+    searchDone(YTSearchHelper helper, YTSearchHelper.SearchArg arg,
+               YTFeed.Result result, Err err) {
+        if (!handleSearchResult(helper, arg, result, err))
+            return; // There is an error in search
+
+        mDbHelper.checkExistAsync(new DBHelper.CheckExistArg(arg, (YTVideoFeed.Entry[])result.entries));
+    }
+
+    @Override
+    public void
+    checkExistDone(DBHelper helper, CheckExistArg arg,
+                   boolean[] results, Err err) {
+        stopLoadingLookAndFeel();
+        if (Err.NO_ERR != err || results.length != arg.ents.length) {
+            UiUtils.showTextToast(this, R.string.err_db_unknown);
+            return;
+        }
+
+        YTSearchHelper.SearchArg sarg = (YTSearchHelper.SearchArg)arg.tag;
+        saveSearchArg(sarg.type, sarg.text);
+        String titleText = "";
+        switch (sarg.type) {
+        case VID_KEYWORD:
+            titleText += getResources().getText(R.string.keyword);
+            break;
+
+        case VID_AUTHOR:
+            titleText += getResources().getText(R.string.author);
+            break;
+
+        case VID_PLAYLIST:
+            titleText += getResources().getText(R.string.playlist);
+            break;
+
+        default:
+            eAssert(false);
+        }
+        titleText += " : " + sarg.title;
+        ((TextView)findViewById(R.id.title)).setText(titleText);
+
+        // First request is done!
+        // Now we know total Results.
+        // Let's build adapter and enable list.
+        for (int i = 0; i < results.length; i++)
+            arg.ents[i].uflag = results[i]?
+                                YTVideoSearchAdapter.FENT_EXIST_DUP:
+                                YTVideoSearchAdapter.FENT_EXIST_NEW;
+
+        // helper's event receiver is changed to adapter in adapter's constructor.
+        YTVideoSearchAdapter adapter = new YTVideoSearchAdapter(this,
+                                                               mSearchHelper,
+                                                               arg.ents);
+        YTVideoSearchAdapter oldAdapter = getAdapter();
+        mListv.setAdapter(adapter);
+        // Cleanup before as soon as possible to secure memories.
+        if (null != oldAdapter)
+            oldAdapter.cleanup();
+    }
+
+
+    @Override
+    public boolean
+    onContextItemSelected(MenuItem mItem) {
+        AdapterContextMenuInfo info = (AdapterContextMenuInfo)mItem.getMenuInfo();
+        switch (mItem.getItemId()) {
+        case R.id.add_to:
+            onAddTo(info.position);
+            return true;
+
+        case R.id.play_video:
+            onPlayVideo(info.position);
+            return true;
+
+        case R.id.videos_of_this_author:
+            onVideosOfThisAuthor(info.position);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public void
+    onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
+        super.onCreateContextMenu(menu, v, menuInfo);
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.ytvideosearch_context, menu);
+        // AdapterContextMenuInfo mInfo = (AdapterContextMenuInfo)menuInfo;
+        boolean visible = (YTSearchHelper.SearchType.VID_AUTHOR == getSearchType())? false: true;
+        menu.findItem(R.id.videos_of_this_author).setVisible(visible);
+    }
+
+    @Override
+    public void
+    onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        mListv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void
+            onItemClick(AdapterView<?> parent, View view, int position, long itemId) {
+                onListItemClick(view, position, itemId);
+            }
+        });
+
+        mDbHelper = new DBHelper();
+        mDbHelper.setCheckExistDoneReceiver(this);
+        mDbHelper.open();
+
+        String stypeStr = getIntent().getStringExtra(INTENT_KEY_SEARCH_TYPE);
+        final String stext = getIntent().getStringExtra(INTENT_KEY_SEARCH_TEXT);
+        final String stitle = getIntent().getStringExtra(INTENT_KEY_SEARCH_TITLE);
+
+        YTSearchHelper.SearchType stype = YTSearchHelper.SearchType.VID_KEYWORD;
+        if (null != stypeStr) {
+            for (YTSearchHelper.SearchType st : YTSearchHelper.SearchType.values()) {
+                if (st.name().equals(stypeStr))
+                    stype = st;
+            }
+        }
+
+        int iconDrawable = 0;
+        final int diagTitle;
+        switch (stype) {
+        case VID_KEYWORD:
+            iconDrawable = R.drawable.ic_ytsearch;
+            diagTitle = R.string.enter_keyword;
+            break;
+
+        case VID_AUTHOR:
+            iconDrawable = R.drawable.ic_ytsearch;
+            diagTitle = R.string.enter_user_name;
+            break;
+
+        case VID_PLAYLIST:
+            diagTitle = 0;
+            break;
+
+        default:
+            diagTitle = 0;
+            eAssert(false);
+        }
+
+        final YTSearchHelper.SearchType searchType = stype;
+        setupToolBtn(iconDrawable,
+                     new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                doNewSearch(searchType, diagTitle);
+            }
+        });
+
+        if (null == stext)
+            doNewSearch(searchType, R.string.enter_keyword);
+        else
+            Utils.getUiHandler().post(new Runnable() {
+                @Override
+                public void run() {
+                    String title = (null == stitle)? stext: stitle;
+                    loadFirstPage(searchType, stext, title);
+                }
+            });
+    }
+
+    @Override
+    protected void
+    onResume() {
+        super.onResume();
+    }
+
+    @Override
+    protected void
+    onPause() {
+        super.onPause();
+    }
+
+    @Override
+    protected void
+    onStop() {
+        super.onStop();
+    }
+
+    @Override
+    protected void
+    onDestroy() {
+        mDbHelper.close();
+        super.onDestroy();
+    }
+
+    @Override
+    public void
+    onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        // Do nothing!
+    }
+
+    @Override
+    public void
+    onBackPressed() {
+        super.onBackPressed();
+    }
+}
