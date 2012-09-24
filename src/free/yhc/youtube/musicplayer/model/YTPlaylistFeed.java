@@ -63,6 +63,10 @@ public class YTPlaylistFeed extends YTFeed {
         public String   playlistId  = "";
     }
 
+    public static String
+    getFeedUrlByUser(String user, int start, int maxCount) {
+        return "https://gdata.youtube.com/feeds/api/users/" + user + "/playlists?v=2";
+    }
 
     /**
      * Is this valid entry that can be handled by YoutubeMusicPlayer?

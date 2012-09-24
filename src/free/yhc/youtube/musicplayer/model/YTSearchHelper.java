@@ -42,11 +42,6 @@ import android.os.Message;
 import android.os.Process;
 
 public class YTSearchHelper {
-    // TODO
-    // Value below tightly coupled with memory consumption.
-    // Later, this value should be configurable through user-preference interface.
-    private static final int ENTRY_CACHE_SIZE           = 500;
-
     private static final int MSG_WHAT_SEARCH            = 0;
     private static final int MSG_WHAT_LOAD_THUMBNAIL    = 1;
 
@@ -76,13 +71,16 @@ public class YTSearchHelper {
         public Object       tag;   // user data tag
         public SearchType   type;
         public String       text;  //
+        public String       title; // title of this search.
         public int          starti;// start index
         public int          max;   // max size to search
-        public SearchArg(Object aTag, SearchType aType, String aText,
+        public SearchArg(Object aTag,
+                         SearchType aType, String aText, String aTitle,
                          int aStarti, int aMax) {
             tag = aTag;
             type = aType;
             text = aText;
+            title = aTitle;
             starti = aStarti;
             max = aMax;
         }
@@ -193,7 +191,7 @@ public class YTSearchHelper {
                     break;
 
                 case PL_USER:
-                    r = parse(loadUrl(YTVideoFeed.getFeedUrlByPlaylist(arg.text, arg.starti, arg.max)),
+                    r = parse(loadUrl(YTPlaylistFeed.getFeedUrlByUser(arg.text, arg.starti, arg.max)),
                               FeedType.PLAYLIST);
                     break;
 
@@ -202,6 +200,10 @@ public class YTSearchHelper {
                 }
             } catch (YTMPException e) {
                 eAssert(Err.NO_ERR != e.getError());
+                if (Err.YTHTTPGET == e.getError()
+                    && ((Integer)e.getExtra()) == HttpUtils.SC_NOT_FOUND)
+                    e = new YTMPException(Err.YTINVALID_PARAM);
+
                 sendFeedDone(arg, null, e.getError());
                 return;
             }

@@ -33,7 +33,6 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
-import free.yhc.youtube.musicplayer.model.DB;
 import free.yhc.youtube.musicplayer.model.Err;
 import free.yhc.youtube.musicplayer.model.Policy;
 import free.yhc.youtube.musicplayer.model.UiUtils;
@@ -41,11 +40,10 @@ import free.yhc.youtube.musicplayer.model.YTFeed;
 import free.yhc.youtube.musicplayer.model.YTPlayer;
 import free.yhc.youtube.musicplayer.model.YTSearchHelper;
 
-public class YTSearchActivity extends Activity implements
+public abstract class YTSearchActivity extends Activity implements
 YTSearchHelper.SearchDoneReceiver {
     private static final int NR_ENTRY_PER_PAGE = Policy.YTSEARCH_MAX_RESULTS;
 
-    protected   final DB        mDb = DB.get();
     protected   final YTPlayer  mMp = YTPlayer.get();
 
     protected   YTSearchHelper  mSearchHelper;
@@ -60,13 +58,14 @@ YTSearchHelper.SearchDoneReceiver {
         @Override
         public void onClick(View v) {
             int page = (Integer)v.getTag();
-            loadPage(mSearchSt.type, mSearchSt.text, page);
+            loadPage(mSearchSt.type, mSearchSt.text, mSearchSt.title, page);
         }
     };
 
     private static class YtSearchState {
         YTSearchHelper.SearchType   type            = YTSearchHelper.SearchType.VID_KEYWORD;
         String                      text            = "";
+        String                      title           = "";
         int                         curPage         = -1;
         int                         totalResults    = -1;
     }
@@ -149,7 +148,7 @@ YTSearchHelper.SearchDoneReceiver {
      *   1-based page number
      */
     private void
-    loadPage(YTSearchHelper.SearchType type, String text, int pageNumber) {
+    loadPage(YTSearchHelper.SearchType type, String text, String title, int pageNumber) {
         if (pageNumber < 1
             || pageNumber > getLastPage()) {
             UiUtils.showTextToast(this, R.string.err_ytsearch);
@@ -165,6 +164,7 @@ YTSearchHelper.SearchDoneReceiver {
             = new YTSearchHelper.SearchArg(pageNumber,
                                            type,
                                            text,
+                                           title,
                                            getStarti(pageNumber),
                                            NR_ENTRY_PER_PAGE);
         Err err = mSearchHelper.searchAsync(arg);
@@ -176,13 +176,13 @@ YTSearchHelper.SearchDoneReceiver {
 
     private void
     loadNext() {
-        loadPage(mSearchSt.type, mSearchSt.text, mSearchSt.curPage + 1);
+        loadPage(mSearchSt.type, mSearchSt.text, mSearchSt.title, mSearchSt.curPage + 1);
     }
 
     private void
     loadPrev() {
         eAssert(mSearchSt.curPage > 1);
-        loadPage(mSearchSt.type, mSearchSt.text, mSearchSt.curPage - 1);
+        loadPage(mSearchSt.type, mSearchSt.text, mSearchSt.title, mSearchSt.curPage - 1);
     }
 
 
@@ -203,13 +203,8 @@ YTSearchHelper.SearchDoneReceiver {
     }
 
     protected void
-    setupTopBar() {
-        //View barv = findViewById(R.id.topbar);
-    }
-
-    protected void
-    setupBottomBar(int toolBtnDrawable,
-                   View.OnClickListener onYtSearch) {
+    setupToolBtn(int toolBtnDrawable,
+                 View.OnClickListener onYtSearch) {
         View barv = findViewById(R.id.bottombar);
         ImageView iv = (ImageView)barv.findViewById(R.id.next);
         iv.setOnClickListener(new View.OnClickListener() {
@@ -315,17 +310,9 @@ YTSearchHelper.SearchDoneReceiver {
     }
 
     protected void
-    loadFirstPage(YTSearchHelper.SearchType type, String text) {
-        loadPage(type, text, 1);
+    loadFirstPage(YTSearchHelper.SearchType type, String text, String title) {
+        loadPage(type, text, title, 1);
     }
-
-    @Override
-    public void
-    searchDone(YTSearchHelper helper, YTSearchHelper.SearchArg arg,
-               YTFeed.Result result, Err err) {
-        handleSearchResult(helper, arg, result, err);
-    }
-
 
     @Override
     public void

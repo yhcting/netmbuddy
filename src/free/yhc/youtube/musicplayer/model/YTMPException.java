@@ -21,14 +21,26 @@
 package free.yhc.youtube.musicplayer.model;
 
 public class YTMPException extends Exception {
-    private Err mErr;
+    private Err     mErr;
+    private Object  mExtra;
 
     public YTMPException(Err err) {
         mErr = err;
+        mExtra = null;
+    }
+
+    public YTMPException(Err err, Object extra) {
+        mErr = err;
+        mExtra = extra;
     }
 
     public Err
     getError() {
         return mErr;
+    }
+
+    public Object
+    getExtra() {
+        return mExtra;
     }
 }

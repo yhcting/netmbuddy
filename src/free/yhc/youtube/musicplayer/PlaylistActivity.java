@@ -52,6 +52,7 @@ import free.yhc.youtube.musicplayer.model.Policy;
 import free.yhc.youtube.musicplayer.model.UiUtils;
 import free.yhc.youtube.musicplayer.model.Utils;
 import free.yhc.youtube.musicplayer.model.YTPlayer;
+import free.yhc.youtube.musicplayer.model.YTSearchHelper;
 
 public class PlaylistActivity extends Activity {
     private final DB            mDb = DB.get();
@@ -362,14 +363,16 @@ public class PlaylistActivity extends Activity {
 
     private void
     onMenuMoreYtSearchAuthor(final View anchor) {
-        // Not implemented yet.
-        eAssert(false);
+        Intent i = new Intent(this, YTVideoSearchActivity.class);
+        i.putExtra(YTVideoSearchActivity.INTENT_KEY_SEARCH_TYPE,
+                   YTSearchHelper.SearchType.VID_AUTHOR.name());
+        startActivity(i);
     }
 
     private void
     onMenuMoreYtSearchPlaylist(final View anchor) {
-        // Not implemented yet.
-        eAssert(false);
+        Intent i = new Intent(PlaylistActivity.this, YTPlaylistSearchActivity.class);
+        startActivity(i);
     }
 
     private void
@@ -486,6 +489,8 @@ public class PlaylistActivity extends Activity {
             @Override
             public void onClick(View v) {
                 Intent i = new Intent(PlaylistActivity.this, YTVideoSearchActivity.class);
+                i.putExtra(YTVideoSearchActivity.INTENT_KEY_SEARCH_TYPE,
+                        YTSearchHelper.SearchType.VID_KEYWORD.name());
                 startActivity(i);
             }
         });

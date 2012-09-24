@@ -33,6 +33,7 @@ public class HttpUtils {
     public static final int SC_FOUND        = 302;
 
     // Client Error     : 4xx
+    public static final int SC_NOT_FOUND    = 404;
 
     // Server Error     : 5xx
 

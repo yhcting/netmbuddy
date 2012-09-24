@@ -32,6 +32,12 @@ import free.yhc.youtube.musicplayer.model.YTVideoFeed;
 public class YTVideoSearchActivity extends YTSearchActivity implements
 YTSearchHelper.SearchDoneReceiver,
 DBHelper.CheckExistDoneReceiver {
+    public static final String  INTENT_KEY_SEARCH_TYPE  = "searchtype";
+    public static final String  INTENT_KEY_SEARCH_TEXT  = "searchtext";
+    public static final String  INTENT_KEY_SEARCH_TITLE = "searchtitle";
+
+    private final DB        mDb = DB.get();
+
     private DBHelper        mDbHelper;
 
 
@@ -41,7 +47,7 @@ DBHelper.CheckExistDoneReceiver {
     }
 
     private void
-    doNewKeywordSearch() {
+    doNewSearch(final YTSearchHelper.SearchType type, int title) {
         UiUtils.EditTextAction action = new UiUtils.EditTextAction() {
             @Override
             public void prepare(Dialog dialog, EditText edit) { }
@@ -49,11 +55,11 @@ DBHelper.CheckExistDoneReceiver {
             public void onOk(Dialog dialog, EditText edit) {
                 String word = edit.getText().toString();
                 RTState.get().setLastSearchWord(edit.getText().toString());
-                loadFirstPage(YTSearchHelper.SearchType.VID_KEYWORD, word);
+                loadFirstPage(type, word, word);
             }
         };
         AlertDialog diag = UiUtils.buildOneLineEditTextDialog(this,
-                                                              R.string.enter_keyword,
+                                                              title,
                                                               RTState.get().getLastSearchWord(),
                                                               action);
         diag.show();
@@ -150,7 +156,9 @@ DBHelper.CheckExistDoneReceiver {
 
     private void
     onVideosOfThisAuthor(final int position) {
-        loadFirstPage(YTSearchHelper.SearchType.VID_AUTHOR, getAdapter().getItemAuthor(position));
+        loadFirstPage(YTSearchHelper.SearchType.VID_AUTHOR,
+                      getAdapter().getItemAuthor(position),
+                      getAdapter().getItemAuthor(position));
     }
 
     private void
@@ -176,7 +184,9 @@ DBHelper.CheckExistDoneReceiver {
     public void
     searchDone(YTSearchHelper helper, YTSearchHelper.SearchArg arg,
                YTFeed.Result result, Err err) {
-        super.searchDone(helper, arg, result, err);
+        if (!handleSearchResult(helper, arg, result, err))
+            return; // There is an error in search
+
         mDbHelper.checkExistAsync(new DBHelper.CheckExistArg(arg, (YTVideoFeed.Entry[])result.entries));
     }
 
@@ -202,10 +212,14 @@ DBHelper.CheckExistDoneReceiver {
             titleText += getResources().getText(R.string.author);
             break;
 
+        case VID_PLAYLIST:
+            titleText += getResources().getText(R.string.playlist);
+            break;
+
         default:
             eAssert(false);
         }
-        titleText += " : " + sarg.text;
+        titleText += " : " + sarg.title;
         ((TextView)findViewById(R.id.title)).setText(titleText);
 
         // First request is done!
@@ -253,7 +267,7 @@ DBHelper.CheckExistDoneReceiver {
     onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
         super.onCreateContextMenu(menu, v, menuInfo);
         MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.ytsearch_context, menu);
+        inflater.inflate(R.menu.ytvideosearch_context, menu);
         // AdapterContextMenuInfo mInfo = (AdapterContextMenuInfo)menuInfo;
         boolean visible = (YTSearchHelper.SearchType.VID_AUTHOR == getSearchType())? false: true;
         menu.findItem(R.id.videos_of_this_author).setVisible(visible);
@@ -271,22 +285,63 @@ DBHelper.CheckExistDoneReceiver {
             }
         });
 
-        mSearchHelper = new YTSearchHelper();
-        mSearchHelper.setSearchDoneRecevier(this);
-
         mDbHelper = new DBHelper();
         mDbHelper.setCheckExistDoneReceiver(this);
         mDbHelper.open();
 
-        setupTopBar();
-        setupBottomBar(R.drawable.ic_ytsearch,
-                       new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            doNewKeywordSearch();
-                        }
-                    });
-        doNewKeywordSearch();
+        String stypeStr = getIntent().getStringExtra(INTENT_KEY_SEARCH_TYPE);
+        final String stext = getIntent().getStringExtra(INTENT_KEY_SEARCH_TEXT);
+        final String stitle = getIntent().getStringExtra(INTENT_KEY_SEARCH_TITLE);
+
+        YTSearchHelper.SearchType stype = YTSearchHelper.SearchType.VID_KEYWORD;
+        if (null != stypeStr) {
+            for (YTSearchHelper.SearchType st : YTSearchHelper.SearchType.values()) {
+                if (st.name().equals(stypeStr))
+                    stype = st;
+            }
+        }
+
+        int iconDrawable = 0;
+        final int diagTitle;
+        switch (stype) {
+        case VID_KEYWORD:
+            iconDrawable = R.drawable.ic_ytsearch;
+            diagTitle = R.string.enter_keyword;
+            break;
+
+        case VID_AUTHOR:
+            iconDrawable = R.drawable.ic_ytsearch;
+            diagTitle = R.string.enter_user_name;
+            break;
+
+        case VID_PLAYLIST:
+            diagTitle = 0;
+            break;
+
+        default:
+            diagTitle = 0;
+            eAssert(false);
+        }
+
+        final YTSearchHelper.SearchType searchType = stype;
+        setupToolBtn(iconDrawable,
+                     new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                doNewSearch(searchType, diagTitle);
+            }
+        });
+
+        if (null == stext)
+            doNewSearch(searchType, R.string.enter_keyword);
+        else
+            Utils.getUiHandler().post(new Runnable() {
+                @Override
+                public void run() {
+                    String title = (null == stitle)? stext: stitle;
+                    loadFirstPage(searchType, stext, title);
+                }
+            });
     }
 
     @Override
