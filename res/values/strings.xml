@@ -1,118 +1,118 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">유투브 뮤직 플레이어</string>
-    <string name="yes">예</string>
-    <string name="no">아니오</string>
-    <string name="on">켜기</string>
-    <string name="off">끄기</string>
-    <string name="ok">확인</string>
-    <string name="cancel">취소</string>
-    <string name="delete">삭제</string>
-    <string name="rename">이름 수정</string>
-    <string name="loading">로딩</string>
-    <string name="deleting">삭제 중</string>
-    <string name="error">에러</string>
-    <string name="buffering">버퍼링</string>
-    <string name="keyword">검색어</string>
-    <string name="author">제작자</string>
-    <string name="volume">볼륨</string>
-    <string name="database">데이타베이스</string>
-    <string name="export">내보내기</string>
-    <string name="import_">가져오기</string>
-    <string name="merge">합치기</string>
+    <string name="app_name">YTMPlayer</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="on">On</string>
+    <string name="off">Off</string>
+    <string name="ok">Ok</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete">Delete</string>
+    <string name="rename">Rename</string>
+    <string name="loading">Loading</string>
+    <string name="deleting">Deleting</string>
+    <string name="error">Error</string>
+    <string name="buffering">Buffering</string>
+    <string name="keyword">Search word</string>
+    <string name="author">Author</string>
+    <string name="volume">Volume</string>
+    <string name="database">Database</string>
+    <string name="export">Export</string>
+    <string name="import_">Import</string>
+    <string name="merge">Merge</string>
 
-    <string name="enter_keyword">검색어 입력</string>
-    <string name="new_search">새로 검색하기</string>
-    <string name="detail_list">상세 목록 보기</string>
-    <string name="enter_new_name">새 이름 입력</string>
-    <string name="new_playlist">새 재생목록</string>
-    <string name="add_to">추가</string>
-    <string name="move_to">이동</string>
-    <string name="enter_playlist_title">재생목록 이름 입력</string>
-    <string name="recently_played">최근 재생목록</string>
-    <string name="set_to_plthumbnail">재생목록 아이콘으로 사용</string>
-    <string name="dbmore">데이타베이스 =&gt;</string>
-    <string name="app_info">어플 정보</string>
-    <string name="feedback">의견 보내기</string>
-    <string name="choose_app">어플리케이션 선택</string>
-    <string name="play_video">비디오 재생</string>
-    <string name="videos_of_this_author">제작자의 다른 비디오들</string>
+    <string name="enter_keyword">Enter search keyword</string>
+    <string name="new_search">New search</string>
+    <string name="detail_list">Detail list</string>
+    <string name="enter_new_name">Enter new name</string>
+    <string name="new_playlist">New playlist</string>
+    <string name="add_to">Add to</string>
+    <string name="move_to">Move to</string>
+    <string name="enter_playlist_title">Enter playlist title</string>
+    <string name="recently_played">Recently played</string>
+    <string name="set_to_plthumbnail">Set as playlist icon</string>
+    <string name="dbmore">Database =&gt;</string>
+    <string name="app_info">App. infomation</string>
+    <string name="feedback">Feedback</string>
+    <string name="choose_app">Choose App.</string>
+    <string name="play_video">Play video</string>
+    <string name="videos_of_this_author">Videos of this author</string>
 
-    <string name="importing_db">DB를 가져오는 중</string>
-    <string name="merging_db">DB를 합치는 중</string>
-    <string name="exporting_db">DB를 내보내는 중</string>
+    <string name="importing_db">Importing DB</string>
+    <string name="merging_db">Merging DB</string>
+    <string name="exporting_db">Exporting DB</string>
 
-    <string name="pref_cat_operation">재생 방식 설정</string>
-    <string name="pref_shuffle">임의 순서로 재생</string>
-    <string name="pref_shuffle_desc">음악 재생시 재생되는 곡의 순서가 무작위로 됩니다.</string>
-    <string name="pref_repeat">반복 재생</string>
-    <string name="pref_repeat_desc">계속해서 반복되어 음악이 재생 됩니다.</string>
-    <string name="pref_autostop">자동정지</string>
-    <string name="pref_autostop_desc">재생이 시작되는 시점부터 일정 시간 후 재생이 자동으로 중단됩니다.\n따라서, 재생 중에 이 값을 바꿀 경우, 현재의 재생시간에는 영향을 주지 않습니다.\n음악 들으면서 잠들때 유용합니다.</string>
+    <string name="pref_cat_operation">Playing music</string>
+    <string name="pref_shuffle">Shuffle</string>
+    <string name="pref_shuffle_desc">Play musics in random order.</string>
+    <string name="pref_repeat">Repeat</string>
+    <string name="pref_repeat_desc">Play musics repeatedly.</string>
+    <string name="pref_autostop">Auto-stop</string>
+    <string name="pref_autostop_desc">Play will be stopped after given time from starting musics.\nChanging in the middle of playing does not effective at current playing session.\nUseful when sleep with listening musics.</string>
 
-    <string name="pref_autostop_30m">30분</string>
-    <string name="pref_autostop_1h">1시간</string>
-    <string name="pref_autostop_2h">2시간</string>
+    <string name="pref_autostop_30m">30 minutes</string>
+    <string name="pref_autostop_1h">1 hour</string>
+    <string name="pref_autostop_2h">2 hours</string>
 
-    <string name="guide_title_first_playlist">첫번째 재생목록 만들기</string>
-    <string name="guide_desc_first_playlist">아이콘을 터치해서 원하는 검색어로 유투브를 검색합니다.\n검색이 완료되면, 검색된 유튜브 목록 중 하나를 길게 터치해서 새 재생목록을 만들어서 곡을 추가합니다.</string>
-    <string name="guide_title_tool_buttons">도구 버튼 설명</string>
-    <string name="guide_desc_playall">재생목록에 관계없이 등록된 모든 곡을 재생합니다.</string>
-    <string name="guide_desc_recently_played">최근 재생된 순서를 보여줍니다.</string>
-    <string name="guide_desc_dbsearch">검색어로 등록된 음악들을 검색합니다.</string>
-    <string name="guide_desc_ytsearch">검색어로 유투브를 검색합니다. 새로운 음악을 등록할 수 있습니다.\n이미 등록된 곡은 회색으로, 등록되지 않은 곡은 노랑색 글씨로 보여집니다. </string>
-    <string name="guide_desc_preference">어플리케이션 동작을 설정합니다.</string>
-    <string name="guide_desc_more">기타 자주 사용하지 않는 하위 메뉴들을 봅니다.</string>
-    <string name="guide_title_playlist_buttons">재생목록 도구버튼 설명</string>
-    <string name="guide_desc_playlist_row">리스트의 항목을 터치하면, 재생목록에 등록된 음악 전체를 재생합니다.</string>
-    <string name="guide_desc_detaillist">재생목록에 등록된 모든 곡의 목록을 보여줍니다.</string>
+    <string name="guide_title_first_playlist">Making my first playlist.</string>
+    <string name="guide_desc_first_playlist">Touching this icon to search Youbute with keywords\nThen, do long-touch one of list-item to make new playlist and add the item to the playlist.</string>
+    <string name="guide_title_tool_buttons">Tool buttons.</string>
+    <string name="guide_desc_playall">Plays all registered musics regardless of playlist.</string>
+    <string name="guide_desc_recently_played">Lists recently played musics.</string>
+    <string name="guide_desc_dbsearch">Searchs musics registered at local playlist with keywords.</string>
+    <string name="guide_desc_ytsearch">Searchs Youbute with keywords to register new music to local playlist.\nRegistered musics and not-registered musics are displayed with gray and yellow text, respectively. </string>
+    <string name="guide_desc_preference">Sets preference.</string>
+    <string name="guide_desc_more">Shows sub-menus those are not used often.</string>
+    <string name="guide_title_playlist_buttons">Tool buttons of each playlist.</string>
+    <string name="guide_desc_playlist_row">Play all musics belonging to the playlist by touching row at the list.</string>
+    <string name="guide_desc_detaillist">Lists all musics belongs to the playlist.</string>
 
-    <string name="report_opinion_title">[유투브 뮤직 플레이어] 의견</string>
+    <string name="report_opinion_title">[Youtube Music Player] Opinion</string>
 
-    <string name="msg_not_implemented">아직 개발 중인 기능입니다.</string>
-    <string name="msg_ytplayer_err">재생에 실패했습니다.</string>
-    <string name="msg_initialize_app">어플리케이션을 준비중입니다.</string>
-    <string name="msg_unknown_format">알수 없는 형식의 유투브 비디오 입니다.</string>
-    <string name="msg_no_thumbnail">이미지가 로드되기 전입니다.\n이미지가 로드된 후 다시 시도해 주세요.</string>
-    <string name="msg_existing_playlist">같은 이름의 재생목록이 이미 존재합니다.</string>
-    <string name="msg_existing_muisc">같은 음악이 이미 재생목록에 존재합니다.</string>
-    <string name="msg_wait_cancel">취소가 완료되길 기다리고 있습니다.</string>
-    <string name="msg_preparing_mplayer">음악을 재생하기 위해 준비 중입니다..</string>
-    <string name="msg_playing_done">재생이 모두 완료되었습니다.</string>
-    <string name="msg_playing_stopped">재생이 중지되었습니다.</string>
-    <string name="msg_playing_err_unknown">음악 재생 중 알수 없는 오류가 발생했습니다.</string>
-    <string name="msg_empty_playlist">비어있는 재생목록입니다.</string>
-    <string name="msg_fail_find_app">수행에 필요한 어플리케이션을 찾을 수 없습니다.</string>
-    <string name="msg_fail_access_exdb">외부 데이타베이스 파일에 접근할 수 없습니다.</string>
-    <string name="msg_delete_music">모든 재생목록에서 제거합니다.</string>
+    <string name="msg_not_implemented">Not implemented yet.</string>
+    <string name="msg_ytplayer_err">Fail in playing.</string>
+    <string name="msg_initialize_app">Preparing application.</string>
+    <string name="msg_unknown_format">Video format is unknown.</string>
+    <string name="msg_no_thumbnail">Thumbnail is not loaded yet.\nTry again after loading thumbnail is done.</string>
+    <string name="msg_existing_playlist">Playlist name is already in used.</string>
+    <string name="msg_existing_muisc">Same music is already in the playlist.</string>
+    <string name="msg_wait_cancel">Waiting for canceling.</string>
+    <string name="msg_preparing_mplayer">Preparing for playing musics.</string>
+    <string name="msg_playing_done">Playing is done.</string>
+    <string name="msg_playing_stopped">Playing is stopped.</string>
+    <string name="msg_playing_err_unknown">Unknown error during playing.</string>
+    <string name="msg_empty_playlist">Playlist is empty.</string>
+    <string name="msg_fail_find_app">Fail in finding appropriate application.</string>
+    <string name="msg_fail_access_exdb">Fail in accessing external database file.</string>
+    <string name="msg_delete_music">Delete from all playlists.</string>
 
-    <string name="err_no_err">성공</string>
-    <string name="err_unknown">알 수 없는 오류가 발생했습니다.</string>
-    <string name="err_interrupted">동작이 중지되었습니다.</string>
-    <string name="err_cancelled">동작이 취소되었습니다.</string>
-    <string name="err_io_net">네트워크 접근에 문제가 발생했습니다.</string>
-    <string name="err_io_file">파일 접근에 문제가 발생했습니다.</string>
-    <string name="err_io_unknown">네트워크 혹은 파일 등, 입출력 자원 사용시 알수 없는 오류가 발생했습니다.</string>
-    <string name="err_db_duplicated">중복된 데이타베이스 데이타입니다.</string>
-    <string name="err_db_version_mismatch">데이타베이스 버젼이 서로 맞지 않습니다.</string>
-    <string name="err_db_invalid">알 수 없는 형식의 데이타베이스 입니다.</string>
-    <string name="err_db_unknown">알 수 없는 데이타베이스 오류가 발생했습니다.</string>
-    <string name="err_invalid_url">인터넷 주소가 잘못 되었습니다.</string>
-    <string name="err_parser_unknown">유투브 정보를 읽어오는데 실패했습니다.</string>
-    <string name="err_no_match">일치하는 결과를 찾을 수 없습니다.</string>
-    <string name="err_ytsearch">유투브 검색에 실패했습니다.</string>
-    <string name="err_ytprotocol">유투브와 통신중 알 수 없는 오류가 발생했습니다 .</string>
-    <string name="err_network_unavailable">네트워크를 사용할 수 없습니다.</string>
-    <string name="err_end_of_data">마지막 데이타입니다.</string>
+    <string name="err_no_err">Success.</string>
+    <string name="err_unknown">Unknown error.</string>
+    <string name="err_interrupted">Interrupted.</string>
+    <string name="err_cancelled">Cancelled.</string>
+    <string name="err_io_net">Error in accessing network.</string>
+    <string name="err_io_file">Error in accessing local file.</string>
+    <string name="err_io_unknown">Error in IO operation - network or file etc.</string>
+    <string name="err_db_duplicated">Duplicated database item.</string>
+    <string name="err_db_version_mismatch">Database versions are mismatched.</string>
+    <string name="err_db_invalid">Invalid database.</string>
+    <string name="err_db_unknown">Unknown database error.</string>
+    <string name="err_invalid_url">Invalid URL.</string>
+    <string name="err_parser_unknown">Fail in parsing Youtube data.</string>
+    <string name="err_no_match">No matching result.</string>
+    <string name="err_ytsearch">Fail in searching Youtube.</string>
+    <string name="err_ytprotocol">Error in communication between Youtube.</string>
+    <string name="err_network_unavailable">Network is unavailable.</string>
+    <string name="err_end_of_data">End of data.</string>
 
     <string name="appinfo_text">
-유투브 뮤직 플레이어\n
+Youtube Music Player(YTMPlayer)\n
 E-mail : yhcting77@gmail.com\n
-블로그 : yhcting.tistory.com\n
+Blog : yhcting.tistory.com\n
 \n
-소프트웨어 엔지니어 하면서 가족한테 무언가 해 준 기억이 없었습니다.\n
-그런데, 새로 스마트폰을 장만한 아내가 유투브에서 음악을 쉽게 그리고, 여러개를 계속해서 들을 수 있으면 좋겠다고 하더군요.\n
-그래서 틈틈히 만들었습니다.\n
-사랑하는 아내의 사진을 기념으로 넣었습니다.
+I have not contributed anything to my family as a software engineer.\n
+Therefore, my boss(wife) would like to listen to bunch of Youtube musics easily and continuously on her new smart phone, without any user interaction.\n
+So, I have been programming in my spare time.\n
+Here is my lovely wife. Thanks to my wife with my heart.
     </string>
 </resources>
