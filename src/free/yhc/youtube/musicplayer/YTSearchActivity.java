@@ -52,7 +52,6 @@ import free.yhc.youtube.musicplayer.model.RTState;
 import free.yhc.youtube.musicplayer.model.UiUtils;
 import free.yhc.youtube.musicplayer.model.Utils;
 import free.yhc.youtube.musicplayer.model.YTPlayer;
-import free.yhc.youtube.musicplayer.model.YTSearchApi;
 import free.yhc.youtube.musicplayer.model.YTSearchHelper;
 
 public class YTSearchActivity extends Activity implements
@@ -81,7 +80,7 @@ DBHelper.CheckExistDoneReceiver {
     };
 
     private static class YtSearchState {
-        YTSearchHelper.SearchType   type            = YTSearchHelper.SearchType.KEYWORD;
+        YTSearchHelper.SearchType   type            = YTSearchHelper.SearchType.VID_KEYWORD;
         String                      text            = "";
         int                         curPage         = -1;
         int                         totalResults    = -1;
@@ -236,7 +235,7 @@ DBHelper.CheckExistDoneReceiver {
             public void onOk(Dialog dialog, EditText edit) {
                 String word = edit.getText().toString();
                 RTState.get().setLastSearchWord(edit.getText().toString());
-                loadPage(YTSearchHelper.SearchType.KEYWORD, word, 1);
+                loadPage(YTSearchHelper.SearchType.VID_KEYWORD, word, 1);
             }
         };
         AlertDialog diag = UiUtils.buildOneLineEditTextDialog(this,

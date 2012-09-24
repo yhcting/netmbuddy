@@ -56,7 +56,7 @@ public class YTSearchHelper {
 
     public interface SearchDoneReceiver {
         void searchDone(YTSearchHelper helper, SearchArg arg,
-                          YTSearchApi.Result result, Err err);
+                        YTFeed.Result result, Err err);
     }
 
     public interface LoadThumbnailDoneReceiver {
@@ -65,8 +65,11 @@ public class YTSearchHelper {
     }
 
     public static enum SearchType {
-        KEYWORD,
-        AUTHOR
+        VID_KEYWORD,
+        VID_AUTHOR,
+        VID_PLAYLIST,
+        PL_USER,
+
     }
 
     public static class SearchArg {
@@ -97,6 +100,11 @@ public class YTSearchHelper {
             width = aWidth;
             height = aHeight;
         }
+    }
+
+    private static enum FeedType {
+        VIDEO,
+        PLAYLIST
     }
 
     private class BGThread extends HandlerThread {
@@ -133,8 +141,8 @@ public class YTSearchHelper {
             return data;
         }
 
-        private YTSearchApi.Result
-        parseFeed(byte[] xmlData) throws YTMPException {
+        private YTFeed.Result
+        parse(byte[] xmlData, FeedType type) throws YTMPException {
             Document dom;
             try {
                 dom = DocumentBuilderFactory.newInstance()
@@ -151,20 +159,42 @@ public class YTSearchHelper {
                 throw new YTMPException(Err.PARSER_UNKNOWN);
             }
 
-            return YTSearchApi.parseSearchFeed(dom);
+            switch (type) {
+            case VIDEO:
+                return YTVideoFeed.parseFeed(dom);
+
+            case PLAYLIST:
+                return YTPlaylistFeed.parseFeed(dom);
+
+            default:
+                eAssert(false);
+            }
+            return null;
         }
 
         private void
         handleSearch(SearchArg arg) {
-            YTSearchApi.Result r = null;
+            YTFeed.Result r = null;
             try {
                 switch (arg.type) {
-                case KEYWORD:
-                    r = parseFeed(loadUrl(YTSearchApi.getFeedUrlByKeyword(arg.text, arg.starti, arg.max)));
+                case VID_KEYWORD:
+                    r = parse(loadUrl(YTVideoFeed.getFeedUrlByKeyword(arg.text, arg.starti, arg.max)),
+                              FeedType.VIDEO);
                     break;
 
-                case AUTHOR:
-                    r = parseFeed(loadUrl(YTSearchApi.getFeedUrlByAuthor(arg.text, arg.starti, arg.max)));
+                case VID_AUTHOR:
+                    r = parse(loadUrl(YTVideoFeed.getFeedUrlByAuthor(arg.text, arg.starti, arg.max)),
+                              FeedType.VIDEO);
+                    break;
+
+                case VID_PLAYLIST:
+                    r = parse(loadUrl(YTVideoFeed.getFeedUrlByPlaylist(arg.text, arg.starti, arg.max)),
+                              FeedType.VIDEO);
+                    break;
+
+                case PL_USER:
+                    r = parse(loadUrl(YTVideoFeed.getFeedUrlByPlaylist(arg.text, arg.starti, arg.max)),
+                              FeedType.PLAYLIST);
                     break;
 
                 default:
@@ -172,10 +202,10 @@ public class YTSearchHelper {
                 }
             } catch (YTMPException e) {
                 eAssert(Err.NO_ERR != e.getError());
-                sendSearchDone(arg, null, e.getError());
+                sendFeedDone(arg, null, e.getError());
                 return;
             }
-            sendSearchDone(arg, r, Err.NO_ERR);
+            sendFeedDone(arg, r, Err.NO_ERR);
         }
 
         private void
@@ -206,7 +236,7 @@ public class YTSearchHelper {
     }
 
     private void
-    sendSearchDone(final SearchArg arg, final YTSearchApi.Result res, final Err err) {
+    sendFeedDone(final SearchArg arg, final YTFeed.Result res, final Err err) {
         Utils.getUiHandler().post(new Runnable() {
             @Override
             public void
