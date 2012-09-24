@@ -201,7 +201,7 @@ DBHelper.CheckExistDoneReceiver {
         }
 
         YTSearchHelper.SearchArg sarg = (YTSearchHelper.SearchArg)arg.tag;
-        saveSearchArg(sarg.type, sarg.text);
+        saveSearchArg(sarg.type, sarg.text, sarg.title);
         String titleText = "";
         switch (sarg.type) {
         case VID_KEYWORD:

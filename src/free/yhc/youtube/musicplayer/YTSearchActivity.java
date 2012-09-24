@@ -197,9 +197,10 @@ YTSearchHelper.SearchDoneReceiver {
     }
 
     protected void
-    saveSearchArg(YTSearchHelper.SearchType type, String text) {
+    saveSearchArg(YTSearchHelper.SearchType type, String text, String title) {
         mSearchSt.type = type;
         mSearchSt.text = text;
+        mSearchSt.title = title;
     }
 
     protected void

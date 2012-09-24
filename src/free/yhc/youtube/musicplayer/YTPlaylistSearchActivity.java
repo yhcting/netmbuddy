@@ -41,7 +41,7 @@ public class YTPlaylistSearchActivity extends YTSearchActivity {
         };
         AlertDialog diag = UiUtils.buildOneLineEditTextDialog(this,
                                                               R.string.enter_user_name,
-                                                              "",
+                                                              RTState.get().getLastSearchWord(),
                                                               action);
         diag.show();
     }
@@ -66,7 +66,7 @@ public class YTPlaylistSearchActivity extends YTSearchActivity {
             return; // There is an error in search
 
         stopLoadingLookAndFeel();
-        saveSearchArg(arg.type, arg.text);
+        saveSearchArg(arg.type, arg.text, arg.title);
 
         String titleText = arg.text + getResources().getText(R.string.user_playlist_title_suffix);
         ((TextView)findViewById(R.id.title)).setText(titleText);
