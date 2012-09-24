@@ -38,25 +38,13 @@ public class YTVideoFeed extends YTFeed {
     private String mDbgQuery = "";
     private String mDbgXml   = "";
 
-    public static class Result extends YTFeed.Result {
-        public Entry[] enties       = null;
-    }
-
     // Most of them are not used yet.
     // But for future use...
-    public static class Entry {
-        public long         uflag       = 0;    // reserved area for additional UX case.
-        // This is NOT related with Youtube data!
-
-        public boolean      available   = true; // available for this App.
-
+    public static class Entry extends YTFeed.Entry {
         public Author       author      = new Author();
-        public Media        media       = new Media();
         public Statistics   stat        = new Statistics();
         public GdRating     gdRating    = new GdRating();
         public YtRating     ytRating    = new YtRating();
-
-
     }
 
     public static enum ParameterOrderBy {
@@ -180,7 +168,7 @@ public class YTVideoFeed extends YTFeed {
 
             n = n.getNextSibling();
         }
-        res.enties = entryl.toArray(new Entry[0]);
+        res.entries = entryl.toArray(new Entry[0]);
         return res;
     }
 }

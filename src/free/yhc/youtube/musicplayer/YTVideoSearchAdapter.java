@@ -1,23 +1,3 @@
-/*****************************************************************************
- *    Copyright (C) 2012 Younghyung Cho. <yhcting77@gmail.com>
- *
- *    This file is part of YTMPlayer.
- *
- *    This program is free software: you can redistribute it and/or modify
- *    it under the terms of the GNU Lesser General Public License as
- *    published by the Free Software Foundation either version 3 of the
- *    License, or (at your option) any later version.
- *
- *    This program is distributed in the hope that it will be useful,
- *    but WITHOUT ANY WARRANTY; without even the implied warranty of
- *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *    GNU Lesser General Public License
- *    (<http://www.gnu.org/licenses/lgpl.html>) for more details.
- *
- *    You should have received a copy of the GNU General Public License
- *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *****************************************************************************/
-
 package free.yhc.youtube.musicplayer;
 
 import static free.yhc.youtube.musicplayer.model.Utils.eAssert;
@@ -36,17 +16,11 @@ import android.widget.TextView;
 import free.yhc.youtube.musicplayer.model.Err;
 import free.yhc.youtube.musicplayer.model.UiUtils;
 import free.yhc.youtube.musicplayer.model.Utils;
-import free.yhc.youtube.musicplayer.model.YTSearchApi;
+import free.yhc.youtube.musicplayer.model.YTFeed;
 import free.yhc.youtube.musicplayer.model.YTSearchHelper;
+import free.yhc.youtube.musicplayer.model.YTVideoFeed;
 
-// ===========================================================================
-//
-// Maximum size of this adapter is YTSearchApi.NR_SEARCH_MAX (50)
-// So, the adapter doens't need to reuse view - 50 is small enough.
-// For convenience and performance reason, view is not reused here.
-//
-// ===========================================================================
-public class YTSearchAdapter extends BaseAdapter implements
+public class YTVideoSearchAdapter extends BaseAdapter implements
 YTSearchHelper.LoadThumbnailDoneReceiver {
     // Flags
     public static final long FENT_EXIST_NEW = 0x0;
@@ -63,11 +37,11 @@ YTSearchHelper.LoadThumbnailDoneReceiver {
     // View holder for each item
     private View[]                  mItemViews;
     private Bitmap[]                mThumbnails;
-    private YTSearchApi.Entry[]     mEntries;
+    private YTFeed.Entry[]          mEntries;
 
-    YTSearchAdapter(Context context,
-                    YTSearchHelper helper,
-                    YTSearchApi.Entry[] entries) {
+    YTVideoSearchAdapter(Context context,
+                         YTSearchHelper helper,
+                         YTFeed.Entry[] entries) {
         super();
         mCxt = context;
         mHelper = helper;
@@ -105,7 +79,7 @@ YTSearchHelper.LoadThumbnailDoneReceiver {
     }
 
     private void
-    setItemView(View v, YTSearchApi.Entry e) {
+    setItemView(View v, YTFeed.Entry e) {
         eAssert(null != v);
 
         if (!e.available) {
@@ -176,12 +150,12 @@ YTSearchHelper.LoadThumbnailDoneReceiver {
 
     public String
     getItemAuthor(int pos) {
-        return mEntries[pos].author.name;
+        return ((YTVideoFeed.Entry)mEntries[pos]).author.name;
     }
 
     public void
     markEntryExist(int pos) {
-        YTSearchApi.Entry e = mEntries[pos];
+        YTFeed.Entry e = mEntries[pos];
         e.uflag = Utils.bitSet(e.uflag, FENT_EXIST_DUP, MENT_EXIST);
         markViewInvalid(pos);
         notifyDataSetChanged();
@@ -229,7 +203,7 @@ YTSearchHelper.LoadThumbnailDoneReceiver {
         if (isViewValid(position))
             return v;
 
-        YTSearchApi.Entry e = mEntries[position];
+        YTFeed.Entry e = mEntries[position];
         setItemView(v, e);
         return v;
     }

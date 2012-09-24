@@ -55,20 +55,12 @@ import org.w3c.dom.Node;
 //</entry>
 public class YTPlaylistFeed extends YTFeed {
 
-    public static class Result extends YTFeed.Result {
-        public Entry[] enties       = null;
-    }
-
     // Most of them are not used yet.
     // But for future use...
-    public static class Entry {
-        public long     uflag       = 0;    // reserved area for additional UX case.
-        public boolean  available   = true; // available for this App.
-
+    public static class Entry extends YTFeed.Entry {
         public String   title       = "";
         public String   summary     = "";
         public String   playlistId  = "";
-        public Media    media       = new Media();
     }
 
 
@@ -125,7 +117,7 @@ public class YTPlaylistFeed extends YTFeed {
 
             n = n.getNextSibling();
         }
-        res.enties = entryl.toArray(new Entry[0]);
+        res.entries = entryl.toArray(new Entry[0]);
         return res;
     }
 }

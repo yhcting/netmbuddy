@@ -485,7 +485,7 @@ public class PlaylistActivity extends Activity {
         ((ImageView)findViewById(R.id.ytsearch)).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent i = new Intent(PlaylistActivity.this, YTSearchActivity.class);
+                Intent i = new Intent(PlaylistActivity.this, YTVideoSearchActivity.class);
                 startActivity(i);
             }
         });

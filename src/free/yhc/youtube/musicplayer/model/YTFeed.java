@@ -7,13 +7,21 @@ import org.w3c.dom.Node;
 
 public abstract class YTFeed {
     public static class Result {
-        public Header  header       = null;
+        public Header   header          = null;
+        public Entry[]  entries         = null;
     }
 
     public static class Header {
-        public String  totalResults = "-1";
-        public String  startIndex   = "-1";
-        public String  itemsPerPage = "-1";
+        public String   totalResults    = "-1";
+        public String   startIndex      = "-1";
+        public String   itemsPerPage    = "-1";
+    }
+
+    public static class Entry {
+        public long     uflag       = 0;    // reserved area for additional UX case.
+        public boolean  available   = true; // available for this App.
+
+        public Media    media       = new Media();
     }
 
     public static class Author {

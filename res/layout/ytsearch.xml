@@ -48,13 +48,12 @@
                 android:orientation="horizontal"
                 >
                 <ImageView
-                    android:id="@+id/search"
+                    android:id="@+id/toolbtn"
                     android:layout_width="@dimen/toolbtn_width"
                     android:layout_height="@dimen/toolbtn_height"
                     android:gravity="center"
                     android:scaleType="fitCenter"
                     android:clickable="true"
-                    android:src="@drawable/ic_ytsearch"
                     />
             </LinearLayout>
             <ImageView
