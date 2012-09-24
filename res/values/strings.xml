@@ -17,6 +17,9 @@
     <string name="author">제작자</string>
     <string name="volume">볼륨</string>
     <string name="database">데이타베이스</string>
+    <string name="export">내보내기</string>
+    <string name="import_">가져오기</string>
+    <string name="merge">합치기</string>
 
     <string name="enter_keyword">검색어 입력</string>
     <string name="new_search">새로 검색하기</string>
@@ -28,9 +31,7 @@
     <string name="enter_playlist_title">재생목록 이름 입력</string>
     <string name="recently_played">최근 재생목록</string>
     <string name="set_to_plthumbnail">재생목록 아이콘으로 사용</string>
-    <string name="exportdb">DB 내보내기</string>
-    <string name="importdb">DB 가져오기</string>
-    <string name="mergedb">DB 합치기</string>
+    <string name="dbmore">데이타베이스 =&gt;</string>
     <string name="app_info">어플 정보</string>
     <string name="feedback">의견 보내기</string>
     <string name="choose_app">어플리케이션 선택</string>

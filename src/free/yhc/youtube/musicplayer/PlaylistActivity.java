@@ -207,10 +207,10 @@ public class PlaylistActivity extends Activity {
     }
 
     private void
-    onMenuMoreImportDb(View anchor) {
+    onMenuMoreDbImport(View anchor) {
         final File exDbf = new File(Policy.EXTERNAL_DBFILE);
         // Actual import!
-        CharSequence title = getResources().getText(R.string.importdb);
+        CharSequence title = getResources().getText(R.string.import_);
         CharSequence msg = getResources().getText(R.string.database) + " <= " + exDbf.getAbsolutePath();
         UiUtils.buildConfirmDialog(this, title, msg, new UiUtils.ConfirmAction() {
             @Override
@@ -246,10 +246,10 @@ public class PlaylistActivity extends Activity {
     }
 
     private void
-    onMenuMoreMergeDb(View anchor) {
+    onMenuMoreDbMerge(View anchor) {
         final File exDbf = new File(Policy.EXTERNAL_DBFILE);
         // Actual import!
-        CharSequence title = getResources().getText(R.string.mergedb);
+        CharSequence title = getResources().getText(R.string.merge);
         CharSequence msg = getResources().getText(R.string.database) + " <= " + exDbf.getAbsolutePath();
         UiUtils.buildConfirmDialog(this, title, msg, new UiUtils.ConfirmAction() {
             @Override
@@ -285,10 +285,10 @@ public class PlaylistActivity extends Activity {
     }
 
     private void
-    onMenuMoreExportDb(View anchor) {
+    onMenuMoreDbExport(View anchor) {
         final File exDbf = new File(Policy.EXTERNAL_DBFILE);
         // Actual import!
-        CharSequence title = getResources().getText(R.string.exportdb);
+        CharSequence title = getResources().getText(R.string.export);
         CharSequence msg = getResources().getText(R.string.database) + " => " + exDbf.getAbsolutePath();
         UiUtils.buildConfirmDialog(this, title, msg, new UiUtils.ConfirmAction() {
             @Override
@@ -323,6 +323,44 @@ public class PlaylistActivity extends Activity {
     }
 
     private void
+    onMenuMoreDB(final View anchor) {
+        final int[] optStringIds = {
+                R.string.export,
+                R.string.import_,
+                R.string.merge };
+
+        final CharSequence[] items = new CharSequence[optStringIds.length];
+        for (int i = 0; i < optStringIds.length; i++)
+            items[i] = getResources().getText(optStringIds[i]);
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle(R.string.database);
+        builder.setItems(items, new DialogInterface.OnClickListener() {
+            @Override
+            public void
+            onClick(DialogInterface dialog, int item) {
+                switch (optStringIds[item]) {
+                case R.string.export:
+                    onMenuMoreDbExport(anchor);
+                    break;
+
+                case R.string.import_:
+                    onMenuMoreDbImport(anchor);
+                    break;
+
+                case R.string.merge:
+                    onMenuMoreDbMerge(anchor);
+                    break;
+
+                default:
+                    eAssert(false);
+                }
+            }
+        });
+        builder.create().show();
+    }
+
+    private void
     onMenuMoreSendOpinion(View anchor) {
         if (!Utils.isNetworkAvailable()) {
             UiUtils.showTextToast(this, R.string.err_network_unavailable);
@@ -337,9 +375,7 @@ public class PlaylistActivity extends Activity {
     onMenuMore(final View anchor) {
         final int[] optStringIds = {
                 R.string.app_info,
-                R.string.importdb,
-                R.string.mergedb,
-                R.string.exportdb,
+                R.string.dbmore,
                 R.string.feedback };
 
         final CharSequence[] items = new CharSequence[optStringIds.length];
@@ -356,16 +392,8 @@ public class PlaylistActivity extends Activity {
                     onMenuMoreSendOpinion(anchor);
                     break;
 
-                case R.string.exportdb:
-                    onMenuMoreExportDb(anchor);
-                    break;
-
-                case R.string.importdb:
-                    onMenuMoreImportDb(anchor);
-                    break;
-
-                case R.string.mergedb:
-                    onMenuMoreMergeDb(anchor);
+                case R.string.dbmore:
+                    onMenuMoreDB(anchor);
                     break;
 
                 case R.string.app_info:

@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:android="http://schemas.android.com/apk/res/android" >
-    <item android:id="@+id/app_info"		android:title="@string/app_info"></item>
-    <item android:id="@+id/importdb"		android:title="@string/importdb"></item>
-    <item android:id="@+id/mergedb"         android:title="@string/mergedb"></item>
-    <item android:id="@+id/exportdb"		android:title="@string/exportdb"></item>
-    <item android:id="@+id/feedback"		android:title="@string/feedback"></item>
-</menu>
