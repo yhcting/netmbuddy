@@ -56,12 +56,6 @@ public class YTDownloader {
         String  ytvid;
         File    outf;
         int     qscore;
-        public DnArg(String aYtvid, File aOutf) {
-            ytvid = aYtvid;
-            outf = aOutf;
-            // default is lowest quality.
-            qscore = YTHacker.YTQUALITY_SCORE_LOWEST;
-        }
 
         public DnArg(String aYtvid, File aOutf, int aQscore) {
             ytvid = aYtvid;
@@ -190,7 +184,7 @@ public class YTDownloader {
      *   11-character-long youtube video id
      */
     public Err
-    download(final String ytvid, final File outf) {
+    download(final String ytvid, final File outf, final int qscore) {
         eAssert(Utils.isUiThread());
 
         if (outf.exists()) {
@@ -200,7 +194,7 @@ public class YTDownloader {
                     @Override
                     public void run() {
                         mDnDoneRcvr.downloadDone(YTDownloader.this,
-                                                 new DnArg(ytvid, outf),
+                                                 new DnArg(ytvid, outf, qscore),
                                                  Err.NO_ERR);
                     }
                 });
@@ -210,7 +204,7 @@ public class YTDownloader {
 
         if (Utils.isNetworkAvailable()) {
             Message msg = mBgHandler.obtainMessage(MSG_WHAT_DOWNLOAD,
-                                                   new DnArg(ytvid, outf));
+                                                   new DnArg(ytvid, outf, qscore));
             mBgHandler.sendMessage(msg);
             return Err.NO_ERR;
         }

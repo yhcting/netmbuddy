@@ -1007,7 +1007,7 @@ MediaPlayer.OnSeekCompleteListener {
                     try {
                         Thread.sleep(500);
                     } catch (InterruptedException e) {}
-                    downloader.download(vid, getCachedVideo(vid));
+                    downloader.download(vid, getCachedVideo(vid), Policy.DEFAULT_VIDEO_QUAILITY);
                 } else
                     downloader.close();
                 // Ignore other cases even if it is fails.
@@ -1020,7 +1020,7 @@ MediaPlayer.OnSeekCompleteListener {
         // NOTE
         // Only mp4 is supported at YTHacker!
         // So, YTDownloader also supports only mpeg4
-        mYtDnr.download(vid, getCachedVideo(vid));
+        mYtDnr.download(vid, getCachedVideo(vid), Policy.DEFAULT_VIDEO_QUAILITY);
     }
 
     private void
@@ -1099,7 +1099,7 @@ MediaPlayer.OnSeekCompleteListener {
                     return;
                 }
 
-                YTHacker.YtVideo ytv = ythack.getVideo(YTHacker.YTQUALITY_SCORE_MIDLOW);
+                YTHacker.YtVideo ytv = ythack.getVideo(Policy.DEFAULT_VIDEO_QUAILITY);
                 try {
                     mpSetDataSource(Uri.parse(ytv.url));
                 } catch (IOException e) {
