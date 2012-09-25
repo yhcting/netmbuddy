@@ -1092,7 +1092,7 @@ MediaPlayer.OnSeekCompleteListener {
                     return;
                 }
 
-                YTHacker.YtVideo ytv = ythack.getVideo(YTHacker.YTQUALITY_SCORE_LOWEST);
+                YTHacker.YtVideo ytv = ythack.getVideo(YTHacker.YTQUALITY_SCORE_MIDLOW);
                 try {
                     mpSetDataSource(Uri.parse(ytv.url));
                 } catch (IOException e) {
