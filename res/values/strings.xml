@@ -34,8 +34,8 @@
     <string name="enter_playlist_title">Enter playlist title</string>
     <string name="recently_played">Recently played</string>
     <string name="set_to_plthumbnail">Set as playlist icon</string>
-    <string name="dbmore">Database -&gt;</string>
-    <string name="ytsearchmore">Search Youtube -&gt;</string>
+    <string name="dbmore">Database ▶</string>
+    <string name="ytsearchmore">Search Youtube ▶</string>
     <string name="app_info">App. infomation</string>
     <string name="feedback">Feedback</string>
     <string name="choose_app">Choose App.</string>
