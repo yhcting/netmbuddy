@@ -585,7 +585,44 @@ MediaPlayer.OnSeekCompleteListener {
         mMp.stop();
         mpSetState(MPState.STOPPED);
     }
+    // ========================================================================
+    //
+    // Notification Handling
+    //
+    // ========================================================================
+    private void
+    notiConfigure(MPState from, MPState to) {
+        NotiManager nm = NotiManager.get();
+        if (!mVlm.hasActiveVideo()) {
+            nm.removeNotification();
+            return;
+        }
+        String title = mVlm.getActiveVideo().title;
 
+        switch (to) {
+        case PREPARED:
+        case PAUSED:
+            nm.putNotification(NotiManager.NotiType.START, title);
+            break;
+
+        case STARTED:
+            nm.putNotification(NotiManager.NotiType.PAUSE, title);
+            break;
+
+        case ERROR:
+            nm.putNotification(NotiManager.NotiType.ALERT, title);
+            break;
+
+        case BUFFERING:
+        case INITIALIZED:
+        case PREPARING:
+            nm.putNotification(NotiManager.NotiType.STOP, title);
+            break;
+
+        default:
+            nm.putNotification(NotiManager.NotiType.BASE, title);
+        }
+    }
     // ========================================================================
     //
     // Player View Handling
@@ -876,6 +913,7 @@ MediaPlayer.OnSeekCompleteListener {
             return;
 
         pvConfigureAll(mPlayerv, from, to);
+        notiConfigure(from, to);
         switch (to) {
         case PAUSED:
         case INVALID:
@@ -1233,11 +1271,26 @@ MediaPlayer.OnSeekCompleteListener {
             }
         }
     }
+    // ============================================================================
+    //
+    // Package interfaces
+    //
+    // ============================================================================
+    void
+    pauseVideo() {
+        if (isVideoPlaying())
+            mpPause();
+    }
 
+    void
+    startVideo() {
+        if (isVideoPlaying())
+            mpStart();
+    }
 
     // ============================================================================
     //
-    //
+    // Public interfaces
     //
     // ============================================================================
     private YTPlayer() {
@@ -1414,12 +1467,6 @@ MediaPlayer.OnSeekCompleteListener {
             return mpGetVolume();
         return DB.INVALID_VOLUME;
     }
-
-    // ============================================================================
-    //
-    //
-    //
-    // ============================================================================
 
     public boolean
     isVideoPlaying() {

@@ -49,5 +49,11 @@
                 <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
             </intent-filter>
         </receiver>
+        <receiver android:name=".model.NotiManager$NotiIntentReceiver">
+            <intent-filter>
+                <action android:name="ytmplayer.intent.action.NOTIFICATION_DELETE" />
+                <action android:name="ytmplayer.intent.action.NOTIFICATION_ACTION" />
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>
