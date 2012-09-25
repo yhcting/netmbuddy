@@ -931,6 +931,13 @@ MediaPlayer.OnSeekCompleteListener {
         }
     }
 
+    private boolean
+    isVideoPlaying() {
+        return mVlm.hasActiveVideo()
+               && MPState.ERROR != mMpS
+               && MPState.END != mMpS;
+    }
+
     private File
     getCachedVideo(String ytvid) {
         // Only mp4 is supported by YTHacker.
@@ -1278,13 +1285,15 @@ MediaPlayer.OnSeekCompleteListener {
     // ============================================================================
     void
     pauseVideo() {
-        if (isVideoPlaying())
+        if (isVideoPlaying()
+            && MPState.PREPARING != mpGetState())
             mpPause();
     }
 
     void
     startVideo() {
-        if (isVideoPlaying())
+        if (isVideoPlaying()
+            && MPState.PREPARING != mpGetState())
             mpStart();
     }
 
@@ -1469,11 +1478,8 @@ MediaPlayer.OnSeekCompleteListener {
     }
 
     public boolean
-    isVideoPlaying() {
-        return mVlm.hasActiveVideo()
-               && MPState.ERROR != mMpS
-               && MPState.END != mMpS
-               && MPState.PREPARING != mMpS;
+    hasActiveVideo() {
+        return mVlm.hasActiveVideo();
     }
 
     // ============================================================================
