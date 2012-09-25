@@ -378,25 +378,25 @@ public class PlaylistActivity extends Activity {
     private void
     onMenuMoreYtSearch(final View anchor) {
         final int[] optStringIds = {
-                R.string.ytsearch_author,
-                R.string.ytsearch_playlist };
+                R.string.videos_with_author,
+                R.string.user_playlist };
 
         final CharSequence[] items = new CharSequence[optStringIds.length];
         for (int i = 0; i < optStringIds.length; i++)
             items[i] = getResources().getText(optStringIds[i]);
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle(R.string.database);
+        builder.setTitle(R.string.ytsearch);
         builder.setItems(items, new DialogInterface.OnClickListener() {
             @Override
             public void
             onClick(DialogInterface dialog, int item) {
                 switch (optStringIds[item]) {
-                case R.string.ytsearch_author:
+                case R.string.videos_with_author:
                     onMenuMoreYtSearchAuthor(anchor);
                     break;
 
-                case R.string.ytsearch_playlist:
+                case R.string.user_playlist:
                     onMenuMoreYtSearchPlaylist(anchor);
                     break;
                 default:

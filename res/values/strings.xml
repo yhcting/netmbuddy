@@ -35,14 +35,15 @@
     <string name="recently_played">Recently played</string>
     <string name="set_to_plthumbnail">Set as playlist icon</string>
     <string name="dbmore">Database ▶</string>
+    <string name="ytsearch">Search Youtube</string>
     <string name="ytsearchmore">Search Youtube ▶</string>
     <string name="app_info">App. infomation</string>
     <string name="feedback">Feedback</string>
     <string name="choose_app">Choose App.</string>
     <string name="play_video">Play video</string>
     <string name="videos_of_this_author">Videos of this author</string>
-    <string name="ytsearch_author">Search with author</string>
-    <string name="ytsearch_playlist">Search user playlist</string>
+    <string name="videos_with_author">Videos with author</string>
+    <string name="user_playlist">User playlists</string>
     <string name="user_playlist_title_suffix">\'s playlists</string>
     <string name="importing_db">Importing DB</string>
     <string name="merging_db">Merging DB</string>

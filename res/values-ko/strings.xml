@@ -35,14 +35,15 @@
     <string name="recently_played">최근 재생목록</string>
     <string name="set_to_plthumbnail">재생목록 아이콘으로 사용</string>
     <string name="dbmore">데이타베이스 ▶</string>
+    <string name="ytsearch">유투브 검색</string>
     <string name="ytsearchmore">유투브 검색 ▶</string>
     <string name="app_info">어플 정보</string>
     <string name="feedback">의견 보내기</string>
     <string name="choose_app">어플리케이션 선택</string>
     <string name="play_video">비디오 재생</string>
     <string name="videos_of_this_author">제작자의 다른 비디오들</string>
-    <string name="ytsearch_author">제작자로 검색</string>
-    <string name="ytsearch_playlist">사용자 재생목록 검색</string>
+    <string name="videos_with_author">제작자로 비디오</string>
+    <string name="user_playlist">사용자 재생목록</string>
     <string name="user_playlist_title_suffix">의 재생목록</string>
     <string name="importing_db">DB를 가져오는 중</string>
     <string name="merging_db">DB를 합치는 중</string>
