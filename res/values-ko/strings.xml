@@ -13,6 +13,7 @@
     <string name="deleting">삭제 중</string>
     <string name="error">에러</string>
     <string name="buffering">버퍼링</string>
+    <string name="preparing">준비중</string>
     <string name="keyword">검색어</string>
     <string name="author">제작자</string>
     <string name="playlist">재생목록</string>
@@ -43,7 +44,6 @@
     <string name="ytsearch_author">제작자로 검색</string>
     <string name="ytsearch_playlist">사용자 재생목록 검색</string>
     <string name="user_playlist_title_suffix">의 재생목록</string>
-
     <string name="importing_db">DB를 가져오는 중</string>
     <string name="merging_db">DB를 합치는 중</string>
     <string name="exporting_db">DB를 내보내는 중</string>

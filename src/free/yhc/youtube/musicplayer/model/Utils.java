@@ -216,8 +216,8 @@ public class Utils {
      * @return
      */
     public static boolean
-    isValidValue(String v) {
-        return !(null == v || v.isEmpty());
+    isValidValue(CharSequence v) {
+        return !(null == v || v.length() <= 0);
     }
 
     /**

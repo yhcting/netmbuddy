@@ -604,14 +604,10 @@ MediaPlayer.OnSeekCompleteListener {
     }
 
     private void
-    pvSetTitle(TextView titlev, CharSequence title, boolean buffering) {
+    pvSetTitle(TextView titlev, CharSequence title) {
         if (null == titlev || null == title)
             return;
-
-        if (buffering)
-            titlev.setText("(" + mRes.getText(R.string.buffering) + ") " + title);
-        else
-            titlev.setText(title);
+        titlev.setText(title);
     }
 
     private void
@@ -636,7 +632,7 @@ MediaPlayer.OnSeekCompleteListener {
         switch (to) {
         case BUFFERING: {
             eAssert(null != videoTitle);
-            pvSetTitle(titlev, videoTitle, true);
+            pvSetTitle(titlev, "(" + mRes.getText(R.string.buffering) + ") " + videoTitle);
         } break;
 
         case PREPARED:
@@ -644,15 +640,18 @@ MediaPlayer.OnSeekCompleteListener {
         case STARTED:
             eAssert(null != videoTitle);
             if (null != videoTitle)
-                pvSetTitle(titlev, videoTitle, false);
+                pvSetTitle(titlev, videoTitle);
             break;
 
         case ERROR:
-            pvSetTitle(titlev, mRes.getText(R.string.msg_ytplayer_err), false);
+            pvSetTitle(titlev, mRes.getText(R.string.msg_ytplayer_err));
             break;
 
         default:
-            pvSetTitle(titlev, mRes.getText(R.string.msg_preparing_mplayer), false);
+            if (Utils.isValidValue(videoTitle))
+                pvSetTitle(titlev, "(" + mRes.getText(R.string.preparing) + ") " + videoTitle);
+            else
+                pvSetTitle(titlev, mRes.getText(R.string.msg_preparing_mplayer));
         }
     }
 
@@ -1217,19 +1216,19 @@ MediaPlayer.OnSeekCompleteListener {
             TextView titlev = (TextView)mPlayerv.findViewById(R.id.music_player_title);
             switch (st) {
             case DONE:
-                pvSetTitle(titlev, mRes.getText(R.string.msg_playing_done), false);
+                pvSetTitle(titlev, mRes.getText(R.string.msg_playing_done));
                 break;
 
             case FORCE_STOPPED:
-                pvSetTitle(titlev, mRes.getText(R.string.msg_playing_stopped), false);
+                pvSetTitle(titlev, mRes.getText(R.string.msg_playing_stopped));
                 break;
 
             case NETWORK_UNAVAILABLE:
-                pvSetTitle(titlev, mRes.getText(R.string.err_network_unavailable), false);
+                pvSetTitle(titlev, mRes.getText(R.string.err_network_unavailable));
                 break;
 
             case UNKNOWN_ERROR:
-                pvSetTitle(titlev, mRes.getText(R.string.msg_playing_err_unknown), false);
+                pvSetTitle(titlev, mRes.getText(R.string.msg_playing_err_unknown));
                 break;
             }
         }

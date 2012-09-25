@@ -13,6 +13,7 @@
     <string name="deleting">Deleting</string>
     <string name="error">Error</string>
     <string name="buffering">Buffering</string>
+    <string name="preparing">Preparing</string>
     <string name="keyword">Search word</string>
     <string name="author">Author</string>
     <string name="playlist">Playlist</string>
@@ -43,7 +44,6 @@
     <string name="ytsearch_author">Search with author</string>
     <string name="ytsearch_playlist">Search user playlist</string>
     <string name="user_playlist_title_suffix">\'s playlists</string>
-
     <string name="importing_db">Importing DB</string>
     <string name="merging_db">Merging DB</string>
     <string name="exporting_db">Exporting DB</string>
