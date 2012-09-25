@@ -129,8 +129,12 @@ YTSearchHelper.SearchDoneReceiver {
             mini = 1;
 
         int maxi = mini + Policy.YTSEARCH_NR_PAGE_INDEX - 1;
-        if (maxi > nrPages)
+        if (maxi > nrPages) {
             maxi = nrPages;
+            mini = maxi - Policy.YTSEARCH_NR_PAGE_INDEX + 1;
+            if (mini < 1)
+                mini = 1;
+        }
 
         for (int i = mini; i <= maxi; i++) {
             int bi = i - mini;
