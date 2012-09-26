@@ -200,8 +200,10 @@ public class YTSearchHelper {
                 }
             } catch (YTMPException e) {
                 eAssert(Err.NO_ERR != e.getError());
+                Object extra = e.getExtra();
                 if (Err.YTHTTPGET == e.getError()
-                    && ((Integer)e.getExtra()) == HttpUtils.SC_NOT_FOUND)
+                    && extra instanceof Integer
+                    && ((Integer)extra) == HttpUtils.SC_NOT_FOUND)
                     e = new YTMPException(Err.YTINVALID_PARAM);
 
                 sendFeedDone(arg, null, e.getError());
