@@ -480,7 +480,17 @@ MediaPlayer.OnSeekCompleteListener {
         if (MPState.ERROR != mMpS && mMp.isPlaying())
             mMp.stop();
 
-        mMp.release();
+        // Why run at another thread?
+        // Sometimes mMp.release takes too long time or may never return.
+        // Even in this case, ANR is very annoying to user.
+        // So, this is a kind of workaround for these cases.
+        final MediaPlayer mp = mMp;
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                mp.release();
+            }
+        }).start();
         mMp = null;
         mpSetState(MPState.END);
     }
