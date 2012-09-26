@@ -42,7 +42,10 @@ public class Policy {
     // --------------------------------------------------------------------
     public static final int     YTPLAYER_RETRY_ON_ERROR = 3;
     // caching-ahead next video will started if current buffering reaches this value.
-    public static final int     YTPLAYER_CACHING_TRIGGER_POINT = 80; // percent.
+    // Most of time for downloading is waiting network response.
+    // Therefore, downloading multiple contents doens't damage to device performance severely.
+    // So, try to trigger caching at the early point of playing.
+    public static final int     YTPLAYER_CACHING_TRIGGER_POINT = 30; // percent.
 
     // --------------------------------------------------------------------
     // Network access
