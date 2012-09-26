@@ -522,6 +522,9 @@ MediaPlayer.OnSeekCompleteListener {
 
     private void
     mpSetVolume(int vol) {
+        if (null == mMp)
+            return;
+
         float volf = vol/100.0f;
         mMpVol = vol;
         mMp.setVolume(volf, volf);
