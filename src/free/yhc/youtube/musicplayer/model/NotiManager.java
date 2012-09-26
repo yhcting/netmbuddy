@@ -27,7 +27,6 @@ import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.support.v4.app.NotificationCompat;
 import free.yhc.youtube.musicplayer.R;
 
 public class NotiManager {
@@ -70,28 +69,8 @@ public class NotiManager {
             icon   = aIcon;
         }
 
-        Notification
-        buildNotification(CharSequence title, CharSequence desc) {
-            Intent intent = new Intent(Utils.getAppContext(), NotiManager.NotiIntentReceiver.class);
-            intent.setAction(NOTI_INTENT_DELETE);
-            PendingIntent piDelete = PendingIntent.getBroadcast(Utils.getAppContext(), 0, intent,
-                                                                PendingIntent.FLAG_UPDATE_CURRENT);
-
-            intent = new Intent(Utils.getAppContext(), NotiManager.NotiIntentReceiver.class);
-            intent.setAction(NOTI_INTENT_ACTION);
-            intent.putExtra("type", name());
-            PendingIntent piContent = PendingIntent.getBroadcast(Utils.getAppContext(), 0, intent,
-                                                                 PendingIntent.FLAG_UPDATE_CURRENT);
-
-            NotificationCompat.Builder nbldr = new NotificationCompat.Builder(Utils.getAppContext());
-            nbldr.setSmallIcon(icon)
-                 .setTicker(null)
-                 .setContentTitle(title)
-                 .setContentText(desc)
-                 .setAutoCancel(true)
-                 .setContentIntent(piContent)
-                 .setDeleteIntent(piDelete);
-            return nbldr.build();
+        int getIcon() {
+            return icon;
         }
     }
 
@@ -141,12 +120,53 @@ public class NotiManager {
     private NotiManager() {
     }
 
+    Notification
+    buildNotification(NotiType ntype, CharSequence title, CharSequence desc) {
+        Intent intent = new Intent(Utils.getAppContext(), NotiManager.NotiIntentReceiver.class);
+        intent.setAction(NOTI_INTENT_DELETE);
+        PendingIntent piDelete = PendingIntent.getBroadcast(Utils.getAppContext(), 0, intent,
+                                                            PendingIntent.FLAG_UPDATE_CURRENT);
+
+        intent = new Intent(Utils.getAppContext(), NotiManager.NotiIntentReceiver.class);
+        intent.setAction(NOTI_INTENT_ACTION);
+        intent.putExtra("type", ntype.name());
+        PendingIntent piContent = PendingIntent.getBroadcast(Utils.getAppContext(), 0, intent,
+                                                             PendingIntent.FLAG_UPDATE_CURRENT);
+
+        /*
+         * NOTE
+         * Below way is deprecated but works well better than using recommended way - notification builder.
+         * (See commends below about using builder)
+         */
+        Notification n = new Notification(ntype.getIcon(), null, System.currentTimeMillis());
+        n.setLatestEventInfo(Utils.getAppContext(), title, desc, piContent);
+        n.deleteIntent = piDelete;
+        n.flags = 0;
+
+        return n;
+        /* Below code generates "java.lang.NoClassDefFoundError : android.support.v4.app.NotificationCompat$Builder"
+         * So, comment out!
+         * (Damn Android!
+         *
+        NotificationCompat.Builder nbldr = new NotificationCompat.Builder(Utils.getAppContext());
+        nbldr.setSmallIcon(ntype.getIcon())
+             .setTicker(null)
+             .setContentTitle(title)
+             .setContentText(desc)
+             .setAutoCancel(true)
+             .setContentIntent(piContent)
+             .setDeleteIntent(piDelete);
+        return nbldr.build();
+        */
+    }
+
     void
     putNotification(NotiType type, String videoTitle) {
         // To avoid unexpected race-condition.
         eAssert(Utils.isUiThread());
         // Set event time.
-        Notification n = type.buildNotification(
+        Notification n = buildNotification(
+                type,
                 Utils.getAppContext().getResources().getText(R.string.app_name),
                 videoTitle);
         n.when = System.currentTimeMillis();
