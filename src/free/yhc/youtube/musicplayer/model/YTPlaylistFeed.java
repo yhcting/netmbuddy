@@ -26,6 +26,8 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
+import android.net.Uri;
+
 
 
 //<entry gd:etag='W/&quot;DkYEQ347eCp7I2A9WhJbEU8.&quot;'>
@@ -65,7 +67,9 @@ public class YTPlaylistFeed extends YTFeed {
 
     public static String
     getFeedUrlByUser(String user, int start, int maxCount) {
-        return "https://gdata.youtube.com/feeds/api/users/" + user + "/playlists?v=2";
+        return "https://gdata.youtube.com/feeds/api/users/"
+               + Uri.encode(user, null)
+               + "/playlists?v=2";
     }
 
     /**
