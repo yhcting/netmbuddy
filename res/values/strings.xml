@@ -50,6 +50,7 @@
     <string name="importing_db">Importing DB</string>
     <string name="merging_db">Merging DB</string>
     <string name="exporting_db">Exporting DB</string>
+    <string name="append_to_playq">Append to player</string>
 
     <string name="pref_cat_operation">Playing music</string>
     <string name="pref_shuffle">Shuffle</string>

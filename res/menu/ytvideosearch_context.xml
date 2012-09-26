@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android" >
     <item android:id="@+id/add_to"                  android:title="@string/add_to"></item>
+    <item android:id="@+id/append_to_playq"         android:title="@string/append_to_playq"></item>
     <item android:id="@+id/play_video"              android:title="@string/play_video"></item>
     <item android:id="@+id/videos_of_this_author"   android:title="@string/videos_of_this_author"></item>
 </menu>

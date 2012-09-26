@@ -50,6 +50,7 @@
     <string name="importing_db">DB를 가져오는 중</string>
     <string name="merging_db">DB를 합치는 중</string>
     <string name="exporting_db">DB를 내보내는 중</string>
+    <string name="append_to_playq">재생기에 추가</string>
 
     <string name="pref_cat_operation">재생 방식 설정</string>
     <string name="pref_shuffle">임의 순서로 재생</string>

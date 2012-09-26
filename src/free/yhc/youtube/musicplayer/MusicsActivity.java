@@ -188,6 +188,16 @@ public class MusicsActivity extends Activity {
     }
 
     private void
+    onContextMenuAppendToPlayQ(final long itemId, final int itemPos) {
+        YTPlayer.Video vid = new YTPlayer.Video(getAdapter().getMusicYtid(itemPos),
+                                                getAdapter().getMusicTitle(itemPos),
+                                                getAdapter().getMusicVolume(itemPos),
+                                                getAdapter().getMusicPlaytime(itemPos));
+        if (!YTPlayer.get().appendToCurrentPlayQ(vid))
+            UiUtils.showTextToast(this, R.string.err_unknown);
+    }
+
+    private void
     onContextMenuRename(final long itemId, final int itemPos) {
         UiUtils.EditTextAction action = new UiUtils.EditTextAction() {
             @Override
@@ -230,6 +240,10 @@ public class MusicsActivity extends Activity {
             onContextMenuVolume(info.id, info.position);
             return true;
 
+        case R.id.append_to_playq:
+            onContextMenuAppendToPlayQ(info.id, info.position);
+            return true;
+
         case R.id.plthumbnail:
             setToPlaylistThumbnail(info.id, info.position);
             return true;
@@ -266,6 +280,9 @@ public class MusicsActivity extends Activity {
         boolean visible = isUserPlaylist(mPlid)? true: false;
         menu.findItem(R.id.move_to).setVisible(visible);
         menu.findItem(R.id.plthumbnail).setVisible(visible);
+
+        visible = YTPlayer.get().hasActiveVideo();
+        menu.findItem(R.id.append_to_playq).setVisible(visible);
     }
 
     @Override

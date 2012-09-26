@@ -154,7 +154,7 @@ DBHelper.CheckExistDoneReceiver {
     }
 
     private void
-    onAddTo(final int position) {
+    onContextMenuAddTo(final int position) {
         UiUtils.OnPlaylistSelectedListener action = new UiUtils.OnPlaylistSelectedListener() {
             @Override
             public void onPlaylist(long plid, Object user) {
@@ -170,12 +170,31 @@ DBHelper.CheckExistDoneReceiver {
     }
 
     private void
-    onPlayVideo(final int position) {
+    onContextMenuAppendToPlayQ(final int position) {
+        int playtime;
+        try {
+            playtime = Integer.parseInt(getAdapter().getItemPlaytime(position));
+        } catch (NumberFormatException e) {
+            UiUtils.showTextToast(this, R.string.err_unknown);
+            return;
+        }
+
+        YTPlayer.Video vid = new YTPlayer.Video(getAdapter().getItemVideoId(position),
+                                                getAdapter().getItemTitle(position),
+                                                Policy.DEFAULT_VIDEO_VOLUME,
+                                                playtime);
+
+        if (!YTPlayer.get().appendToCurrentPlayQ(vid))
+            UiUtils.showTextToast(this, R.string.err_unknown);
+    }
+
+    private void
+    onContextMenuPlayVideo(final int position) {
         UiUtils.playAsVideo(this, getAdapter().getItemVideoId(position));
     }
 
     private void
-    onVideosOfThisAuthor(final int position) {
+    onContextMenuVideosOfThisAuthor(final int position) {
         loadFirstPage(YTSearchHelper.SearchType.VID_AUTHOR,
                       getAdapter().getItemAuthor(position),
                       getAdapter().getItemAuthor(position));
@@ -268,15 +287,19 @@ DBHelper.CheckExistDoneReceiver {
         AdapterContextMenuInfo info = (AdapterContextMenuInfo)mItem.getMenuInfo();
         switch (mItem.getItemId()) {
         case R.id.add_to:
-            onAddTo(info.position);
+            onContextMenuAddTo(info.position);
+            return true;
+
+        case R.id.append_to_playq:
+            onContextMenuAppendToPlayQ(info.position);
             return true;
 
         case R.id.play_video:
-            onPlayVideo(info.position);
+            onContextMenuPlayVideo(info.position);
             return true;
 
         case R.id.videos_of_this_author:
-            onVideosOfThisAuthor(info.position);
+            onContextMenuVideosOfThisAuthor(info.position);
             return true;
         }
         return false;
@@ -291,6 +314,9 @@ DBHelper.CheckExistDoneReceiver {
         // AdapterContextMenuInfo mInfo = (AdapterContextMenuInfo)menuInfo;
         boolean visible = (YTSearchHelper.SearchType.VID_AUTHOR == getSearchType())? false: true;
         menu.findItem(R.id.videos_of_this_author).setVisible(visible);
+
+        visible = YTPlayer.get().hasActiveVideo();
+        menu.findItem(R.id.append_to_playq).setVisible(visible);
     }
 
     @Override

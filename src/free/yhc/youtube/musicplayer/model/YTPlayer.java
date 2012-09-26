@@ -156,7 +156,7 @@ MediaPlayer.OnSeekCompleteListener {
         String   videoId;
         int      volume;
         int      playtime; // This is to workaround not-correct value returns from getDuration() function
-                           //   of youtube player.
+                           //   of youtube player (Seconds).
         public Video(String aVideoId, String aTitle,
                      int aVolume, int aPlaytime) {
             videoId = aVideoId;
@@ -306,24 +306,29 @@ MediaPlayer.OnSeekCompleteListener {
         private int         vi  = -1; // video index
 
         boolean hasActiveVideo() {
+            eAssert(Utils.isUiThread());
             return null != getActiveVideo();
         }
 
         boolean hasNextVideo() {
+            eAssert(Utils.isUiThread());
             return hasActiveVideo()
                    && vi < (vs.length - 1);
         }
 
         boolean hasPrevVideo() {
+            eAssert(Utils.isUiThread());
             return hasActiveVideo() && 0 < vi;
         }
 
         void reset() {
+            eAssert(Utils.isUiThread());
             vs = null;
             vi = -1;
         }
 
         void setVideoList(Video[] aVs) {
+            eAssert(Utils.isUiThread());
             vs = aVs;
             if (null == vs || 0 >= vs.length)
                 reset();
@@ -331,19 +336,31 @@ MediaPlayer.OnSeekCompleteListener {
                 vi = 0;
         }
 
+        void appendVideo(Video v) {
+            eAssert(Utils.isUiThread());
+            Video[] newvs = new Video[vs.length + 1];
+            System.arraycopy(vs, 0, newvs, 0, vs.length);
+            newvs[newvs.length - 1] = v;
+            // assigning reference is atomic operation in JAVA!
+            vs = newvs;
+        }
+
         Video getActiveVideo() {
+            eAssert(Utils.isUiThread());
             if (null != vs && 0 <= vi && vi < vs.length)
                 return vs[vi];
             return null;
         }
 
         Video getNextVideo() {
+            eAssert(Utils.isUiThread());
             if (!hasNextVideo())
                 return null;
             return vs[vi + 1];
         }
 
         boolean moveToFist() {
+            eAssert(Utils.isUiThread());
             if (hasActiveVideo()) {
                     vi = 0;
                     return true;
@@ -352,6 +369,7 @@ MediaPlayer.OnSeekCompleteListener {
         }
 
         boolean moveToNext() {
+            eAssert(Utils.isUiThread());
             if (hasActiveVideo()
                 && vi < (vs.length - 1)) {
                 vi++;
@@ -361,6 +379,7 @@ MediaPlayer.OnSeekCompleteListener {
         }
 
         boolean moveToPrev() {
+            eAssert(Utils.isUiThread());
             if (hasActiveVideo()
                 && vi > 0) {
                 vi--;
@@ -1399,6 +1418,27 @@ MediaPlayer.OnSeekCompleteListener {
                 c.close();
             }
         }).start();
+    }
+
+    /**
+     *
+     * @param v
+     * @return
+     *   false if error, otherwise true
+     */
+    public boolean
+    appendToCurrentPlayQ(Video v) {
+        if (!mVlm.hasActiveVideo())
+            return false;
+
+        mVlm.appendVideo(v);
+        // Video list is changed.
+        // So, control button need to be changed due to 'next' button.
+        if (null != mPlayerv)
+            pvConfigureControl((ViewGroup)mPlayerv.findViewById(R.id.music_player_control),
+                               mpGetState(), mpGetState());
+
+        return true;
     }
 
     public void

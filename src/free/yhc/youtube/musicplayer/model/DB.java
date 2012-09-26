@@ -137,7 +137,7 @@ public class DB extends SQLiteOpenHelper {
         TITLE           ("title",           "text",     "not null"),
         DESCRIPTION     ("description",     "text",     "not null"),
         VIDEOID         ("videoid",         "text",     "not null"),
-        PLAYTIME        ("playtime",        "integer",  "not null"),
+        PLAYTIME        ("playtime",        "integer",  "not null"), // Seconds
         THUMBNAIL       ("thumbnail",       "blob",     "not null"),
 
         // --------------------------------------------------------------------
