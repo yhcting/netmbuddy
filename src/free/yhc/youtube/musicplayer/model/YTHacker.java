@@ -38,12 +38,14 @@ import android.os.AsyncTask;
 // This is main class for HACKING Youtube protocol.
 //
 public class YTHacker {
+    public static final int     YTQUALITY_SCORE_MAXIMUM     = 100;
     public static final int     YTQUALITY_SCORE_HIGHEST     = 100;
     public static final int     YTQUALITY_SCORE_HIGH        = 80;
     public static final int     YTQUALITY_SCORE_MIDHIGH     = 60;
     public static final int     YTQUALITY_SCORE_MIDLOW      = 40;
     public static final int     YTQUALITY_SCORE_LOW         = 20;
     public static final int     YTQUALITY_SCORE_LOWEST      = 0;
+    public static final int     YTQUALITY_SCORE_MINIMUM     = 0;
 
     // See youtube api documentation.
     private static final int    YTVID_LENGTH = 11;
@@ -319,6 +321,21 @@ public class YTHacker {
         return "http://" + getYtHost() + "/" + getYtUri(videoId);
     }
 
+    public static int
+    getQScorePreferLow(int qscore) {
+        int score = qscore - 1;
+        return score < YTQUALITY_SCORE_MINIMUM?
+                YTQUALITY_SCORE_MINIMUM:
+                score;
+    }
+
+    public static int
+    getQScorePreferHigh(int qscore) {
+        int score = qscore + 1;
+        return score > YTQUALITY_SCORE_MAXIMUM?
+                YTQUALITY_SCORE_MAXIMUM:
+                score;
+    }
     public YTHacker(String ytvid) {
         mYtvid = ytvid;
         mUser = null;

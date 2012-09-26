@@ -5,7 +5,7 @@
     <string name="no">No</string>
     <string name="on">On</string>
     <string name="off">Off</string>
-    <string name="ok">Ok</string>
+    <string name="ok">OK</string>
     <string name="cancel">Cancel</string>
     <string name="delete">Delete</string>
     <string name="rename">Rename</string>
@@ -22,6 +22,8 @@
     <string name="export">Export</string>
     <string name="import_">Import</string>
     <string name="merge">Merge</string>
+    <string name="low">Low</string>
+    <string name="normal">Normal</string>
 
     <string name="enter_keyword">Enter search keyword</string>
     <string name="new_search">New search</string>
@@ -56,6 +58,8 @@
     <string name="pref_repeat_desc">Play musics repeatedly.</string>
     <string name="pref_autostop">Auto-stop</string>
     <string name="pref_autostop_desc">Play will be stopped after given time from starting musics.\nChanging in the middle of playing does not effective at current playing session.\nUseful when sleep with listening musics.</string>
+    <string name="pref_quality">Audio quality</string>
+    <string name="pref_quality_desc">Low quality for poor network condition, otherwise normal is recommended</string>
 
     <string name="pref_autostop_30m">30 minutes</string>
     <string name="pref_autostop_1h">1 hour</string>

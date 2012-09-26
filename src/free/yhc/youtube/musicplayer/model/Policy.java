@@ -36,7 +36,6 @@ public class Policy {
     public static final int     DEFAULT_VIDEO_VOLUME    = 50;
     public static final int     YTSEARCH_MAX_RESULTS    = 25; // 1 ~ 50
     public static final int     YTSEARCH_NR_PAGE_INDEX  = 10;
-    public static final int     DEFAULT_VIDEO_QUAILITY  = YTHacker.YTQUALITY_SCORE_MIDLOW;
 
     // --------------------------------------------------------------------
     // Youtube Player

@@ -25,5 +25,13 @@
             android:entries="@array/strarr_pref_autostop_entry"
             android:entryValues="@array/strarr_pref_autostop_value"
             />
+        <ListPreference
+            android:title="@string/pref_quality"
+            android:summary="@string/pref_quality_desc"
+            android:key="quality"
+            android:defaultValue="NORMAL"
+            android:entries="@array/strarr_pref_quality_entry"
+            android:entryValues="@array/strarr_pref_quality_value"
+            />
     </PreferenceCategory>
 </PreferenceScreen>

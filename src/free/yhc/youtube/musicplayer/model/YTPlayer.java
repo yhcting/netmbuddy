@@ -931,6 +931,19 @@ MediaPlayer.OnSeekCompleteListener {
         }
     }
 
+    private int
+    getVideoQualityScore() {
+        switch (Utils.getPrefQuality()) {
+        case LOW:
+            return YTHacker.getQScorePreferLow(YTHacker.YTQUALITY_SCORE_LOWEST);
+
+        case NORMAL:
+            return YTHacker.getQScorePreferHigh(YTHacker.YTQUALITY_SCORE_MIDLOW);
+        }
+        eAssert(false);
+        return YTHacker.getQScorePreferLow(YTHacker.YTQUALITY_SCORE_LOWEST);
+    }
+
     private boolean
     isVideoPlaying() {
         return mVlm.hasActiveVideo()
@@ -1007,7 +1020,7 @@ MediaPlayer.OnSeekCompleteListener {
                     try {
                         Thread.sleep(500);
                     } catch (InterruptedException e) {}
-                    downloader.download(vid, getCachedVideo(vid), Policy.DEFAULT_VIDEO_QUAILITY);
+                    downloader.download(vid, getCachedVideo(vid), getVideoQualityScore());
                 } else
                     downloader.close();
                 // Ignore other cases even if it is fails.
@@ -1020,7 +1033,7 @@ MediaPlayer.OnSeekCompleteListener {
         // NOTE
         // Only mp4 is supported at YTHacker!
         // So, YTDownloader also supports only mpeg4
-        mYtDnr.download(vid, getCachedVideo(vid), Policy.DEFAULT_VIDEO_QUAILITY);
+        mYtDnr.download(vid, getCachedVideo(vid), getVideoQualityScore());
     }
 
     private void
@@ -1099,7 +1112,7 @@ MediaPlayer.OnSeekCompleteListener {
                     return;
                 }
 
-                YTHacker.YtVideo ytv = ythack.getVideo(Policy.DEFAULT_VIDEO_QUAILITY);
+                YTHacker.YtVideo ytv = ythack.getVideo(getVideoQualityScore());
                 try {
                     mpSetDataSource(Uri.parse(ytv.url));
                 } catch (IOException e) {

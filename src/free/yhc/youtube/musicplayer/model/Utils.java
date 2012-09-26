@@ -81,6 +81,11 @@ public class Utils {
         "yyyy-MM-d'T'HH:mm:ss'Z'",
     };
 
+    public static enum PrefQuality {
+        LOW,
+        NORMAL
+    }
+
     // ========================================================================
     //
     // Initialization
@@ -562,6 +567,17 @@ public class Utils {
             eAssert(false);
         }
         return min * 60 * 1000;
+    }
+
+    public static PrefQuality
+    getPrefQuality() {
+        String qstr = sPrefs.getString("quality", PrefQuality.NORMAL.name());
+        for (PrefQuality q : PrefQuality.values()) {
+            if (q.name().equals(qstr))
+                return q;
+        }
+        eAssert(false);
+        return null;
     }
     // ------------------------------------------------------------------------
     //

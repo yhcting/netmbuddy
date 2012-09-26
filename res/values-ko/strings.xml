@@ -22,6 +22,8 @@
     <string name="export">내보내기</string>
     <string name="import_">가져오기</string>
     <string name="merge">합치기</string>
+    <string name="low">낮음</string>
+    <string name="normal">일반</string>
 
     <string name="enter_keyword">검색어 입력</string>
     <string name="new_search">새로 검색하기</string>
@@ -56,6 +58,8 @@
     <string name="pref_repeat_desc">계속해서 반복되어 음악이 재생 됩니다.</string>
     <string name="pref_autostop">자동정지</string>
     <string name="pref_autostop_desc">재생이 시작되는 시점부터 일정 시간 후 재생이 자동으로 중단됩니다.\n따라서, 재생 중에 이 값을 바꿀 경우, 현재의 재생시간에는 영향을 주지 않습니다.\n음악 들으면서 잠들때 유용합니다.</string>
+    <string name="pref_quality">음질</string>
+    <string name="pref_quality_desc">네트워크 상태가 좋지 않다면 [낮음], 그렇지 않으면 [일반]을 권장 합니다.</string>
 
     <string name="pref_autostop_30m">30분</string>
     <string name="pref_autostop_1h">1시간</string>
