@@ -189,6 +189,10 @@ public class NetLoader {
             } catch (ClientProtocolException e) {
                 logI("NetLoader ClientProtocolException : " + e.getMessage());
                 throw new YTMPException(Err.YTHTTPGET);
+            } catch (IllegalArgumentException e) {
+                logI("Illegal Argument Exception : " + e.getMessage() + "\n"
+                     + "URI : " + uriString);
+                throw new YTMPException(Err.INVALID_URL);
             } catch (UnknownHostException e) {
                 logI("NetLoader UnknownHostException : Maybe timeout?" + e.getMessage());
                 if (mUserClose)
