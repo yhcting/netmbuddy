@@ -224,8 +224,8 @@ MediaPlayer.OnSeekCompleteListener {
         resetProgressView() {
             if (null != seekbar) {
                 maxposv.setText(Utils.secsToMinSecText(mpGetDuration() / 1000));
-                update(1, 0, true);
-                update2(0, true);
+                update(1, 0);
+                update2(0);
             }
             lastProgress = -1;
             lastProgress2 = -1;
@@ -247,16 +247,16 @@ MediaPlayer.OnSeekCompleteListener {
             seekbar = (SeekBar)progv.findViewById(R.id.music_player_seekbar);
             if (null != seekbar) {
                 maxposv.setText(Utils.secsToMinSecText(mpGetDuration() / 1000));
-                update(mpGetDuration(), lastProgress, true);
-                update2(lastProgress2, true);
+                update(mpGetDuration(), lastProgress);
+                update2(lastProgress2);
             }
         }
 
         void start() {
             //logI("Progress Start");
             maxposv.setText(Utils.secsToMinSecText(mpGetDuration() / 1000));
-            update(mpGetDuration(), lastProgress, true);
-            update2(lastProgress2, true);
+            update(mpGetDuration(), lastProgress);
+            update2(lastProgress2);
             run();
         }
 
@@ -266,18 +266,15 @@ MediaPlayer.OnSeekCompleteListener {
             resetProgressView();
         }
 
-        void update(int duration, int currentPos, boolean force) {
+        void update(int durationMilli, int curMilli) {
             // ignore aDuration.
             // Sometimes youtube player returns incorrect duration value!
             if (null != seekbar) {
-                int curProgress = (duration > 0)? currentPos * 100 / duration
-                                                : 0;
-                if (force || curProgress > lastProgress) {
-                    seekbar.setProgress(curProgress);
-                    curposv.setText(progressToTimeText(curProgress));
-                }
-
-                lastProgress = curProgress;
+                int curPv = (durationMilli > 0)? curMilli * seekbar.getMax() / durationMilli
+                                               : 0;
+                seekbar.setProgress(curPv);
+                curposv.setText(Utils.secsToMinSecText(curMilli / 1000));
+                lastProgress = curPv;
             }
         }
 
@@ -285,18 +282,18 @@ MediaPlayer.OnSeekCompleteListener {
          * Update secondary progress
          * @param percent
          */
-        void update2(int percent, boolean force) {
+        void update2(int percent) {
             // Update secondary progress
             if (null != seekbar) {
-                if (force || lastProgress2 != percent)
-                    seekbar.setSecondaryProgress(percent);
-                lastProgress2 = percent;
+                int pv = percent * seekbar.getMax() / 100;
+                seekbar.setSecondaryProgress(pv);
+                lastProgress2 = pv;
             }
         }
 
         @Override
         public void run() {
-            update(mpGetDuration(), mpGetCurrentPosition(), false);
+            update(mpGetDuration(), mpGetCurrentPosition());
             Utils.getUiHandler().postDelayed(this, 1000);
         }
     }
@@ -815,7 +812,7 @@ MediaPlayer.OnSeekCompleteListener {
             // Workaround of Youtube player.
             // Sometimes Youtube player doesn't update progress 100% before playing is ended.
             // So, update to 100% in force at this ended state.
-            mUpdateProg.update(1, 1, false);
+            mUpdateProg.update(1, 1);
             // Missing 'break' is intentional.
 
         case INITIALIZED:
@@ -828,7 +825,7 @@ MediaPlayer.OnSeekCompleteListener {
 
         default:
             mUpdateProg.stop();
-            mUpdateProg.update(1, 0, false);
+            mUpdateProg.update(1, 0);
         }
     }
 
@@ -1564,7 +1561,7 @@ MediaPlayer.OnSeekCompleteListener {
             // This is the first moment that buffering is reached to 100%
             prepareNext();
 
-        mUpdateProg.update2(percent, false);
+        mUpdateProg.update2(percent);
     }
 
     @Override
@@ -1665,7 +1662,7 @@ MediaPlayer.OnSeekCompleteListener {
             // TODO
             // Check is there any exceptional case regarding buffering???
             //mpSetState(MPState.STARTED);
-            mUpdateProg.update2(100, false);
+            mUpdateProg.update2(100);
             break;
 
         case MediaPlayer.MEDIA_INFO_BAD_INTERLEAVING:
