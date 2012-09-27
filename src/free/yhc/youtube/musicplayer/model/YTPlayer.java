@@ -215,11 +215,6 @@ MediaPlayer.OnSeekCompleteListener {
         private int         lastProgress = -1;
         private int         lastProgress2 = -1; // For secondary progress
 
-        private String
-        progressToTimeText(int progress) {
-            return Utils.secsToMinSecText(mpGetDuration() / 1000 * progress / 100);
-        }
-
         private void
         resetProgressView() {
             if (null != seekbar) {
@@ -227,8 +222,8 @@ MediaPlayer.OnSeekCompleteListener {
                 update(1, 0);
                 update2(0);
             }
-            lastProgress = -1;
-            lastProgress2 = -1;
+            lastProgress = 0;
+            lastProgress2 = 0;
         }
 
         int getProgress() {
@@ -266,14 +261,14 @@ MediaPlayer.OnSeekCompleteListener {
             resetProgressView();
         }
 
-        void update(int durationMilli, int curMilli) {
+        void update(int durms, int curms) {
             // ignore aDuration.
             // Sometimes youtube player returns incorrect duration value!
             if (null != seekbar) {
-                int curPv = (durationMilli > 0)? curMilli * seekbar.getMax() / durationMilli
+                int curPv = (durms > 0)? (int)((long)curms * (long)seekbar.getMax() / durms)
                                                : 0;
                 seekbar.setProgress(curPv);
-                curposv.setText(Utils.secsToMinSecText(curMilli / 1000));
+                curposv.setText(Utils.secsToMinSecText(curms / 1000));
                 lastProgress = curPv;
             }
         }
@@ -588,7 +583,7 @@ MediaPlayer.OnSeekCompleteListener {
 
     private void
     mpSeekTo(int pos) {
-        logD("MPlayer - seekTo");
+        logD("MPlayer - seekTo : " + pos);
         if (null == mMp)
             return;
 
@@ -913,7 +908,7 @@ MediaPlayer.OnSeekCompleteListener {
         sb.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-                mpSeekTo(seekBar.getProgress() * mpGetDuration() / 100);
+                mpSeekTo((int)((long)seekBar.getProgress() * (long)mpGetDuration() / seekBar.getMax()));
             }
 
             @Override
@@ -1659,9 +1654,7 @@ MediaPlayer.OnSeekCompleteListener {
             break;
 
         case MediaPlayer.MEDIA_INFO_BUFFERING_END:
-            // TODO
             // Check is there any exceptional case regarding buffering???
-            //mpSetState(MPState.STARTED);
             mUpdateProg.update2(100);
             break;
 
