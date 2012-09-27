@@ -69,6 +69,7 @@ MediaPlayer.OnVideoSizeChangedListener,
 MediaPlayer.OnSeekCompleteListener {
     private static final String WLTAG               = "YTPlayer";
     private static final int    PLAYER_ERR_RETRY    = 3;
+    private static final int    SEEKBAR_MAX         = 1000;
 
     private static final Comparator<NrElem> sNrElemComparator = new Comparator<NrElem>() {
         @Override
@@ -213,25 +214,26 @@ MediaPlayer.OnSeekCompleteListener {
         private TextView    curposv = null;
         private TextView    maxposv = null;
         private int         lastProgress = -1;
-        private int         lastProgress2 = -1; // For secondary progress
+        private int         lastSecondaryProgress = -1; // For secondary progress
 
         private void
         resetProgressView() {
             if (null != seekbar) {
                 maxposv.setText(Utils.secsToMinSecText(mpGetDuration() / 1000));
                 update(1, 0);
-                update2(0);
+                updateSecondary(0);
             }
             lastProgress = 0;
-            lastProgress2 = 0;
+            lastSecondaryProgress = 0;
         }
 
-        int getProgress() {
-            return lastProgress;
-        }
-
-        int getProgress2() {
-            return lastProgress2;
+        int getSecondaryProgressPercent() {
+            int percent =  lastSecondaryProgress * 100 / SEEKBAR_MAX;
+            if (percent > 100)
+                percent = 100;
+            if (percent < 0)
+                percent = 0;
+            return percent;
         }
 
         void setProgressView(ViewGroup progv) {
@@ -243,7 +245,7 @@ MediaPlayer.OnSeekCompleteListener {
             if (null != seekbar) {
                 maxposv.setText(Utils.secsToMinSecText(mpGetDuration() / 1000));
                 update(mpGetDuration(), lastProgress);
-                update2(lastProgress2);
+                updateSecondary(lastSecondaryProgress);
             }
         }
 
@@ -251,7 +253,7 @@ MediaPlayer.OnSeekCompleteListener {
             //logI("Progress Start");
             maxposv.setText(Utils.secsToMinSecText(mpGetDuration() / 1000));
             update(mpGetDuration(), lastProgress);
-            update2(lastProgress2);
+            updateSecondary(lastSecondaryProgress);
             run();
         }
 
@@ -265,7 +267,7 @@ MediaPlayer.OnSeekCompleteListener {
             // ignore aDuration.
             // Sometimes youtube player returns incorrect duration value!
             if (null != seekbar) {
-                int curPv = (durms > 0)? (int)((long)curms * (long)seekbar.getMax() / durms)
+                int curPv = (durms > 0)? (int)((long)curms * (long)SEEKBAR_MAX / durms)
                                                : 0;
                 seekbar.setProgress(curPv);
                 curposv.setText(Utils.secsToMinSecText(curms / 1000));
@@ -277,12 +279,12 @@ MediaPlayer.OnSeekCompleteListener {
          * Update secondary progress
          * @param percent
          */
-        void update2(int percent) {
+        void updateSecondary(int percent) {
             // Update secondary progress
             if (null != seekbar) {
-                int pv = percent * seekbar.getMax() / 100;
+                int pv = percent * SEEKBAR_MAX / 100;
                 seekbar.setSecondaryProgress(pv);
-                lastProgress2 = pv;
+                lastSecondaryProgress = pv;
             }
         }
 
@@ -905,10 +907,11 @@ MediaPlayer.OnSeekCompleteListener {
     pvInit(ViewGroup playerv) {
         ViewGroup progv = (ViewGroup)playerv.findViewById(R.id.music_player_progress);
         SeekBar sb = (SeekBar)progv.findViewById(R.id.music_player_seekbar);
+        sb.setMax(SEEKBAR_MAX);
         sb.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-                mpSeekTo((int)((long)seekBar.getProgress() * (long)mpGetDuration() / seekBar.getMax()));
+                mpSeekTo((int)((long)seekBar.getProgress() * (long)mpGetDuration() / SEEKBAR_MAX));
             }
 
             @Override
@@ -1551,12 +1554,12 @@ MediaPlayer.OnSeekCompleteListener {
         //logD("MPlayer - onBufferingUpdate : " + percent + " %");
         // See comments aroudn MEDIA_INFO_BUFFERING_START in onInfo()
         //mpSetState(MPState.BUFFERING);
-        if (mUpdateProg.getProgress2() < Policy.YTPLAYER_CACHING_TRIGGER_POINT
+        if (mUpdateProg.getSecondaryProgressPercent() < Policy.YTPLAYER_CACHING_TRIGGER_POINT
             && Policy.YTPLAYER_CACHING_TRIGGER_POINT <= percent)
             // This is the first moment that buffering is reached to 100%
             prepareNext();
 
-        mUpdateProg.update2(percent);
+        mUpdateProg.updateSecondary(percent);
     }
 
     @Override
@@ -1655,7 +1658,7 @@ MediaPlayer.OnSeekCompleteListener {
 
         case MediaPlayer.MEDIA_INFO_BUFFERING_END:
             // Check is there any exceptional case regarding buffering???
-            mUpdateProg.update2(100);
+            mUpdateProg.updateSecondary(100);
             break;
 
         case MediaPlayer.MEDIA_INFO_BAD_INTERLEAVING:

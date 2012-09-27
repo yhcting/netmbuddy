@@ -101,12 +101,17 @@ public class Utils {
             sInitialized = true;
 
         new File(Policy.APPDATA_DIR).mkdirs();
-        new File(Policy.APPDATA_TMPDIR).mkdirs();
         new File(Policy.APPDATA_VIDDIR).mkdirs();
+
+        // Clear/Create cache directory!
         File cacheF = new File(Policy.APPDATA_CACHEDIR);
-        // Clear cache!
         removeFileRecursive(cacheF, cacheF);
         cacheF.mkdirs();
+
+        // Clear/Make temp directory!
+        File tempF = new File(Policy.APPDATA_TMPDIR);
+        removeFileRecursive(tempF, tempF);
+        tempF.mkdirs();
 
         if (LOGF) {
             new File(Policy.APPDATA_LOGDIR).mkdirs();
