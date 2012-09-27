@@ -29,6 +29,7 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Intent;
 import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.os.Bundle;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
@@ -53,12 +54,8 @@ import free.yhc.youtube.musicplayer.model.YTVideoFeed;
 public class YTPlaylistSearchActivity extends YTSearchActivity {
 
     private static class MergeToPlaylistResult {
-        Err     err         = Err.NO_ERR;
-        int     nrIgnored   = -1;
-        int     nrDone      = -1;
-        void init() {
-            nrIgnored = nrDone = 0;
-        }
+        int     nrIgnored   = 0;
+        int     nrDone      = 0;
     }
 
     private interface ProgressListener {
@@ -176,7 +173,6 @@ public class YTPlaylistSearchActivity extends YTSearchActivity {
                 Utils.getAppContext().getResources().getDimensionPixelSize(R.dimen.thumbnail_width),
                 Utils.getAppContext().getResources().getDimensionPixelSize(R.dimen.thumbnail_height));
 
-        mtpr.init();
         // Update progress base and portion.
         pvBase += pvPortion;
         pvPortion = 100 - pvBase; // all remains.
@@ -235,12 +231,28 @@ public class YTPlaylistSearchActivity extends YTSearchActivity {
             @Override
             public void onPlaylist(final long plid, final Object user) {
                 DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
-                    @Override
-                    public void onPostExecute(DiagAsyncTask task, Err result) {
+                    private CharSequence
+                    getReportText() {
+                        Resources res = Utils.getAppContext().getResources();
+                        return res.getText(R.string.done) + " : " + mtpr.nrDone + ", "
+                                   + res.getText(R.string.error) + " : " + mtpr.nrIgnored;
                     }
+
                     @Override
-                    public void onCancel(DiagAsyncTask task) {
+                    public void
+                    onPostExecute(DiagAsyncTask task, Err result) {
+                        if (Err.NO_ERR != result)
+                            UiUtils.showTextToast(YTPlaylistSearchActivity.this, result.getMessage());
+                        else
+                            UiUtils.showTextToast(YTPlaylistSearchActivity.this, getReportText());
                     }
+
+                    @Override
+                    public void
+                    onCancel(DiagAsyncTask task) {
+                        UiUtils.showTextToast(YTPlaylistSearchActivity.this, getReportText());
+                    }
+
                     @Override
                     public Err
                     doBackgroundWork(final DiagAsyncTask task, Object... objs) {

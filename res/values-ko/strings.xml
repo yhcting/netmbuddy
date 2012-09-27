@@ -24,6 +24,7 @@
     <string name="merge">합치기</string>
     <string name="low">낮음</string>
     <string name="normal">일반</string>
+    <string name="done">완료</string>
 
     <string name="enter_keyword">검색어 입력</string>
     <string name="new_search">새로 검색하기</string>

@@ -24,6 +24,7 @@
     <string name="merge">Merge</string>
     <string name="low">Low</string>
     <string name="normal">Normal</string>
+    <string name="done">Done</string>
 
     <string name="enter_keyword">Enter search keyword</string>
     <string name="new_search">New search</string>
