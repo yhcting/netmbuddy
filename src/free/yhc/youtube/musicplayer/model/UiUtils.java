@@ -58,7 +58,6 @@ public class UiUtils {
     }
 
     public interface OnPlaylistSelectedListener {
-        void onNewPlaylist(Object user);
         void onPlaylist(long plid, Object user);
     }
     // ========================================================================
@@ -227,6 +226,14 @@ public class UiUtils {
     }
 
     public static AlertDialog
+    buildOneLineEditTextDialog(Context context, int title, int initText, EditTextAction action) {
+        return buildOneLineEditTextDialog(context,
+                                          context.getResources().getText(title),
+                                          context.getResources().getText(initText),
+                                          action);
+    }
+
+    public static AlertDialog
     buildOneLineEditTextDialog(Context context, int title, EditTextAction action) {
         return buildOneLineEditTextDialog(context, context.getResources().getText(title), action);
     }
@@ -241,8 +248,8 @@ public class UiUtils {
      * @return
      */
     public static AlertDialog
-    buildSelectPlaylistDialog(DB                                db,
-                              Context                           context,
+    buildSelectPlaylistDialog(final DB                          db,
+                              final Context                     context,
                               final OnPlaylistSelectedListener  action,
                               long                              excludedPlid,
                               final Object                      user) {
@@ -280,12 +287,37 @@ public class UiUtils {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 eAssert(which >= 0);
-                if (0 == which)
-                    action.onNewPlaylist(user);
-                else
-                    action.onPlaylist(ids[which], user);
+                dialog.dismiss();
+                if (0 == which) {
+                    // Need to get new playlist name.
+                    UiUtils.EditTextAction edAction = new UiUtils.EditTextAction() {
+                        @Override
+                        public void prepare(Dialog dialog, EditText edit) { }
 
-                dialog.cancel();
+                        @Override
+                        public void onOk(Dialog dialog, EditText edit) {
+                            String title = edit.getText().toString();
+                            if (db.containsPlaylist(title)) {
+                                UiUtils.showTextToast(context, R.string.msg_existing_playlist);
+                                return;
+                            }
+
+                            long plid = db.insertPlaylist(title, "");
+                            if (plid < 0) {
+                                UiUtils.showTextToast(context, R.string.err_db_unknown);
+                                return;
+                            }
+
+                            action.onPlaylist(plid, user);
+                        }
+                    };
+                    AlertDialog diag = UiUtils.buildOneLineEditTextDialog(context,
+                                                                          R.string.enter_playlist_title,
+                                                                          R.string.enter_playlist_title,
+                                                                          edAction);
+                    diag.show();
+                } else
+                    action.onPlaylist(ids[which], user);
             }
         });
         return bldr.create();

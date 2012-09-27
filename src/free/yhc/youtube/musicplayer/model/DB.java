@@ -275,7 +275,9 @@ public class DB extends SQLiteOpenHelper {
      * @return
      */
     private static String
-    buildQueryVideosSQL(long plid, ColVideo[] cols, ColVideo colOrderBy, boolean asc) {
+    buildQueryVideosSQL(long plid, ColVideo[] cols,
+                        ColVideo field, Object value,
+                        ColVideo colOrderBy, boolean asc) {
         eAssert(cols.length > 0);
 
         String sql = "SELECT ";
@@ -286,6 +288,12 @@ public class DB extends SQLiteOpenHelper {
             sel += tableVideoNS + cnames[i] + ", ";
         sel += tableVideoNS + cnames[cnames.length - 1];
 
+        String where = "";
+        if (null != field && null != value)
+            where = " AND "
+                    + tableVideoNS + field.getName() + " = "
+                    + DatabaseUtils.sqlEscapeString(value.toString());
+
         String orderBy = buildSQLOrderBy(true, colOrderBy, asc);
         // NOTE
         // There is NO USE CASE requiring sorted cursor for videos.
@@ -294,6 +302,7 @@ public class DB extends SQLiteOpenHelper {
         sql += sel + " FROM " + TABLE_VIDEO + ", " + mrefTable
                 + " WHERE " + mrefTable + "." + ColVideoRef.VIDEOID.getName()
                             + " = " + tableVideoNS + ColVideo.ID.getName()
+                + where
                 + " " + (null != orderBy? orderBy: "")
                 + ";";
         return sql;
@@ -570,7 +579,7 @@ public class DB extends SQLiteOpenHelper {
     }
 
     private boolean
-    doesVideoExist(long plid, long vid) {
+    containsVideo(long plid, long vid) {
         Cursor c = mDb.query(getVideoRefTableName(plid),
                              new String[] { ColVideoRef.ID.getName() },
                              ColVideoRef.VIDEOID.getName() + " = " + vid,
@@ -748,7 +757,7 @@ public class DB extends SQLiteOpenHelper {
             do {
                 int i = 0;
                 String plTitle = excPl.getString(plColiTitle);
-                while (doesPlaylistExist(plTitle)) {
+                while (containsPlaylist(plTitle)) {
                     i++;
                     plTitle = excPl.getString(plColiTitle)+ "_" + i + "_";
                 }
@@ -908,7 +917,7 @@ public class DB extends SQLiteOpenHelper {
     //
     // ======================================================================
     public boolean
-    doesPlaylistExist(String title) {
+    containsPlaylist(String title) {
         boolean r;
         Cursor c = mDb.query(TABLE_PLAYLIST,
                              new String[] { ColPlaylist.ID.getName() },
@@ -985,8 +994,18 @@ public class DB extends SQLiteOpenHelper {
     }
 
     public boolean
-    existVideo(String videoId) {
-        Cursor c = queryVideos(new ColVideo[] { ColVideo.ID }, ColVideo.VIDEOID, videoId);
+    containsVideo(String ytvid) {
+        Cursor c = queryVideos(new ColVideo[] { ColVideo.ID }, ColVideo.VIDEOID, ytvid);
+        boolean r = c.getCount() > 0;
+        c.close();
+        return r;
+    }
+
+    public boolean
+    containsVideo(long plid, String ytvid) {
+        Cursor c = mDb.rawQuery(buildQueryVideosSQL(plid, new ColVideo[] { ColVideo.ID },
+                                                    ColVideo.VIDEOID, ytvid,
+                                                    null, true), null);
         boolean r = c.getCount() > 0;
         c.close();
         return r;
@@ -994,7 +1013,7 @@ public class DB extends SQLiteOpenHelper {
 
     public Err
     insertVideoToPlaylist(long plid, long vid) {
-        if (doesVideoExist(plid, vid))
+        if (containsVideo(plid, vid))
             return Err.DB_DUPLICATED;
 
         if (0 > insertVideoRef(plid, vid))
@@ -1044,7 +1063,7 @@ public class DB extends SQLiteOpenHelper {
             c.moveToFirst();
             vid = c.getLong(0);
             c.close();
-            if (doesVideoExist(plid, vid))
+            if (containsVideo(plid, vid))
                 return Err.DB_DUPLICATED;
 
             if (0 > insertVideoRef(plid, vid))
@@ -1121,7 +1140,7 @@ public class DB extends SQLiteOpenHelper {
     public Cursor
     queryVideos(long plid, ColVideo[] cols, ColVideo colOrderBy, boolean asc) {
         eAssert(cols.length > 0);
-        return mDb.rawQuery(buildQueryVideosSQL(plid, cols, colOrderBy, asc), null);
+        return mDb.rawQuery(buildQueryVideosSQL(plid, cols, null, null, colOrderBy, asc), null);
     }
 
     public Cursor

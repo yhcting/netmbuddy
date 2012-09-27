@@ -33,6 +33,7 @@
     <string name="new_playlist">New playlist</string>
     <string name="add_to">Add to</string>
     <string name="move_to">Move to</string>
+    <string name="merge_to">Merge to</string>
     <string name="enter_playlist_title">Enter playlist title</string>
     <string name="recently_played">Recently played</string>
     <string name="set_to_plthumbnail">Set as playlist icon</string>
@@ -50,6 +51,7 @@
     <string name="importing_db">Importing DB</string>
     <string name="merging_db">Merging DB</string>
     <string name="exporting_db">Exporting DB</string>
+    <string name="merging_playlist">Merging playlist</string>
     <string name="append_to_playq">Append to player</string>
 
     <string name="pref_cat_operation">Playing music</string>

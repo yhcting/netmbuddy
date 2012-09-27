@@ -222,10 +222,10 @@ public class PlaylistActivity extends Activity {
                     return;
                 }
 
-                SpinAsyncTask.Worker worker = new SpinAsyncTask.Worker() {
+                DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
                     @Override
                     public void
-                    onPostExecute(SpinAsyncTask task, Err result) {
+                    onPostExecute(DiagAsyncTask task, Err result) {
                         if (Err.NO_ERR == result)
                             getAdapter().reloadCursorAsync();
                         else
@@ -233,15 +233,18 @@ public class PlaylistActivity extends Activity {
                     }
 
                     @Override
-                    public void onCancel(SpinAsyncTask task) { }
+                    public void onCancel(DiagAsyncTask task) { }
 
                     @Override
                     public Err
-                    doBackgroundWork(SpinAsyncTask task, Object... objs) {
+                    doBackgroundWork(DiagAsyncTask task, Object... objs) {
                         return importDbInBackground(exDbf);
                     }
                 };
-                new SpinAsyncTask(PlaylistActivity.this, worker, R.string.importing_db, false).execute(exDbf);
+                new DiagAsyncTask(PlaylistActivity.this, worker,
+                                  DiagAsyncTask.Style.SPIN,
+                                  R.string.importing_db, false)
+                .execute(exDbf);
             }
         }).show();
     }
@@ -261,10 +264,10 @@ public class PlaylistActivity extends Activity {
                     return;
                 }
 
-                SpinAsyncTask.Worker worker = new SpinAsyncTask.Worker() {
+                DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
                     @Override
                     public void
-                    onPostExecute(SpinAsyncTask task, Err result) {
+                    onPostExecute(DiagAsyncTask task, Err result) {
                         if (Err.NO_ERR == result)
                             getAdapter().reloadCursorAsync();
                         else
@@ -272,15 +275,18 @@ public class PlaylistActivity extends Activity {
                     }
 
                     @Override
-                    public void onCancel(SpinAsyncTask task) { }
+                    public void onCancel(DiagAsyncTask task) { }
 
                     @Override
                     public Err
-                    doBackgroundWork(SpinAsyncTask task, Object... objs) {
+                    doBackgroundWork(DiagAsyncTask task, Object... objs) {
                         return mergeDbInBackground(exDbf);
                     }
                 };
-                new SpinAsyncTask(PlaylistActivity.this, worker, R.string.merging_db, false).execute(exDbf);
+                new DiagAsyncTask(PlaylistActivity.this, worker,
+                                  DiagAsyncTask.Style.SPIN,
+                                  R.string.merging_db, false)
+                .execute(exDbf);
             }
         }).show();
     }
@@ -300,25 +306,27 @@ public class PlaylistActivity extends Activity {
                     return;
                 }
 
-                SpinAsyncTask.Worker worker = new SpinAsyncTask.Worker() {
+                DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
                     @Override
                     public void
-                    onPostExecute(SpinAsyncTask task, Err result) {
+                    onPostExecute(DiagAsyncTask task, Err result) {
                         if (Err.NO_ERR != result) {
                             UiUtils.showTextToast(PlaylistActivity.this, result.getMessage());
                         }
                     }
 
                     @Override
-                    public void onCancel(SpinAsyncTask task) { }
+                    public void onCancel(DiagAsyncTask task) { }
 
                     @Override
                     public Err
-                    doBackgroundWork(SpinAsyncTask task, Object... objs) {
+                    doBackgroundWork(DiagAsyncTask task, Object... objs) {
                         return exportDbInBackground(exDbf);
                     }
                 };
-                new SpinAsyncTask(PlaylistActivity.this, worker, R.string.exporting_db, false).execute(exDbf);
+                new DiagAsyncTask(PlaylistActivity.this, worker,
+                                  DiagAsyncTask.Style.SPIN,
+                                  R.string.exporting_db, false).execute(exDbf);
             }
         }).show();
     }
@@ -512,7 +520,7 @@ public class PlaylistActivity extends Activity {
     }
 
     private void
-    onContextRename(final AdapterContextMenuInfo info) {
+    onContextMenuRename(final AdapterContextMenuInfo info) {
         UiUtils.EditTextAction action = new UiUtils.EditTextAction() {
             @Override
             public void prepare(Dialog dialog, EditText edit) { }
@@ -531,21 +539,24 @@ public class PlaylistActivity extends Activity {
     }
 
     private void
-    onContextDelete(AdapterContextMenuInfo info) {
-        SpinAsyncTask.Worker worker = new SpinAsyncTask.Worker() {
+    onContextMenuDelete(AdapterContextMenuInfo info) {
+        DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
             @Override
-            public void onPostExecute(SpinAsyncTask task, Err result) {
+            public void onPostExecute(DiagAsyncTask task, Err result) {
                 getAdapter().reloadCursor();
             }
             @Override
-            public void onCancel(SpinAsyncTask task) { }
+            public void onCancel(DiagAsyncTask task) { }
             @Override
-            public Err doBackgroundWork(SpinAsyncTask task, Object... objs) {
+            public Err doBackgroundWork(DiagAsyncTask task, Object... objs) {
                 mDb.deletePlaylist((Long)objs[0]);
                 return Err.NO_ERR;
             }
         };
-        new SpinAsyncTask(this, worker, R.string.loading, false).execute(info.id);
+        new DiagAsyncTask(this, worker,
+                          DiagAsyncTask.Style.SPIN,
+                          R.string.deleting, false)
+        .execute(info.id);
     }
 
     private void
@@ -564,11 +575,11 @@ public class PlaylistActivity extends Activity {
         AdapterContextMenuInfo info = (AdapterContextMenuInfo)mItem.getMenuInfo();
         switch (mItem.getItemId()) {
         case R.id.rename:
-            onContextRename(info);
+            onContextMenuRename(info);
             return true;
 
         case R.id.delete:
-            onContextDelete(info);
+            onContextMenuDelete(info);
             return true;
         }
         eAssert(false);

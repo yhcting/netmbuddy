@@ -42,6 +42,8 @@ import android.os.Message;
 import android.os.Process;
 
 public class YTSearchHelper {
+    public static final int MAX_NR_RESULT_PER_PAGE      = 50; // See Youtube API Document
+
     private static final int MSG_WHAT_SEARCH            = 0;
     private static final int MSG_WHAT_LOAD_THUMBNAIL    = 1;
 
@@ -100,6 +102,24 @@ public class YTSearchHelper {
         }
     }
 
+    public static class SearchReturn {
+        public YTFeed.Result   r;
+        public Err             err;
+        SearchReturn(YTFeed.Result aR, Err aErr) {
+            r = aR;
+            err = aErr;
+        }
+    }
+
+    public static class LoadThumbnailReturn {
+        public Bitmap  bm;
+        public Err     err;
+        LoadThumbnailReturn(Bitmap aBm, Err aErr) {
+            bm = aBm;
+            err = aErr;
+        }
+    }
+
     private static enum FeedType {
         VIDEO,
         PLAYLIST
@@ -121,120 +141,21 @@ public class YTSearchHelper {
             super(looper);
         }
 
-        private byte[]
-        loadUrl(String urlStr) throws YTMPException {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            Uri uri = Uri.parse(urlStr);
-            NetLoader loader = new NetLoader().open(null);
-            loader.readHttpData(baos, uri);
-            loader.close();
-
-            byte[] data = baos.toByteArray();
-            try {
-                baos.close();
-            } catch (IOException e) {
-                throw new YTMPException(Err.IO_UNKNOWN);
-            }
-
-            return data;
-        }
-
-        private YTFeed.Result
-        parse(byte[] xmlData, FeedType type) throws YTMPException {
-            Document dom;
-            try {
-                dom = DocumentBuilderFactory.newInstance()
-                                            .newDocumentBuilder()
-                                            .parse(new ByteArrayInputStream(xmlData));
-            } catch (IOException ie) {
-                logW("YTSearchHelper.JobHandler : DOM IO error!");
-                throw new YTMPException(Err.IO_UNKNOWN);
-            } catch (SAXException se) {
-                logW("YTSearchHelper.JobHandler : Parse unexpected format!");
-                throw new YTMPException(Err.PARSER_UNEXPECTED_FORMAT);
-            } catch (ParserConfigurationException pe) {
-                logW("YTSearchHelper.JobHandler : Parse cofiguration exception!");
-                throw new YTMPException(Err.PARSER_UNKNOWN);
-            }
-
-            switch (type) {
-            case VIDEO:
-                return YTVideoFeed.parseFeed(dom);
-
-            case PLAYLIST:
-                return YTPlaylistFeed.parseFeed(dom);
-
-            default:
-                eAssert(false);
-            }
-            return null;
-        }
-
-        private void
-        handleSearch(SearchArg arg) {
-            YTFeed.Result r = null;
-            try {
-                switch (arg.type) {
-                case VID_KEYWORD:
-                    r = parse(loadUrl(YTVideoFeed.getFeedUrlByKeyword(arg.text, arg.starti, arg.max)),
-                              FeedType.VIDEO);
-                    break;
-
-                case VID_AUTHOR:
-                    r = parse(loadUrl(YTVideoFeed.getFeedUrlByAuthor(arg.text, arg.starti, arg.max)),
-                              FeedType.VIDEO);
-                    break;
-
-                case VID_PLAYLIST:
-                    r = parse(loadUrl(YTVideoFeed.getFeedUrlByPlaylist(arg.text, arg.starti, arg.max)),
-                              FeedType.VIDEO);
-                    break;
-
-                case PL_USER:
-                    r = parse(loadUrl(YTPlaylistFeed.getFeedUrlByUser(arg.text, arg.starti, arg.max)),
-                              FeedType.PLAYLIST);
-                    break;
-
-                default:
-                    eAssert(false);
-                }
-            } catch (YTMPException e) {
-                eAssert(Err.NO_ERR != e.getError());
-                Object extra = e.getExtra();
-                if (Err.YTHTTPGET == e.getError()
-                    && extra instanceof Integer
-                    && ((Integer)extra) == HttpUtils.SC_NOT_FOUND)
-                    e = new YTMPException(Err.YTINVALID_PARAM);
-
-                sendFeedDone(arg, null, e.getError());
-                return;
-            }
-            sendFeedDone(arg, r, Err.NO_ERR);
-        }
-
-        private void
-        handlerLoadThumbnail(LoadThumbnailArg arg) {
-            Bitmap bm;
-            try {
-                bm = Utils.decodeImage(loadUrl(arg.url), arg.width, arg.height);
-            } catch (YTMPException e) {
-                eAssert(Err.NO_ERR != e.getError());
-                sendLoadThumbnailDone(arg, null, e.getError());
-                return;
-            }
-            sendLoadThumbnailDone(arg, bm, Err.NO_ERR);
-        }
-
         @Override
         public void
         handleMessage(Message msg) {
             switch (msg.what) {
-            case MSG_WHAT_SEARCH:
-                handleSearch((SearchArg)msg.obj);
-                break;
-            case MSG_WHAT_LOAD_THUMBNAIL:
-                handlerLoadThumbnail((LoadThumbnailArg)msg.obj);
-                break;
+            case MSG_WHAT_SEARCH: {
+                SearchArg arg = (SearchArg)msg.obj;
+                SearchReturn r = doSearch(arg);
+                sendFeedDone(arg, r.r, r.err);
+            } break;
+
+            case MSG_WHAT_LOAD_THUMBNAIL: {
+                LoadThumbnailArg arg = (LoadThumbnailArg)msg.obj;
+                LoadThumbnailReturn r = doLoadThumbnail(arg);
+                sendLoadThumbnailDone(arg, r.bm, r.err);
+            } break;
             }
         }
     }
@@ -262,6 +183,109 @@ public class YTSearchHelper {
         });
         return;
     }
+
+    private LoadThumbnailReturn
+    doLoadThumbnail(LoadThumbnailArg arg) {
+        Bitmap bm;
+        try {
+            bm = Utils.decodeImage(loadUrl(arg.url), arg.width, arg.height);
+        } catch (YTMPException e) {
+            eAssert(Err.NO_ERR != e.getError());
+            return new LoadThumbnailReturn(null, e.getError());
+        }
+        return new LoadThumbnailReturn(bm, Err.NO_ERR);
+    }
+
+    private byte[]
+    loadUrl(String urlStr) throws YTMPException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        Uri uri = Uri.parse(urlStr);
+        NetLoader loader = new NetLoader().open(null);
+        loader.readHttpData(baos, uri);
+        loader.close();
+
+        byte[] data = baos.toByteArray();
+        try {
+            baos.close();
+        } catch (IOException e) {
+            throw new YTMPException(Err.IO_UNKNOWN);
+        }
+
+        return data;
+    }
+
+    private YTFeed.Result
+    parse(byte[] xmlData, FeedType type) throws YTMPException {
+        Document dom;
+        try {
+            dom = DocumentBuilderFactory.newInstance()
+                                        .newDocumentBuilder()
+                                        .parse(new ByteArrayInputStream(xmlData));
+        } catch (IOException ie) {
+            logW("YTSearchHelper.JobHandler : DOM IO error!");
+            throw new YTMPException(Err.IO_UNKNOWN);
+        } catch (SAXException se) {
+            logW("YTSearchHelper.JobHandler : Parse unexpected format!");
+            throw new YTMPException(Err.PARSER_UNEXPECTED_FORMAT);
+        } catch (ParserConfigurationException pe) {
+            logW("YTSearchHelper.JobHandler : Parse cofiguration exception!");
+            throw new YTMPException(Err.PARSER_UNKNOWN);
+        }
+
+        switch (type) {
+        case VIDEO:
+            return YTVideoFeed.parseFeed(dom);
+
+        case PLAYLIST:
+            return YTPlaylistFeed.parseFeed(dom);
+
+        default:
+            eAssert(false);
+        }
+        return null;
+    }
+
+    private SearchReturn
+    doSearch(SearchArg arg) {
+        YTFeed.Result r = null;
+        try {
+            switch (arg.type) {
+            case VID_KEYWORD:
+                r = parse(loadUrl(YTVideoFeed.getFeedUrlByKeyword(arg.text, arg.starti, arg.max)),
+                          FeedType.VIDEO);
+                break;
+
+            case VID_AUTHOR:
+                r = parse(loadUrl(YTVideoFeed.getFeedUrlByAuthor(arg.text, arg.starti, arg.max)),
+                          FeedType.VIDEO);
+                break;
+
+            case VID_PLAYLIST:
+                r = parse(loadUrl(YTVideoFeed.getFeedUrlByPlaylist(arg.text, arg.starti, arg.max)),
+                          FeedType.VIDEO);
+                break;
+
+            case PL_USER:
+                r = parse(loadUrl(YTPlaylistFeed.getFeedUrlByUser(arg.text, arg.starti, arg.max)),
+                          FeedType.PLAYLIST);
+                break;
+
+            default:
+                eAssert(false);
+            }
+        } catch (YTMPException e) {
+            eAssert(Err.NO_ERR != e.getError());
+            Object extra = e.getExtra();
+            if (Err.YTHTTPGET == e.getError()
+                && extra instanceof Integer
+                && ((Integer)extra) == HttpUtils.SC_NOT_FOUND)
+                e = new YTMPException(Err.YTINVALID_PARAM);
+
+            return new SearchReturn(null, e.getError());
+        }
+        return new SearchReturn(r, Err.NO_ERR);
+    }
+
 
     public YTSearchHelper() {
     }
@@ -291,6 +315,20 @@ public class YTSearchHelper {
             return Err.NO_ERR;
         }
         return Err.NETWORK_UNAVAILABLE;
+    }
+
+    public SearchReturn
+    search(SearchArg arg) {
+        if (!Utils.isNetworkAvailable())
+            return new SearchReturn(null, Err.NETWORK_UNAVAILABLE);
+        return doSearch(arg);
+    }
+
+    public LoadThumbnailReturn
+    loadThumbnail(LoadThumbnailArg arg) {
+        if (!Utils.isNetworkAvailable())
+            return new LoadThumbnailReturn(null, Err.NETWORK_UNAVAILABLE);
+        return doLoadThumbnail(arg);
     }
 
     public void

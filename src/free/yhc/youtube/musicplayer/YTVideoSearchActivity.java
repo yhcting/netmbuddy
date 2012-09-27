@@ -128,41 +128,11 @@ DBHelper.CheckExistDoneReceiver {
     }
 
     private void
-    addToNewPlaylist(final int position) {
-        UiUtils.EditTextAction action = new UiUtils.EditTextAction() {
-            @Override
-            public void prepare(Dialog dialog, EditText edit) { }
-
-            @Override
-            public void onOk(Dialog dialog, EditText edit) {
-                String title = edit.getText().toString();
-                if (mDb.doesPlaylistExist(title)) {
-                    UiUtils.showTextToast(YTVideoSearchActivity.this, R.string.msg_existing_playlist);
-                    return;
-                }
-
-                long plid = mDb.insertPlaylist(title, "");
-                if (plid < 0) {
-                    UiUtils.showTextToast(YTVideoSearchActivity.this, R.string.err_db_unknown);
-                } else {
-                    addToPlaylist(plid, position);
-                }
-            }
-        };
-        AlertDialog diag = UiUtils.buildOneLineEditTextDialog(this, R.string.enter_playlist_title, action);
-        diag.show();
-    }
-
-    private void
     onContextMenuAddTo(final int position) {
         UiUtils.OnPlaylistSelectedListener action = new UiUtils.OnPlaylistSelectedListener() {
             @Override
             public void onPlaylist(long plid, Object user) {
                 addToPlaylist(plid, (Integer)user);
-            }
-            @Override
-            public void onNewPlaylist(Object user) {
-                addToNewPlaylist((Integer)user);
             }
         };
 

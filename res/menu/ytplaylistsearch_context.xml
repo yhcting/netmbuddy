@@ -1,4 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android" >
-    <item android:id="@+id/import_"                  android:title="@string/import_"></item>
+    <item android:id="@+id/merge_to"            android:title="@string/merge_to"></item>
 </menu>

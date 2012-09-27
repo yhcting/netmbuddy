@@ -68,32 +68,6 @@ public class MusicsActivity extends Activity {
     }
 
     private void
-    addToNewPlaylist(final long mid, final boolean move) {
-        UiUtils.EditTextAction action = new UiUtils.EditTextAction() {
-            @Override
-            public void prepare(Dialog dialog, EditText edit) { }
-
-            @Override
-            public void onOk(Dialog dialog, EditText edit) {
-                String title = edit.getText().toString();
-                if (mDb.doesPlaylistExist(title)) {
-                    UiUtils.showTextToast(MusicsActivity.this, R.string.msg_existing_playlist);
-                    return;
-                }
-
-                long plid = mDb.insertPlaylist(title, "");
-                if (plid < 0) {
-                    UiUtils.showTextToast(MusicsActivity.this, R.string.err_db_unknown);
-                } else {
-                    addToPlaylist(plid, mid, move);
-                }
-            }
-        };
-        AlertDialog diag = UiUtils.buildOneLineEditTextDialog(this, R.string.enter_playlist_title, action);
-        diag.show();
-    }
-
-    private void
     addToPlaylist(long plid, long mid, boolean move) {
         eAssert(isUserPlaylist(plid));
         Err err = mDb.insertVideoToPlaylist(plid, mid);
@@ -114,11 +88,6 @@ public class MusicsActivity extends Activity {
             public void onPlaylist(long plid, Object user) {
                 addToPlaylist(plid, musicId, move);
             }
-
-            @Override
-            public void onNewPlaylist(Object user) {
-                addToNewPlaylist(musicId, move);
-            }
         };
 
         // exclude current playlist
@@ -128,21 +97,23 @@ public class MusicsActivity extends Activity {
 
     private void
     onDeleteMusicCompletely(final long mid) {
-        SpinAsyncTask.Worker worker = new SpinAsyncTask.Worker() {
+        DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
             @Override
-            public void onPostExecute(SpinAsyncTask task, Err result) {
+            public void onPostExecute(DiagAsyncTask task, Err result) {
                 getAdapter().reloadCursorAsync();
             }
             @Override
-            public void onCancel(SpinAsyncTask task) {
+            public void onCancel(DiagAsyncTask task) {
             }
             @Override
-            public Err doBackgroundWork(SpinAsyncTask task, Object... objs) {
+            public Err doBackgroundWork(DiagAsyncTask task, Object... objs) {
                 mDb.deleteVideoAndRefsCompletely(mid);
                 return Err.NO_ERR;
             }
         };
-        new SpinAsyncTask(this, worker, R.string.deleting, false).execute();
+        new DiagAsyncTask(this, worker,
+                          DiagAsyncTask.Style.SPIN,
+                          R.string.deleting, false).execute();
     }
 
     private void

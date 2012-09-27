@@ -81,24 +81,26 @@ public class PlaylistAdapter extends ResourceCursorAdapter {
 
     public void
     reloadCursorAsync() {
-        SpinAsyncTask.Worker worker = new SpinAsyncTask.Worker() {
+        DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
             private Cursor newCursor;
             @Override
-            public void onPostExecute(SpinAsyncTask task, Err result) {
+            public void onPostExecute(DiagAsyncTask task, Err result) {
                 changeCursor(newCursor);
             }
             @Override
-            public void onCancel(SpinAsyncTask task) {
+            public void onCancel(DiagAsyncTask task) {
                 // TODO Auto-generated method stub
 
             }
             @Override
-            public Err doBackgroundWork(SpinAsyncTask task, Object... objs) {
+            public Err doBackgroundWork(DiagAsyncTask task, Object... objs) {
                 newCursor = createCursor();
                 return Err.NO_ERR;
             }
         };
-        new SpinAsyncTask(mContext, worker, R.string.loading, false).execute();
+        new DiagAsyncTask(mContext, worker,
+                          DiagAsyncTask.Style.SPIN,
+                          R.string.loading, false).execute();
     }
 
     public String
