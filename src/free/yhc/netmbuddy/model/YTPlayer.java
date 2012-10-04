@@ -1372,6 +1372,9 @@ MediaPlayer.OnSeekCompleteListener {
 
     public Err
     setController(Context context, ViewGroup playerv) {
+        // update notification by force
+        notiConfigure(MPState.INVALID, mpGetState());
+
         if (context == mVContext && mPlayerv == playerv)
             // controller is already set for this context.
             // So, nothing to do. just return!
