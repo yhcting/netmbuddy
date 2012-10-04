@@ -99,7 +99,7 @@
         <SeekBar
             android:id="@+id/music_player_seekbar" 
             android:layout_width="0dip" 
-            android:layout_height="22dip"
+            android:layout_height="25dip"
             android:layout_weight="1"
             android:progressDrawable="@drawable/progressbar"
             android:thumb="@drawable/seek_thumb"
