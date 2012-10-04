@@ -102,6 +102,7 @@ MediaPlayer.OnSeekCompleteListener {
     // ------------------------------------------------------------------------
     private final UpdateProgress    mUpdateProg = new UpdateProgress();
     private final AutoStop          mAutoStop   = new AutoStop();
+    private final StartVideoRecovery    mStartVideoRecovery = new StartVideoRecovery();
 
     // ------------------------------------------------------------------------
     //
@@ -206,6 +207,37 @@ MediaPlayer.OnSeekCompleteListener {
         @Override
         public void run() {
             stopVideos();
+        }
+    }
+
+    private class StartVideoRecovery implements Runnable {
+        private Video v = null;
+
+        void cancel() {
+            Utils.getUiHandler().removeCallbacks(this);
+        }
+
+        // USE THIS FUNCTION
+        void executeRecoveryStart(Video aV, long delays) {
+            eAssert(Utils.isUiThread());
+            cancel();
+            v = aV;
+            if (delays > 0)
+                Utils.getUiHandler().postDelayed(this, delays);
+            else
+                Utils.getUiHandler().post(this);
+        }
+
+        void executeRecoveryStart(Video aV) {
+            executeRecoveryStart(aV, 0);
+        }
+
+        // DO NOT run this explicitly.
+        @Override
+        public void run() {
+            eAssert(Utils.isUiThread());
+            if (null != v)
+                startVideo(v, true);
         }
     }
 
@@ -678,16 +710,6 @@ MediaPlayer.OnSeekCompleteListener {
         if (null == titlev)
             return;
 
-        if (!Utils.isNetworkAvailable()) {
-            Utils.getUiHandler().post(new Runnable() {
-                @Override
-                public void run() {
-                    stopPlay(StopState.NETWORK_UNAVAILABLE);
-                }
-            });
-            return;
-        }
-
         CharSequence videoTitle = "";
         if (mVlm.hasActiveVideo())
             videoTitle = mVlm.getActiveVideo().title;
@@ -1105,8 +1127,6 @@ MediaPlayer.OnSeekCompleteListener {
     private void
     prepareVideoStreaming(final String videoId) {
         logI("Prepare Video Streaming : " + videoId);
-        if (!Utils.isNetworkAvailable())
-            return; // prepare fails.
 
         YTHacker.YtHackListener listener = new YTHacker.YtHackListener() {
             @Override
@@ -1133,12 +1153,7 @@ MediaPlayer.OnSeekCompleteListener {
 
                 if (Err.NO_ERR != result) {
                     logW("YTPlayer YTVideoConnector Fails : " + result.name());
-                    Utils.getUiHandler().post(new Runnable() {
-                        @Override
-                        public void run() {
-                            startVideo(mVlm.getActiveVideo(), true);
-                        }
-                    });
+                    mStartVideoRecovery.executeRecoveryStart(mVlm.getActiveVideo());
                     return;
                 }
 
@@ -1147,12 +1162,7 @@ MediaPlayer.OnSeekCompleteListener {
                     mpSetDataSource(Uri.parse(ytv.url));
                 } catch (IOException e) {
                     logW("YTPlayer SetDataSource IOException : " + e.getMessage());
-                    Utils.getUiHandler().post(new Runnable() {
-                        @Override
-                        public void run() {
-                            startVideo(mVlm.getActiveVideo(), true);
-                        }
-                    });
+                    mStartVideoRecovery.executeRecoveryStart(mVlm.getActiveVideo(), 500);
                     return;
                 }
 
@@ -1197,12 +1207,7 @@ MediaPlayer.OnSeekCompleteListener {
             // Clean cache and try again - next time as streaming!
             cleanCache(true);
             logW("YTPlayer SetDataSource to Cached File IOException : " + e.getMessage());
-            Utils.getUiHandler().post(new Runnable() {
-                @Override
-                public void run() {
-                    startVideo(mVlm.getActiveVideo(), true);
-                }
-            });
+            mStartVideoRecovery.executeRecoveryStart(mVlm.getActiveVideo());
         }
         mpPrepareAsync();
 
@@ -1222,13 +1227,19 @@ MediaPlayer.OnSeekCompleteListener {
     startVideo(final String videoId, final int volume, boolean recovery) {
         eAssert(0 <= volume && volume <= 100);
 
+        // Clean recovery try
+        mStartVideoRecovery.cancel();
+
         // Whenever start videos, try to clean cache.
         cleanCache(false);
 
         if (recovery) {
             mErrRetry--;
             if (mErrRetry <= 0) {
-                stopPlay(StopState.UNKNOWN_ERROR);
+                if (Utils.isNetworkAvailable())
+                    stopPlay(StopState.UNKNOWN_ERROR);
+                else
+                    stopPlay(StopState.NETWORK_UNAVAILABLE);
                 return;
             }
         } else
@@ -1244,8 +1255,12 @@ MediaPlayer.OnSeekCompleteListener {
         File cachedVid = getCachedVideo(videoId);
         if (cachedVid.exists() && cachedVid.canRead())
             prepareCachedVideo(cachedVid);
-        else
-            prepareVideoStreaming(videoId);
+        else {
+            if (!Utils.isNetworkAvailable())
+                mStartVideoRecovery.executeRecoveryStart(new Video(videoId, "", volume, 0), 1000);
+            else
+                prepareVideoStreaming(videoId);
+        }
 
     }
 

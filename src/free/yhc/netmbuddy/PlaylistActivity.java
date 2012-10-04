@@ -676,6 +676,8 @@ public class PlaylistActivity extends Activity {
     @Override
     public void
     onBackPressed() {
+        // stop playing if exit via back-key.
+        mMp.stopVideos();
         super.onBackPressed();
     }
 }
