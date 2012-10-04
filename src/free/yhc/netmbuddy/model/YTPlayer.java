@@ -1105,6 +1105,9 @@ MediaPlayer.OnSeekCompleteListener {
     private void
     prepareVideoStreaming(final String videoId) {
         logI("Prepare Video Streaming : " + videoId);
+        if (!Utils.isNetworkAvailable())
+            return; // prepare fails.
+
         YTHacker.YtHackListener listener = new YTHacker.YtHackListener() {
             @Override
             public void

@@ -237,9 +237,11 @@ public class Utils {
     public static boolean
     isNetworkAvailable() {
         ConnectivityManager cm = (ConnectivityManager)getAppContext().getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo ni = cm.getActiveNetworkInfo();
-        if (null != ni)
-            return ni.isConnectedOrConnecting();
+        NetworkInfo wifiNi = cm.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
+        NetworkInfo mobileNi = cm.getNetworkInfo(ConnectivityManager.TYPE_MOBILE);
+        if ((null != wifiNi && wifiNi.isConnected())
+            || (null != mobileNi && mobileNi.isConnected()))
+            return true;
         else
             return false;
     }

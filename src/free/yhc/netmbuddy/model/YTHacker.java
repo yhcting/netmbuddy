@@ -271,6 +271,9 @@ public class YTHacker {
 
     private Err
     doMainWork() {
+        if (!Utils.isNetworkAvailable())
+            return Err.NETWORK_UNAVAILABLE;
+
         NetLoader.HttpRespContent content;
         Err err = Err.NO_ERR;
         try {
