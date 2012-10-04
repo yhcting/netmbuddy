@@ -65,6 +65,8 @@
     <string name="pref_quality">음질</string>
     <string name="pref_quality_desc">네트워크 상태가 좋지 않다면 [낮음], 그렇지 않으면 [일반]을 권장 합니다.</string>
 
+    <string name="pref_autostop_10m">10분</string>
+    <string name="pref_autostop_20m">20분</string>
     <string name="pref_autostop_30m">30분</string>
     <string name="pref_autostop_1h">1시간</string>
     <string name="pref_autostop_2h">2시간</string>

@@ -10,6 +10,8 @@
     </string-array>
     <string-array name="strarr_pref_autostop_entry">
         <item>@string/off</item>
+        <item>@string/pref_autostop_10m</item>
+        <item>@string/pref_autostop_20m</item>
         <item>@string/pref_autostop_30m</item>
         <item>@string/pref_autostop_1h</item>
         <item>@string/pref_autostop_2h</item>
@@ -17,6 +19,8 @@
     <!-- integer value of minutes : 0 means OFF -->
     <string-array name="strarr_pref_autostop_value">
         <item>0</item>
+        <item>10</item>
+        <item>20</item>
         <item>30</item>
         <item>60</item>
         <item>120</item>

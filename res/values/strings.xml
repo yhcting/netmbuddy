@@ -65,6 +65,8 @@
     <string name="pref_quality">Audio quality</string>
     <string name="pref_quality_desc">Low quality for poor network condition, otherwise normal is recommended</string>
 
+    <string name="pref_autostop_10m">10 minutes</string>
+    <string name="pref_autostop_20m">20 minutes</string>
     <string name="pref_autostop_30m">30 minutes</string>
     <string name="pref_autostop_1h">1 hour</string>
     <string name="pref_autostop_2h">2 hours</string>
