@@ -422,7 +422,7 @@ public class PlaylistActivity extends Activity {
             return;
         }
         sendMail(getResources().getText(R.string.choose_app),
-                 getResources().getText(R.string.report_opinion_title),
+                 "[ " + getResources().getText(R.string.app_name) + " ] " + getResources().getText(R.string.feedback),
                  "");
     }
 

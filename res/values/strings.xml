@@ -84,8 +84,6 @@
     <string name="guide_desc_playlist_row">Play all musics belonging to the playlist by touching row at the list.</string>
     <string name="guide_desc_detaillist">Lists all musics belongs to the playlist.</string>
 
-    <string name="report_opinion_title">[Youtube Music Player] Opinion</string>
-
     <string name="msg_not_implemented">Not implemented yet.</string>
     <string name="msg_ytplayer_err">Fail in playing.</string>
     <string name="msg_initialize_app">Preparing application.</string>
@@ -124,7 +122,6 @@
     <string name="err_end_of_data">End of data.</string>
 
     <string name="appinfo_text">
-Youtube Music Player(YTMPlayer)\n
 E-mail : yhcting77@gmail.com\n
 Blog : yhcting.tistory.com\n
 \n

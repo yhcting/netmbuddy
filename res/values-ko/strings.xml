@@ -84,8 +84,6 @@
     <string name="guide_desc_playlist_row">리스트의 항목을 터치하면, 재생목록에 등록된 음악 전체를 재생합니다.</string>
     <string name="guide_desc_detaillist">재생목록에 등록된 모든 곡의 목록을 보여줍니다.</string>
 
-    <string name="report_opinion_title">[유투브 뮤직 플레이어] 의견</string>
-
     <string name="msg_not_implemented">아직 개발 중인 기능입니다.</string>
     <string name="msg_ytplayer_err">재생에 실패했습니다.</string>
     <string name="msg_initialize_app">어플리케이션을 준비중입니다.</string>
@@ -124,7 +122,6 @@
     <string name="err_end_of_data">마지막 데이타입니다.</string>
 
     <string name="appinfo_text">
-유투브 뮤직 플레이어\n
 E-mail : yhcting77@gmail.com\n
 블로그 : yhcting.tistory.com\n
 \n
