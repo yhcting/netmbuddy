@@ -922,11 +922,13 @@ MediaPlayer.OnSeekCompleteListener {
         eAssert(null != mVContext);
 
         ListView lv = (ListView)playerDrawer.findViewById(R.id.music_player_drawer_content);
+        SlidingDrawer drawer = (SlidingDrawer)playerDrawer.findViewById(R.id.music_player_sliding_drawer);
         playerDrawer.setVisibility(View.VISIBLE);
         lv = (ListView)playerDrawer.findViewById(R.id.music_player_drawer_content);
         YTPlayerVidArrayAdapter adapter = new YTPlayerVidArrayAdapter(mVContext, mVlm.getVideoList());
         adapter.setActiveItem(mVlm.getActiveVideoIndex());
         lv.setAdapter(adapter);
+        drawer.close();
     }
 
     private void
@@ -1099,6 +1101,10 @@ MediaPlayer.OnSeekCompleteListener {
                 }
             });
         }
+
+        // Enable drawer by default.
+        // If there is no active video, drawer will be disabled at the configure function.
+        pvEnableDrawer(playerDrawer);
 
         pvSetupControlButton(playerv);
         pvConfigureAll(playerv, playerDrawer, MPState.INVALID, mpGetState());
@@ -1554,6 +1560,7 @@ MediaPlayer.OnSeekCompleteListener {
         if (context == mVContext) {
             mPlayerv = null;
             mVContext = null;
+            mPlayerDrawer = null;
             mVlm.clearOnListChangedListener();
         }
     }
