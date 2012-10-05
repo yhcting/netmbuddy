@@ -109,6 +109,15 @@
             android:layout_below="@id/topbar"
             android:layout_above="@id/player"
             />
+        <LinearLayout
+            android:id="@+id/drawer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_above="@id/player"
+            android:visibility="gone"
+            >
+            <include layout="@layout/music_player_drawer" />
+        </LinearLayout>
     </RelativeLayout>
     <LinearLayout
         android:id="@+id/infolayout"

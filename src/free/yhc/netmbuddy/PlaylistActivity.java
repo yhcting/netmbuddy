@@ -96,7 +96,7 @@ public class PlaylistActivity extends Activity {
         }
         ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
         playerv.setVisibility(View.VISIBLE);
-        mMp.setController(this, playerv);
+        mMp.setController(this, playerv, (ViewGroup)findViewById(R.id.drawer));
         mMp.startVideos(c, 0, 1, 2, 3, Utils.isPrefSuffle());
     }
 
@@ -635,7 +635,7 @@ public class PlaylistActivity extends Activity {
     onResume() {
         super.onResume();
         ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
-        mMp.setController(this, playerv);
+        mMp.setController(this, playerv, (ViewGroup)findViewById(R.id.drawer));
         if (mMp.hasActiveVideo())
             playerv.setVisibility(View.VISIBLE);
         else

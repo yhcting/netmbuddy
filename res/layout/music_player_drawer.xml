@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<SlidingDrawer xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/music_player_sliding_drawer"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:handle="@+id/music_player_drawer_handle"
+    android:content="@+id/music_player_drawer_content"
+    android:orientation="vertical"
+    >
+    <ImageView
+        android:id="@+id/music_player_drawer_handle"
+        android:layout_width="80dip"
+        android:layout_height="35dip"
+        android:gravity="center"
+        android:src="@drawable/drawer_handle"
+        android:background="@drawable/drawer_bg"
+        android:clickable="true"
+        />
+    <ListView
+        android:id="@+id/music_player_drawer_content"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:listSelector="@android:color/transparent"
+        android:background="@color/black"
+        />
+</SlidingDrawer>

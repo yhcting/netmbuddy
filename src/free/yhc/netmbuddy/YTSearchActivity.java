@@ -338,7 +338,7 @@ YTSearchHelper.SearchDoneReceiver {
     onResume() {
         super.onResume();
         ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
-        mMp.setController(this, playerv);
+        mMp.setController(this, playerv, (ViewGroup)findViewById(R.id.drawer));
         if (mMp.hasActiveVideo())
             playerv.setVisibility(View.VISIBLE);
         else
