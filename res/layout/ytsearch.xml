@@ -116,7 +116,7 @@
             android:layout_above="@id/player"
             android:visibility="gone"
             >
-            <include layout="@layout/music_player_drawer" />
+            <include layout="@layout/music_player_list_drawer" />
         </LinearLayout>
     </RelativeLayout>
     <LinearLayout
