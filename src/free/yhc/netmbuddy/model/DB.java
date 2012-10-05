@@ -193,7 +193,8 @@ public class DB extends SQLiteOpenHelper {
             cvs.put(ColVideo.VOLUME.getName(), volume);
             cvs.put(ColVideo.RATE.getName(), 0);
             cvs.put(ColVideo.TIME_ADD.getName(), System.currentTimeMillis());
-            cvs.put(ColVideo.TIME_PLAYED.getName(), System.currentTimeMillis());
+            // Set to oldest value when first added because it is never played yet.
+            cvs.put(ColVideo.TIME_PLAYED.getName(), 0);
 
             cvs.put(ColVideo.GENRE.getName(), "");
             cvs.put(ColVideo.ARTIST.getName(), "");
