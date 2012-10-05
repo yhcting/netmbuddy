@@ -20,5 +20,5 @@
         android:layout_height="wrap_content"
         android:minWidth="@dimen/seekbar_width"
         android:layout_margin="5dip"
-        />  
+        />
 </LinearLayout>

@@ -66,7 +66,7 @@ public class YTPlayerVidArrayAdapter extends BaseAdapter {
         if (null != convertView)
             tv = (TextView)convertView;
         else
-            tv = (TextView)UiUtils.inflateLayout(mContext, R.layout.music_player_list_drawer_row);
+            tv = (TextView)UiUtils.inflateLayout(mContext, R.layout.mplayer_ldrawer_row);
 
         if (mActivePos >=0
             && position == mActivePos)

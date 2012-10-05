@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/music_player_layout_magic_id"
+    android:id="@+id/mplayer_layout_magic_id"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
@@ -18,7 +18,7 @@
         android:layout_marginBottom="3dip"
         >
         <TextView
-            android:id="@+id/music_player_title"
+            android:id="@+id/mplayer_title"
             android:layout_width="match_parent"
             android:layout_height="@dimen/toolbtn_height"
             android:layout_marginRight="1dip"
@@ -30,7 +30,7 @@
             android:ellipsize="end"
             />
          <LinearLayout
-            android:id="@+id/music_player_control"
+            android:id="@+id/mplayer_control"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
@@ -39,7 +39,7 @@
             android:visibility="gone"
             >
             <ImageView
-                android:id="@+id/music_player_btnvol"
+                android:id="@+id/mplayer_btnvol"
                 android:layout_width="@dimen/toolbtn_width"
                 android:layout_height="@dimen/toolbtn_height"
                 android:layout_weight="1"
@@ -49,7 +49,7 @@
                 android:clickable="true"
                 />
             <ImageView
-                android:id="@+id/music_player_btnprev"
+                android:id="@+id/mplayer_btnprev"
                 android:layout_width="@dimen/toolbtn_width"
                 android:layout_height="@dimen/toolbtn_height"
                 android:layout_weight="1"
@@ -59,7 +59,7 @@
                 android:clickable="true"
                 />
             <ImageView
-                android:id="@+id/music_player_btnplay"
+                android:id="@+id/mplayer_btnplay"
                 android:layout_width="@dimen/toolbtn_width"
                 android:layout_height="@dimen/toolbtn_height"
                 android:layout_weight="1"
@@ -69,7 +69,7 @@
                 android:clickable="true"
                 />
             <ImageView
-                android:id="@+id/music_player_btnnext"
+                android:id="@+id/mplayer_btnnext"
                 android:layout_width="@dimen/toolbtn_width"
                 android:layout_height="@dimen/toolbtn_height"
                 android:layout_weight="1"
@@ -81,14 +81,14 @@
         </LinearLayout>
     </FrameLayout>
     <LinearLayout
-        android:id="@+id/music_player_progress"
+        android:id="@+id/mplayer_progress"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:weightSum="1"
         android:orientation="horizontal"
         >
         <TextView
-            android:id="@+id/music_player_curpos"
+            android:id="@+id/mplayer_curpos"
             android:layout_width="40dip"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
@@ -97,15 +97,15 @@
             android:textColor="@color/desc_text_color"
             />
         <SeekBar
-            android:id="@+id/music_player_seekbar" 
-            android:layout_width="0dip" 
+            android:id="@+id/mplayer_seekbar"
+            android:layout_width="0dip"
             android:layout_height="25dip"
             android:layout_weight="1"
             android:progressDrawable="@drawable/progressbar"
             android:thumb="@drawable/seek_thumb"
             />
         <TextView
-            android:id="@+id/music_player_maxpos"
+            android:id="@+id/mplayer_maxpos"
             android:layout_width="40dip"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
@@ -113,7 +113,7 @@
             android:textSize="@dimen/desc_text_size"
             android:textColor="@color/desc_text_color"
             />
-        </LinearLayout>    
+        </LinearLayout>
     <ImageView
         android:layout_width="match_parent"
         android:layout_height="1dip"

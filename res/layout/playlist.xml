@@ -85,7 +85,7 @@
         android:layout_above="@id/toolbar"
         android:visibility="gone"
         >
-        <include layout="@layout/music_player" />
+        <include layout="@layout/mplayer" />
     </LinearLayout>
     <LinearLayout
         android:id="@+id/empty_list"
@@ -104,12 +104,12 @@
         android:layout_alignParentTop="true"
         />
     <LinearLayout
-        android:id="@+id/drawer"
+        android:id="@+id/list_drawer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_above="@id/player"
         android:visibility="gone"
         >
-        <include layout="@layout/music_player_list_drawer" />
+        <include layout="@layout/mplayer_ldrawer" />
     </LinearLayout>
 </RelativeLayout>

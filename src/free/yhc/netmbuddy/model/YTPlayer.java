@@ -127,7 +127,7 @@ MediaPlayer.OnSeekCompleteListener {
     // ------------------------------------------------------------------------
     private Context             mVContext   = null;
     private LinearLayout        mPlayerv    = null;
-    private LinearLayout        mPlayerDrawer = null;
+    private LinearLayout        mPlayerLDrawer   = null;
 
     // ------------------------------------------------------------------------
     // Player Runtime Status
@@ -283,10 +283,10 @@ MediaPlayer.OnSeekCompleteListener {
         void
         setProgressView(ViewGroup progv) {
             eAssert(Utils.isUiThread());
-            eAssert(null != progv.findViewById(R.id.music_player_progress));
-            curposv = (TextView)progv.findViewById(R.id.music_player_curpos);
-            maxposv = (TextView)progv.findViewById(R.id.music_player_maxpos);
-            seekbar = (SeekBar)progv.findViewById(R.id.music_player_seekbar);
+            eAssert(null != progv.findViewById(R.id.mplayer_progress));
+            curposv = (TextView)progv.findViewById(R.id.mplayer_curpos);
+            maxposv = (TextView)progv.findViewById(R.id.mplayer_maxpos);
+            seekbar = (SeekBar)progv.findViewById(R.id.mplayer_seekbar);
             if (null != seekbar) {
                 maxposv.setText(Utils.secsToMinSecText(mpGetDuration() / 1000));
                 update(mpGetDuration(), lastProgress);
@@ -809,10 +809,10 @@ MediaPlayer.OnSeekCompleteListener {
 
     private void
     pvDisableControlButton(ViewGroup playerv) {
-        pvDisableButton((ImageView)playerv.findViewById(R.id.music_player_btnplay));
-        pvDisableButton((ImageView)playerv.findViewById(R.id.music_player_btnnext));
-        pvDisableButton((ImageView)playerv.findViewById(R.id.music_player_btnprev));
-        pvDisableButton((ImageView)playerv.findViewById(R.id.music_player_btnvol));
+        pvDisableButton((ImageView)playerv.findViewById(R.id.mplayer_btnplay));
+        pvDisableButton((ImageView)playerv.findViewById(R.id.mplayer_btnnext));
+        pvDisableButton((ImageView)playerv.findViewById(R.id.mplayer_btnprev));
+        pvDisableButton((ImageView)playerv.findViewById(R.id.mplayer_btnvol));
     }
 
     private void
@@ -826,10 +826,10 @@ MediaPlayer.OnSeekCompleteListener {
         }
 
         controlv.setVisibility(View.VISIBLE);
-        ImageView nextv = (ImageView)controlv.findViewById(R.id.music_player_btnnext);
-        ImageView prevv = (ImageView)controlv.findViewById(R.id.music_player_btnprev);
-        ImageView playv = (ImageView)controlv.findViewById(R.id.music_player_btnplay);
-        ImageView volv  = (ImageView)controlv.findViewById(R.id.music_player_btnvol);
+        ImageView nextv = (ImageView)controlv.findViewById(R.id.mplayer_btnnext);
+        ImageView prevv = (ImageView)controlv.findViewById(R.id.mplayer_btnprev);
+        ImageView playv = (ImageView)controlv.findViewById(R.id.mplayer_btnplay);
+        ImageView volv  = (ImageView)controlv.findViewById(R.id.mplayer_btnvol);
 
         switch (to) {
         case BUFFERING:
@@ -915,16 +915,16 @@ MediaPlayer.OnSeekCompleteListener {
     }
 
     private void
-    pvEnableDrawer(ViewGroup playerDrawer) {
-        if (null == playerDrawer
+    pvEnableLDrawer(ViewGroup playerLDrawer) {
+        if (null == playerLDrawer
             || !mVlm.hasActiveVideo())
             return; // nothing to do
         eAssert(null != mVContext);
 
-        ListView lv = (ListView)playerDrawer.findViewById(R.id.music_player_drawer_content);
-        SlidingDrawer drawer = (SlidingDrawer)playerDrawer.findViewById(R.id.music_player_sliding_drawer);
-        playerDrawer.setVisibility(View.VISIBLE);
-        lv = (ListView)playerDrawer.findViewById(R.id.music_player_drawer_content);
+        ListView lv = (ListView)playerLDrawer.findViewById(R.id.mplayer_ldrawer_content);
+        SlidingDrawer drawer = (SlidingDrawer)playerLDrawer.findViewById(R.id.mplayer_ldrawer);
+        playerLDrawer.setVisibility(View.VISIBLE);
+        lv = (ListView)playerLDrawer.findViewById(R.id.mplayer_ldrawer_content);
         YTPlayerVidArrayAdapter adapter = new YTPlayerVidArrayAdapter(mVContext, mVlm.getVideoList());
         adapter.setActiveItem(mVlm.getActiveVideoIndex());
         lv.setAdapter(adapter);
@@ -932,26 +932,26 @@ MediaPlayer.OnSeekCompleteListener {
     }
 
     private void
-    pvDisableDrawer(ViewGroup playerDrawer) {
-        if (null == playerDrawer
-            || View.GONE == playerDrawer.getVisibility())
+    pvDisableLDrawer(ViewGroup playerLDrawer) {
+        if (null == playerLDrawer
+            || View.GONE == playerLDrawer.getVisibility())
             return; // nothing to do
         eAssert(null != mVContext);
-        ListView lv = (ListView)playerDrawer.findViewById(R.id.music_player_drawer_content);
+        ListView lv = (ListView)playerLDrawer.findViewById(R.id.mplayer_ldrawer_content);
         lv.setAdapter(null);
-        SlidingDrawer drawer = (SlidingDrawer)playerDrawer.findViewById(R.id.music_player_sliding_drawer);
+        SlidingDrawer drawer = (SlidingDrawer)playerLDrawer.findViewById(R.id.mplayer_ldrawer);
         drawer.close();
-        playerDrawer.setVisibility(View.GONE);
+        playerLDrawer.setVisibility(View.GONE);
     }
 
     private void
-    pvConfigureDrawer(ViewGroup playerDrawer, MPState from, MPState to) {
+    pvConfigureLDrawer(ViewGroup playerLDrawer, MPState from, MPState to) {
         if (!mVlm.hasActiveVideo()) {
-            pvDisableDrawer(playerDrawer);
+            pvDisableLDrawer(playerLDrawer);
             return;
         }
 
-        ListView lv = (ListView)playerDrawer.findViewById(R.id.music_player_drawer_content);
+        ListView lv = (ListView)playerLDrawer.findViewById(R.id.mplayer_ldrawer_content);
         YTPlayerVidArrayAdapter adapter = (YTPlayerVidArrayAdapter)lv.getAdapter();
         if (null != adapter
             && mVlm.getActiveVideoIndex() != adapter.getActiveItemPos()) {
@@ -961,25 +961,25 @@ MediaPlayer.OnSeekCompleteListener {
     }
 
     private void
-    pvConfigureAll(ViewGroup playerv, ViewGroup playerDrawer,
+    pvConfigureAll(ViewGroup playerv, ViewGroup playerLDrawer,
                    MPState from, MPState to) {
         if (null == playerv) {
-            eAssert(null == playerDrawer);
+            eAssert(null == playerLDrawer);
             return; // nothing to do
         }
 
-        pvConfigureTitle((TextView)playerv.findViewById(R.id.music_player_title),
+        pvConfigureTitle((TextView)playerv.findViewById(R.id.mplayer_title),
                           from, to);
-        pvConfigureProgress((ViewGroup)playerv.findViewById(R.id.music_player_progress),
+        pvConfigureProgress((ViewGroup)playerv.findViewById(R.id.mplayer_progress),
                            from, to);
-        pvConfigureControl((ViewGroup)playerv.findViewById(R.id.music_player_control),
+        pvConfigureControl((ViewGroup)playerv.findViewById(R.id.mplayer_control),
                            from, to);
-        pvConfigureDrawer(playerDrawer, from, to);
+        pvConfigureLDrawer(playerLDrawer, from, to);
     }
 
     private void
     pvSetupControlButton(final ViewGroup playerv) {
-        ImageView btn = (ImageView)playerv.findViewById(R.id.music_player_btnplay);
+        ImageView btn = (ImageView)playerv.findViewById(R.id.mplayer_btnplay);
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -1010,7 +1010,7 @@ MediaPlayer.OnSeekCompleteListener {
             }
         });
 
-        btn = (ImageView)playerv.findViewById(R.id.music_player_btnprev);
+        btn = (ImageView)playerv.findViewById(R.id.mplayer_btnprev);
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -1019,7 +1019,7 @@ MediaPlayer.OnSeekCompleteListener {
             }
         });
 
-        btn = (ImageView)playerv.findViewById(R.id.music_player_btnnext);
+        btn = (ImageView)playerv.findViewById(R.id.mplayer_btnnext);
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -1028,7 +1028,7 @@ MediaPlayer.OnSeekCompleteListener {
             }
         });
 
-        btn = (ImageView)playerv.findViewById(R.id.music_player_btnvol);
+        btn = (ImageView)playerv.findViewById(R.id.mplayer_btnvol);
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -1042,9 +1042,9 @@ MediaPlayer.OnSeekCompleteListener {
     }
 
     private void
-    pvInit(ViewGroup playerv, ViewGroup playerDrawer) {
-        ViewGroup progv = (ViewGroup)playerv.findViewById(R.id.music_player_progress);
-        SeekBar sb = (SeekBar)progv.findViewById(R.id.music_player_seekbar);
+    pvInit(ViewGroup playerv, ViewGroup playerLDrawer) {
+        ViewGroup progv = (ViewGroup)playerv.findViewById(R.id.mplayer_progress);
+        SeekBar sb = (SeekBar)progv.findViewById(R.id.mplayer_seekbar);
         sb.setMax(SEEKBAR_MAX);
         sb.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
@@ -1065,27 +1065,27 @@ MediaPlayer.OnSeekCompleteListener {
         });
         mUpdateProg.setProgressView(progv);
 
-        if (null != playerDrawer) {
+        if (null != playerLDrawer) {
             mVlm.setOnListChangedListener(new VideoListManager.OnListChangedListener() {
                 @Override
                 public void
                 onListChanged(VideoListManager vlm) {
-                    if (null == mPlayerDrawer)
+                    if (null == mPlayerLDrawer)
                         return;
 
                     if (mVlm.hasActiveVideo()) {
-                        ListView lv = (ListView)mPlayerDrawer.findViewById(R.id.music_player_drawer_content);
+                        ListView lv = (ListView)mPlayerLDrawer.findViewById(R.id.mplayer_ldrawer_content);
                         YTPlayerVidArrayAdapter adapter = (YTPlayerVidArrayAdapter)lv.getAdapter();
                         if (null != adapter) {
                             adapter.setVidArray(mVlm.getVideoList());
                             adapter.notifyDataSetChanged();
                         }
                     } else
-                        pvDisableDrawer(mPlayerDrawer);
+                        pvDisableLDrawer(mPlayerLDrawer);
                 }
             });
 
-            SlidingDrawer drawer = (SlidingDrawer)playerDrawer.findViewById(R.id.music_player_sliding_drawer);
+            SlidingDrawer drawer = (SlidingDrawer)playerLDrawer.findViewById(R.id.mplayer_ldrawer);
             drawer.setOnDrawerOpenListener(new SlidingDrawer.OnDrawerOpenListener() {
                 @Override
                 public void
@@ -1093,7 +1093,7 @@ MediaPlayer.OnSeekCompleteListener {
                     if (!mVlm.hasActiveVideo())
                         return;
 
-                    ListView lv = (ListView)mPlayerDrawer.findViewById(R.id.music_player_drawer_content);
+                    ListView lv = (ListView)mPlayerLDrawer.findViewById(R.id.mplayer_ldrawer_content);
                     int topPos = mVlm.getActiveVideoIndex() - 1;
                     if (topPos < 0)
                         topPos = 0;
@@ -1104,10 +1104,10 @@ MediaPlayer.OnSeekCompleteListener {
 
         // Enable drawer by default.
         // If there is no active video, drawer will be disabled at the configure function.
-        pvEnableDrawer(playerDrawer);
+        pvEnableLDrawer(playerLDrawer);
 
         pvSetupControlButton(playerv);
-        pvConfigureAll(playerv, playerDrawer, MPState.INVALID, mpGetState());
+        pvConfigureAll(playerv, playerLDrawer, MPState.INVALID, mpGetState());
     }
 
     // ========================================================================
@@ -1121,7 +1121,7 @@ MediaPlayer.OnSeekCompleteListener {
         if (from == to)
             return;
 
-        pvConfigureAll(mPlayerv, mPlayerDrawer, from, to);
+        pvConfigureAll(mPlayerv, mPlayerLDrawer, from, to);
         notiConfigure(from, to);
         switch (to) {
         case PAUSED:
@@ -1476,7 +1476,7 @@ MediaPlayer.OnSeekCompleteListener {
         mpSetState(MPState.INVALID);
 
         if (null != mPlayerv) {
-            TextView titlev = (TextView)mPlayerv.findViewById(R.id.music_player_title);
+            TextView titlev = (TextView)mPlayerv.findViewById(R.id.mplayer_title);
             switch (st) {
             case DONE:
                 pvSetTitle(titlev, mRes.getText(R.string.msg_playing_done));
@@ -1531,7 +1531,7 @@ MediaPlayer.OnSeekCompleteListener {
     }
 
     public Err
-    setController(Context context, ViewGroup playerv, ViewGroup playerDrawer) {
+    setController(Context context, ViewGroup playerv, ViewGroup playerLDrawer) {
         // update notification by force
         notiConfigure(MPState.INVALID, mpGetState());
 
@@ -1542,15 +1542,15 @@ MediaPlayer.OnSeekCompleteListener {
 
         mVContext = context;
         mPlayerv = (LinearLayout)playerv;
-        mPlayerDrawer = (LinearLayout)playerDrawer;
+        mPlayerLDrawer = (LinearLayout)playerLDrawer;
 
         if (null == mPlayerv) {
-            eAssert(null == mPlayerDrawer);
+            eAssert(null == mPlayerLDrawer);
             return Err.NO_ERR;
         }
 
-        eAssert(null != mPlayerv.findViewById(R.id.music_player_layout_magic_id));
-        pvInit(playerv, playerDrawer);
+        eAssert(null != mPlayerv.findViewById(R.id.mplayer_layout_magic_id));
+        pvInit(playerv, playerLDrawer);
 
         return Err.NO_ERR;
     }
@@ -1560,7 +1560,7 @@ MediaPlayer.OnSeekCompleteListener {
         if (context == mVContext) {
             mPlayerv = null;
             mVContext = null;
-            mPlayerDrawer = null;
+            mPlayerLDrawer = null;
             mVlm.clearOnListChangedListener();
         }
     }
@@ -1577,7 +1577,7 @@ MediaPlayer.OnSeekCompleteListener {
         setAutoStop(Utils.getPrefAutoStopMillis());
 
         mVlm.setVideoList(vs);
-        pvEnableDrawer(mPlayerDrawer);
+        pvEnableLDrawer(mPlayerLDrawer);
 
         if (mVlm.moveToFist())
             startVideo(mVlm.getActiveVideo(), false);
@@ -1621,7 +1621,7 @@ MediaPlayer.OnSeekCompleteListener {
         // Video list is changed.
         // So, control button need to be changed due to 'next' button.
         if (null != mPlayerv)
-            pvConfigureControl((ViewGroup)mPlayerv.findViewById(R.id.music_player_control),
+            pvConfigureControl((ViewGroup)mPlayerv.findViewById(R.id.mplayer_control),
                                mpGetState(), mpGetState());
 
         return true;
@@ -1651,7 +1651,7 @@ MediaPlayer.OnSeekCompleteListener {
                 curvol = i.intValue();
         }
 
-        ViewGroup diagv = (ViewGroup)UiUtils.inflateLayout(mVContext, R.layout.music_player_volume_dialog);
+        ViewGroup diagv = (ViewGroup)UiUtils.inflateLayout(mVContext, R.layout.mplayer_vol_dialog);
         AlertDialog.Builder bldr = new AlertDialog.Builder(mVContext);
         bldr.setView(diagv);
         bldr.setTitle(Utils.getAppContext().getResources().getText(R.string.volume)

@@ -185,7 +185,7 @@ DBHelper.CheckExistDoneReceiver {
                 getAdapter().getItemTitle(position),
                 Policy.DEFAULT_VIDEO_VOLUME,
                 playtime);
-        mMp.setController(this, playerv, (ViewGroup)findViewById(R.id.drawer));
+        mMp.setController(this, playerv, (ViewGroup)findViewById(R.id.list_drawer));
         mMp.startVideos(new YTPlayer.Video[] { v });
     }
 
