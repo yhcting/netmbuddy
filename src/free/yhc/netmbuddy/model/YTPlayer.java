@@ -70,7 +70,7 @@ MediaPlayer.OnInfoListener,
 MediaPlayer.OnVideoSizeChangedListener,
 MediaPlayer.OnSeekCompleteListener {
     private static final String WLTAG               = "YTPlayer";
-    private static final int    PLAYER_ERR_RETRY    = 3;
+    private static final int    PLAYER_ERR_RETRY    = Policy.YTPLAYER_RETRY_ON_ERROR;
     private static final int    SEEKBAR_MAX         = 1000;
 
     private static final Comparator<NrElem> sNrElemComparator = new Comparator<NrElem>() {
