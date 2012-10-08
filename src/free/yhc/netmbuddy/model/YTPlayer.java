@@ -32,12 +32,9 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Random;
 
-import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.res.Resources;
 import android.database.Cursor;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
@@ -49,16 +46,7 @@ import android.net.wifi.WifiManager.WifiLock;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.telephony.TelephonyManager;
-import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.ListView;
-import android.widget.SeekBar;
-import android.widget.SlidingDrawer;
-import android.widget.TextView;
-import free.yhc.netmbuddy.R;
-import free.yhc.netmbuddy.model.DB.ColVideo;
 import free.yhc.netmbuddy.model.YTDownloader.DnArg;
 import free.yhc.netmbuddy.model.YTDownloader.DownloadDoneReceiver;
 
@@ -72,7 +60,6 @@ MediaPlayer.OnVideoSizeChangedListener,
 MediaPlayer.OnSeekCompleteListener {
     private static final String WLTAG               = "YTPlayer";
     private static final int    PLAYER_ERR_RETRY    = Policy.YTPLAYER_RETRY_ON_ERROR;
-    private static final int    SEEKBAR_MAX         = 1000;
 
     private static final Comparator<NrElem> sNrElemComparator = new Comparator<NrElem>() {
         @Override
@@ -99,15 +86,15 @@ MediaPlayer.OnSeekCompleteListener {
 
     private static YTPlayer sInstance = null;
 
-    private final Resources     mRes        = Utils.getAppContext().getResources();
     private final DB            mDb         = DB.get();
 
     // ------------------------------------------------------------------------
     //
     // ------------------------------------------------------------------------
-    private final UpdateProgress    mUpdateProg = new UpdateProgress();
-    private final AutoStop          mAutoStop   = new AutoStop();
+    private final YTPlayerUI            mUi         = new YTPlayerUI(this); // for UI control
+    private final AutoStop              mAutoStop   = new AutoStop();
     private final StartVideoRecovery    mStartVideoRecovery = new StartVideoRecovery();
+    private final VideoListManager      mVlm;
 
     // ------------------------------------------------------------------------
     //
@@ -124,26 +111,41 @@ MediaPlayer.OnSeekCompleteListener {
     private YTDownloader        mYtDnr      = new YTDownloader();
 
     // ------------------------------------------------------------------------
-    // UI Control.
+    // Runtime Status
     // ------------------------------------------------------------------------
-    private Context             mVContext   = null;
-    private LinearLayout        mPlayerv    = null;
-    private LinearLayout        mPlayerLDrawer   = null;
-
-    // ------------------------------------------------------------------------
-    // Player Runtime Status
-    // ------------------------------------------------------------------------
-    private VideoListManager        mVlm    = new VideoListManager();
     private int                     mErrRetry = PLAYER_ERR_RETRY;
     private YTPState                mYtpS   = YTPState.IDLE;
+    private int                     mLastBuffering  = -1;
 
-    private static enum YTPState {
-        IDLE,
-        SUSPENDED,
+    // ------------------------------------------------------------------------
+    // Listeners
+    // ------------------------------------------------------------------------
+    private VideosStateListener     mVStateLsnr = null;
+    private PlayerStateListener     mPStateLsnr = null;
+
+    public interface VideosStateListener {
+        /**
+         *  playing videos in the queue is started
+         */
+        void onStarted();
+        /**
+         * playing videos in the queue is stopped
+         */
+        void onStopped(StopState state);
+        /**
+         * video-queue of the player is changed.
+         */
+        void onChanged();
     }
 
+    public interface PlayerStateListener {
+        void onStateChanged(MPState from, MPState to);
+        void onBufferingChanged(int percent);
+    }
+
+
     // see "http://developer.android.com/reference/android/media/MediaPlayer.html"
-    private static enum MPState {
+    public static enum MPState {
         INVALID,
         IDLE,
         INITIALIZED,
@@ -158,18 +160,23 @@ MediaPlayer.OnSeekCompleteListener {
         ERROR
     }
 
-    private static enum StopState {
+    public static enum StopState {
         DONE,
         FORCE_STOPPED,
         NETWORK_UNAVAILABLE,
         UNKNOWN_ERROR
     }
 
+    private static enum YTPState {
+        IDLE,
+        SUSPENDED,
+    }
+
     public static class Video {
-        String   title;
-        String   videoId;
-        int      volume;
-        int      playtime; // This is to workaround not-correct value returns from getDuration() function
+        public final String   title;
+        public final String   videoId;
+        public final int      volume;
+        public final int      playtime; // This is to workaround not-correct value returns from getDuration() function
                            //   of youtube player (Seconds).
         public Video(String aVideoId, String aTitle,
                      int aVolume, int aPlaytime) {
@@ -286,98 +293,6 @@ MediaPlayer.OnSeekCompleteListener {
         }
     }
 
-    private class UpdateProgress implements Runnable {
-        private SeekBar     seekbar = null;
-        private TextView    curposv = null;
-        private TextView    maxposv = null;
-        private int         lastProgress = -1;
-        private int         lastSecondaryProgress = -1; // For secondary progress
-
-        private void
-        resetProgressView() {
-            if (null != seekbar) {
-                maxposv.setText(Utils.secsToMinSecText(mpGetDuration() / 1000));
-                update(1, 0);
-                updateSecondary(0);
-            }
-            lastProgress = 0;
-            lastSecondaryProgress = 0;
-        }
-
-        int
-        getSecondaryProgressPercent() {
-            int percent =  lastSecondaryProgress * 100 / SEEKBAR_MAX;
-            if (percent > 100)
-                percent = 100;
-            if (percent < 0)
-                percent = 0;
-            return percent;
-        }
-
-        void
-        setProgressView(ViewGroup progv) {
-            eAssert(Utils.isUiThread());
-            eAssert(null != progv.findViewById(R.id.mplayer_progress));
-            curposv = (TextView)progv.findViewById(R.id.mplayer_curpos);
-            maxposv = (TextView)progv.findViewById(R.id.mplayer_maxpos);
-            seekbar = (SeekBar)progv.findViewById(R.id.mplayer_seekbar);
-            if (null != seekbar) {
-                maxposv.setText(Utils.secsToMinSecText(mpGetDuration() / 1000));
-                update(mpGetDuration(), lastProgress);
-                updateSecondary(lastSecondaryProgress);
-            }
-        }
-
-        void
-        start() {
-            //logI("Progress Start");
-            maxposv.setText(Utils.secsToMinSecText(mpGetDuration() / 1000));
-            update(mpGetDuration(), lastProgress);
-            updateSecondary(lastSecondaryProgress);
-            run();
-        }
-
-        void
-        stop() {
-            //logI("Progress End");
-            Utils.getUiHandler().removeCallbacks(this);
-            resetProgressView();
-        }
-
-        void
-        update(int durms, int curms) {
-            // ignore aDuration.
-            // Sometimes youtube player returns incorrect duration value!
-            if (null != seekbar) {
-                int curPv = (durms > 0)? (int)((long)curms * (long)SEEKBAR_MAX / durms)
-                                               : 0;
-                seekbar.setProgress(curPv);
-                curposv.setText(Utils.secsToMinSecText(curms / 1000));
-                lastProgress = curPv;
-            }
-        }
-
-        /**
-         * Update secondary progress
-         * @param percent
-         */
-        void
-        updateSecondary(int percent) {
-            // Update secondary progress
-            if (null != seekbar) {
-                int pv = percent * SEEKBAR_MAX / 100;
-                seekbar.setSecondaryProgress(pv);
-                lastSecondaryProgress = pv;
-            }
-        }
-
-        @Override
-        public
-        void run() {
-            update(mpGetDuration(), mpGetCurrentPosition());
-            Utils.getUiHandler().postDelayed(this, 1000);
-        }
-    }
 
     private static class VideoListManager {
         private Video[]     vs  = null; // video array
@@ -385,7 +300,11 @@ MediaPlayer.OnSeekCompleteListener {
         private OnListChangedListener lcListener = null;
 
         interface OnListChangedListener {
-            void onListChanged(VideoListManager vlm);
+            void onChanged(VideoListManager vm);
+        }
+
+        VideoListManager(OnListChangedListener listener) {
+            lcListener = listener;
         }
 
         void
@@ -403,7 +322,7 @@ MediaPlayer.OnSeekCompleteListener {
         void
         notifyToListChangedListener() {
             if (null != lcListener)
-                lcListener.onListChanged(this);
+                lcListener.onChanged(this);
         }
 
         boolean
@@ -747,407 +666,6 @@ MediaPlayer.OnSeekCompleteListener {
     }
     // ========================================================================
     //
-    // Notification Handling
-    //
-    // ========================================================================
-    private void
-    notiConfigure(MPState from, MPState to) {
-        NotiManager nm = NotiManager.get();
-        if (!mVlm.hasActiveVideo()) {
-            nm.removeNotification();
-            return;
-        }
-        String title = mVlm.getActiveVideo().title;
-
-        switch (to) {
-        case PREPARED:
-        case PAUSED:
-            nm.putNotification(NotiManager.NotiType.START, title);
-            break;
-
-        case STARTED:
-            nm.putNotification(NotiManager.NotiType.PAUSE, title);
-            break;
-
-        case ERROR:
-            nm.putNotification(NotiManager.NotiType.ALERT, title);
-            break;
-
-        case BUFFERING:
-        case INITIALIZED:
-        case PREPARING:
-            nm.putNotification(NotiManager.NotiType.STOP, title);
-            break;
-
-        default:
-            nm.putNotification(NotiManager.NotiType.BASE, title);
-        }
-    }
-    // ========================================================================
-    //
-    // Player View Handling
-    //
-    // ========================================================================
-    private void
-    pvDisableButton(ImageView btn) {
-        btn.setVisibility(View.INVISIBLE);
-    }
-
-    private void
-    pvEnableButton(ImageView btn, int image) {
-        if (0 != image)
-            btn.setImageResource(image);
-        btn.setVisibility(View.VISIBLE);
-    }
-
-    private void
-    pvSetTitle(TextView titlev, CharSequence title) {
-        if (null == titlev || null == title)
-            return;
-        titlev.setText(title);
-    }
-
-    private void
-    pvConfigureTitle(TextView titlev, MPState from, MPState to) {
-        if (null == titlev)
-            return;
-
-        CharSequence videoTitle = "";
-        if (mVlm.hasActiveVideo())
-            videoTitle = mVlm.getActiveVideo().title;
-
-        switch (to) {
-        case BUFFERING: {
-            eAssert(null != videoTitle);
-            pvSetTitle(titlev, "(" + mRes.getText(R.string.buffering) + ") " + videoTitle);
-        } break;
-
-        case PREPARED:
-        case PAUSED:
-        case STARTED:
-            eAssert(null != videoTitle);
-            if (null != videoTitle)
-                pvSetTitle(titlev, videoTitle);
-            break;
-
-        case ERROR:
-            pvSetTitle(titlev, mRes.getText(R.string.msg_ytplayer_err));
-            break;
-
-        default:
-            if (Utils.isValidValue(videoTitle))
-                pvSetTitle(titlev, "(" + mRes.getText(R.string.preparing) + ") " + videoTitle);
-            else
-                pvSetTitle(titlev, mRes.getText(R.string.msg_preparing_mplayer));
-        }
-    }
-
-
-    private void
-    pvDisableControlButton(ViewGroup playerv) {
-        pvDisableButton((ImageView)playerv.findViewById(R.id.mplayer_btnplay));
-        pvDisableButton((ImageView)playerv.findViewById(R.id.mplayer_btnnext));
-        pvDisableButton((ImageView)playerv.findViewById(R.id.mplayer_btnprev));
-        pvDisableButton((ImageView)playerv.findViewById(R.id.mplayer_btnvol));
-    }
-
-    private void
-    pvConfigureControl(ViewGroup controlv, MPState from, MPState to) {
-        if (null == controlv)
-            return;
-
-        if (!mVlm.hasActiveVideo()) {
-            controlv.setVisibility(View.GONE);
-            return;
-        }
-
-        controlv.setVisibility(View.VISIBLE);
-        ImageView nextv = (ImageView)controlv.findViewById(R.id.mplayer_btnnext);
-        ImageView prevv = (ImageView)controlv.findViewById(R.id.mplayer_btnprev);
-        ImageView playv = (ImageView)controlv.findViewById(R.id.mplayer_btnplay);
-        ImageView volv  = (ImageView)controlv.findViewById(R.id.mplayer_btnvol);
-
-        switch (to) {
-        case BUFFERING:
-        case PAUSED:
-        case STARTED:
-            pvEnableButton(volv, 0);
-
-            if (mVlm.hasNextVideo())
-                pvEnableButton(nextv, 0);
-            else
-                pvDisableButton(nextv);
-
-            if (mVlm.hasPrevVideo())
-                pvEnableButton(prevv, 0);
-            else
-                pvDisableButton(prevv);
-            break;
-
-        default:
-            pvDisableButton(volv);
-            pvDisableButton(prevv);
-            pvDisableButton(nextv);
-        }
-
-        switch (to) {
-        case PREPARED:
-        case PAUSED:
-            pvEnableButton(playv, R.drawable.ic_media_play);
-            // Set next state be moved to on click as 'Tag'
-            playv.setTag(MPState.STARTED);
-            break;
-
-        case STARTED:
-            pvEnableButton(playv, R.drawable.ic_media_pause);
-            // Set next state be moved to on click as 'Tag'
-            playv.setTag(MPState.PAUSED);
-            break;
-
-        case BUFFERING:
-        case INITIALIZED:
-        case PREPARING:
-            pvEnableButton(playv, R.drawable.ic_media_stop);
-            // Set next state be moved to on click as 'Tag'
-            playv.setTag(MPState.STOPPED);
-            break;
-
-        default:
-            playv.setTag(null);
-            controlv.setVisibility(View.GONE);
-        }
-    }
-
-    private void
-    pvConfigureProgress(ViewGroup progressv, MPState from, MPState to) {
-
-        if (null == progressv)
-            return;
-
-        switch (to) {
-        case PREPARED:
-            mUpdateProg.start();
-            break;
-
-        case PLAYBACK_COMPLETED:
-            // Workaround of Youtube player.
-            // Sometimes Youtube player doesn't update progress 100% before playing is ended.
-            // So, update to 100% in force at this ended state.
-            mUpdateProg.update(1, 1);
-            // Missing 'break' is intentional.
-
-        case INITIALIZED:
-        case PREPARING:
-        case STARTED:
-        case PAUSED:
-        case BUFFERING:
-            ; // do nothing progress is now under update..
-            break;
-
-        default:
-            mUpdateProg.stop();
-            mUpdateProg.update(1, 0);
-        }
-    }
-
-    private void
-    pvEnableLDrawer(ViewGroup playerLDrawer) {
-        if (null == playerLDrawer
-            || !mVlm.hasActiveVideo())
-            return; // nothing to do
-        eAssert(null != mVContext);
-
-        ListView lv = (ListView)playerLDrawer.findViewById(R.id.mplayer_ldrawer_content);
-        SlidingDrawer drawer = (SlidingDrawer)playerLDrawer.findViewById(R.id.mplayer_ldrawer);
-        playerLDrawer.setVisibility(View.VISIBLE);
-        lv = (ListView)playerLDrawer.findViewById(R.id.mplayer_ldrawer_content);
-        YTPlayerVidArrayAdapter adapter = new YTPlayerVidArrayAdapter(mVContext, mVlm.getVideoList());
-        adapter.setActiveItem(mVlm.getActiveVideoIndex());
-        lv.setAdapter(adapter);
-        drawer.close();
-    }
-
-    private void
-    pvDisableLDrawer(ViewGroup playerLDrawer) {
-        if (null == playerLDrawer
-            || View.GONE == playerLDrawer.getVisibility())
-            return; // nothing to do
-        eAssert(null != mVContext);
-        ListView lv = (ListView)playerLDrawer.findViewById(R.id.mplayer_ldrawer_content);
-        lv.setAdapter(null);
-        SlidingDrawer drawer = (SlidingDrawer)playerLDrawer.findViewById(R.id.mplayer_ldrawer);
-        drawer.close();
-        playerLDrawer.setVisibility(View.GONE);
-    }
-
-    private void
-    pvConfigureLDrawer(ViewGroup playerLDrawer, MPState from, MPState to) {
-        if (!mVlm.hasActiveVideo()) {
-            pvDisableLDrawer(playerLDrawer);
-            return;
-        }
-
-        ListView lv = (ListView)playerLDrawer.findViewById(R.id.mplayer_ldrawer_content);
-        YTPlayerVidArrayAdapter adapter = (YTPlayerVidArrayAdapter)lv.getAdapter();
-        if (null != adapter
-            && mVlm.getActiveVideoIndex() != adapter.getActiveItemPos()) {
-            adapter.setActiveItem(mVlm.getActiveVideoIndex());
-            adapter.notifyDataSetChanged();
-        }
-    }
-
-    private void
-    pvConfigureAll(ViewGroup playerv, ViewGroup playerLDrawer,
-                   MPState from, MPState to) {
-        if (null == playerv) {
-            eAssert(null == playerLDrawer);
-            return; // nothing to do
-        }
-
-        pvConfigureTitle((TextView)playerv.findViewById(R.id.mplayer_title),
-                          from, to);
-        pvConfigureProgress((ViewGroup)playerv.findViewById(R.id.mplayer_progress),
-                           from, to);
-        pvConfigureControl((ViewGroup)playerv.findViewById(R.id.mplayer_control),
-                           from, to);
-        pvConfigureLDrawer(playerLDrawer, from, to);
-    }
-
-    private void
-    pvSetupControlButton(final ViewGroup playerv) {
-        ImageView btn = (ImageView)playerv.findViewById(R.id.mplayer_btnplay);
-        btn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // See pvConfigControl() for details.
-                MPState nextst = (MPState)v.getTag();
-                if (null == nextst)
-                    return; // Nothing to do.
-
-                switch (nextst) {
-                case STARTED:
-                    mpStart();
-                    break;
-
-                case PAUSED:
-                    mpPause();
-                    // prevent clickable during transition player state.
-                    break;
-
-                case STOPPED:
-                    // This doesn't means "Stop only this video",
-                    //   but means stop playing vidoes - previous user request.
-                    stopVideos();
-                    break;
-
-                default:
-                    ; // do nothing.
-                }
-            }
-        });
-
-        btn = (ImageView)playerv.findViewById(R.id.mplayer_btnprev);
-        btn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startPrev();
-                pvDisableControlButton(playerv);
-            }
-        });
-
-        btn = (ImageView)playerv.findViewById(R.id.mplayer_btnnext);
-        btn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startNext();
-                pvDisableControlButton(playerv);
-            }
-        });
-
-        btn = (ImageView)playerv.findViewById(R.id.mplayer_btnvol);
-        btn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (!mVlm.hasActiveVideo())
-                    return;
-                changeVideoVolume(mVlm.getActiveVideo().title,
-                                  mVlm.getActiveVideo().videoId);
-            }
-        });
-
-    }
-
-    private void
-    pvInit(ViewGroup playerv, ViewGroup playerLDrawer) {
-        ViewGroup progv = (ViewGroup)playerv.findViewById(R.id.mplayer_progress);
-        SeekBar sb = (SeekBar)progv.findViewById(R.id.mplayer_seekbar);
-        sb.setMax(SEEKBAR_MAX);
-        sb.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void
-            onStopTrackingTouch(SeekBar seekBar) {
-                mpSeekTo((int)((long)seekBar.getProgress() * (long)mpGetDuration() / SEEKBAR_MAX));
-            }
-
-            @Override
-            public void
-            onStartTrackingTouch(SeekBar seekBar) {
-            }
-
-            @Override
-            public void
-            onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-            }
-        });
-        mUpdateProg.setProgressView(progv);
-
-        if (null != playerLDrawer) {
-            mVlm.setOnListChangedListener(new VideoListManager.OnListChangedListener() {
-                @Override
-                public void
-                onListChanged(VideoListManager vlm) {
-                    if (null == mPlayerLDrawer)
-                        return;
-
-                    if (mVlm.hasActiveVideo()) {
-                        ListView lv = (ListView)mPlayerLDrawer.findViewById(R.id.mplayer_ldrawer_content);
-                        YTPlayerVidArrayAdapter adapter = (YTPlayerVidArrayAdapter)lv.getAdapter();
-                        if (null != adapter) {
-                            adapter.setVidArray(mVlm.getVideoList());
-                            adapter.notifyDataSetChanged();
-                        }
-                    } else
-                        pvDisableLDrawer(mPlayerLDrawer);
-                }
-            });
-
-            SlidingDrawer drawer = (SlidingDrawer)playerLDrawer.findViewById(R.id.mplayer_ldrawer);
-            drawer.setOnDrawerOpenListener(new SlidingDrawer.OnDrawerOpenListener() {
-                @Override
-                public void
-                onDrawerOpened() {
-                    if (!mVlm.hasActiveVideo())
-                        return;
-
-                    ListView lv = (ListView)mPlayerLDrawer.findViewById(R.id.mplayer_ldrawer_content);
-                    int topPos = mVlm.getActiveVideoIndex() - 1;
-                    if (topPos < 0)
-                        topPos = 0;
-                    lv.setSelectionFromTop(topPos, 0);
-                }
-            });
-        }
-
-        // Enable drawer by default.
-        // If there is no active video, drawer will be disabled at the configure function.
-        pvEnableLDrawer(playerLDrawer);
-
-        pvSetupControlButton(playerv);
-        pvConfigureAll(playerv, playerLDrawer, MPState.INVALID, mpGetState());
-    }
-
-    // ========================================================================
-    //
     // Suspending/Resuming Control
     //
     // ========================================================================
@@ -1180,8 +698,9 @@ MediaPlayer.OnSeekCompleteListener {
         if (from == to)
             return;
 
-        pvConfigureAll(mPlayerv, mPlayerLDrawer, from, to);
-        notiConfigure(from, to);
+        if (null != mPStateLsnr)
+            mPStateLsnr.onStateChanged(from, to);
+
         switch (to) {
         case PAUSED:
         case INVALID:
@@ -1210,13 +729,6 @@ MediaPlayer.OnSeekCompleteListener {
         }
         eAssert(false);
         return YTHacker.getQScorePreferLow(YTHacker.YTQUALITY_SCORE_LOWEST);
-    }
-
-    private boolean
-    isVideoPlaying() {
-        return mVlm.hasActiveVideo()
-               && MPState.ERROR != mMpS
-               && MPState.END != mMpS;
     }
 
     private File
@@ -1543,26 +1055,8 @@ MediaPlayer.OnSeekCompleteListener {
         // We need to overwrite title message.
         mpSetState(MPState.INVALID);
 
-        if (null != mPlayerv) {
-            TextView titlev = (TextView)mPlayerv.findViewById(R.id.mplayer_title);
-            switch (st) {
-            case DONE:
-                pvSetTitle(titlev, mRes.getText(R.string.msg_playing_done));
-                break;
-
-            case FORCE_STOPPED:
-                pvSetTitle(titlev, mRes.getText(R.string.msg_playing_stopped));
-                break;
-
-            case NETWORK_UNAVAILABLE:
-                pvSetTitle(titlev, mRes.getText(R.string.err_network_unavailable));
-                break;
-
-            case UNKNOWN_ERROR:
-                pvSetTitle(titlev, mRes.getText(R.string.msg_playing_err_unknown));
-                break;
-            }
-        }
+        if (null != mVStateLsnr)
+            mVStateLsnr.onStopped(st);
     }
     // ============================================================================
     //
@@ -1585,222 +1079,6 @@ MediaPlayer.OnSeekCompleteListener {
 
     // ============================================================================
     //
-    // Public interfaces
-    //
-    // ============================================================================
-    private YTPlayer() {
-    }
-
-    public static YTPlayer
-    get() {
-        if (null == sInstance)
-            sInstance = new YTPlayer();
-        return sInstance;
-    }
-
-    public Err
-    setController(Context context, ViewGroup playerv, ViewGroup playerLDrawer) {
-        // update notification by force
-        notiConfigure(MPState.INVALID, mpGetState());
-
-        if (context == mVContext && mPlayerv == playerv)
-            // controller is already set for this context.
-            // So, nothing to do. just return!
-            return Err.NO_ERR;
-
-        mVContext = context;
-        mPlayerv = (LinearLayout)playerv;
-        mPlayerLDrawer = (LinearLayout)playerLDrawer;
-
-        if (null == mPlayerv) {
-            eAssert(null == mPlayerLDrawer);
-            return Err.NO_ERR;
-        }
-
-        eAssert(null != mPlayerv.findViewById(R.id.mplayer_layout_magic_id));
-        pvInit(playerv, playerLDrawer);
-
-        return Err.NO_ERR;
-    }
-
-    public void
-    unsetController(Context context) {
-        if (context == mVContext) {
-            mPlayerv = null;
-            mVContext = null;
-            mPlayerLDrawer = null;
-            mVlm.clearOnListChangedListener();
-        }
-    }
-
-    public void
-    startVideos(final Video[] vs) {
-        eAssert(Utils.isUiThread());
-        eAssert(null != mPlayerv);
-
-        if (null == vs || vs.length <= 0)
-            return;
-
-        acquireLocks();
-        setAutoStop(Utils.getPrefAutoStopMillis());
-
-        mVlm.setVideoList(vs);
-        pvEnableLDrawer(mPlayerLDrawer);
-
-        if (mVlm.moveToFist())
-            startVideo(mVlm.getActiveVideo(), false);
-    }
-
-    public void
-    startVideos(final Cursor c,
-                final int coliUrl,      final int coliTitle,
-                final int coliVolume,   final int coliPlaytime,
-                final boolean shuffle) {
-        eAssert(Utils.isUiThread());
-        eAssert(null != mPlayerv);
-
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                final Video[] vs = getVideos(c, coliTitle, coliUrl, coliVolume, coliPlaytime, shuffle);
-                Utils.getUiHandler().post(new Runnable() {
-                    @Override
-                    public void run() {
-                        startVideos(vs);
-                    }
-                });
-                c.close();
-            }
-        }).start();
-    }
-
-    /**
-     *
-     * @param v
-     * @return
-     *   false if error, otherwise true
-     */
-    public boolean
-    appendToCurrentPlayQ(Video v) {
-        if (!mVlm.hasActiveVideo())
-            return false;
-
-        mVlm.appendVideo(v);
-        // Video list is changed.
-        // So, control button need to be changed due to 'next' button.
-        if (null != mPlayerv)
-            pvConfigureControl((ViewGroup)mPlayerv.findViewById(R.id.mplayer_control),
-                               mpGetState(), mpGetState());
-
-        return true;
-    }
-
-    public void
-    stopVideos() {
-        stopPlay(StopState.FORCE_STOPPED);
-    }
-
-    public void
-    changeVideoVolume(final String title, final String videoId) {
-        if (null == mVContext)
-            return;
-
-        final boolean runningVideo;
-        // Retrieve current volume
-        int curvol = Policy.DEFAULT_VIDEO_VOLUME;
-        if (isVideoPlaying()
-            && mVlm.getActiveVideo().videoId.equals(videoId)) {
-            runningVideo = true;
-            curvol = mpGetVolume();
-        } else {
-            runningVideo = false;
-            Long i = (Long)mDb.getVideoInfo(videoId, ColVideo.VOLUME);
-            if (null != i)
-                curvol = i.intValue();
-        }
-
-        ViewGroup diagv = (ViewGroup)UiUtils.inflateLayout(mVContext, R.layout.mplayer_vol_dialog);
-        AlertDialog.Builder bldr = new AlertDialog.Builder(mVContext);
-        bldr.setView(diagv);
-        bldr.setTitle(Utils.getAppContext().getResources().getText(R.string.volume)
-                      + " : " + title);
-        final AlertDialog aDiag = bldr.create();
-
-        final SeekBar sbar = (SeekBar)diagv.findViewById(R.id.seekbar);
-        sbar.setMax(100);
-        sbar.setProgress(curvol);
-        sbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void
-            onStopTrackingTouch(SeekBar seekBar) { }
-            @Override
-            public void
-            onStartTrackingTouch(SeekBar seekBar) { }
-            @Override
-            public void
-            onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                if (runningVideo)
-                    mpSetVolume(progress);
-            }
-        });
-
-        final int oldVolume = curvol;
-        aDiag.setOnDismissListener(new DialogInterface.OnDismissListener() {
-            @Override
-            public void
-            onDismiss(DialogInterface dialog) {
-                int newVolume = sbar.getProgress();
-                if (oldVolume == newVolume)
-                    return;
-                // Save to database and update adapter
-                // NOTE
-                // Should I consider about performance?
-                // Not yet. do something when performance is issued.
-                mDb.updateVideo(DB.ColVideo.VIDEOID, videoId,
-                                DB.ColVideo.VOLUME, newVolume);
-            }
-        });
-        aDiag.show();
-    }
-
-    public String
-    getPlayVideoYtId() {
-        if (isVideoPlaying())
-            return mVlm.getActiveVideo().videoId;
-        return null;
-    }
-
-    /**
-     * Set volume of video-on-play
-     * @param vol
-     */
-    public void
-    setVideoVolume(int vol) {
-        eAssert(0 <= vol && vol <= 100);
-        // Implement this
-        if (isVideoPlaying())
-            mpSetVolume(vol);
-    }
-
-    /**
-     * Get volume of video-on-play
-     * @return
-     *   -1 : for error
-     */
-    public int
-    getVideoVolume() {
-        if (isVideoPlaying())
-            return mpGetVolume();
-        return DB.INVALID_VOLUME;
-    }
-
-    public boolean
-    hasActiveVideo() {
-        return mVlm.hasActiveVideo();
-    }
-
-    // ============================================================================
-    //
     // Override for "MediaPlayer.*"
     //
     // ============================================================================
@@ -1808,14 +1086,18 @@ MediaPlayer.OnSeekCompleteListener {
     public void
     onBufferingUpdate (MediaPlayer mp, int percent) {
         //logD("MPlayer - onBufferingUpdate : " + percent + " %");
-        // See comments aroudn MEDIA_INFO_BUFFERING_START in onInfo()
+        // See comments around MEDIA_INFO_BUFFERING_START in onInfo()
         //mpSetState(MPState.BUFFERING);
-        if (mUpdateProg.getSecondaryProgressPercent() < Policy.YTPLAYER_CACHING_TRIGGER_POINT
+
+        if (mLastBuffering < Policy.YTPLAYER_CACHING_TRIGGER_POINT
             && Policy.YTPLAYER_CACHING_TRIGGER_POINT <= percent)
             // This is the first moment that buffering is reached to 100%
             prepareNext();
 
-        mUpdateProg.updateSecondary(percent);
+        if (null != mPStateLsnr)
+            mPStateLsnr.onBufferingChanged(percent);
+
+        mLastBuffering = percent;
     }
 
     @Override
@@ -1913,8 +1195,8 @@ MediaPlayer.OnSeekCompleteListener {
             break;
 
         case MediaPlayer.MEDIA_INFO_BUFFERING_END:
-            // Check is there any exceptional case regarding buffering???
-            mUpdateProg.updateSecondary(100);
+            if (null != mPStateLsnr)
+                mPStateLsnr.onBufferingChanged(100);
             break;
 
         case MediaPlayer.MEDIA_INFO_BAD_INTERLEAVING:
@@ -1926,6 +1208,250 @@ MediaPlayer.OnSeekCompleteListener {
         default:
         }
         return false;
+    }
+
+    // ============================================================================
+    //
+    // Package interfaces (Usually for YTPLayerUI)
+    //
+    // ============================================================================
+    void
+    setVideosStateListener(VideosStateListener listener) {
+        eAssert(null != listener);
+        mVStateLsnr = listener;
+    }
+
+    void
+    setPlayerStateListener(PlayerStateListener listener) {
+        eAssert(null != listener);
+        mPStateLsnr = listener;
+    }
+
+    boolean
+    hasNextVideo() {
+        return mVlm.hasNextVideo();
+    }
+
+    void
+    startNextVideo() {
+        startNext();
+    }
+
+    boolean
+    hasPrevVideo() {
+        return mVlm.hasPrevVideo();
+    }
+
+    void
+    startPrevVideo() {
+        startPrev();
+    }
+
+    Video
+    getActiveVideo() {
+        return mVlm.getActiveVideo();
+    }
+
+    Video[]
+    getVideoList() {
+        return mVlm.getVideoList();
+    }
+
+    int
+    getActiveVideoIndex() {
+        return mVlm.getActiveVideoIndex();
+    }
+
+    MPState
+    playerGetState() {
+        return mpGetState();
+    }
+
+    void
+    playerStart() {
+        mpStart();
+    }
+
+    void
+    playerPause() {
+        mpPause();
+    }
+
+    /**
+     *
+     * @param pos
+     *   milliseconds.
+     */
+    void
+    playerSeekTo(int pos) {
+        mpSeekTo(pos);
+    }
+
+
+    /**
+     * Get duration(milliseconds) of current active video
+     * @return
+     */
+    int
+    playerGetDuration() {
+        return mpGetDuration();
+    }
+
+    /**
+     * Get current position(milliseconds) from start
+     * @return
+     */
+    int
+    playerGetPosition() {
+        return mpGetCurrentPosition();
+    }
+
+    int
+    playerGetVolume() {
+        return mpGetVolume();
+    }
+
+
+    /**
+     * Set volume of video-on-play
+     * @param vol
+     */
+    void
+    playerSetVolume(int vol) {
+        eAssert(0 <= vol && vol <= 100);
+        // Implement this
+        if (isVideoPlaying())
+            mpSetVolume(vol);
+    }
+
+    // ============================================================================
+    //
+    // Public interfaces
+    //
+    // ============================================================================
+    private YTPlayer() {
+        mVlm = new VideoListManager(new VideoListManager.OnListChangedListener() {
+            @Override
+            public void onChanged(VideoListManager vm) {
+                eAssert(Utils.isUiThread());
+                if (null != mVStateLsnr)
+                    mVStateLsnr.onChanged();
+            }
+        });
+    }
+
+    public static YTPlayer
+    get() {
+        if (null == sInstance)
+            sInstance = new YTPlayer();
+        return sInstance;
+    }
+
+    public Err
+    setController(Context context, ViewGroup playerv, ViewGroup playerLDrawer) {
+        return mUi.setController(context, playerv, playerLDrawer);
+    }
+
+    public void
+    unsetController(Context context) {
+        mUi.unsetController(context);
+    }
+
+    public void
+    changeVideoVolume(final String title, final String videoId) {
+        mUi.changeVideoVolume(title, videoId);
+    }
+
+    public boolean
+    hasActiveVideo() {
+        return mVlm.hasActiveVideo();
+    }
+
+    public boolean
+    isVideoPlaying() {
+        return mVlm.hasActiveVideo()
+               && MPState.ERROR != mMpS
+               && MPState.END != mMpS;
+    }
+
+    /**
+     * Get volume of video-on-play
+     * @return
+     *   -1 : for error
+     */
+    public int
+    getVideoVolume() {
+        if (isVideoPlaying())
+            return mpGetVolume();
+        return DB.INVALID_VOLUME;
+    }
+
+    public void
+    startVideos(final Video[] vs) {
+        eAssert(Utils.isUiThread());
+
+        if (null == vs || vs.length <= 0)
+            return;
+
+        acquireLocks();
+        setAutoStop(Utils.getPrefAutoStopMillis());
+
+        mVlm.setVideoList(vs);
+
+        if (mVlm.moveToFist()) {
+            startVideo(mVlm.getActiveVideo(), false);
+            if (null != mVStateLsnr)
+                mVStateLsnr.onStarted();
+        }
+    }
+
+    public void
+    startVideos(final Cursor c,
+                final int coliUrl,      final int coliTitle,
+                final int coliVolume,   final int coliPlaytime,
+                final boolean shuffle) {
+        eAssert(Utils.isUiThread());
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                final Video[] vs = getVideos(c, coliTitle, coliUrl, coliVolume, coliPlaytime, shuffle);
+                Utils.getUiHandler().post(new Runnable() {
+                    @Override
+                    public void run() {
+                        startVideos(vs);
+                    }
+                });
+                c.close();
+            }
+        }).start();
+    }
+
+    /**
+     *
+     * @param v
+     * @return
+     *   false if error, otherwise true
+     */
+    public boolean
+    appendToCurrentPlayQ(Video v) {
+        if (!mVlm.hasActiveVideo())
+            return false;
+
+        mVlm.appendVideo(v);
+        return true;
+    }
+
+    public void
+    stopVideos() {
+        stopPlay(StopState.FORCE_STOPPED);
+    }
+
+    public String
+    getPlayVideoYtId() {
+        if (isVideoPlaying())
+            return mVlm.getActiveVideo().videoId;
+        return null;
     }
 
 }
