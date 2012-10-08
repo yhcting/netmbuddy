@@ -897,17 +897,6 @@ MediaPlayer.OnSeekCompleteListener {
                     return;
                 }
 
-                // Update DB at this moment.
-                // It's not perfectly right moment but it's fair enough
-                // But, this case can be ignored.
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        mDb.updateVideo(DB.ColVideo.VIDEOID, videoId,
-                                        DB.ColVideo.TIME_PLAYED, System.currentTimeMillis());
-                    }
-
-                }).start();
                 mpPrepareAsync();
             }
 
@@ -993,6 +982,17 @@ MediaPlayer.OnSeekCompleteListener {
         mpNewInstance();
         mpReset();
         mpSetVolume(volume);
+
+        // Update DB at this moment.
+        // It's not perfectly right moment but it's fair enough
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                mDb.updateVideo(DB.ColVideo.VIDEOID, videoId,
+                                DB.ColVideo.TIME_PLAYED, System.currentTimeMillis());
+            }
+
+        }).start();
 
         File cachedVid = getCachedVideo(videoId);
         if (cachedVid.exists() && cachedVid.canRead())
