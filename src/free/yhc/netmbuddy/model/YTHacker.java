@@ -283,7 +283,7 @@ public class YTHacker {
                 eAssert(content.type.toLowerCase().startsWith("text/html"));
                 mYtr = parseYtVideoHtml(new BufferedReader(new InputStreamReader(content.stream)));
                 if (mYtr.vids.length <= 0) {
-                    err = Err.UNKNOWN;
+                    err = Err.YTPARSEHTML;
                     break;
                 }
 

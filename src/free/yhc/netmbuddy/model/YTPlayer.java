@@ -1312,7 +1312,7 @@ MediaPlayer.OnSeekCompleteListener {
                 mLoader = loader;
 
                 if (Err.NO_ERR != result) {
-                    logW("YTPlayer YTVideoConnector Fails : " + result.name());
+                    logW("YTPlayer YTHack Fails : " + result.name());
                     mStartVideoRecovery.executeRecoveryStart(mVlm.getActiveVideo());
                     return;
                 }
@@ -1396,9 +1396,18 @@ MediaPlayer.OnSeekCompleteListener {
         if (recovery) {
             mErrRetry--;
             if (mErrRetry <= 0) {
-                if (Utils.isNetworkAvailable())
-                    stopPlay(StopState.UNKNOWN_ERROR);
-                else
+                if (Utils.isNetworkAvailable()) {
+                    if (mVlm.hasNextVideo()) {
+                        if (mVlm.hasActiveVideo()) {
+                            Video v = mVlm.getActiveVideo();
+                            logW("YTPlayer Recovery video play Fails");
+                            logW("    ytvid : " + v.videoId);
+                            logW("    title : " + v.title);
+                        }
+                        startNext(); // move to next video.
+                    } else
+                        stopPlay(StopState.UNKNOWN_ERROR);
+                } else
                     stopPlay(StopState.NETWORK_UNAVAILABLE);
                 return;
             }

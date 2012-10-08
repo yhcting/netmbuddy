@@ -179,7 +179,7 @@ public class Utils {
             case F: Log.wtf(TAG, msg); break;
             }
         } else {
-            sLogWriter.print("[" + lv.name() + "] " + msg);
+            sLogWriter.print("[" + lv.name() + "] " + msg + "\n");
             sLogWriter.flush();
         }
     }

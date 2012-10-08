@@ -43,6 +43,7 @@ public enum Err {
     NO_MATCH                    (R.string.err_no_match),
     YTSEARCH                    (R.string.err_ytsearch),
     YTHTTPGET                   (R.string.err_ytprotocol),
+    YTPARSEHTML                 (R.string.err_ytparsehtml),
     YTINVALID_PARAM             (R.string.err_ytinvalid_param),
     END_OF_DATA                 (R.string.err_end_of_data);
 
