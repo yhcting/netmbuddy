@@ -55,7 +55,7 @@ import android.preference.PreferenceManager;
 import android.util.Log;
 
 public class Utils {
-    private static final boolean DBG    = true;
+    private static final boolean DBG    = false;
     private static final boolean LOGF   = false;
     private static final String  TAG    = "[YoutubeMusicPlayer]";
 
@@ -65,7 +65,7 @@ public class Utils {
     // For debugging
     private static PrintWriter  sLogWriter  = null;
 
-    // Even if these two varaibles are not 'final', those should be handled like 'final'
+    // Even if these two variables are not 'final', those should be handled like 'final'
     //   because those are set only at init() function, and SHOULD NOT be changed.
     private static Context  sAppContext  = null;
     private static Handler  sUiHandler   = null;
