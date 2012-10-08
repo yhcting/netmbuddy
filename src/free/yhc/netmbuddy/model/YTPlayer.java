@@ -978,8 +978,10 @@ MediaPlayer.OnSeekCompleteListener {
                         startNext(); // move to next video.
                     } else
                         stopPlay(StopState.UNKNOWN_ERROR);
-                } else
+                } else {
+                    logI("YTPlayer video play stopped due to NETWORK_UNAVAILABLE");
                     stopPlay(StopState.NETWORK_UNAVAILABLE);
+                }
                 return;
             }
         } else
@@ -1165,8 +1167,10 @@ MediaPlayer.OnSeekCompleteListener {
         if (tryAgain && mVlm.hasActiveVideo()) {
             logD("MPlayer - Try to recover!");
             startVideo(mVlm.getActiveVideo(), true);
-        } else
+        } else {
+            logI("MPlayer - not-recoverable error : " + what + "/" + extra);
             stopPlay(StopState.UNKNOWN_ERROR);
+        }
 
         return true; // DO NOT call onComplete Listener.
     }
