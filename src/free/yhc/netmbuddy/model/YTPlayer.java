@@ -48,6 +48,7 @@ import android.net.wifi.WifiManager;
 import android.net.wifi.WifiManager.WifiLock;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
+import android.telephony.TelephonyManager;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -134,6 +135,12 @@ MediaPlayer.OnSeekCompleteListener {
     // ------------------------------------------------------------------------
     private VideoListManager        mVlm    = new VideoListManager();
     private int                     mErrRetry = PLAYER_ERR_RETRY;
+    private YTPState                mYtpS   = YTPState.IDLE;
+
+    private static enum YTPState {
+        IDLE,
+        SUSPENDED,
+    }
 
     // see "http://developer.android.com/reference/android/media/MediaPlayer.html"
     private static enum MPState {
@@ -180,6 +187,33 @@ MediaPlayer.OnSeekCompleteListener {
         NrElem(int aN, Object aTag) {
             n = aN;
             tag = aTag;
+        }
+    }
+
+    public static class TelephonyMonitor extends BroadcastReceiver {
+        @Override
+        public void
+        onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (!action.equals("android.intent.action.PHONE_STATE"))
+                return;
+
+            String exst = intent.getExtras().getString(TelephonyManager.EXTRA_STATE);
+            if (null == exst) {
+                logW("TelephonyMonitor Unexpected broadcast message");
+                return;
+            }
+
+            if (TelephonyManager.EXTRA_STATE_IDLE.equals(exst)) {
+                YTPlayer.get().ytpResumePlaying();
+            } else if (TelephonyManager.EXTRA_STATE_RINGING.equals(exst)) {
+                YTPlayer.get().ytpSuspendPlaying();
+            } else if (TelephonyManager.EXTRA_STATE_OFFHOOK.equals(exst)) {
+                // Nothing to do...
+            } else {
+                logW("TelephonyMonitor Unexpected extra state : " + exst);
+                return; // ignore others.
+            }
         }
     }
 
@@ -481,7 +515,6 @@ MediaPlayer.OnSeekCompleteListener {
         }
     }
 
-
     // ========================================================================
     //
     //
@@ -694,6 +727,9 @@ MediaPlayer.OnSeekCompleteListener {
     mpStart() {
         logD("MPlayer - start");
         if (null == mMp)
+            return;
+
+        if (ytpIsSuspended())
             return;
 
         mMp.start();
@@ -1112,10 +1148,33 @@ MediaPlayer.OnSeekCompleteListener {
 
     // ========================================================================
     //
+    // Suspending/Resuming Control
+    //
+    // ========================================================================
+    private void
+    ytpSuspendPlaying() {
+        eAssert(Utils.isUiThread());
+        pauseVideo();
+        mYtpS = YTPState.SUSPENDED;
+    }
+
+    private void
+    ytpResumePlaying() {
+        eAssert(Utils.isUiThread());
+        mYtpS = YTPState.IDLE;
+    }
+
+    private boolean
+    ytpIsSuspended() {
+        eAssert(Utils.isUiThread());
+        return YTPState.SUSPENDED == mYtpS;
+    }
+
+    // ========================================================================
+    //
     // General Control
     //
     // ========================================================================
-
     private void
     onMpStateChanged(MPState from, MPState to) {
         if (from == to)
@@ -1833,7 +1892,7 @@ MediaPlayer.OnSeekCompleteListener {
     @Override
     public boolean
     onInfo(MediaPlayer mp, int what, int extra) {
-        logD("MPlayer - onInfo");
+        logD("MPlayer - onInfo : " + what);
         switch (what) {
         case MediaPlayer.MEDIA_INFO_VIDEO_TRACK_LAGGING:
             break;
