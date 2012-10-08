@@ -109,6 +109,7 @@ public class DB extends SQLiteOpenHelper {
     // This is just video list
     // To get detail and sorted table, 'Joining Table' should be used.
     public static enum ColVideoRef implements Col {
+        // primary key - BaseColumns._ID of TABLE_VIDEO table
         VIDEOID         ("videoid",         "integer",  ""),
         ID              (BaseColumns._ID,   "integer",  "primary key autoincrement, "
                 + "FOREIGN KEY(videoid) REFERENCES " + TABLE_VIDEO + "(" + ColVideo.ID.getName() + ")");
@@ -135,8 +136,8 @@ public class DB extends SQLiteOpenHelper {
         // Youtube information
         // --------------------------------------------------------------------
         TITLE           ("title",           "text",     "not null"),
-        DESCRIPTION     ("description",     "text",     "not null"),
-        VIDEOID         ("videoid",         "text",     "not null"),
+        DESCRIPTION     ("description",     "text",     "not null"), // Not used yet.
+        VIDEOID         ("videoid",         "text",     "not null"), // Youtube Video Id (11-characters)
         PLAYTIME        ("playtime",        "integer",  "not null"), // Seconds
         THUMBNAIL       ("thumbnail",       "blob",     "not null"),
 
@@ -149,16 +150,16 @@ public class DB extends SQLiteOpenHelper {
         //   plays with loud sound but others are not.
         // To tune this variance between videos this field is required.
         VOLUME          ("volume",          "integer",  "not null"),
-        RATE            ("rate",            "integer",  "not null"), // my rate of this Video
-        TIME_ADD        ("time_add",        "integer",  "not null"),
+        RATE            ("rate",            "integer",  "not null"), // my rate of this Video - Not used yet
+        TIME_ADD        ("time_add",        "integer",  "not null"), // Not used yet.
         TIME_PLAYED     ("time_played",     "integer",  "not_null"), // time last played
 
         // --------------------------------------------------------------------
         // Video information - Not used yet (reserved for future use)
         // --------------------------------------------------------------------
-        GENRE           ("genre",           "text",     "not null"),
-        ARTIST          ("artist",          "text",     "not null"),
-        ALBUM           ("album",           "text",     "not null"),
+        GENRE           ("genre",           "text",     "not null"), // Not used yet
+        ARTIST          ("artist",          "text",     "not null"), // Not used yet
+        ALBUM           ("album",           "text",     "not null"), // Not used yet
 
         // --------------------------------------------------------------------
         // Internal use for DB management
@@ -273,6 +274,12 @@ public class DB extends SQLiteOpenHelper {
      * Build SQL from joining video and video-ref tables
      * @param plid
      * @param cols
+     * @param field
+     *   for "WHERE 'field' = 'value'"
+     * @param value
+     *   for "WHERE 'field' = 'value'"
+     * @param colOrderBy
+     * @param asc
      * @return
      */
     private static String
