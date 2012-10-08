@@ -213,10 +213,10 @@ MediaPlayer.OnSeekCompleteListener {
 
             if (TelephonyManager.EXTRA_STATE_IDLE.equals(exst)) {
                 YTPlayer.get().ytpResumePlaying();
-            } else if (TelephonyManager.EXTRA_STATE_RINGING.equals(exst)) {
-                YTPlayer.get().ytpSuspendPlaying();
-            } else if (TelephonyManager.EXTRA_STATE_OFFHOOK.equals(exst)) {
-                // Nothing to do...
+            } else if (TelephonyManager.EXTRA_STATE_RINGING.equals(exst)
+                       || TelephonyManager.EXTRA_STATE_OFFHOOK.equals(exst)) {
+                if (!YTPlayer.get().ytpIsSuspended())
+                    YTPlayer.get().ytpSuspendPlaying();
             } else {
                 logW("TelephonyMonitor Unexpected extra state : " + exst);
                 return; // ignore others.
