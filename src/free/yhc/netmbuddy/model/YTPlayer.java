@@ -982,6 +982,9 @@ MediaPlayer.OnSeekCompleteListener {
         mpReset();
         mpSetVolume(volume);
 
+        // Initialize lastBuffering value.
+        mLastBuffering = -1;
+
         // Update DB at this moment.
         // It's not perfectly right moment but it's fair enough
         new Thread(new Runnable() {
@@ -1092,7 +1095,7 @@ MediaPlayer.OnSeekCompleteListener {
 
         if (mLastBuffering < Policy.YTPLAYER_CACHING_TRIGGER_POINT
             && Policy.YTPLAYER_CACHING_TRIGGER_POINT <= percent)
-            // This is the first moment that buffering is reached to 100%
+            // This is the first moment that buffering is reached to trigger-point
             prepareNext();
 
         if (null != mPStateLsnr)
