@@ -64,6 +64,10 @@ public class Utils {
 
     // For debugging
     private static PrintWriter  sLogWriter  = null;
+    private static DateFormat   sLogTimeDateFormat =
+            DateFormat.getDateTimeInstance(DateFormat.MEDIUM,
+                                           DateFormat.MEDIUM,
+                                           Locale.ENGLISH);
 
     // Even if these two variables are not 'final', those should be handled like 'final'
     //   because those are set only at init() function, and SHOULD NOT be changed.
@@ -179,7 +183,12 @@ public class Utils {
             case F: Log.wtf(TAG, msg); break;
             }
         } else {
-            sLogWriter.print("[" + lv.name() + "] " + msg + "\n");
+            long timems = System.currentTimeMillis();
+            sLogWriter.printf("<%s:%03d> [%s] %s\n",
+                              sLogTimeDateFormat.format(new Date(timems)),
+                              timems % 1000,
+                              lv.name(),
+                              msg);
             sLogWriter.flush();
         }
     }
