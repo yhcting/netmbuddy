@@ -499,27 +499,35 @@ public class YTPlayerUI {
             mMp.setVideosStateListener(new YTPlayer.VideosStateListener() {
                 @Override
                 public void onStopped(YTPlayer.StopState state) {
+                    boolean      needToNotification = true;
+                    CharSequence msg = "";
+                    switch (state) {
+                    case DONE:
+                        needToNotification = false;
+                        msg = mRes.getText(R.string.msg_playing_done);
+                        break;
+
+                    case FORCE_STOPPED:
+                        needToNotification = false;
+                        msg = mRes.getText(R.string.msg_playing_stopped);
+                        break;
+
+                    case NETWORK_UNAVAILABLE:
+                        msg = mRes.getText(R.string.err_network_unavailable);
+                        break;
+
+                    case UNKNOWN_ERROR:
+                        msg = mRes.getText(R.string.msg_playing_err_unknown);
+                        break;
+                    }
 
                     if (null != mPlayerv) {
                         TextView titlev = (TextView)mPlayerv.findViewById(R.id.mplayer_title);
-                        switch (state) {
-                        case DONE:
-                            pvSetTitle(titlev, mRes.getText(R.string.msg_playing_done));
-                            break;
-
-                        case FORCE_STOPPED:
-                            pvSetTitle(titlev, mRes.getText(R.string.msg_playing_stopped));
-                            break;
-
-                        case NETWORK_UNAVAILABLE:
-                            pvSetTitle(titlev, mRes.getText(R.string.err_network_unavailable));
-                            break;
-
-                        case UNKNOWN_ERROR:
-                            pvSetTitle(titlev, mRes.getText(R.string.msg_playing_err_unknown));
-                            break;
-                        }
+                        pvSetTitle(titlev, mRes.getText(R.string.msg_playing_done));
                     }
+
+                    if (needToNotification)
+                        NotiManager.get().putNotification(NotiManager.NotiType.ALERT, (String)msg);
                 }
 
                 @Override
