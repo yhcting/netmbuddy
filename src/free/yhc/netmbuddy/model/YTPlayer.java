@@ -967,10 +967,9 @@ MediaPlayer.OnSeekCompleteListener {
                         startNext(); // move to next video.
                     } else
                         stopPlay(StopState.UNKNOWN_ERROR);
-                } else {
-                    logI("YTPlayer video play stopped due to NETWORK_UNAVAILABLE");
+                } else
                     stopPlay(StopState.NETWORK_UNAVAILABLE);
-                }
+
                 return;
             }
         } else
@@ -1030,7 +1029,7 @@ MediaPlayer.OnSeekCompleteListener {
 
     private void
     stopPlay(StopState st) {
-        logD("VideoView - playDone : forceStop (" + st.name() + ")");
+        logD("YTPlayer stopPlay : " + st.name());
         if (null != mYtHack)
             mYtHack.forceCancel();
 
