@@ -144,11 +144,11 @@ public class MusicsAdapter extends ResourceCursorAdapter {
                 // NOTE
                 // First-call of'getCount()', can make 'Cursor' cache lots of internal information.
                 // And this caching-job usually takes quite long time especially DB has lots of rows.
-                // In addition, calling 'moveToFirst()' to trigger time-consuming-sorting operation.
                 // So, do it here in background!
-                // (This has dependency on internal implementation of Cursor!)
+                // This has dependency on internal implementation of Cursor!
+                // Until JellyBean, SQLiteCursor executes 'fillWindow(0)' at first 'getCount()' call.
+                // And 'fillWindow(0)' is most-time-consuming preparation for using cursor.
                 newCursor.getCount();
-                newCursor.moveToFirst();
                 return Err.NO_ERR;
             }
         };
