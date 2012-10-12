@@ -3,6 +3,7 @@
     android:id="@+id/mplayer_ldrawer"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:layout_marginTop="50dip"
     android:handle="@+id/mplayer_ldrawer_handle"
     android:content="@+id/mplayer_ldrawer_content"
     android:orientation="vertical"
@@ -17,12 +18,27 @@
         android:background="@drawable/ldrawer_bg"
         android:clickable="true"
         />
-    <ListView
+    <LinearLayout
         android:id="@+id/mplayer_ldrawer_content"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:listSelector="@android:color/transparent"
-        android:divider="@android:color/transparent"
+        android:orientation="vertical"
         android:background="@color/black"
-        />
+        >
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="1dip"
+            android:scaleType="fitXY"
+            android:src="@drawable/divider_horizontal_bright"
+            />
+        <ListView
+            android:id="@+id/mplayer_ldrawer_list"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingLeft="5dip"
+            android:paddingRight="5dip"
+            android:listSelector="@android:color/transparent"
+            android:divider="@android:color/transparent"
+            />
+    </LinearLayout>
 </SlidingDrawer>

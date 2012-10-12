@@ -338,10 +338,9 @@ public class YTPlayerUI {
             return; // nothing to do
         eAssert(null != mVContext);
 
-        ListView lv = (ListView)playerLDrawer.findViewById(R.id.mplayer_ldrawer_content);
+        ListView lv = (ListView)playerLDrawer.findViewById(R.id.mplayer_ldrawer_list);
         SlidingDrawer drawer = (SlidingDrawer)playerLDrawer.findViewById(R.id.mplayer_ldrawer);
         playerLDrawer.setVisibility(View.VISIBLE);
-        lv = (ListView)playerLDrawer.findViewById(R.id.mplayer_ldrawer_content);
         YTPlayerVidArrayAdapter adapter = new YTPlayerVidArrayAdapter(mVContext, mMp.getVideoList());
         adapter.setActiveItem(mMp.getActiveVideoIndex());
         lv.setAdapter(adapter);
@@ -354,7 +353,7 @@ public class YTPlayerUI {
             || View.GONE == playerLDrawer.getVisibility())
             return; // nothing to do
         eAssert(null != mVContext);
-        ListView lv = (ListView)playerLDrawer.findViewById(R.id.mplayer_ldrawer_content);
+        ListView lv = (ListView)playerLDrawer.findViewById(R.id.mplayer_ldrawer_list);
         lv.setAdapter(null);
         SlidingDrawer drawer = (SlidingDrawer)playerLDrawer.findViewById(R.id.mplayer_ldrawer);
         drawer.close();
@@ -368,7 +367,7 @@ public class YTPlayerUI {
             return;
         }
 
-        ListView lv = (ListView)playerLDrawer.findViewById(R.id.mplayer_ldrawer_content);
+        ListView lv = (ListView)playerLDrawer.findViewById(R.id.mplayer_ldrawer_list);
         YTPlayerVidArrayAdapter adapter = (YTPlayerVidArrayAdapter)lv.getAdapter();
         if (null != adapter
             && mMp.getActiveVideoIndex() != adapter.getActiveItemPos()) {
@@ -547,7 +546,7 @@ public class YTPlayerUI {
                         return;
 
                     if (mMp.hasActiveVideo()) {
-                        ListView lv = (ListView)mPlayerLDrawer.findViewById(R.id.mplayer_ldrawer_content);
+                        ListView lv = (ListView)mPlayerLDrawer.findViewById(R.id.mplayer_ldrawer_list);
                         YTPlayerVidArrayAdapter adapter = (YTPlayerVidArrayAdapter)lv.getAdapter();
                         if (null != adapter) {
                             adapter.setVidArray(mMp.getVideoList());
@@ -566,7 +565,7 @@ public class YTPlayerUI {
                     if (!mMp.hasActiveVideo())
                         return;
 
-                    ListView lv = (ListView)mPlayerLDrawer.findViewById(R.id.mplayer_ldrawer_content);
+                    ListView lv = (ListView)mPlayerLDrawer.findViewById(R.id.mplayer_ldrawer_list);
                     int topPos = mMp.getActiveVideoIndex() - 1;
                     if (topPos < 0)
                         topPos = 0;
