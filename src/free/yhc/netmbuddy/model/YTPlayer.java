@@ -35,6 +35,7 @@ import java.util.Random;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.database.Cursor;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
@@ -250,6 +251,38 @@ MediaPlayer.OnSeekCompleteListener {
         }
     }
 
+    public static class WiredHeadsetMonitor extends BroadcastReceiver {
+        // See "http://developer.android.com/reference/android/content/Intent.html#ACTION_HEADSET_PLUG"
+        private static final int WHSTATE_PLUG   = 1;
+        private static final int WHSTATE_UNPLUG = 0;
+
+        @Override
+        public void
+        onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (!action.equals(Intent.ACTION_HEADSET_PLUG))
+                return;
+
+            int state = intent.getIntExtra("state", -1);
+            switch (state) {
+            case WHSTATE_UNPLUG:
+            case WHSTATE_PLUG:
+                Utils.getUiHandler().post(new Runnable() {
+                    @Override
+                    public void
+                    run() {
+                        YTPlayer.get().pauseVideo();
+                    }
+                });
+                break;
+
+            default:
+                eAssert(false);
+                break;
+            }
+        }
+    }
+
     private class AutoStop implements Runnable {
         @Override
         public void
@@ -432,6 +465,17 @@ MediaPlayer.OnSeekCompleteListener {
             }
             return false;
         }
+    }
+
+    // ========================================================================
+    //
+    //
+    //
+    // ========================================================================
+    static {
+        IntentFilter receiverFilter = new IntentFilter(Intent.ACTION_HEADSET_PLUG);
+        WiredHeadsetMonitor receiver = new WiredHeadsetMonitor();
+        Utils.getAppContext().registerReceiver(receiver, receiverFilter);
     }
 
     // ========================================================================
