@@ -34,6 +34,8 @@ public class YTPlayerUI {
     private LinearLayout        mPlayerLDrawer   = null;
 
     private class UpdateProgress implements Runnable {
+        private static final int UPDATE_INTERVAL_MS = 1000;
+
         private SeekBar     seekbar = null;
         private TextView    curposv = null;
         private TextView    maxposv = null;
@@ -85,6 +87,17 @@ public class YTPlayerUI {
         }
 
         void
+        resume() {
+            Utils.getUiHandler().removeCallbacks(this);
+            Utils.getUiHandler().postDelayed(this, UPDATE_INTERVAL_MS);
+        }
+
+        void
+        pause() {
+            Utils.getUiHandler().removeCallbacks(this);
+        }
+
+        void
         stop() {
             //logI("Progress End");
             Utils.getUiHandler().removeCallbacks(this);
@@ -122,7 +135,7 @@ public class YTPlayerUI {
         public
         void run() {
             update(mMp.playerGetDuration(), mMp.playerGetPosition());
-            Utils.getUiHandler().postDelayed(this, 1000);
+            Utils.getUiHandler().postDelayed(this, UPDATE_INTERVAL_MS);
         }
     }
 
@@ -317,10 +330,16 @@ public class YTPlayerUI {
             mUpdateProg.update(1, 1);
             // Missing 'break' is intentional.
 
+        case STARTED:
+            mUpdateProg.resume();
+            break;
+
+        case PAUSED:
+            mUpdateProg.pause();
+            break;
+
         case INITIALIZED:
         case PREPARING:
-        case STARTED:
-        case PAUSED:
         case BUFFERING:
             ; // do nothing progress is now under update..
             break;
