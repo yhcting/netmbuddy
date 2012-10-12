@@ -25,6 +25,7 @@
     <string name="low">낮음</string>
     <string name="normal">일반</string>
     <string name="done">완료</string>
+    <string name="autostop">자동정지</string>
 
     <string name="enter_keyword">검색어 입력</string>
     <string name="new_search">새로 검색하기</string>
@@ -54,22 +55,19 @@
     <string name="exporting_db">DB를 내보내는 중</string>
     <string name="merging_playlist">목록을 가져오는 중</string>
     <string name="append_to_playq">재생기에 추가</string>
+    <string name="time10m">10분</string>
+    <string name="time20m">20분</string>
+    <string name="time30m">30분</string>
+    <string name="time1h">1시간</string>
+    <string name="time2h">2시간</string>
 
     <string name="pref_cat_operation">재생 방식 설정</string>
     <string name="pref_shuffle">임의 순서로 재생</string>
     <string name="pref_shuffle_desc">음악 재생시 재생되는 곡의 순서가 무작위로 됩니다.</string>
     <string name="pref_repeat">반복 재생</string>
     <string name="pref_repeat_desc">계속해서 반복되어 음악이 재생 됩니다.</string>
-    <string name="pref_autostop">자동정지</string>
-    <string name="pref_autostop_desc">재생이 시작되는 시점부터 일정 시간 후 재생이 자동으로 중단됩니다.\n따라서, 재생 중에 이 값을 바꿀 경우, 현재의 재생시간에는 영향을 주지 않습니다.\n음악 들으면서 잠들때 유용합니다.</string>
     <string name="pref_quality">음질</string>
     <string name="pref_quality_desc">네트워크 상태가 좋지 않다면 [낮음], 그렇지 않으면 [일반]을 권장 합니다.</string>
-
-    <string name="pref_autostop_10m">10분</string>
-    <string name="pref_autostop_20m">20분</string>
-    <string name="pref_autostop_30m">30분</string>
-    <string name="pref_autostop_1h">1시간</string>
-    <string name="pref_autostop_2h">2시간</string>
 
     <string name="guide_title_first_playlist">첫번째 재생목록 만들기</string>
     <string name="guide_desc_first_playlist">아이콘을 터치해서 원하는 검색어로 유투브를 검색합니다.\n검색이 완료되면, 검색된 유튜브 목록 중 하나를 길게 터치해서 새 재생목록을 만들어서 곡을 추가합니다.</string>
@@ -100,6 +98,7 @@
     <string name="msg_fail_find_app">수행에 필요한 어플리케이션을 찾을 수 없습니다.</string>
     <string name="msg_fail_access_exdb">외부 데이타베이스 파일에 접근할 수 없습니다.</string>
     <string name="msg_delete_music">모든 재생목록에서 제거합니다.</string>
+    <string name="msg_autostop_not_allowed">자동정지 설정 실패. 재생기가 활성화된 상태에서, 동작중인 재생기에 대해서만 설정 가능합니다.</string>
 
     <string name="err_no_err">성공</string>
     <string name="err_unknown">알 수 없는 오류가 발생했습니다.</string>

@@ -427,12 +427,50 @@ public class PlaylistActivity extends Activity {
     }
 
     private void
+    onMenuMoreAutoStop(View anchor) {
+        final int[] optStringIds = {
+                R.string.time10m,
+                R.string.time20m,
+                R.string.time30m,
+                R.string.time1h,
+                R.string.time2h };
+
+
+        final CharSequence[] items = new CharSequence[optStringIds.length];
+        for (int i = 0; i < optStringIds.length; i++)
+            items[i] = getResources().getText(optStringIds[i]);
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle(R.string.autostop);
+        builder.setItems(items, new DialogInterface.OnClickListener() {
+            @Override
+            public void
+            onClick(DialogInterface dialog, int item) {
+                long timems = 0;
+                switch (optStringIds[item]) {
+                case R.string.time10m:  timems = 10 * 60 * 1000;        break;
+                case R.string.time20m:  timems = 20 * 60 * 1000;        break;
+                case R.string.time30m:  timems = 30 * 60 * 1000;        break;
+                case R.string.time1h:   timems = 1 * 60 * 60 * 1000;    break;
+                case R.string.time2h:   timems = 2 * 60 * 60 * 1000;    break;
+                default:
+                    eAssert(false);
+                }
+                mMp.setAutoStop(timems);
+            }
+        });
+        builder.create().show();
+
+    }
+
+    private void
     onMenuMore(final View anchor) {
         final int[] optStringIds = {
                 R.string.app_info,
                 R.string.dbmore,
                 R.string.ytsearchmore,
-                R.string.feedback };
+                R.string.feedback,
+                R.string.autostop };
 
         final CharSequence[] items = new CharSequence[optStringIds.length];
         for (int i = 0; i < optStringIds.length; i++)
@@ -444,6 +482,13 @@ public class PlaylistActivity extends Activity {
             public void
             onClick(DialogInterface dialog, int item) {
                 switch (optStringIds[item]) {
+                case R.string.autostop:
+                    if (mMp.hasActiveVideo())
+                        onMenuMoreAutoStop(anchor);
+                    else
+                        UiUtils.showTextToast(PlaylistActivity.this, R.string.msg_autostop_not_allowed);
+                    break;
+
                 case R.string.feedback:
                     onMenuMoreSendOpinion(anchor);
                     break;

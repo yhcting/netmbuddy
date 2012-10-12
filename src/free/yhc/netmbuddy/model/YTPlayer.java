@@ -835,18 +835,6 @@ MediaPlayer.OnSeekCompleteListener {
         Utils.removeFileRecursive(sCacheDir, skipSet);
     }
 
-    /**
-     * player will be stopped after 'millis'
-     * @param millis
-     *   0 for disable autostop
-     */
-    private void
-    setAutoStop(long millis) {
-        Utils.getUiHandler().removeCallbacks(mAutoStop);
-        if (millis > 0)
-            Utils.getUiHandler().postDelayed(mAutoStop, millis);
-    }
-
     private void
     prepareNext() {
         if (!mVlm.hasNextVideo())
@@ -1043,9 +1031,10 @@ MediaPlayer.OnSeekCompleteListener {
                 return;
             }
         }
+
         // Play is already stopped.
         // So, auto stop should be inactive here.
-        setAutoStop(0);
+        disableAutostop();
 
         mpStop();
         mpRelease();
@@ -1062,6 +1051,13 @@ MediaPlayer.OnSeekCompleteListener {
         if (null != mVStateLsnr)
             mVStateLsnr.onStopped(st);
     }
+
+    private void
+    disableAutostop() {
+        Utils.getUiHandler().removeCallbacks(mAutoStop);
+    }
+
+
     // ============================================================================
     //
     // Package interfaces
@@ -1400,8 +1396,8 @@ MediaPlayer.OnSeekCompleteListener {
             return;
 
         acquireLocks();
-        setAutoStop(Utils.getPrefAutoStopMillis());
-
+        // removes auto stop that is set before.
+        disableAutostop();
         mVlm.setVideoList(vs);
 
         if (mVlm.moveToFist()) {
@@ -1446,6 +1442,20 @@ MediaPlayer.OnSeekCompleteListener {
 
         mVlm.appendVideo(v);
         return true;
+    }
+
+    /**
+     * player will be stopped after 'millis'
+     * @param millis
+     *   0 for disable autostop
+     */
+    public void
+    setAutoStop(long millis) {
+        Utils.getUiHandler().removeCallbacks(mAutoStop);
+        if (mVlm.hasActiveVideo()) {
+            if (millis > 0)
+                Utils.getUiHandler().postDelayed(mAutoStop, millis);
+        }
     }
 
     public void

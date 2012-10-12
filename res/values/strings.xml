@@ -25,6 +25,7 @@
     <string name="low">Low</string>
     <string name="normal">Normal</string>
     <string name="done">Done</string>
+    <string name="autostop">Auto-stop</string>
 
     <string name="enter_keyword">Enter search keyword</string>
     <string name="new_search">New search</string>
@@ -54,22 +55,19 @@
     <string name="exporting_db">Exporting DB</string>
     <string name="merging_playlist">Merging playlist</string>
     <string name="append_to_playq">Append to player</string>
+    <string name="time10m">10 minutes</string>
+    <string name="time20m">20 minutes</string>
+    <string name="time30m">30 minutes</string>
+    <string name="time1h">1 hour</string>
+    <string name="time2h">2 hours</string>
 
     <string name="pref_cat_operation">Playing music</string>
     <string name="pref_shuffle">Shuffle</string>
     <string name="pref_shuffle_desc">Play musics in random order.</string>
     <string name="pref_repeat">Repeat</string>
     <string name="pref_repeat_desc">Play musics repeatedly.</string>
-    <string name="pref_autostop">Auto-stop</string>
-    <string name="pref_autostop_desc">Play will be stopped after given time from starting musics.\nChanging in the middle of playing does not effective at current playing session.\nUseful when sleep with listening musics.</string>
     <string name="pref_quality">Audio quality</string>
     <string name="pref_quality_desc">Low quality for poor network condition, otherwise normal is recommended</string>
-
-    <string name="pref_autostop_10m">10 minutes</string>
-    <string name="pref_autostop_20m">20 minutes</string>
-    <string name="pref_autostop_30m">30 minutes</string>
-    <string name="pref_autostop_1h">1 hour</string>
-    <string name="pref_autostop_2h">2 hours</string>
 
     <string name="guide_title_first_playlist">Making my first playlist.</string>
     <string name="guide_desc_first_playlist">Touching this icon to search Youbute with keywords\nThen, do long-touch one of list-item to make new playlist and add the item to the playlist.</string>
@@ -100,6 +98,7 @@
     <string name="msg_fail_find_app">Fail in finding appropriate application.</string>
     <string name="msg_fail_access_exdb">Fail in accessing external database file.</string>
     <string name="msg_delete_music">Delete from all playlists.</string>
+    <string name="msg_autostop_not_allowed">Fails to set auto-stop. Player is not active. Auto-stop can be set only on current playing session.</string>
 
     <string name="err_no_err">Success.</string>
     <string name="err_unknown">Unknown error.</string>
