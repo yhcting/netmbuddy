@@ -156,6 +156,9 @@ public class YTDownloader {
         @Override
         public void
         handleMessage(Message msg) {
+            if (getLooper().getThread().isInterrupted())
+                return;
+
             switch (msg.what) {
             case MSG_WHAT_DOWNLOAD:
                 handleDownload((DnArg)msg.obj);

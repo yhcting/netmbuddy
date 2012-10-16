@@ -144,6 +144,9 @@ public class YTSearchHelper {
         @Override
         public void
         handleMessage(Message msg) {
+            if (getLooper().getThread().isInterrupted())
+                return;
+
             switch (msg.what) {
             case MSG_WHAT_SEARCH: {
                 SearchArg arg = (SearchArg)msg.obj;

@@ -1,10 +1,12 @@
 package free.yhc.netmbuddy.model;
 
 import static free.yhc.netmbuddy.model.Utils.eAssert;
+import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.res.Resources;
+import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -14,6 +16,7 @@ import android.widget.SeekBar;
 import android.widget.SlidingDrawer;
 import android.widget.TextView;
 import free.yhc.netmbuddy.R;
+import free.yhc.netmbuddy.VideoPlayerActivity;
 
 public class YTPlayerUI {
     private static final int    SEEKBAR_MAX         = 1000;
@@ -29,9 +32,12 @@ public class YTPlayerUI {
     // ------------------------------------------------------------------------
     // UI Control.
     // ------------------------------------------------------------------------
-    private Context             mVContext   = null;
+    private Activity            mVActivity   = null;
     private LinearLayout        mPlayerv    = null;
-    private LinearLayout        mPlayerLDrawer   = null;
+    private LinearLayout        mPlayerLDrawer  = null;
+
+    // To support video
+    private SurfaceView         mSurfacev       = null;
 
     private class UpdateProgress implements Runnable {
         private static final int UPDATE_INTERVAL_MS = 1000;
@@ -263,6 +269,7 @@ public class YTPlayerUI {
 
         switch (to) {
         case BUFFERING:
+        case PREPARED:
         case PAUSED:
         case STARTED:
             pvEnableButton(volv, 0);
@@ -355,12 +362,12 @@ public class YTPlayerUI {
         if (null == playerLDrawer
             || !mMp.hasActiveVideo())
             return; // nothing to do
-        eAssert(null != mVContext);
+        eAssert(null != mVActivity);
 
         ListView lv = (ListView)playerLDrawer.findViewById(R.id.mplayer_ldrawer_list);
         SlidingDrawer drawer = (SlidingDrawer)playerLDrawer.findViewById(R.id.mplayer_ldrawer);
         playerLDrawer.setVisibility(View.VISIBLE);
-        YTPlayerVidArrayAdapter adapter = new YTPlayerVidArrayAdapter(mVContext, mMp.getVideoList());
+        YTPlayerVidArrayAdapter adapter = new YTPlayerVidArrayAdapter(mVActivity, mMp.getVideoList());
         adapter.setActiveItem(mMp.getActiveVideoIndex());
         lv.setAdapter(adapter);
         drawer.close();
@@ -371,7 +378,7 @@ public class YTPlayerUI {
         if (null == playerLDrawer
             || View.GONE == playerLDrawer.getVisibility())
             return; // nothing to do
-        eAssert(null != mVContext);
+        eAssert(null != mVActivity);
         ListView lv = (ListView)playerLDrawer.findViewById(R.id.mplayer_ldrawer_list);
         lv.setAdapter(null);
         SlidingDrawer drawer = (SlidingDrawer)playerLDrawer.findViewById(R.id.mplayer_ldrawer);
@@ -381,6 +388,9 @@ public class YTPlayerUI {
 
     private void
     pvConfigureLDrawer(ViewGroup playerLDrawer, YTPlayer.MPState from, YTPlayer.MPState to) {
+        if (null == playerLDrawer)
+            return;
+
         if (!mMp.hasActiveVideo()) {
             pvDisableLDrawer(playerLDrawer);
             return;
@@ -470,15 +480,28 @@ public class YTPlayerUI {
                 if (!mMp.hasActiveVideo())
                     return;
                 changeVideoVolume(mMp.getActiveVideo().title,
-                        mMp.getActiveVideo().videoId);
+                                  mMp.getActiveVideo().videoId);
             }
         });
 
+        btn = (ImageView)playerv.findViewById(R.id.mplayer_btnvideo);
+        btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (!mMp.hasActiveVideo()
+                    || null == mVActivity)
+                    return;
+                mMp.prepareTransitionMPMode();
+                mVActivity.startActivity(new Intent(mVActivity, VideoPlayerActivity.class));
+            }
+        });
+        if (null != mSurfacev)
+            btn.setVisibility(View.GONE);
     }
 
     private void
     pvInit(ViewGroup playerv, ViewGroup playerLDrawer) {
-        mMp.setPlayerStateListener(new YTPlayer.PlayerStateListener() {
+        mMp.addPlayerStateListener(this, new YTPlayer.PlayerStateListener() {
             @Override
             public void onStateChanged(YTPlayer.MPState from, YTPlayer.MPState to) {
                 pvConfigureAll(mPlayerv, mPlayerLDrawer, from, to);
@@ -514,7 +537,7 @@ public class YTPlayerUI {
         mUpdateProg.setProgressView(progv);
 
         if (null != playerLDrawer) {
-            mMp.setVideosStateListener(new YTPlayer.VideosStateListener() {
+            mMp.addVideosStateListener(this, new YTPlayer.VideosStateListener() {
                 @Override
                 public void onStopped(YTPlayer.StopState state) {
                     boolean      needToNotification = true;
@@ -611,18 +634,22 @@ public class YTPlayerUI {
     }
 
     Err
-    setController(Context context, ViewGroup playerv, ViewGroup playerLDrawer) {
+    setController(Activity  activity,
+                  ViewGroup playerv,
+                  ViewGroup playerLDrawer,
+                  SurfaceView surfacev) {
         // update notification by force
         notiConfigure(YTPlayer.MPState.INVALID, mMp.playerGetState());
 
-        if (context == mVContext && mPlayerv == playerv)
+        if (activity == mVActivity && mPlayerv == playerv)
             // controller is already set for this context.
             // So, nothing to do. just return!
             return Err.NO_ERR;
 
-        mVContext = context;
+        mVActivity = activity;
         mPlayerv = (LinearLayout)playerv;
         mPlayerLDrawer = (LinearLayout)playerLDrawer;
+        mSurfacev = surfacev;
 
         if (null == mPlayerv) {
             eAssert(null == mPlayerLDrawer);
@@ -636,17 +663,23 @@ public class YTPlayerUI {
     }
 
     void
-    unsetController(Context context) {
-        if (context == mVContext) {
+    unsetController(Activity activity) {
+        if (activity == mVActivity) {
             mPlayerv = null;
-            mVContext = null;
+            mVActivity = null;
             mPlayerLDrawer = null;
+            mSurfacev = null;
         }
+    }
+
+    SurfaceView
+    getVideoSurfaceView() {
+        return (null == mSurfacev)? null: mSurfacev;
     }
 
     void
     changeVideoVolume(final String title, final String videoId) {
-        if (null == mVContext)
+        if (null == mVActivity)
             return;
 
         final boolean runningVideo;
@@ -663,8 +696,8 @@ public class YTPlayerUI {
                 curvol = i.intValue();
         }
 
-        ViewGroup diagv = (ViewGroup)UiUtils.inflateLayout(mVContext, R.layout.mplayer_vol_dialog);
-        AlertDialog.Builder bldr = new AlertDialog.Builder(mVContext);
+        ViewGroup diagv = (ViewGroup)UiUtils.inflateLayout(mVActivity, R.layout.mplayer_vol_dialog);
+        AlertDialog.Builder bldr = new AlertDialog.Builder(mVActivity);
         bldr.setView(diagv);
         bldr.setTitle(Utils.getAppContext().getResources().getText(R.string.volume)
                       + " : " + title);

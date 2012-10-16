@@ -34,7 +34,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
-            android:weightSum="4"
+            android:weightSum="5"
             android:orientation="horizontal"
             android:visibility="gone"
             >
@@ -76,6 +76,16 @@
                 android:gravity="center"
                 android:scaleType="fitCenter"
                 android:src="@drawable/ic_media_next"
+                android:clickable="true"
+                />
+            <ImageView
+                android:id="@+id/mplayer_btnvideo"
+                android:layout_width="@dimen/toolbtn_width"
+                android:layout_height="@dimen/toolbtn_height"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_media_video"
                 android:clickable="true"
                 />
         </LinearLayout>

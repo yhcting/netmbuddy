@@ -45,6 +45,11 @@
                   android:configChanges="orientation|keyboardHidden"
                   android:theme="@android:style/Theme.NoTitleBar"
                   />
+        <activity android:name=".VideoPlayerActivity"
+                  android:screenOrientation="landscape"
+                  android:configChanges="orientation|keyboardHidden"
+                  android:theme="@android:style/Theme.NoTitleBar"
+                  />
         <receiver android:name=".model.YTPlayer$TelephonyMonitor">
             <intent-filter>
                 <action android:name="android.intent.action.PHONE_STATE" />

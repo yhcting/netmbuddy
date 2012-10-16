@@ -92,6 +92,9 @@ public class DBHelper {
         @Override
         public void
         handleMessage(Message msg) {
+            if (getLooper().getThread().isInterrupted())
+                return;
+
             switch (msg.what) {
             case MSG_WHAT_CHECK_EXIST:
                 handleCheckExist((CheckExistArg)msg.obj);

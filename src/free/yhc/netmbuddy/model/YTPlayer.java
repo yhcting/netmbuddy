@@ -30,8 +30,10 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Random;
 
+import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -47,7 +49,10 @@ import android.net.wifi.WifiManager.WifiLock;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.telephony.TelephonyManager;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import free.yhc.netmbuddy.model.YTDownloader.DnArg;
 import free.yhc.netmbuddy.model.YTDownloader.DownloadDoneReceiver;
 
@@ -117,12 +122,13 @@ MediaPlayer.OnSeekCompleteListener {
     private int                     mErrRetry = PLAYER_ERR_RETRY;
     private YTPState                mYtpS   = YTPState.IDLE;
     private int                     mLastBuffering  = -1;
+    private PlayerState             mStoredPState = null;
 
     // ------------------------------------------------------------------------
     // Listeners
     // ------------------------------------------------------------------------
-    private VideosStateListener     mVStateLsnr = null;
-    private PlayerStateListener     mPStateLsnr = null;
+    private KBLinkedList            mVStateLsnrl = new KBLinkedList<VideosStateListener>();
+    private KBLinkedList            mPStateLsnrl = new KBLinkedList<PlayerStateListener>();
 
     public interface VideosStateListener {
         /**
@@ -196,6 +202,12 @@ MediaPlayer.OnSeekCompleteListener {
             n = aN;
             tag = aTag;
         }
+    }
+
+    private static class PlayerState {
+        MPState mpState     = MPState.INVALID;
+        int     pos         = -1;
+        int     vol         = -1;
     }
 
     public static class TelephonyMonitor extends BroadcastReceiver {
@@ -546,6 +558,9 @@ MediaPlayer.OnSeekCompleteListener {
         mp.setScreenOnWhilePlaying(false);
         mp.setAudioStreamType(AudioManager.STREAM_MUSIC);
         mp.setOnPreparedListener(this);
+        SurfaceView surfv = mUi.getVideoSurfaceView();
+        SurfaceHolder sh = (null == surfv)? null: surfv.getHolder();
+        mp.setDisplay(sh);
     }
 
     private void
@@ -595,6 +610,7 @@ MediaPlayer.OnSeekCompleteListener {
         new Thread(new Runnable() {
             @Override
             public void run() {
+                mp.setDisplay(null);
                 mp.release();
             }
         }).start();
@@ -742,8 +758,9 @@ MediaPlayer.OnSeekCompleteListener {
         if (from == to)
             return;
 
-        if (null != mPStateLsnr)
-            mPStateLsnr.onStateChanged(from, to);
+        Iterator<PlayerStateListener> iter = mPStateLsnrl.iterator();
+        while (iter.hasNext())
+            iter.next().onStateChanged(from, to);
 
         switch (to) {
         case PAUSED:
@@ -1092,8 +1109,9 @@ MediaPlayer.OnSeekCompleteListener {
         // We need to overwrite title message.
         mpSetState(MPState.INVALID);
 
-        if (null != mVStateLsnr)
-            mVStateLsnr.onStopped(st);
+        Iterator<VideosStateListener> iter = mVStateLsnrl.iterator();
+        while (iter.hasNext())
+            iter.next().onStopped(st);
     }
 
     private void
@@ -1101,6 +1119,51 @@ MediaPlayer.OnSeekCompleteListener {
         Utils.getUiHandler().removeCallbacks(mAutoStop);
     }
 
+    private void
+    storePlayerState() {
+        if (null == mMp)
+            return;
+
+        mStoredPState = new PlayerState();
+        switch(mpGetState()) {
+        case STARTED:
+        case PAUSED:
+            mStoredPState.pos = mpGetCurrentPosition();
+            mStoredPState.vol = mpGetVolume();
+            mStoredPState.mpState = mpGetState();
+            break;
+
+        }
+    }
+
+    private void
+    restorePlayerState() {
+        if (!haveStoredPlayerState())
+            return;
+
+        // Android MediaPlayer seek to previous position automatically.
+        // And volume is preserved.
+        // Below two line is useless.
+        mpSeekTo(mStoredPState.pos);
+        mpSetVolume(mStoredPState.vol);
+
+        clearStoredPlayerState();
+    }
+
+    private void
+    clearStoredPlayerState() {
+        mStoredPState = null;
+    }
+
+    private boolean
+    haveStoredPlayerState() {
+        return mStoredPState != null;
+    }
+
+    private boolean
+    isStoredPlayerStatePaused() {
+        return MPState.PAUSED == mStoredPState.mpState;
+    }
 
     // ============================================================================
     //
@@ -1138,8 +1201,9 @@ MediaPlayer.OnSeekCompleteListener {
             // This is the first moment that buffering is reached to trigger-point
             prepareNext();
 
-        if (null != mPStateLsnr)
-            mPStateLsnr.onBufferingChanged(percent);
+        Iterator<PlayerStateListener> iter = mPStateLsnrl.iterator();
+        while (iter.hasNext())
+            iter.next().onBufferingChanged(percent);
 
         mLastBuffering = percent;
     }
@@ -1167,8 +1231,39 @@ MediaPlayer.OnSeekCompleteListener {
         }
 
         logD("MPlayer - onPrepared");
+        boolean autoStart = true;
+        if (haveStoredPlayerState()) {
+            autoStart = !isStoredPlayerStatePaused();
+            restorePlayerState();
+        }
+        clearStoredPlayerState();
+
+        // Set Video Surface Holder
+        SurfaceView surfv = mUi.getVideoSurfaceView();
+        if (null != surfv) {
+            //Scale video with fixed-ratio.
+            int vw = mp.getVideoWidth();
+            int vh = mp.getVideoHeight();
+
+            int sw = ((WindowManager)Utils.getAppContext().getSystemService(Context.WINDOW_SERVICE))
+                        .getDefaultDisplay().getWidth();
+            int sh = ((WindowManager)Utils.getAppContext().getSystemService(Context.WINDOW_SERVICE))
+                        .getDefaultDisplay().getHeight();
+
+            int[] sz = new int[2];
+            Utils.fitFixedRatio(sw, sh, vw, vh, sz);
+
+            ViewGroup.LayoutParams lp = surfv.getLayoutParams();
+            lp.width = sz[0];
+            lp.height = sz[1];
+            surfv.setLayoutParams(lp);
+            surfv.requestLayout();
+        }
+
         mpSetState(MPState.PREPARED);
-        mpStart(); // auto start
+
+        if (autoStart)
+            mpStart(); // auto start
     }
 
     @Override
@@ -1241,8 +1336,9 @@ MediaPlayer.OnSeekCompleteListener {
             break;
 
         case MediaPlayer.MEDIA_INFO_BUFFERING_END:
-            if (null != mPStateLsnr)
-                mPStateLsnr.onBufferingChanged(100);
+            Iterator<PlayerStateListener> iter = mPStateLsnrl.iterator();
+            while (iter.hasNext())
+                iter.next().onBufferingChanged(100);
             break;
 
         case MediaPlayer.MEDIA_INFO_BAD_INTERLEAVING:
@@ -1262,15 +1358,17 @@ MediaPlayer.OnSeekCompleteListener {
     //
     // ============================================================================
     void
-    setVideosStateListener(VideosStateListener listener) {
+    addVideosStateListener(Object key, VideosStateListener listener) {
         eAssert(null != listener);
-        mVStateLsnr = listener;
+        mVStateLsnrl.remove(key);
+        mVStateLsnrl.add(key, listener);
     }
 
     void
-    setPlayerStateListener(PlayerStateListener listener) {
+    addPlayerStateListener(Object key, PlayerStateListener listener) {
         eAssert(null != listener);
-        mPStateLsnr = listener;
+        mPStateLsnrl.remove(key);
+        mPStateLsnrl.add(key, listener);
     }
 
     boolean
@@ -1321,6 +1419,11 @@ MediaPlayer.OnSeekCompleteListener {
     void
     playerPause() {
         mpPause();
+    }
+
+    void
+    playerStop() {
+        mpStop();
     }
 
     /**
@@ -1380,8 +1483,9 @@ MediaPlayer.OnSeekCompleteListener {
             @Override
             public void onChanged(VideoListManager vm) {
                 eAssert(Utils.isUiThread());
-                if (null != mVStateLsnr)
-                    mVStateLsnr.onChanged();
+                Iterator<VideosStateListener> iter = mVStateLsnrl.iterator();
+                while (iter.hasNext())
+                    iter.next().onChanged();
             }
         });
     }
@@ -1394,13 +1498,24 @@ MediaPlayer.OnSeekCompleteListener {
     }
 
     public Err
-    setController(Context context, ViewGroup playerv, ViewGroup playerLDrawer) {
-        return mUi.setController(context, playerv, playerLDrawer);
+    setController(Activity  activity,
+                  ViewGroup playerv,
+                  ViewGroup playerLDrawer,
+                  SurfaceView surfacev) {
+        Err err = mUi.setController(activity, playerv, playerLDrawer, surfacev);
+
+        if (!mVlm.hasActiveVideo())
+            return err;
+
+        if (haveStoredPlayerState())
+            startVideo(mVlm.getActiveVideo(), false);
+
+        return err;
     }
 
     public void
-    unsetController(Context context) {
-        mUi.unsetController(context);
+    unsetController(Activity  activity) {
+        mUi.unsetController(activity);
     }
 
     public void
@@ -1446,8 +1561,9 @@ MediaPlayer.OnSeekCompleteListener {
 
         if (mVlm.moveToFist()) {
             startVideo(mVlm.getActiveVideo(), false);
-            if (null != mVStateLsnr)
-                mVStateLsnr.onStarted();
+            Iterator<VideosStateListener> iter = mVStateLsnrl.iterator();
+            while (iter.hasNext())
+                iter.next().onStarted();
         }
     }
 
@@ -1471,6 +1587,12 @@ MediaPlayer.OnSeekCompleteListener {
                 c.close();
             }
         }).start();
+    }
+
+    public void
+    prepareTransitionMPMode() {
+        storePlayerState();
+        mpStop();
     }
 
     /**

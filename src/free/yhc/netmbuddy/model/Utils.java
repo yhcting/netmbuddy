@@ -55,7 +55,7 @@ import android.preference.PreferenceManager;
 import android.util.Log;
 
 public class Utils {
-    private static final boolean DBG    = false;
+    private static final boolean DBG    = true;
     private static final boolean LOGF   = false;
     private static final String  TAG    = "[YoutubeMusicPlayer]";
 
@@ -348,8 +348,8 @@ public class Utils {
     shrinkFixedRatio(int boundW, int boundH, int width, int height, int[] out) {
         boolean ret;
         // Check size of picture..
-        float rw = (float) boundW / (float) width, // width ratio
-        rh = (float) boundH / (float) height; // height ratio
+        float rw = (float) boundW / (float) width; // width ratio
+        float rh = (float) boundH / (float) height; // height ratio
 
         // check whether shrinking is needed or not.
         if (rw >= 1.0f && rh >= 1.0f) {
@@ -367,6 +367,38 @@ public class Utils {
             ret = true;
         }
         return ret;
+    }
+
+    /**
+     * Calculate rectangle(out[]). This is got by fitting  rectangle(width,height) to
+     *   bound rectangle(boundW, boundH) with fixed ratio - preserving width-height-ratio.
+     * If input rectangle is included in bound, then input rectangle itself will be
+     *   returned. (we don't need to adjust)
+     * @param boundW
+     *   width of bound rect
+     * @param boundH
+     *   height of bound rect
+     * @param width
+     *   width of rect to be shrunk
+     * @param height
+     *   height of rect to be shrunk
+     * @param out
+     *   calculated value [ out[0](width) out[1](height) ]
+     * @return
+     *   false(not shrunk) / true(shrunk)
+     */
+    public static void
+    fitFixedRatio(int boundW, int boundH, int width, int height, int[] out) {
+        boolean ret;
+        // Check size of picture..
+        float rw = (float) boundW / (float) width; // width ratio
+        float rh = (float) boundH / (float) height; // height ratio
+
+        float ratio = (rw > rh) ? rh : rw; // choose minimum
+        // integer-type-casting(rounding down) guarantees that value cannot
+        // be greater than bound!!
+        out[0] = (int) (ratio * width);
+        out[1] = (int) (ratio * height);
     }
 
     /**
@@ -551,6 +583,25 @@ public class Utils {
         return date;
     }
 
+    // ------------------------------------------------------
+    // To handle generic array
+    // ------------------------------------------------------
+    public static <T> T[]
+    toArray(List<T> list, T[] a) {
+        if (a.length < list.size())
+            a = (T[])java.lang.reflect.Array.newInstance(a.getClass().getComponentType(), list.size());
+        return list.toArray(a);
+    }
+
+    public static <T> T[]
+    toArray(List<T> list, Class<T> k) {
+        return list.toArray((T[])java.lang.reflect.Array.newInstance(k, list.size()));
+    }
+
+    public static <T> T[]
+    newArray(Class<T> k, int size) {
+        return (T[])java.lang.reflect.Array.newInstance(k, size);
+    }
     // ------------------------------------------------------------------------
     //
     // Strings
