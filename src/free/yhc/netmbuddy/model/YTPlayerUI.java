@@ -32,12 +32,20 @@ public class YTPlayerUI {
     // ------------------------------------------------------------------------
     // UI Control.
     // ------------------------------------------------------------------------
-    private Activity            mVActivity   = null;
-    private LinearLayout        mPlayerv    = null;
+    private Activity            mVActivity      = null;
+    private LinearLayout        mPlayerv        = null;
     private LinearLayout        mPlayerLDrawer  = null;
 
     // To support video
     private SurfaceView         mSurfacev       = null;
+
+    // For extra Button
+    private CustomExtraButton  mCustomExtraBtn  = null;
+
+    public static class CustomExtraButton {
+        public int                  mDrawable       = 0;
+        public View.OnClickListener mExtraBtnClick  = null;
+    }
 
     private class UpdateProgress implements Runnable {
         private static final int UPDATE_INTERVAL_MS = 1000;
@@ -364,7 +372,7 @@ public class YTPlayerUI {
             return; // nothing to do
         eAssert(null != mVActivity);
 
-        ListView lv = (ListView)playerLDrawer.findViewById(R.id.mplayer_ldrawer_list);
+        ListView lv = (ListView)playerLDrawer.findViewById(R.id.mplayer_list);
         SlidingDrawer drawer = (SlidingDrawer)playerLDrawer.findViewById(R.id.mplayer_ldrawer);
         playerLDrawer.setVisibility(View.VISIBLE);
         YTPlayerVidArrayAdapter adapter = new YTPlayerVidArrayAdapter(mVActivity, mMp.getVideoList());
@@ -379,7 +387,7 @@ public class YTPlayerUI {
             || View.GONE == playerLDrawer.getVisibility())
             return; // nothing to do
         eAssert(null != mVActivity);
-        ListView lv = (ListView)playerLDrawer.findViewById(R.id.mplayer_ldrawer_list);
+        ListView lv = (ListView)playerLDrawer.findViewById(R.id.mplayer_list);
         lv.setAdapter(null);
         SlidingDrawer drawer = (SlidingDrawer)playerLDrawer.findViewById(R.id.mplayer_ldrawer);
         drawer.close();
@@ -396,7 +404,7 @@ public class YTPlayerUI {
             return;
         }
 
-        ListView lv = (ListView)playerLDrawer.findViewById(R.id.mplayer_ldrawer_list);
+        ListView lv = (ListView)playerLDrawer.findViewById(R.id.mplayer_list);
         YTPlayerVidArrayAdapter adapter = (YTPlayerVidArrayAdapter)lv.getAdapter();
         if (null != adapter
             && mMp.getActiveVideoIndex() != adapter.getActiveItemPos()) {
@@ -484,23 +492,32 @@ public class YTPlayerUI {
             }
         });
 
-        btn = (ImageView)playerv.findViewById(R.id.mplayer_btnvideo);
-        btn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (!mMp.hasActiveVideo()
-                    || null == mVActivity)
-                    return;
-                mMp.prepareTransitionMPMode();
-                mVActivity.startActivity(new Intent(mVActivity, VideoPlayerActivity.class));
-            }
-        });
+        btn = (ImageView)playerv.findViewById(R.id.mplayer_btnextra);
+        View.OnClickListener onClick;
+        if (null == mCustomExtraBtn) {
+            btn.setImageResource(R.drawable.ic_media_video);
+            onClick = new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (!mMp.hasActiveVideo()
+                        || null == mVActivity)
+                        return;
+                    mMp.prepareTransitionMPMode();
+                    mVActivity.startActivity(new Intent(mVActivity, VideoPlayerActivity.class));
+                }
+            };
+        } else {
+            btn.setImageResource(mCustomExtraBtn.mDrawable);
+            onClick = mCustomExtraBtn.mExtraBtnClick;
+        }
+        btn.setOnClickListener(onClick);
+
         if (null != mSurfacev)
             btn.setVisibility(View.GONE);
     }
 
     private void
-    pvInit(ViewGroup playerv, ViewGroup playerLDrawer) {
+    pvInit(ViewGroup playerv, ViewGroup playerLDrawer, SurfaceView surfacev) {
         mMp.addPlayerStateListener(this, new YTPlayer.PlayerStateListener() {
             @Override
             public void onStateChanged(YTPlayer.MPState from, YTPlayer.MPState to) {
@@ -588,7 +605,7 @@ public class YTPlayerUI {
                         return;
 
                     if (mMp.hasActiveVideo()) {
-                        ListView lv = (ListView)mPlayerLDrawer.findViewById(R.id.mplayer_ldrawer_list);
+                        ListView lv = (ListView)mPlayerLDrawer.findViewById(R.id.mplayer_list);
                         YTPlayerVidArrayAdapter adapter = (YTPlayerVidArrayAdapter)lv.getAdapter();
                         if (null != adapter) {
                             adapter.setVidArray(mMp.getVideoList());
@@ -599,7 +616,7 @@ public class YTPlayerUI {
                 }
             });
 
-            SlidingDrawer drawer = (SlidingDrawer)playerLDrawer.findViewById(R.id.mplayer_ldrawer);
+            final SlidingDrawer drawer = (SlidingDrawer)playerLDrawer.findViewById(R.id.mplayer_ldrawer);
             drawer.setOnDrawerOpenListener(new SlidingDrawer.OnDrawerOpenListener() {
                 @Override
                 public void
@@ -607,13 +624,25 @@ public class YTPlayerUI {
                     if (!mMp.hasActiveVideo())
                         return;
 
-                    ListView lv = (ListView)mPlayerLDrawer.findViewById(R.id.mplayer_ldrawer_list);
+                    ListView lv = (ListView)mPlayerLDrawer.findViewById(R.id.mplayer_list);
                     int topPos = mMp.getActiveVideoIndex() - 1;
                     if (topPos < 0)
                         topPos = 0;
                     lv.setSelectionFromTop(topPos, 0);
                 }
             });
+
+            if (null != surfacev) {
+                // Below listener function is workaround of Android framework's bug
+                //   that can be seen when SurfaceView and SlidingDrawer are used together.
+                drawer.setOnDrawerCloseListener(new SlidingDrawer.OnDrawerCloseListener() {
+                    @Override
+                    public void onDrawerClosed() {
+                        (drawer.findViewById(R.id.mplayer_ldrawer_handle)).setVisibility(View.GONE);
+                        (drawer.findViewById(R.id.mplayer_ldrawer_handle)).setVisibility(View.VISIBLE);
+                    }
+                });
+            }
         }
 
         // Enable drawer by default.
@@ -637,7 +666,8 @@ public class YTPlayerUI {
     setController(Activity  activity,
                   ViewGroup playerv,
                   ViewGroup playerLDrawer,
-                  SurfaceView surfacev) {
+                  SurfaceView surfacev,
+                  CustomExtraButton customExtraBtn) {
         // update notification by force
         notiConfigure(YTPlayer.MPState.INVALID, mMp.playerGetState());
 
@@ -650,6 +680,7 @@ public class YTPlayerUI {
         mPlayerv = (LinearLayout)playerv;
         mPlayerLDrawer = (LinearLayout)playerLDrawer;
         mSurfacev = surfacev;
+        mCustomExtraBtn = customExtraBtn;
 
         if (null == mPlayerv) {
             eAssert(null == mPlayerLDrawer);
@@ -657,7 +688,7 @@ public class YTPlayerUI {
         }
 
         eAssert(null != mPlayerv.findViewById(R.id.mplayer_layout_magic_id));
-        pvInit(playerv, playerLDrawer);
+        pvInit(playerv, playerLDrawer, surfacev);
 
         return Err.NO_ERR;
     }

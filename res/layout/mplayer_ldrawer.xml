@@ -31,14 +31,7 @@
             android:scaleType="fitXY"
             android:src="@drawable/divider_horizontal_bright"
             />
-        <ListView
-            android:id="@+id/mplayer_ldrawer_list"
-            android:layout_width="match_parent"
-            android:layout_height="fill_parent"
-            android:paddingLeft="5dip"
-            android:paddingRight="5dip"
-            android:listSelector="@android:color/transparent"
-            android:divider="@android:color/transparent"
-            />
+        <include
+            layout="@layout/mplayer_list" />
     </LinearLayout>
 </SlidingDrawer>

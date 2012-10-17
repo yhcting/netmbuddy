@@ -79,13 +79,12 @@
                 android:clickable="true"
                 />
             <ImageView
-                android:id="@+id/mplayer_btnvideo"
+                android:id="@+id/mplayer_btnextra"
                 android:layout_width="@dimen/toolbtn_width"
                 android:layout_height="@dimen/toolbtn_height"
                 android:layout_weight="1"
                 android:gravity="center"
                 android:scaleType="fitCenter"
-                android:src="@drawable/ic_media_video"
                 android:clickable="true"
                 />
         </LinearLayout>

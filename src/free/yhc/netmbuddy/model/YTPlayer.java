@@ -1502,7 +1502,7 @@ MediaPlayer.OnSeekCompleteListener {
                   ViewGroup playerv,
                   ViewGroup playerLDrawer,
                   SurfaceView surfacev) {
-        Err err = mUi.setController(activity, playerv, playerLDrawer, surfacev);
+        Err err = mUi.setController(activity, playerv, playerLDrawer, surfacev, null);
 
         if (!mVlm.hasActiveVideo())
             return err;
