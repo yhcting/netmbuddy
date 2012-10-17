@@ -51,10 +51,14 @@ SurfaceHolder.Callback {
             @Override
             public void onClick(View v) {
                 ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
-                if (View.GONE == playerv.getVisibility())
+                ViewGroup drawer = (ViewGroup)findViewById(R.id.list_drawer);
+                if (View.GONE == playerv.getVisibility()) {
                     playerv.setVisibility(View.VISIBLE);
-                else
+                    drawer.setVisibility(View.VISIBLE);
+                } else {
                     playerv.setVisibility(View.GONE);
+                    drawer.setVisibility(View.GONE);
+                }
             }
         });
     }
