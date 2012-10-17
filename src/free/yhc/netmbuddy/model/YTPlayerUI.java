@@ -502,7 +502,7 @@ public class YTPlayerUI {
                     if (!mMp.hasActiveVideo()
                         || null == mVActivity)
                         return;
-                    mMp.prepareTransitionMPMode();
+                    mMp.backupPlayerState();
                     mVActivity.startActivity(new Intent(mVActivity, VideoPlayerActivity.class));
                 }
             };

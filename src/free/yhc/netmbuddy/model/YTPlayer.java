@@ -206,6 +206,7 @@ MediaPlayer.OnSeekCompleteListener {
 
     private static class PlayerState {
         MPState mpState     = MPState.INVALID;
+        Video   vidobj      = null;
         int     pos         = -1;
         int     vol         = -1;
     }
@@ -768,7 +769,6 @@ MediaPlayer.OnSeekCompleteListener {
             return;
 
         SurfaceHolder holder = (null == surfv)? null: surfv.getHolder();
-        mpSetVideoSurface(holder);
 
         //Scale video with fixed-ratio.
         int vw = mpGetVideoWidth();
@@ -790,7 +790,7 @@ MediaPlayer.OnSeekCompleteListener {
         lp.height = sz[1];
         surfv.setLayoutParams(lp);
         surfv.requestLayout();
-
+        mpSetVideoSurface(holder);
     }
 
     // ========================================================================
@@ -1199,6 +1199,7 @@ MediaPlayer.OnSeekCompleteListener {
         case STARTED:
         case PAUSED:
             mStoredPState = new PlayerState();
+            mStoredPState.vidobj = mVlm.getActiveVideo();
             mStoredPState.pos = mpGetCurrentPosition();
             mStoredPState.vol = mpGetVolume();
             mStoredPState.mpState = mpGetState();
@@ -1211,11 +1212,13 @@ MediaPlayer.OnSeekCompleteListener {
         if (!haveStoredPlayerState())
             return;
 
-        // Android MediaPlayer seek to previous position automatically.
-        // And volume is preserved.
-        // Below two line is useless.
-        mpSeekTo(mStoredPState.pos);
-        mpSetVolume(mStoredPState.vol);
+        if (mVlm.getActiveVideo() == mStoredPState.vidobj) {
+            // Android MediaPlayer seek to previous position automatically.
+            // And volume is preserved.
+            // Below two line is useless.
+            mpSeekTo(mStoredPState.pos);
+            mpSetVolume(mStoredPState.vol);
+        }
 
         clearStoredPlayerState();
     }
@@ -1619,6 +1622,7 @@ MediaPlayer.OnSeekCompleteListener {
             return;
 
         acquireLocks();
+        clearStoredPlayerState();
         // removes auto stop that is set before.
         disableAutostop();
         mVlm.setVideoList(vs);
@@ -1654,9 +1658,8 @@ MediaPlayer.OnSeekCompleteListener {
     }
 
     public void
-    prepareTransitionMPMode() {
+    backupPlayerState() {
         storePlayerState();
-        mpStop();
     }
 
     /**

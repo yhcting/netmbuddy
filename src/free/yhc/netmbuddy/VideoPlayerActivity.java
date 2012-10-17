@@ -99,6 +99,7 @@ SurfaceHolder.Callback {
     @Override
     protected void
     onPause() {
+        mMp.backupPlayerState();
         mMp.unsetController(this);
         super.onPause();
     }
@@ -112,7 +113,6 @@ SurfaceHolder.Callback {
     @Override
     protected void
     onDestroy() {
-        mMp.unsetController(this);
         super.onDestroy();
     }
 
