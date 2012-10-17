@@ -313,6 +313,7 @@ public class MusicsActivity extends Activity {
     @Override
     protected void
     onPause() {
+        mMp.unsetController(this);
         super.onPause();
     }
 
@@ -325,7 +326,6 @@ public class MusicsActivity extends Activity {
     @Override
     protected void
     onDestroy() {
-        mMp.unsetController(this);
         super.onDestroy();
     }
 

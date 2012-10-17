@@ -700,6 +700,7 @@ public class PlaylistActivity extends Activity {
     @Override
     protected void
     onPause() {
+        mMp.unsetController(this);
         super.onPause();
         mDb.registerToPlaylistTableWatcher(this);
     }
@@ -713,7 +714,6 @@ public class PlaylistActivity extends Activity {
     @Override
     protected void
     onDestroy() {
-        mMp.unsetController(this);
         super.onDestroy();
     }
 

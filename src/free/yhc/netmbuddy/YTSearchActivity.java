@@ -348,6 +348,7 @@ YTSearchHelper.SearchDoneReceiver {
     @Override
     protected void
     onPause() {
+        mMp.unsetController(this);
         super.onPause();
     }
 
@@ -361,7 +362,6 @@ YTSearchHelper.SearchDoneReceiver {
     protected void
     onDestroy() {
         mSearchHelper.close();
-        mMp.unsetController(this);
         super.onDestroy();
     }
 

@@ -19,6 +19,15 @@ SurfaceHolder.Callback {
 
     private boolean mSurfCreated = false;
 
+    private void
+    setController(boolean withSurface) {
+        SurfaceView surfv = withSurface? (SurfaceView)findViewById(R.id.surface): null;
+        mMp.setController(VideoPlayerActivity.this,
+                          (ViewGroup)findViewById(R.id.player),
+                          (ViewGroup)findViewById(R.id.list_drawer),
+                          surfv);
+    }
+
     @Override
     public void
     surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
@@ -80,11 +89,7 @@ SurfaceHolder.Callback {
                         eAssert(false);
                 } else {
                     waitTime = 0;
-                    ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
-                    mMp.setController(VideoPlayerActivity.this,
-                                      playerv,
-                                      (ViewGroup)findViewById(R.id.list_drawer),
-                                      (SurfaceView)findViewById(R.id.surface));
+                    setController(true);
                     //playerv.setVisibility(View.GONE);
                 }
             }
@@ -94,6 +99,7 @@ SurfaceHolder.Callback {
     @Override
     protected void
     onPause() {
+        mMp.unsetController(this);
         super.onPause();
     }
 
@@ -121,6 +127,5 @@ SurfaceHolder.Callback {
     public void
     onBackPressed() {
         super.onBackPressed();
-        mMp.prepareTransitionMPMode();
     }
 }

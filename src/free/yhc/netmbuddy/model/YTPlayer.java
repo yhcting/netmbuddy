@@ -617,8 +617,27 @@ MediaPlayer.OnSeekCompleteListener {
 
     private void
     mpReset() {
+        if (null == mMp)
+            return;
+
         mMp.reset();
         mpSetState(MPState.IDLE);
+    }
+
+    private void
+    mpSetVideoSurface(SurfaceHolder sholder) {
+        if (null == mMp)
+            return;
+
+        mMp.setDisplay(sholder);
+    }
+
+    private void
+    mpRemoveVideoSurface() {
+        if (null == mMp)
+            return;
+
+        mMp.setDisplay(null);
     }
 
     private void
@@ -671,6 +690,22 @@ MediaPlayer.OnSeekCompleteListener {
         return 0;
     }
 
+    private int
+    mpGetVideoWidth() {
+        if (null == mMp)
+            return 0;
+
+        return mMp.getVideoWidth();
+    }
+
+    private int
+    mpGetVideoHeight() {
+        if (null == mMp)
+            return 0;
+
+        return mMp.getVideoHeight();
+    }
+
     private boolean
     mpIsPlaying() {
         //logD("MPlayer - isPlaying");
@@ -721,6 +756,43 @@ MediaPlayer.OnSeekCompleteListener {
         mMp.stop();
         mpSetState(MPState.STOPPED);
     }
+
+    // ========================================================================
+    //
+    // Video Surface Controll
+    //
+    // ========================================================================
+    private void
+    setVideoSurface(SurfaceView surfv) {
+        if (null == surfv)
+            return;
+
+        SurfaceHolder holder = (null == surfv)? null: surfv.getHolder();
+        mpSetVideoSurface(holder);
+
+        //Scale video with fixed-ratio.
+        int vw = mpGetVideoWidth();
+        int vh = mpGetVideoHeight();
+
+        if (0 >= vw || 0 >= vh)
+            return;
+
+        int sw = ((WindowManager)Utils.getAppContext().getSystemService(Context.WINDOW_SERVICE))
+                    .getDefaultDisplay().getWidth();
+        int sh = ((WindowManager)Utils.getAppContext().getSystemService(Context.WINDOW_SERVICE))
+                    .getDefaultDisplay().getHeight();
+
+        int[] sz = new int[2];
+        Utils.fitFixedRatio(sw, sh, vw, vh, sz);
+
+        ViewGroup.LayoutParams lp = surfv.getLayoutParams();
+        lp.width = sz[0];
+        lp.height = sz[1];
+        surfv.setLayoutParams(lp);
+        surfv.requestLayout();
+
+    }
+
     // ========================================================================
     //
     // Suspending/Resuming Control
@@ -1237,29 +1309,7 @@ MediaPlayer.OnSeekCompleteListener {
         clearStoredPlayerState();
 
         // Set Video Surface Holder
-        SurfaceView surfv = mUi.getVideoSurfaceView();
-        if (null != surfv) {
-            SurfaceHolder holder = (null == surfv)? null: surfv.getHolder();
-            mp.setDisplay(holder);
-
-            //Scale video with fixed-ratio.
-            int vw = mp.getVideoWidth();
-            int vh = mp.getVideoHeight();
-
-            int sw = ((WindowManager)Utils.getAppContext().getSystemService(Context.WINDOW_SERVICE))
-                        .getDefaultDisplay().getWidth();
-            int sh = ((WindowManager)Utils.getAppContext().getSystemService(Context.WINDOW_SERVICE))
-                        .getDefaultDisplay().getHeight();
-
-            int[] sz = new int[2];
-            Utils.fitFixedRatio(sw, sh, vw, vh, sz);
-
-            ViewGroup.LayoutParams lp = surfv.getLayoutParams();
-            lp.width = sz[0];
-            lp.height = sz[1];
-            surfv.setLayoutParams(lp);
-            surfv.requestLayout();
-        }
+        setVideoSurface(mUi.getVideoSurfaceView());
 
         mpSetState(MPState.PREPARED);
 
@@ -1508,6 +1558,17 @@ MediaPlayer.OnSeekCompleteListener {
         if (!mVlm.hasActiveVideo())
             return err;
 
+        // controller is set again.
+        // Than new surface may have to be used.
+        if (null != surfacev) {
+            switch (mpGetState()) {
+            case PREPARED:
+            case STARTED:
+            case PAUSED:
+                setVideoSurface(mUi.getVideoSurfaceView());
+            }
+        }
+
         if (haveStoredPlayerState())
             startVideo(mVlm.getActiveVideo(), false);
 
@@ -1516,6 +1577,8 @@ MediaPlayer.OnSeekCompleteListener {
 
     public void
     unsetController(Activity  activity) {
+        if (null != mUi.getVideoSurfaceView())
+            mpRemoveVideoSurface();
         mUi.unsetController(activity);
     }
 
