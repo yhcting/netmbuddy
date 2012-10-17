@@ -41,6 +41,10 @@ public class Policy {
     public static final int     YTSEARCH_MAX_RESULTS    = 25; // 1 ~ 50
     public static final int     YTSEARCH_NR_PAGE_INDEX  = 10;
 
+    // Performance for loading thumbnail
+    public static final int     YTSEARCH_LOAD_THUMBNAIL_INTERVAL    = 100; // 100ms
+    public static final int     YTSEARCH_MAX_LOAD_THUMBNAIL_THREAD  = 10;
+
     // --------------------------------------------------------------------
     // Youtube Player
     // --------------------------------------------------------------------

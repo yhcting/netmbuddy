@@ -20,6 +20,7 @@
 
 package free.yhc.netmbuddy;
 
+import static free.yhc.netmbuddy.model.Utils.eAssert;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.view.View;
@@ -27,6 +28,7 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import free.yhc.netmbuddy.model.Err;
+import free.yhc.netmbuddy.model.Policy;
 import free.yhc.netmbuddy.model.UiUtils;
 import free.yhc.netmbuddy.model.Utils;
 import free.yhc.netmbuddy.model.YTFeed;
@@ -44,7 +46,7 @@ YTSearchHelper.LoadThumbnailDoneReceiver {
     protected YTFeed.Entry[]        mEntries;
 
     private Bitmap[]                mThumbnails;
-    private final YTSearchHelper    mHelper;
+    private YTSearchHelper          mHelper;
 
     YTSearchAdapter(Context context,
                     YTSearchHelper helper,
@@ -59,16 +61,25 @@ YTSearchHelper.LoadThumbnailDoneReceiver {
         mThumbnails = new Bitmap[mEntries.length];
 
         mHelper.setLoadThumbnailDoneRecevier(this);
+        long delay = 0;
         for (int i = 0; i < mItemViews.length; i++) {
             mItemViews[i] = UiUtils.inflateLayout(Utils.getAppContext(), rowLayout);
             markViewInvalid(i);
-            YTSearchHelper.LoadThumbnailArg arg
+            final YTSearchHelper.LoadThumbnailArg arg
                 = new YTSearchHelper.LoadThumbnailArg(i,
                                                       mEntries[i].media.thumbnailUrl,
                                                       mCxt.getResources().getDimensionPixelSize(R.dimen.thumbnail_width),
                                                       mCxt.getResources().getDimensionPixelSize(R.dimen.thumbnail_height));
             mThumbnails[i] = null;
-            mHelper.loadThumbnailAsync(arg);
+            Utils.getUiHandler().postDelayed(new Runnable() {
+                @Override
+                public void
+                run() {
+                    if (null != mHelper)
+                        mHelper.loadThumbnailAsync(arg);
+                }
+            }, delay);
+            delay += Policy.YTSEARCH_LOAD_THUMBNAIL_INTERVAL;
         }
     }
 
@@ -99,9 +110,11 @@ YTSearchHelper.LoadThumbnailDoneReceiver {
      */
     public void
     cleanup() {
+        eAssert(Utils.isUiThread());
         for (Bitmap bm : mThumbnails)
             if (null != bm)
                 bm.recycle();
+        mHelper = null;
     }
 
     public Bitmap
