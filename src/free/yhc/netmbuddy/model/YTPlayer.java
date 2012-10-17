@@ -558,9 +558,6 @@ MediaPlayer.OnSeekCompleteListener {
         mp.setScreenOnWhilePlaying(false);
         mp.setAudioStreamType(AudioManager.STREAM_MUSIC);
         mp.setOnPreparedListener(this);
-        SurfaceView surfv = mUi.getVideoSurfaceView();
-        SurfaceHolder sh = (null == surfv)? null: surfv.getHolder();
-        mp.setDisplay(sh);
     }
 
     private void
@@ -1124,15 +1121,16 @@ MediaPlayer.OnSeekCompleteListener {
         if (null == mMp)
             return;
 
-        mStoredPState = new PlayerState();
+        clearStoredPlayerState();
+
         switch(mpGetState()) {
         case STARTED:
         case PAUSED:
+            mStoredPState = new PlayerState();
             mStoredPState.pos = mpGetCurrentPosition();
             mStoredPState.vol = mpGetVolume();
             mStoredPState.mpState = mpGetState();
             break;
-
         }
     }
 
@@ -1241,6 +1239,9 @@ MediaPlayer.OnSeekCompleteListener {
         // Set Video Surface Holder
         SurfaceView surfv = mUi.getVideoSurfaceView();
         if (null != surfv) {
+            SurfaceHolder holder = (null == surfv)? null: surfv.getHolder();
+            mp.setDisplay(holder);
+
             //Scale video with fixed-ratio.
             int vw = mp.getVideoWidth();
             int vh = mp.getVideoHeight();
