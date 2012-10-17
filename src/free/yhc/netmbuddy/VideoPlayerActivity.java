@@ -47,7 +47,7 @@ SurfaceHolder.Callback {
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         final SurfaceView surfv = (SurfaceView)findViewById(R.id.surface);
         surfv.getHolder().addCallback(this);
-        surfv.setOnClickListener(new View.OnClickListener() {
+        findViewById(R.id.touch_ground).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 ViewGroup playerv = (ViewGroup)findViewById(R.id.player);

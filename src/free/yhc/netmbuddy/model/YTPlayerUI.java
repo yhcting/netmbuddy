@@ -631,18 +631,6 @@ public class YTPlayerUI {
                     lv.setSelectionFromTop(topPos, 0);
                 }
             });
-
-            if (null != surfacev) {
-                // Below listener function is workaround of Android framework's bug
-                //   that can be seen when SurfaceView and SlidingDrawer are used together.
-                drawer.setOnDrawerCloseListener(new SlidingDrawer.OnDrawerCloseListener() {
-                    @Override
-                    public void onDrawerClosed() {
-                        (drawer.findViewById(R.id.mplayer_ldrawer_handle)).setVisibility(View.GONE);
-                        (drawer.findViewById(R.id.mplayer_ldrawer_handle)).setVisibility(View.VISIBLE);
-                    }
-                });
-            }
         }
 
         // Enable drawer by default.
