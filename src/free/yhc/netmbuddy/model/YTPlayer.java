@@ -1666,6 +1666,7 @@ SurfaceHolder.Callback {
         mSurfHolder = holder;
         if (null != holder) {
             holder.addCallback(this);
+            holder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
         }
     }
 
