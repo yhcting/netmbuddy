@@ -183,6 +183,7 @@ public class YTPlayerUI {
 
         case BUFFERING:
         case INITIALIZED:
+        case PREPARED_AUDIO:
         case PREPARING:
             nm.putNotification(NotiManager.NotiType.STOP, title);
             break;
@@ -315,6 +316,7 @@ public class YTPlayerUI {
 
         case BUFFERING:
         case INITIALIZED:
+        case PREPARED_AUDIO:
         case PREPARING:
             pvEnableButton(playv, R.drawable.ic_media_stop);
             // Set next state be moved to on click as 'Tag'
@@ -355,6 +357,7 @@ public class YTPlayerUI {
 
         case INITIALIZED:
         case PREPARING:
+        case PREPARED_AUDIO:
         case BUFFERING:
             ; // do nothing progress is now under update..
             break;
@@ -503,6 +506,7 @@ public class YTPlayerUI {
                         || null == mVActivity)
                         return;
                     mMp.backupPlayerState();
+                    mMp.playerStop();
                     mVActivity.startActivity(new Intent(mVActivity, VideoPlayerActivity.class));
                 }
             };
@@ -692,8 +696,8 @@ public class YTPlayerUI {
     }
 
     SurfaceView
-    getVideoSurfaceView() {
-        return (null == mSurfacev)? null: mSurfacev;
+    getSurfaceView() {
+        return mSurfacev;
     }
 
     void

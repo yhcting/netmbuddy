@@ -43,7 +43,6 @@ import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.net.Uri;
 import android.net.wifi.WifiManager;
 import android.net.wifi.WifiManager.WifiLock;
 import android.os.PowerManager;
@@ -63,7 +62,9 @@ MediaPlayer.OnPreparedListener,
 MediaPlayer.OnErrorListener,
 MediaPlayer.OnInfoListener,
 MediaPlayer.OnVideoSizeChangedListener,
-MediaPlayer.OnSeekCompleteListener {
+MediaPlayer.OnSeekCompleteListener,
+// To support video
+SurfaceHolder.Callback {
     private static final String WLTAG               = "YTPlayer";
     private static final int    PLAYER_ERR_RETRY    = Policy.YTPLAYER_RETRY_ON_ERROR;
 
@@ -110,6 +111,9 @@ MediaPlayer.OnSeekCompleteListener {
     private WifiLock            mWfl        = null;
     private MediaPlayer         mMp         = null;
     private MPState             mMpS        = MPState.INVALID; // state of mMp;
+    private SurfaceHolder       mSurfHolder = null; // To support video
+    private boolean             mSurfReady  = false;
+    private boolean             mVSzReady   = false;
     private int                 mMpVol      = Policy.DEFAULT_VIDEO_VOLUME; // Current volume of media player.
     private YTHacker            mYtHack     = null;
     private NetLoader           mLoader     = null;
@@ -127,8 +131,8 @@ MediaPlayer.OnSeekCompleteListener {
     // ------------------------------------------------------------------------
     // Listeners
     // ------------------------------------------------------------------------
-    private KBLinkedList            mVStateLsnrl = new KBLinkedList<VideosStateListener>();
-    private KBLinkedList            mPStateLsnrl = new KBLinkedList<PlayerStateListener>();
+    private KBLinkedList<VideosStateListener>   mVStateLsnrl = new KBLinkedList<VideosStateListener>();
+    private KBLinkedList<PlayerStateListener>   mPStateLsnrl = new KBLinkedList<PlayerStateListener>();
 
     public interface VideosStateListener {
         /**
@@ -157,7 +161,8 @@ MediaPlayer.OnSeekCompleteListener {
         IDLE,
         INITIALIZED,
         PREPARING,
-        PREPARED,
+        PREPARED_AUDIO, // This is same with MediaPlayer's PREPARED state
+        PREPARED,       // MediaPlayer is prepared + SurfaceHolder for video is prepared.
         STARTED,
         STOPPED,
         PAUSED,
@@ -574,12 +579,6 @@ MediaPlayer.OnSeekCompleteListener {
     }
 
     private void
-    mpSetDataSource(Uri uri) throws IOException {
-        mMp.setDataSource(Utils.getAppContext(), uri);
-        mpSetState(MPState.INITIALIZED);
-    }
-
-    private void
     mpSetDataSource(String path) throws IOException {
         mMp.setDataSource(path);
         mpSetState(MPState.INITIALIZED);
@@ -608,7 +607,7 @@ MediaPlayer.OnSeekCompleteListener {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                mp.setDisplay(null);
+                mpUnsetVideoSurface();
                 mp.release();
             }
         }).start();
@@ -634,7 +633,7 @@ MediaPlayer.OnSeekCompleteListener {
     }
 
     private void
-    mpRemoveVideoSurface() {
+    mpUnsetVideoSurface() {
         if (null == mMp)
             return;
 
@@ -760,15 +759,33 @@ MediaPlayer.OnSeekCompleteListener {
 
     // ========================================================================
     //
-    // Video Surface Controll
+    // Video Surface Control
     //
     // ========================================================================
     private void
-    setVideoSurface(SurfaceView surfv) {
-        if (null == surfv)
-            return;
+    setSurfaceReady(boolean ready) {
+        mSurfReady = ready;
+    }
 
-        SurfaceHolder holder = (null == surfv)? null: surfv.getHolder();
+    private void
+    setVideoSizeReady(boolean ready) {
+        mVSzReady = ready;
+    }
+
+    private boolean
+    isSurfaceReady() {
+        return mSurfReady;
+    }
+
+    private boolean
+    isVideoSizeReady() {
+        return mVSzReady;
+    }
+
+    private void
+    fitVideoSurfaceToScreen(SurfaceHolder holder) {
+        if (null == holder)
+            return;
 
         //Scale video with fixed-ratio.
         int vw = mpGetVideoWidth();
@@ -784,13 +801,15 @@ MediaPlayer.OnSeekCompleteListener {
 
         int[] sz = new int[2];
         Utils.fitFixedRatio(sw, sh, vw, vh, sz);
+        holder.setFixedSize(sz[0], sz[1]);
 
+        SurfaceView surfv = mUi.getSurfaceView();
+        eAssert(null != surfv);
         ViewGroup.LayoutParams lp = surfv.getLayoutParams();
         lp.width = sz[0];
         lp.height = sz[1];
         surfv.setLayoutParams(lp);
         surfv.requestLayout();
-        mpSetVideoSurface(holder);
     }
 
     // ========================================================================
@@ -846,6 +865,14 @@ MediaPlayer.OnSeekCompleteListener {
                 mLoader.close();
             break;
         }
+    }
+
+    private boolean
+    isPreparedCompletely() {
+        return (null == mSurfHolder && MPState.PREPARED_AUDIO == mpGetState())
+                || (null != mSurfHolder && MPState.PREPARED_AUDIO == mpGetState()
+                                        && isSurfaceReady()
+                                        && isVideoSizeReady());
     }
 
     private int
@@ -1008,7 +1035,8 @@ MediaPlayer.OnSeekCompleteListener {
 
                 YTHacker.YtVideo ytv = ythack.getVideo(getVideoQualityScore());
                 try {
-                    mpSetDataSource(Uri.parse(ytv.url));
+                    mpSetDataSource(ytv.url);
+                    mpSetVideoSurface(mSurfHolder);
                 } catch (IOException e) {
                     logW("YTPlayer SetDataSource IOException : " + e.getMessage());
                     mStartVideoRecovery.executeRecoveryStart(mVlm.getActiveVideo(), 500);
@@ -1040,6 +1068,7 @@ MediaPlayer.OnSeekCompleteListener {
         // So play in local!
         try {
             mpSetDataSource(cachedVid.getAbsolutePath());
+            mpSetVideoSurface(mSurfHolder);
         } catch (IOException e) {
             // Something wrong at cached file.
             // Clean cache and try again - next time as streaming!
@@ -1064,6 +1093,9 @@ MediaPlayer.OnSeekCompleteListener {
     private void
     startVideo(final String videoId, final int volume, boolean recovery) {
         eAssert(0 <= volume && volume <= 100);
+
+        // Reset flag regarding video size.
+        setVideoSizeReady(false);
 
         // Clean recovery try
         mStartVideoRecovery.cancel();
@@ -1259,6 +1291,49 @@ MediaPlayer.OnSeekCompleteListener {
 
     // ============================================================================
     //
+    // Override for "SurfaceHolder.Callback"
+    //
+    // ============================================================================
+    @Override
+    public void
+    surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+        if (holder != mSurfHolder)
+            logW("MPlayer - surfaceCreated with invalid holder");
+
+        logD("MPlayer - surfaceChanged : " + format + ", " + width + ", " + height);
+    }
+
+    @Override
+    public void
+    surfaceCreated(SurfaceHolder holder) {
+        if (holder != mSurfHolder)
+            logW("MPlayer - surfaceCreated with invalid holder");
+
+        logD("MPlayer - surfaceCreated");
+        if (isSurfaceReady())
+            logW("MPlayer - surfaceCreated is called at [surfaceReady]");
+
+        setSurfaceReady(true);
+
+        if (isPreparedCompletely())
+            onPreparedCompletely();
+    }
+
+    @Override
+    public void
+    surfaceDestroyed(SurfaceHolder holder) {
+        if (holder != mSurfHolder)
+            logW("MPlayer - surfaceCreated with invalid holder");
+
+        logD("MPlayer - surfaceDestroyed");
+        if (!isSurfaceReady())
+            logW("MPlayer - surfaceDestroyed is called at [NOT-surfaceReady]");
+
+        setSurfaceReady(false);
+    }
+
+    // ============================================================================
+    //
     // Override for "MediaPlayer.*"
     //
     // ============================================================================
@@ -1289,6 +1364,26 @@ MediaPlayer.OnSeekCompleteListener {
         startNext();
     }
 
+    private void
+    onPreparedCompletely() {
+        logD("MPlayer - onPreparedInternal");
+
+        fitVideoSurfaceToScreen(mSurfHolder);
+
+        boolean autoStart = true;
+        if (haveStoredPlayerState()) {
+            autoStart = !isStoredPlayerStatePaused();
+            restorePlayerState();
+        }
+
+        clearStoredPlayerState();
+
+        mpSetState(MPState.PREPARED);
+
+        if (autoStart)
+            mpStart(); // auto start
+    }
+
     @Override
     public void
     onPrepared(MediaPlayer mp) {
@@ -1303,27 +1398,21 @@ MediaPlayer.OnSeekCompleteListener {
             return;
         }
 
-        logD("MPlayer - onPrepared");
-        boolean autoStart = true;
-        if (haveStoredPlayerState()) {
-            autoStart = !isStoredPlayerStatePaused();
-            restorePlayerState();
-        }
-        clearStoredPlayerState();
+        mpSetState(MPState.PREPARED_AUDIO);
+        logD("MPlayer - onPrepared - (PREPARED_AUDIO)");
 
-        // Set Video Surface Holder
-        setVideoSurface(mUi.getVideoSurfaceView());
-
-        mpSetState(MPState.PREPARED);
-
-        if (autoStart)
-            mpStart(); // auto start
+        if (isPreparedCompletely())
+            onPreparedCompletely();
     }
 
     @Override
     public void
     onVideoSizeChanged(MediaPlayer mp, int width, int height) {
         logD("MPlayer - onVideoSizeChanged");
+        setVideoSizeReady(true);
+
+        if (isPreparedCompletely())
+            onPreparedCompletely();
     }
 
     @Override
@@ -1551,11 +1640,34 @@ MediaPlayer.OnSeekCompleteListener {
         return sInstance;
     }
 
+    public void
+    setSurfaceHolder(SurfaceHolder holder) {
+        if (null != mSurfHolder
+            && mSurfHolder != holder)
+            unsetSurfaceHolder(mSurfHolder);
+        mSurfHolder = holder;
+        holder.addCallback(this);
+        holder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+    }
+
+    public void
+    unsetSurfaceHolder(SurfaceHolder holder) {
+        if (null != mSurfHolder
+            && mSurfHolder == holder) {
+            mSurfHolder.removeCallback(this);
+            mSurfHolder = null;
+            setSurfaceReady(false);
+        }
+    }
+
     public Err
     setController(Activity  activity,
                   ViewGroup playerv,
                   ViewGroup playerLDrawer,
                   SurfaceView surfacev) {
+        eAssert((null == surfacev && null == mSurfHolder)
+                || (null != surfacev && surfacev.getHolder() == mSurfHolder));
+
         Err err = mUi.setController(activity, playerv, playerLDrawer, surfacev, null);
 
         if (!mVlm.hasActiveVideo())
@@ -1564,11 +1676,12 @@ MediaPlayer.OnSeekCompleteListener {
         // controller is set again.
         // Than new surface may have to be used.
         if (null != surfacev) {
+            mSurfHolder = surfacev.getHolder();
             switch (mpGetState()) {
             case PREPARED:
             case STARTED:
             case PAUSED:
-                setVideoSurface(mUi.getVideoSurfaceView());
+                fitVideoSurfaceToScreen(mSurfHolder);
             }
         }
 
@@ -1580,8 +1693,6 @@ MediaPlayer.OnSeekCompleteListener {
 
     public void
     unsetController(Activity  activity) {
-        if (null != mUi.getVideoSurfaceView())
-            mpRemoveVideoSurface();
         mUi.unsetController(activity);
     }
 
