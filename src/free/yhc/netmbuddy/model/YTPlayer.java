@@ -111,6 +111,7 @@ SurfaceHolder.Callback {
     private WifiLock            mWfl        = null;
     private MediaPlayer         mMp         = null;
     private MPState             mMpS        = MPState.INVALID; // state of mMp;
+    private boolean             mMpSurfAttached = false;
     private SurfaceHolder       mSurfHolder = null; // To support video
     private boolean             mSurfReady  = false;
     private boolean             mVSzReady   = false;
@@ -569,6 +570,7 @@ SurfaceHolder.Callback {
     private void
     mpNewInstance() {
         mMp = new MediaPlayer();
+        mMpSurfAttached = false;
         mMpVol = Policy.DEFAULT_VIDEO_VOLUME;
         initMediaPlayer(mMp);
     }
@@ -630,6 +632,7 @@ SurfaceHolder.Callback {
             return;
 
         mMp.setDisplay(sholder);
+        mMpSurfAttached = (null != sholder);
     }
 
     private void
@@ -638,6 +641,7 @@ SurfaceHolder.Callback {
             return;
 
         mMp.setDisplay(null);
+        mMpSurfAttached = false;
     }
 
     private void
@@ -705,6 +709,12 @@ SurfaceHolder.Callback {
 
         return mMp.getVideoHeight();
     }
+
+    private boolean
+    mpIsSurfaceAttached() {
+        return mMpSurfAttached;
+    }
+
 
     private boolean
     mpIsPlaying() {
@@ -1227,14 +1237,14 @@ SurfaceHolder.Callback {
 
         clearStoredPlayerState();
 
+        mStoredPState = new PlayerState();
+        mStoredPState.mpState = mpGetState();
+        mStoredPState.vidobj = mVlm.getActiveVideo();
         switch(mpGetState()) {
         case STARTED:
         case PAUSED:
-            mStoredPState = new PlayerState();
-            mStoredPState.vidobj = mVlm.getActiveVideo();
             mStoredPState.pos = mpGetCurrentPosition();
             mStoredPState.vol = mpGetVolume();
-            mStoredPState.mpState = mpGetState();
             break;
         }
     }
@@ -1244,7 +1254,9 @@ SurfaceHolder.Callback {
         if (!haveStoredPlayerState())
             return;
 
-        if (mVlm.getActiveVideo() == mStoredPState.vidobj) {
+        if (mVlm.getActiveVideo() == mStoredPState.vidobj
+            && (MPState.STARTED == mStoredPState.mpState
+                || MPState.PAUSED == mStoredPState.mpState)) {
             // Android MediaPlayer seek to previous position automatically.
             // And volume is preserved.
             // Below two line is useless.
@@ -1425,6 +1437,7 @@ SurfaceHolder.Callback {
     public boolean
     onError(MediaPlayer mp, int what, int extra) {
         boolean tryAgain = true;
+        MPState origState = mpGetState();
         mpSetState(MPState.ERROR);
         switch (what) {
         case MediaPlayer.MEDIA_ERROR_NOT_VALID_FOR_PROGRESSIVE_PLAYBACK:
@@ -1444,12 +1457,17 @@ SurfaceHolder.Callback {
             logD("MPlayer - onError");
         }
 
-        if (tryAgain && mVlm.hasActiveVideo()) {
+        if (tryAgain
+            && mVlm.hasActiveVideo()
+            && (MPState.INITIALIZED == origState
+                || MPState.PREPARING == origState)) {
             logD("MPlayer - Try to recover!");
             startVideo(mVlm.getActiveVideo(), true);
         } else {
-            logI("MPlayer - not-recoverable error : " + what + "/" + extra);
-            stopPlay(StopState.UNKNOWN_ERROR);
+            if (!haveStoredPlayerState()) {
+                logI("MPlayer - not-recoverable error : " + what + "/" + extra);
+                stopPlay(StopState.UNKNOWN_ERROR);
+            }
         }
 
         return true; // DO NOT call onComplete Listener.
@@ -1646,8 +1664,9 @@ SurfaceHolder.Callback {
             && mSurfHolder != holder)
             unsetSurfaceHolder(mSurfHolder);
         mSurfHolder = holder;
-        holder.addCallback(this);
-        holder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+        if (null != holder) {
+            holder.addCallback(this);
+        }
     }
 
     public void
@@ -1660,14 +1679,19 @@ SurfaceHolder.Callback {
         }
     }
 
+    public void
+    detachVideoSurface(SurfaceHolder holder) {
+        if (null != mSurfHolder
+                && mSurfHolder == holder) {
+            mpUnsetVideoSurface();
+        }
+    }
+
     public Err
     setController(Activity  activity,
                   ViewGroup playerv,
                   ViewGroup playerLDrawer,
                   SurfaceView surfacev) {
-        eAssert((null == surfacev && null == mSurfHolder)
-                || (null != surfacev && surfacev.getHolder() == mSurfHolder));
-
         Err err = mUi.setController(activity, playerv, playerLDrawer, surfacev, null);
 
         if (!mVlm.hasActiveVideo())
@@ -1675,14 +1699,19 @@ SurfaceHolder.Callback {
 
         // controller is set again.
         // Than new surface may have to be used.
-        if (null != surfacev) {
-            mSurfHolder = surfacev.getHolder();
-            switch (mpGetState()) {
-            case PREPARED:
-            case STARTED:
-            case PAUSED:
-                fitVideoSurfaceToScreen(mSurfHolder);
-            }
+        // This is completely DIRTY and RISKY...
+        // Until to find any other better way...
+        // (I HATE THIS KIND OF HACK!!! :-( )
+        if (!haveStoredPlayerState()
+            && null != surfacev
+            && null != mSurfHolder
+            && surfacev.getHolder() == mSurfHolder
+            && !mpIsSurfaceAttached()) {
+            // Video surface should be set again.
+            // This is Android MediaPlayer's constraints.
+            // Video SHOULD BE re-started!
+            backupPlayerState();
+            mpStop();
         }
 
         if (haveStoredPlayerState())

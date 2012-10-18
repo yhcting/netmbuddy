@@ -10,8 +10,8 @@ import android.view.WindowManager;
 import free.yhc.netmbuddy.model.YTPlayer;
 
 public class VideoPlayerActivity extends Activity {
-    private final YTPlayer mMp = YTPlayer.get();
-
+    private final YTPlayer  mMp = YTPlayer.get();
+    private SurfaceView     mSurfv;
     private void
     setController(boolean withSurface) {
         SurfaceView surfv = withSurface? (SurfaceView)findViewById(R.id.surface): null;
@@ -27,8 +27,8 @@ public class VideoPlayerActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.videoplayer);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        final SurfaceView surfv = (SurfaceView)findViewById(R.id.surface);
-        mMp.setSurfaceHolder(surfv.getHolder());
+        mSurfv = (SurfaceView)findViewById(R.id.surface);
+        mMp.setSurfaceHolder(mSurfv.getHolder());
         findViewById(R.id.touch_ground).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -55,6 +55,7 @@ public class VideoPlayerActivity extends Activity {
     @Override
     protected void
     onPause() {
+        mMp.detachVideoSurface(mSurfv.getHolder());
         mMp.unsetController(this);
         super.onPause();
     }
@@ -62,13 +63,13 @@ public class VideoPlayerActivity extends Activity {
     @Override
     protected void
     onStop() {
-        mMp.unsetSurfaceHolder(((SurfaceView)findViewById(R.id.surface)).getHolder());
         super.onStop();
     }
 
     @Override
     protected void
     onDestroy() {
+        mMp.unsetSurfaceHolder(mSurfv.getHolder());
         super.onDestroy();
     }
 
@@ -82,7 +83,6 @@ public class VideoPlayerActivity extends Activity {
     @Override
     public void
     onBackPressed() {
-        mMp.unsetSurfaceHolder(((SurfaceView)findViewById(R.id.surface)).getHolder());
         super.onBackPressed();
     }
 }
