@@ -772,6 +772,11 @@ SurfaceHolder.Callback {
     // Video Surface Control
     //
     // ========================================================================
+    private boolean
+    isVideoMode() {
+        return null != mSurfHolder;
+    }
+
     private void
     setSurfaceReady(boolean ready) {
         mSurfReady = ready;
@@ -1078,15 +1083,41 @@ SurfaceHolder.Callback {
         // So play in local!
         try {
             mpSetDataSource(cachedVid.getAbsolutePath());
-            mpSetVideoSurface(mSurfHolder);
         } catch (IOException e) {
             // Something wrong at cached file.
             // Clean cache and try again - next time as streaming!
             cleanCache(true);
             logW("YTPlayer SetDataSource to Cached File IOException : " + e.getMessage());
             mStartVideoRecovery.executeRecoveryStart(mVlm.getActiveVideo());
+            return;
         }
-        mpPrepareAsync();
+
+        final MediaPlayer mp = mpGet();
+
+        Utils.getUiHandler().post(new Runnable() {
+            private int retry = 20;
+            @Override
+            public void
+            run() {
+                if (mp != mpGet())
+                    return; // ignore preparing for old media player.
+
+                if (retry < 0) {
+                    logW("YTPlayer : video surface is never created! Preparing will be stopped.");
+                    mpStop();
+                    return;
+                }
+
+                if (null == mSurfHolder
+                    || isSurfaceReady()) {
+                    mpSetVideoSurface(mSurfHolder);
+                    mpPrepareAsync();
+                } else {
+                    --retry;
+                    Utils.getUiHandler().postDelayed(this, 100);
+                }
+            }
+        });
 
         // In this case, player doens't need to buffering video.
         // So, player doens't need to wait until buffering is 100% done.
@@ -1165,7 +1196,6 @@ SurfaceHolder.Callback {
             else
                 prepareVideoStreaming(videoId);
         }
-
     }
 
     private void
