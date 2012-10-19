@@ -884,10 +884,10 @@ SurfaceHolder.Callback {
 
     private boolean
     isPreparedCompletely() {
-        return (null == mSurfHolder && MPState.PREPARED_AUDIO == mpGetState())
-                || (null != mSurfHolder && MPState.PREPARED_AUDIO == mpGetState()
-                                        && isSurfaceReady()
-                                        && isVideoSizeReady());
+        return (!isVideoMode() && MPState.PREPARED_AUDIO == mpGetState())
+                || (isVideoMode() && MPState.PREPARED_AUDIO == mpGetState()
+                                  && isSurfaceReady()
+                                  && isVideoSizeReady());
     }
 
     private int
@@ -1108,7 +1108,7 @@ SurfaceHolder.Callback {
                     return;
                 }
 
-                if (null == mSurfHolder
+                if (!isVideoMode()
                     || isSurfaceReady()) {
                     mpSetVideoSurface(mSurfHolder);
                     mpPrepareAsync();
