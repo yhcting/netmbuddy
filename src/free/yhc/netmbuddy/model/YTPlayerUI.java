@@ -247,7 +247,7 @@ public class YTPlayerUI {
             if (Utils.isValidValue(videoTitle))
                 pvSetTitle(titlev, "(" + mRes.getText(R.string.preparing) + ") " + videoTitle);
             else
-                pvSetTitle(titlev, mRes.getText(R.string.msg_preparing_mplayer));
+                pvSetTitle(titlev, "");
         }
     }
 
@@ -642,6 +642,10 @@ public class YTPlayerUI {
         pvEnableLDrawer(playerLDrawer);
 
         pvSetupControlButton(playerv);
+
+        // Set progress state to right position.
+        mUpdateProg.update(mMp.playerGetDuration(), mMp.playerGetPosition());
+
         pvConfigureAll(playerv, playerLDrawer, YTPlayer.MPState.INVALID, mMp.playerGetState());
     }
 
