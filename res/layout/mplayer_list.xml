@@ -11,5 +11,6 @@
         android:paddingRight="5dip"
         android:listSelector="@android:color/transparent"
         android:divider="@android:color/transparent"
+        android:background="@android:color/transparent"
         />
 </LinearLayout>
