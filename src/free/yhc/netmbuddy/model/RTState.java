@@ -20,11 +20,13 @@
 
 package free.yhc.netmbuddy.model;
 
+import static free.yhc.netmbuddy.model.Utils.eAssert;
 
 public class RTState {
     private static RTState sInstance = null;
 
-    private String  mLastSearchWord = "";
+    private String      mLastSearchWord = "";
+    private YTHacker    mLastSuccessfulHacker = null;
     // TODO
     // Proxy string should be changed if user changes proxy setting.
     private String  mProxy          = "";
@@ -55,5 +57,16 @@ public class RTState {
     public String
     getProxy() {
         return mProxy;
+    }
+
+    public void
+    setLastSuccessfulHacker(YTHacker hacker) {
+        eAssert(hacker.hasHackedResult());
+        mLastSuccessfulHacker = hacker;
+    }
+
+    public YTHacker
+    getLastSuccessfulHacker() {
+        return mLastSuccessfulHacker;
     }
 }

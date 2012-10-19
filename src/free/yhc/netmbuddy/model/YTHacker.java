@@ -207,8 +207,9 @@ public class YTHacker {
     }
 
     private static class YtVideoHtmlResult {
-        String         generate_204_url = ""; // url including generate 204
-        YtVideoElem[]  vids = new YtVideoElem[0];
+        long            tmstamp = 0; // System time in milli.
+        String          generate_204_url = ""; // url including generate 204
+        YtVideoElem[]   vids = new YtVideoElem[0];
     }
 
     private static String
@@ -259,6 +260,7 @@ public class YTHacker {
                     result.vids[i++] = YtVideoElem.parse(s);
             }
         }
+        result.tmstamp = System.currentTimeMillis();
         return result;
     }
 
@@ -358,10 +360,27 @@ public class YTHacker {
         return mLoader;
     }
 
+    public boolean
+    hasHackedResult() {
+        return null != mYtr;
+    }
+
+    public String
+    getYtVideoId() {
+        return mYtvid;
+    }
+
+    public long
+    getHackTimeStamp() {
+        eAssert(hasHackedResult());
+        return mYtr.tmstamp;
+    }
+
     public YtVideo
     getVideo(int quality) {
-        eAssert(null != mYtr);
         eAssert(0 <= quality && quality <= 100);
+       if (null == mYtr)
+            return null;
 
         // Select video that has closest quality score
         YtVideoElem ve = null;

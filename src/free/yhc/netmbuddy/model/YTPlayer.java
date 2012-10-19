@@ -1016,8 +1016,63 @@ SurfaceHolder.Callback {
     }
 
     private void
+    preparePlayerAsync() {
+        final MediaPlayer mp = mpGet();
+
+        Utils.getUiHandler().post(new Runnable() {
+            private int retry = 20;
+            @Override
+            public void
+            run() {
+                if (mp != mpGet())
+                    return; // ignore preparing for old media player.
+
+                if (retry < 0) {
+                    logW("YTPlayer : video surface is never created! Preparing will be stopped.");
+                    mpStop();
+                    return;
+                }
+
+                if (!isVideoMode()
+                    || isSurfaceReady()) {
+                    mpSetVideoSurface(mSurfHolder);
+                    mpPrepareAsync();
+                } else {
+                    --retry;
+                    Utils.getUiHandler().postDelayed(this, 100);
+                }
+            }
+        });
+    }
+
+    private void
+    prepareVideoStreamingFromYtHack(YTHacker ythack) {
+        YTHacker.YtVideo ytv = ythack.getVideo(getVideoQualityScore());
+        try {
+            mpSetDataSource(ytv.url);
+        } catch (IOException e) {
+            logW("YTPlayer SetDataSource IOException : " + e.getMessage());
+            mStartVideoRecovery.executeRecoveryStart(mVlm.getActiveVideo(), 500);
+            return;
+        }
+
+        preparePlayerAsync();
+    }
+
+    private void
     prepareVideoStreaming(final String videoId) {
         logI("Prepare Video Streaming : " + videoId);
+
+        YTHacker lastHacker = RTState.get().getLastSuccessfulHacker();
+        if (null != lastHacker
+            && videoId.equals(lastHacker.getYtVideoId())
+            && (System.currentTimeMillis() - lastHacker.getHackTimeStamp()) < Policy.YTHACK_REUSE_TIMEOUT) {
+            eAssert(lastHacker.hasHackedResult());
+            // Let's try to reuse it.
+            prepareVideoStreamingFromYtHack(lastHacker);
+            return;
+        }
+
 
         YTHacker.YtHackListener listener = new YTHacker.YtHackListener() {
             @Override
@@ -1048,17 +1103,8 @@ SurfaceHolder.Callback {
                     return;
                 }
 
-                YTHacker.YtVideo ytv = ythack.getVideo(getVideoQualityScore());
-                try {
-                    mpSetDataSource(ytv.url);
-                    mpSetVideoSurface(mSurfHolder);
-                } catch (IOException e) {
-                    logW("YTPlayer SetDataSource IOException : " + e.getMessage());
-                    mStartVideoRecovery.executeRecoveryStart(mVlm.getActiveVideo(), 500);
-                    return;
-                }
-
-                mpPrepareAsync();
+                prepareVideoStreamingFromYtHack(ythack);
+                RTState.get().setLastSuccessfulHacker(ythack);
             }
 
             @Override
@@ -1092,32 +1138,6 @@ SurfaceHolder.Callback {
             return;
         }
 
-        final MediaPlayer mp = mpGet();
-
-        Utils.getUiHandler().post(new Runnable() {
-            private int retry = 20;
-            @Override
-            public void
-            run() {
-                if (mp != mpGet())
-                    return; // ignore preparing for old media player.
-
-                if (retry < 0) {
-                    logW("YTPlayer : video surface is never created! Preparing will be stopped.");
-                    mpStop();
-                    return;
-                }
-
-                if (!isVideoMode()
-                    || isSurfaceReady()) {
-                    mpSetVideoSurface(mSurfHolder);
-                    mpPrepareAsync();
-                } else {
-                    --retry;
-                    Utils.getUiHandler().postDelayed(this, 100);
-                }
-            }
-        });
 
         // In this case, player doens't need to buffering video.
         // So, player doens't need to wait until buffering is 100% done.

@@ -46,6 +46,16 @@ public class Policy {
     public static final int     YTSEARCH_MAX_LOAD_THUMBNAIL_THREAD  = 10;
 
     // --------------------------------------------------------------------
+    // Youtube Hack
+    // --------------------------------------------------------------------
+    // Really 5 minutes is correct and enough value?
+    // For safety, the smaller is the better, but for good UX, the longer is the better (Trade-off).
+    // The problem is, there is no way to know exact expire time even if there is 'expire' token is html source.
+    // (It's totally dependent on server-side-implementation.)
+    // So, this is just experimental value!
+    public static final int     YTHACK_REUSE_TIMEOUT    = 5 * 60 * 1000; // 5 minutes
+
+    // --------------------------------------------------------------------
     // Youtube Player
     // --------------------------------------------------------------------
     public static final int     YTPLAYER_RETRY_ON_ERROR = 3;
