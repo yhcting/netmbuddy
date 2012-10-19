@@ -1568,20 +1568,6 @@ SurfaceHolder.Callback {
     // Package interfaces (Usually for YTPLayerUI)
     //
     // ============================================================================
-    void
-    addVideosStateListener(Object key, VideosStateListener listener) {
-        eAssert(null != listener);
-        mVStateLsnrl.remove(key);
-        mVStateLsnrl.add(key, listener);
-    }
-
-    void
-    addPlayerStateListener(Object key, PlayerStateListener listener) {
-        eAssert(null != listener);
-        mPStateLsnrl.remove(key);
-        mPStateLsnrl.add(key, listener);
-    }
-
     boolean
     hasNextVideo() {
         return mVlm.hasNextVideo();
@@ -1706,6 +1692,30 @@ SurfaceHolder.Callback {
         if (null == sInstance)
             sInstance = new YTPlayer();
         return sInstance;
+    }
+
+    public void
+    addVideosStateListener(Object key, VideosStateListener listener) {
+        eAssert(null != listener);
+        mVStateLsnrl.remove(key);
+        mVStateLsnrl.add(key, listener);
+    }
+
+    public void
+    removeVideosStateListener(Object key) {
+        mVStateLsnrl.remove(key);
+    }
+
+    public void
+    addPlayerStateListener(Object key, PlayerStateListener listener) {
+        eAssert(null != listener);
+        mPStateLsnrl.remove(key);
+        mPStateLsnrl.add(key, listener);
+    }
+
+    public void
+    removePlayerStateListener(Object key) {
+        mPStateLsnrl.remove(key);
     }
 
     public void

@@ -9,6 +9,32 @@
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
         />
+    <LinearLayout
+        android:id="@+id/infolayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:visibility="gone"
+        >
+        <TextView
+            android:id="@+id/infomsg"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="@dimen/title_text_size"
+            android:textColor="@color/title_text_color_new"
+            android:gravity="center"
+            />
+        <ImageView
+            android:id="@+id/infoimg"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dip"
+            android:gravity="center"
+            android:src="@drawable/spinner_large"
+            android:scaleType="fitCenter"
+            />
+    </LinearLayout>
     <View
         android:id="@+id/touch_ground"
         android:layout_width="match_parent"

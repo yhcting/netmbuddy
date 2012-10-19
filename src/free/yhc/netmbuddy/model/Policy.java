@@ -75,4 +75,8 @@ public class Policy {
     // Too short : fails on bad network condition.
     public static final int     NETWORK_CONN_TIMEOUT    = 5000;
     public static final int     NETOWRK_CONN_RETRY      = 3;
+
+    // --------------------------------------------------------------------
+    // Video Player
+    // --------------------------------------------------------------------
 }
