@@ -48,7 +48,7 @@
         <activity android:name=".VideoPlayerActivity"
                   android:screenOrientation="landscape"
                   android:configChanges="orientation|keyboardHidden"
-                  android:theme="@android:style/Theme.NoTitleBar"
+                  android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
                   />
         <receiver android:name=".model.YTPlayer$TelephonyMonitor">
             <intent-filter>
