@@ -1016,12 +1016,17 @@ SurfaceHolder.Callback {
         return YTHacker.getQScorePreferLow(YTHacker.YTQUALITY_SCORE_LOWEST);
     }
 
-    private File
+    private static String
+    getCachedVideoFilePath(String ytvid, Utils.PrefQuality quality) {
+        return Policy.APPDATA_CACHEDIR + ytvid + "-" + quality.name() + ".mp4";
+    }
+
+    private static File
     getCachedVideo(String ytvid) {
         // Only mp4 is supported by YTHacker.
         // WebM and Flv is not supported directly in Android's MediaPlayer.
         // So, Mpeg is only option we can choose.
-        return new File(Policy.APPDATA_CACHEDIR + ytvid + ".mp4");
+        return new File(getCachedVideoFilePath(ytvid, Utils.getPrefQuality()));
     }
 
     private Video[]
@@ -1112,10 +1117,12 @@ SurfaceHolder.Callback {
             //   current and next video.
             // DO NOT delete cache directory itself!
             skipSet.add(sCacheDir.getAbsolutePath());
-            skipSet.add(getCachedVideo(mVlm.getActiveVideo().videoId).getAbsolutePath());
-            Video nextVid = mVlm.getNextVideo();
-            if (null != nextVid)
-                skipSet.add(getCachedVideo(nextVid.videoId).getAbsolutePath());
+            for (Utils.PrefQuality pq : Utils.PrefQuality.values()) {
+                skipSet.add(new File(getCachedVideoFilePath(mVlm.getActiveVideo().videoId, pq)).getAbsolutePath());
+                Video nextVid = mVlm.getNextVideo();
+                if (null != nextVid)
+                    skipSet.add(new File(getCachedVideoFilePath(nextVid.videoId, pq)).getAbsolutePath());
+            }
         }
         Utils.removeFileRecursive(sCacheDir, skipSet);
     }

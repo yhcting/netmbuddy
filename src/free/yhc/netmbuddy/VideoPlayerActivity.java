@@ -11,9 +11,11 @@ import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
 import android.widget.TextView;
 import free.yhc.netmbuddy.model.YTPlayer;
+import free.yhc.netmbuddy.model.YTPlayer.StopState;
 
 public class VideoPlayerActivity extends Activity implements
-YTPlayer.PlayerStateListener {
+YTPlayer.PlayerStateListener,
+YTPlayer.VideosStateListener {
     private final YTPlayer  mMp = YTPlayer.get();
     private SurfaceView     mSurfv;
     private void
@@ -63,6 +65,33 @@ YTPlayer.PlayerStateListener {
         infov.setVisibility(View.GONE);
     }
 
+    // ========================================================================
+    //
+    // Overriding 'YTPlayer.VideosStateListener'
+    //
+    // ========================================================================
+    @Override
+    public void
+    onStarted() {
+    }
+
+    @Override
+    public void
+    onStopped(StopState state) {
+        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+    }
+
+    @Override
+    public void
+    onChanged() {
+
+    }
+
+    // ========================================================================
+    //
+    // Overriding 'YTPlayer.PlayerStateListener'
+    //
+    // ========================================================================
     @Override
     public void
     onStateChanged(YTPlayer.MPState from, YTPlayer.MPState to) {
@@ -71,10 +100,11 @@ YTPlayer.PlayerStateListener {
             showLoadingSpinProgress();
             break;
 
+        case PREPARED:
         case STOPPED:
-        case STARTED:
-        case PAUSED:
+        case ERROR:
             hideLoadingSpinProgress();
+            break;
         }
     }
 
@@ -83,6 +113,11 @@ YTPlayer.PlayerStateListener {
     onBufferingChanged(int percent) {
     }
 
+    // ========================================================================
+    //
+    // Overriding 'Activity'
+    //
+    // ========================================================================
     @Override
     public void
     onCreate(Bundle savedInstanceState) {
@@ -94,7 +129,6 @@ YTPlayer.PlayerStateListener {
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.videoplayer);
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         mSurfv = (SurfaceView)findViewById(R.id.surface);
         mMp.setSurfaceHolder(mSurfv.getHolder());
         findViewById(R.id.touch_ground).setOnClickListener(new View.OnClickListener() {
@@ -107,7 +141,12 @@ YTPlayer.PlayerStateListener {
                     hideController();
             }
         });
+
+        if (mMp.hasActiveVideo())
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
         mMp.addPlayerStateListener(this, this);
+        mMp.addVideosStateListener(this, this);
     }
 
     @Override
@@ -144,6 +183,7 @@ YTPlayer.PlayerStateListener {
     onDestroy() {
         mMp.unsetSurfaceHolder(mSurfv.getHolder());
         mMp.removePlayerStateListener(this);
+        mMp.removeVideosStateListener(this);
         super.onDestroy();
     }
 
