@@ -296,7 +296,7 @@ SurfaceHolder.Callback {
                 break;
 
             default:
-                eAssert(false);
+                logW("Unknown WiredHeadset State : " + state);
                 break;
             }
         }
