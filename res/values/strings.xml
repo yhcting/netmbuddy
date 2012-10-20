@@ -24,6 +24,7 @@
     <string name="merge">Merge</string>
     <string name="low">Low</string>
     <string name="normal">Normal</string>
+    <string name="high">High</string>
     <string name="done">Done</string>
     <string name="autostop">Auto-stop</string>
 
@@ -67,7 +68,7 @@
     <string name="pref_repeat">Repeat</string>
     <string name="pref_repeat_desc">Play musics repeatedly.</string>
     <string name="pref_quality">Audio quality</string>
-    <string name="pref_quality_desc">Low quality for poor network condition, otherwise normal is recommended</string>
+    <string name="pref_quality_desc">Low quality for poor network condition, otherwise normal is recommended. high is only for high-quality video.</string>
 
     <string name="guide_title_first_playlist">Making my first playlist.</string>
     <string name="guide_desc_first_playlist">Touching this icon to search Youbute with keywords\nThen, do long-touch one of list-item to make new playlist and add the item to the playlist.</string>

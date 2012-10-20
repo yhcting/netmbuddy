@@ -59,7 +59,7 @@ public class YTHacker {
 
     private static final int    YTSTREAMTAG_MPEG_1080p  = 37;
     private static final int    YTSTREAMTAG_MPEG_720p   = 22;
-    private static final int    YTSTREAMTAG_MPEG_480p   = 35;
+    private static final int    YTSTREAMTAG_MPEG_480p   = -1; // ???? What is itag value for mpeg4 480p???
     private static final int    YTSTREAMTAG_MPEG_360p   = 18;
 
     private static final int    YTSTREAMTAG_3GPP_240p   = 36;
@@ -70,6 +70,7 @@ public class YTHacker {
     private static final int    YTSTREAMTAG_WEBM_480p   = 44;
     private static final int    YTSTREAMTAG_WEBM_360p   = 43;
 
+    private static final int    YTSTREAMTAG_FLV_480p    = 35;
     private static final int    YTSTREAMTAG_FLV_360p    = 34;
     private static final int    YTSTREAMTAG_FLV_240p    = 5;
 

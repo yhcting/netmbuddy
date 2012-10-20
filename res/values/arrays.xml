@@ -11,10 +11,12 @@
     <string-array name="strarr_pref_quality_entry">
         <item>@string/low</item>
         <item>@string/normal</item>
+        <item>@string/high</item>
     </string-array>
     <!-- Value should match Utils.PrefAudioQuality enum name -->
     <string-array name="strarr_pref_quality_value">
         <item>"LOW"</item>
         <item>"NORMAL"</item>
+        <item>"HIGH"</item>
     </string-array>
 </resources>

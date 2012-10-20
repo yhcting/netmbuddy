@@ -87,7 +87,8 @@ public class Utils {
 
     public static enum PrefQuality {
         LOW,
-        NORMAL
+        NORMAL,
+        HIGH
     }
 
     // ========================================================================
