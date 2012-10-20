@@ -9,6 +9,7 @@ import android.content.res.Resources;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
@@ -558,6 +559,17 @@ public class YTPlayerUI {
         mUpdateProg.setProgressView(progv);
 
         if (null != playerLDrawer) {
+            ListView lv = (ListView)playerLDrawer.findViewById(R.id.mplayer_list);
+            lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void
+                onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                    if (!mMp.hasActiveVideo())
+                        return;
+                    mMp.startVideoAt(position);
+                }
+            });
+
             mMp.addVideosStateListener(this, new YTPlayer.VideosStateListener() {
                 @Override
                 public void onStopped(YTPlayer.StopState state) {

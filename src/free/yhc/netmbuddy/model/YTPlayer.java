@@ -454,35 +454,30 @@ SurfaceHolder.Callback {
         }
 
         boolean
+        moveTo(int index) {
+            eAssert(Utils.isUiThread());
+            if (index < 0 || index >= vs.length)
+                return false;
+            vi = index;
+            return true;
+        }
+
+        boolean
         moveToFist() {
             eAssert(Utils.isUiThread());
-            if (hasActiveVideo()) {
-                    vi = 0;
-                    return true;
-            }
-            return false;
+            return moveTo(0);
         }
 
         boolean
         moveToNext() {
             eAssert(Utils.isUiThread());
-            if (hasActiveVideo()
-                && vi < (vs.length - 1)) {
-                vi++;
-                return true;
-            }
-            return false;
+            return moveTo(vi + 1);
         }
 
         boolean
         moveToPrev() {
             eAssert(Utils.isUiThread());
-            if (hasActiveVideo()
-                && vi > 0) {
-                vi--;
-                return true;
-            }
-            return false;
+            return moveTo(vi - 1);
         }
     }
 
@@ -1365,6 +1360,17 @@ SurfaceHolder.Callback {
     }
 
     private void
+    startAt(int index) {
+        if (!mVlm.hasActiveVideo())
+            return; // do nothing
+
+        if (mVlm.moveTo(index))
+            startVideo(mVlm.getActiveVideo(), false);
+        else
+            stopPlay(StopState.DONE);
+    }
+
+    private void
     stopPlay(StopState st) {
         logD("YTPlayer stopPlay : " + st.name());
         if (null != mYtHack)
@@ -1691,6 +1697,11 @@ SurfaceHolder.Callback {
     void
     startPrevVideo() {
         startPrev();
+    }
+
+    void
+    startVideoAt(int videoListIndex) {
+        startAt(videoListIndex);
     }
 
     Video
