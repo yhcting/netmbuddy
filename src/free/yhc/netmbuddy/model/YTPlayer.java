@@ -290,7 +290,7 @@ SurfaceHolder.Callback {
                     @Override
                     public void
                     run() {
-                        YTPlayer.get().pauseVideo();
+                        YTPlayer.get().playerPause();
                     }
                 });
                 break;
@@ -573,6 +573,7 @@ SurfaceHolder.Callback {
         mMpSurfAttached = false;
         mMpVol = Policy.DEFAULT_VIDEO_VOLUME;
         initMediaPlayer(mMp);
+        mpSetState(MPState.IDLE);
     }
 
     private MediaPlayer
@@ -582,14 +583,32 @@ SurfaceHolder.Callback {
 
     private void
     mpSetDataSource(String path) throws IOException {
-        mMp.setDataSource(path);
-        mpSetState(MPState.INITIALIZED);
+        if (null == mMp)
+            return;
+
+        switch (mpGetState()) {
+        case IDLE:
+            mMp.setDataSource(path);
+            mpSetState(MPState.INITIALIZED);
+            return;
+        }
+
+        logI("MP [" + mpGetState().name() + "] : setDataSource ignored : ");
     }
 
     private void
     mpPrepareAsync() {
-        mpSetState(MPState.PREPARING);
-        mMp.prepareAsync();
+        if (null == mMp)
+            return;
+
+        switch (mpGetState()) {
+        case INITIALIZED:
+        case STOPPED:
+            mpSetState(MPState.PREPARING);
+            mMp.prepareAsync();
+            return;
+        }
+        logI("MP [" + mpGetState().name() + "] : prepareAsync ignored : ");
     }
 
     private void
@@ -622,8 +641,21 @@ SurfaceHolder.Callback {
         if (null == mMp)
             return;
 
-        mMp.reset();
-        mpSetState(MPState.IDLE);
+        switch (mpGetState()) {
+        case IDLE:
+        case INITIALIZED:
+        case PREPARED_AUDIO:
+        case PREPARED:
+        case STARTED:
+        case PAUSED:
+        case STOPPED:
+        case PLAYBACK_COMPLETED:
+        case ERROR:
+            mMp.reset();
+            mpSetState(MPState.IDLE);
+            return;
+        }
+        logI("MP [" + mpGetState().name() + "] : reset ignored : ");
     }
 
     private void
@@ -649,17 +681,30 @@ SurfaceHolder.Callback {
         if (null == mMp)
             return;
 
-        float volf = vol/100.0f;
-        mMpVol = vol;
-        mMp.setVolume(volf, volf);
+        switch (mpGetState()) {
+        case IDLE:
+        case INITIALIZED:
+        case PREPARED_AUDIO:
+        case PREPARED:
+        case STARTED:
+        case PAUSED:
+        case STOPPED:
+        case PLAYBACK_COMPLETED:
+            float volf = vol/100.0f;
+            mMpVol = vol;
+            mMp.setVolume(volf, volf);
+            return;
+        }
+
+        logI("MP [" + mpGetState().name() + "] : setVolume ignored : ");
     }
 
     private int
     mpGetVolume() {
-        switch(mMpS) {
+        switch(mpGetState()) {
+        case INVALID:
         case END:
-        case ERROR:
-        case PREPARING:
+            logI("MP [" + mpGetState().name() + "] : getCurrentPosition ignored : ");
             return Policy.DEFAULT_VIDEO_VOLUME;
         }
         return mMpVol;
@@ -671,11 +716,18 @@ SurfaceHolder.Callback {
             return 0;
 
         switch (mpGetState()) {
-        case ERROR:
-        case END:
-            return 0;
+        case IDLE:
+        case INITIALIZED:
+        case PREPARED_AUDIO:
+        case PREPARED:
+        case STARTED:
+        case PAUSED:
+        case STOPPED:
+        case PLAYBACK_COMPLETED:
+            return mMp.getCurrentPosition();
         }
-        return mMp.getCurrentPosition();
+        logI("MP [" + mpGetState().name() + "] : getCurrentPosition ignored : ");
+        return 0;
     }
 
     private int
@@ -683,7 +735,8 @@ SurfaceHolder.Callback {
         if (null == mMp)
             return 0;
 
-        switch(mpGetState()) {
+        switch (mpGetState()) {
+        case PREPARED_AUDIO:
         case PREPARED:
         case STARTED:
         case PAUSED:
@@ -691,6 +744,7 @@ SurfaceHolder.Callback {
         case PLAYBACK_COMPLETED:
             return mMp.getDuration();
         }
+        logI("MP [" + mpGetState().name() + "] : getDuration ignored : ");
         return 0;
     }
 
@@ -699,7 +753,20 @@ SurfaceHolder.Callback {
         if (null == mMp)
             return 0;
 
-        return mMp.getVideoWidth();
+        switch (mpGetState()) {
+        case IDLE:
+        case INITIALIZED:
+        case PREPARED_AUDIO:
+        case PREPARED:
+        case STARTED:
+        case PAUSED:
+        case STOPPED:
+        case PLAYBACK_COMPLETED:
+            return mMp.getVideoWidth();
+        }
+        logI("MP [" + mpGetState().name() + "] : getVideoWidth ignored : ");
+        return 0;
+
     }
 
     private int
@@ -707,7 +774,19 @@ SurfaceHolder.Callback {
         if (null == mMp)
             return 0;
 
-        return mMp.getVideoHeight();
+        switch (mpGetState()) {
+        case IDLE:
+        case INITIALIZED:
+        case PREPARED_AUDIO:
+        case PREPARED:
+        case STARTED:
+        case PAUSED:
+        case STOPPED:
+        case PLAYBACK_COMPLETED:
+            return mMp.getVideoHeight();
+        }
+        logI("MP [" + mpGetState().name() + "] : getVideoHeight ignored : ");
+        return 0;
     }
 
     private boolean
@@ -731,8 +810,14 @@ SurfaceHolder.Callback {
         if (null == mMp)
             return;
 
-        mMp.pause();
-        mpSetState(MPState.PAUSED);
+        switch (mpGetState()) {
+        case STARTED:
+        case PAUSED:
+            mMp.pause();
+            mpSetState(MPState.PAUSED);
+            return;
+        }
+        logI("MP [" + mpGetState().name() + "] : pause ignored : ");
     }
 
     private void
@@ -741,7 +826,16 @@ SurfaceHolder.Callback {
         if (null == mMp)
             return;
 
-        mMp.seekTo(pos);
+        switch (mpGetState()) {
+        case PREPARED_AUDIO:
+        case PREPARED:
+        case STARTED:
+        case PAUSED:
+        case PLAYBACK_COMPLETED:
+            mMp.seekTo(pos);
+            return;
+        }
+        logI("MP [" + mpGetState().name() + "] : seekTo ignored : ");
     }
 
     private void
@@ -753,18 +847,37 @@ SurfaceHolder.Callback {
         if (ytpIsSuspended())
             return;
 
-        mMp.start();
-        mpSetState(MPState.STARTED);
+        switch (mpGetState()) {
+        case PREPARED:
+        case STARTED:
+        case PAUSED:
+        case PLAYBACK_COMPLETED:
+            mMp.start();
+            mpSetState(MPState.STARTED);
+            return;
+        }
+        logI("MP [" + mpGetState().name() + "] : start ignored : ");
     }
 
     private void
     mpStop() {
+        logD("MPlayer - stop");
         if (null == mMp)
             return;
 
-        logD("MPlayer - stop");
-        mMp.stop();
-        mpSetState(MPState.STOPPED);
+        switch (mpGetState()) {
+        case PREPARING:
+        case PREPARED_AUDIO:
+        case PREPARED:
+        case STARTED:
+        case PAUSED:
+        case STOPPED:
+        case PLAYBACK_COMPLETED:
+            mMp.stop();
+            mpSetState(MPState.STOPPED);
+            return;
+        }
+        logI("MP [" + mpGetState().name() + "] : stop ignored : ");
     }
 
     // ========================================================================
@@ -835,7 +948,7 @@ SurfaceHolder.Callback {
     private void
     ytpSuspendPlaying() {
         eAssert(Utils.isUiThread());
-        pauseVideo();
+        playerPause();
         mYtpS = YTPState.SUSPENDED;
     }
 
@@ -1335,25 +1448,6 @@ SurfaceHolder.Callback {
 
     // ============================================================================
     //
-    // Package interfaces
-    //
-    // ============================================================================
-    void
-    pauseVideo() {
-        if (isVideoPlaying()
-            && MPState.PREPARING != mpGetState())
-            mpPause();
-    }
-
-    void
-    startVideo() {
-        if (isVideoPlaying()
-            && MPState.PREPARING != mpGetState())
-            mpStart();
-    }
-
-    // ============================================================================
-    //
     // Override for "SurfaceHolder.Callback"
     //
     // ============================================================================
@@ -1611,12 +1705,16 @@ SurfaceHolder.Callback {
 
     void
     playerStart() {
-        mpStart();
+        if (isVideoPlaying()
+            && MPState.PREPARING != mpGetState())
+            mpStart();
     }
 
     void
     playerPause() {
-        mpPause();
+        if (isVideoPlaying()
+            && MPState.PREPARING != mpGetState())
+            mpPause();
     }
 
     void
@@ -1666,9 +1764,7 @@ SurfaceHolder.Callback {
     void
     playerSetVolume(int vol) {
         eAssert(0 <= vol && vol <= 100);
-        // Implement this
-        if (isVideoPlaying())
-            mpSetVolume(vol);
+        mpSetVolume(vol);
     }
 
     // ============================================================================

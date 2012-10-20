@@ -94,11 +94,11 @@ public class NotiManager {
                     break;
 
                 case START:
-                    ytp.startVideo();
+                    ytp.playerStart();
                     break;
 
                 case PAUSE:
-                    ytp.pauseVideo();
+                    ytp.playerPause();
                     break;
 
                 case STOP:

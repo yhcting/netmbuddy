@@ -67,13 +67,13 @@ YTPlayer.PlayerStateListener {
     public void
     onStateChanged(YTPlayer.MPState from, YTPlayer.MPState to) {
         switch(to) {
-        case INITIALIZED:
-        case PREPARING:
-        case PREPARED_AUDIO:
+        case IDLE:
             showLoadingSpinProgress();
             break;
 
-        default:
+        case STOPPED:
+        case STARTED:
+        case PAUSED:
             hideLoadingSpinProgress();
         }
     }
@@ -81,7 +81,6 @@ YTPlayer.PlayerStateListener {
     @Override
     public void
     onBufferingChanged(int percent) {
-
     }
 
     @Override

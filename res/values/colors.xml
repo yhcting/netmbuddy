@@ -5,5 +5,5 @@
     <color name="desc_text_color">#fffafa</color>
     <color name="white">#ffffff</color>
     <color name="black">#000000</color>
-    <color name="bg_trans_black">#b0000000</color>   
+    <color name="bg_trans_black">#b0000000</color>
 </resources>
