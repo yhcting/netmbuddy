@@ -1138,6 +1138,7 @@ SurfaceHolder.Callback {
             return;
         }
 
+        preparePlayerAsync();
 
         // In this case, player doens't need to buffering video.
         // So, player doens't need to wait until buffering is 100% done.
