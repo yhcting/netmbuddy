@@ -77,6 +77,8 @@ public class YTDownloader {
 
     private class BGHandler extends Handler {
         private File    tmpF = null;
+        private volatile File   curOutF = null;
+
         BGHandler(Looper looper) {
             super(looper);
         }
@@ -99,6 +101,9 @@ public class YTDownloader {
         // That is, ONLY one file can be download in one YTDownloader instance at a time.
         private void
         handleDownload(DnArg arg) {
+            // assigning object reference is atomic operation in JAVA
+            curOutF = arg.outf;
+
             if (null != tmpF)
                 tmpF.delete();
 
@@ -150,7 +155,19 @@ public class YTDownloader {
 
                 if (null != tmpF)
                     tmpF.delete();
+
+                // assigning object reference is atomic operation in JAVA
+                curOutF = null;
             }
+        }
+
+        String
+        getCurrentDownloadingFile() {
+            // NOTE.
+            // curOutF is volatile and assigning object reference is atomic operation in JAVA.
+            // So, synchronization is not required here.
+            File outF = curOutF;
+            return (null == outF)? null: outF.getAbsolutePath();
         }
 
         @Override
@@ -179,6 +196,11 @@ public class YTDownloader {
     public Object
     getTag() {
         return mUserTag;
+    }
+
+    public String
+    getCurrentDownloadingFile() {
+        return (null == mBgHandler)? null: mBgHandler.getCurrentDownloadingFile();
     }
 
     /**

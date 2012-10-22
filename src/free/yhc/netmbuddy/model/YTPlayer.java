@@ -1066,6 +1066,13 @@ SurfaceHolder.Callback {
 
     private void
     cachingVideo(final String vid) {
+        File cacheFile = getCachedVideo(vid);
+        if ((cacheFile.exists() && cacheFile.canRead())
+            // previous operation is same with current request. And it is still running.
+            // So, ignore current request.
+            || cacheFile.getAbsolutePath().equals(mYtDnr.getCurrentDownloadingFile()))
+            return;
+
         mYtDnr.close();
 
         mYtDnr = new YTDownloader();
