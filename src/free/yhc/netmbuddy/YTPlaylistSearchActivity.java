@@ -345,7 +345,7 @@ public class YTPlaylistSearchActivity extends YTSearchActivity {
             }
         });
 
-        setupToolBtn(R.drawable.ic_ytsearch,
+        setupBottomBar(R.drawable.ic_ytsearch,
                      new View.OnClickListener() {
             @Override
             public void onClick(View v) {

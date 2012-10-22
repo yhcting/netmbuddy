@@ -921,6 +921,26 @@ public class DB extends SQLiteOpenHelper {
 
     // ======================================================================
     //
+    // Transaction
+    //
+    // ======================================================================
+    public void
+    beginTransaction() {
+        mDb.beginTransaction();
+    }
+
+    public void
+    setTransactionSuccessful() {
+        mDb.setTransactionSuccessful();
+    }
+
+    public void
+    endTransaction() {
+        mDb.endTransaction();
+    }
+
+    // ======================================================================
+    //
     // Operations
     //
     // ======================================================================

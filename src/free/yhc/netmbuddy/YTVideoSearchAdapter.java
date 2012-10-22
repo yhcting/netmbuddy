@@ -27,9 +27,13 @@ import java.util.Locale;
 
 import android.content.Context;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.TextView;
+import free.yhc.netmbuddy.model.DB;
+import free.yhc.netmbuddy.model.Policy;
 import free.yhc.netmbuddy.model.Utils;
 import free.yhc.netmbuddy.model.YTFeed;
+import free.yhc.netmbuddy.model.YTPlayer;
 import free.yhc.netmbuddy.model.YTSearchHelper;
 import free.yhc.netmbuddy.model.YTVideoFeed;
 
@@ -40,10 +44,68 @@ public class YTVideoSearchAdapter extends YTSearchAdapter {
     public static final long FENT_EXIST_DUP = 0x1;
     public static final long MENT_EXIST     = 0x1;
 
+    // Check Button Tag Key
+    private static final int TAGKEY_POS         = R.drawable.btncheck_on;
+    private static final int TAGKEY_MARK_STATE  = R.drawable.btncheck_off;
+
+    private final OnCheckStateListener  mCheckListener;
+    private int mNrChecked = 0;
+
+    private final View.OnClickListener mMarkOnClick = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            ImageView iv = (ImageView)v;
+            int pos = (Integer)iv.getTag(TAGKEY_POS);
+            if ((Boolean)iv.getTag(TAGKEY_MARK_STATE))
+                unmarkItemCheck(pos);
+            else
+                markItemCheck(pos);
+
+            eAssert(mNrChecked >= 0 && mNrChecked <= mEntries.length);
+        }
+    };
+
+    public interface OnCheckStateListener {
+        /**
+         *
+         * @param nrChecked
+         *   total number of check item of this adapter.
+         * @param pos
+         *   item position that check state is changed on.
+         * @param checked
+         *   new check state after changing.
+         */
+        void onStateChanged(int nrChecked, int pos, boolean checked);
+    }
+
+    private void
+    setToNew(View v) {
+        TextView titlev = (TextView)v.findViewById(R.id.title);
+        titlev.setTextColor(Utils.getAppContext().getResources().getColor(R.color.title_text_color_new));
+        v.findViewById(R.id.checkbtn).setVisibility(View.VISIBLE);
+    }
+
+    private void
+    setToExist(View v) {
+        TextView titlev = (TextView)v.findViewById(R.id.title);
+        titlev.setTextColor(Utils.getAppContext().getResources().getColor(R.color.title_text_color_existing));
+        v.findViewById(R.id.checkbtn).setVisibility(View.GONE);
+    }
+
     YTVideoSearchAdapter(Context context,
                          YTSearchHelper helper,
+                         OnCheckStateListener listener,
                          YTVideoFeed.Entry[] entries) {
         super(context, helper, R.layout.ytvideosearch_row, entries);
+        mCheckListener = listener;
+        for (int i = 0; i < mItemViews.length; i++) {
+            View v = mItemViews[i].findViewById(R.id.checkbtn);
+            v.setOnClickListener(mMarkOnClick);
+            v.setTag(TAGKEY_MARK_STATE, false);
+            v.setTag(TAGKEY_POS, i);
+        }
+        // initial notification to callback.
+        mCheckListener.onStateChanged(0, -1, false);
     }
 
     @Override
@@ -57,11 +119,7 @@ public class YTVideoSearchAdapter extends YTSearchAdapter {
         YTVideoFeed.Entry e = (YTVideoFeed.Entry)arge;
 
         TextView titlev = (TextView)v.findViewById(R.id.title);
-        titlev.setText(e.media.title);
-        if (Utils.bitIsSet(e.uflag, FENT_EXIST_DUP, MENT_EXIST))
-            titlev.setTextColor(Utils.getAppContext().getResources().getColor(R.color.title_text_color_existing));
-        else
-            titlev.setTextColor(Utils.getAppContext().getResources().getColor(R.color.title_text_color_new));
+        titlev.setText(arge.media.title);
 
         String playtmtext = "?";
         try {
@@ -82,7 +140,12 @@ public class YTVideoSearchAdapter extends YTSearchAdapter {
 
         ((TextView)v.findViewById(R.id.uploadedtime)).setText("< " + dateText + " >");
 
-        v.setTag(VTAGKEY_VALID, true);
+        if (Utils.bitIsSet(e.uflag, FENT_EXIST_DUP, MENT_EXIST))
+            setToExist(v);
+        else
+            setToNew(v);
+
+        markViewValid(v);
     }
 
     public String
@@ -105,11 +168,50 @@ public class YTVideoSearchAdapter extends YTSearchAdapter {
         return ((YTVideoFeed.Entry[])mEntries)[pos].author.name;
     }
 
+    public int
+    getItemVolume(int pos) {
+        int volume = DB.INVALID_VOLUME;
+        YTPlayer ytp = YTPlayer.get();
+        String runningYtVid = ytp.getPlayVideoYtId();
+        if (null != runningYtVid
+            && runningYtVid.equals(getItemVideoId(pos)))
+            volume = ytp.getVideoVolume();
+
+        if (DB.INVALID_VOLUME == volume)
+            volume = Policy.DEFAULT_VIDEO_VOLUME;
+
+        return volume;
+    }
+
+    public boolean
+    getItemMarkState(int pos) {
+        return (Boolean)mItemViews[pos].findViewById(R.id.checkbtn).getTag(TAGKEY_MARK_STATE);
+    }
+
     public void
     markEntryExist(int pos) {
         YTFeed.Entry e = mEntries[pos];
         e.uflag = Utils.bitSet(e.uflag, FENT_EXIST_DUP, MENT_EXIST);
-        markViewInvalid(pos);
-        notifyDataSetChanged();
+        setToExist(mItemViews[pos]);
+    }
+
+    public void
+    markItemCheck(int pos) {
+        eAssert(Utils.isUiThread());
+        ImageView iv = (ImageView)mItemViews[pos].findViewById(R.id.checkbtn);
+        iv.setImageResource(R.drawable.btncheck_on);
+        iv.setTag(TAGKEY_MARK_STATE, true);
+        mNrChecked++;
+        mCheckListener.onStateChanged(mNrChecked, pos, (Boolean)iv.getTag(TAGKEY_MARK_STATE));
+    }
+
+    public void
+    unmarkItemCheck(int pos) {
+        eAssert(Utils.isUiThread());
+        ImageView iv = (ImageView)mItemViews[pos].findViewById(R.id.checkbtn);
+        iv.setImageResource(R.drawable.btncheck_off);
+        iv.setTag(TAGKEY_MARK_STATE, false);
+        mNrChecked--;
+        mCheckListener.onStateChanged(mNrChecked, pos, (Boolean)iv.getTag(TAGKEY_MARK_STATE));
     }
 }

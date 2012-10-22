@@ -21,6 +21,10 @@
 package free.yhc.netmbuddy;
 
 import static free.yhc.netmbuddy.model.Utils.eAssert;
+
+import java.util.Iterator;
+import java.util.LinkedList;
+
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.res.Configuration;
@@ -35,6 +39,7 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.TextView;
 import free.yhc.netmbuddy.model.DB;
 import free.yhc.netmbuddy.model.DBHelper;
@@ -59,7 +64,27 @@ DBHelper.CheckExistDoneReceiver {
     private final DB        mDb = DB.get();
 
     private DBHelper        mDbHelper;
+    private int             mToolBtnDefaultIcon = 0;
+    private View.OnClickListener mToolBtnDefaultAction;
 
+    private YTVideoSearchAdapter.OnCheckStateListener mAdapterCheckListener
+        = new YTVideoSearchAdapter.OnCheckStateListener() {
+        @Override
+        public void
+        onStateChanged(int nrChecked, int pos, boolean checked) {
+            ImageView toolbtn = (ImageView)findViewById(R.id.toolbtn);
+            if (0 == nrChecked) {
+                setupToolBtn(mToolBtnDefaultIcon, mToolBtnDefaultAction);
+            } else {
+                setupToolBtn(R.drawable.ic_add, new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        addCheckedMusicsToPlaylist();
+                    }
+                });
+            }
+        }
+    };
 
     private YTVideoSearchAdapter
     getAdapter() {
@@ -85,32 +110,33 @@ DBHelper.CheckExistDoneReceiver {
         diag.show();
     }
 
-    private void
-    addToPlaylist(long plid, int position) {
+
+    /**
+     * @return
+     *   0 for success, otherwise error message id.
+     */
+    private int
+    addToPlaylist(final long plid, final int pos, final int volume) {
+        // NOTE
+        // This function is designed to be able to run in background.
+        // But, getting volume is related with YTPlayer instance.
+        // And lots of functions of YTPlayer instance, requires running on UI Context
+        //   to avoid synchronization issue.
+        // So, volume should be gotten out of this function.
         eAssert(plid >= 0);
-        Bitmap bm = getAdapter().getItemThumbnail(position);
+
+        Bitmap bm = getAdapter().getItemThumbnail(pos);
         if (null == bm) {
-            UiUtils.showTextToast(this, R.string.msg_no_thumbnail);
-            return;
+            return R.string.msg_no_thumbnail;
         }
-        final YTVideoFeed.Entry entry = (YTVideoFeed.Entry)getAdapter().getItem(position);
+
+        final YTVideoFeed.Entry entry = (YTVideoFeed.Entry)getAdapter().getItem(pos);
         int playtm = 0;
         try {
              playtm = Integer.parseInt(entry.media.playTime);
         } catch (NumberFormatException ex) {
-            UiUtils.showTextToast(this, R.string.msg_unknown_format);
-            return;
+            return R.string.msg_unknown_format;
         }
-
-        int volume = DB.INVALID_VOLUME;
-        YTPlayer ytp = YTPlayer.get();
-        String runningYtVid = ytp.getPlayVideoYtId();
-        if (null != runningYtVid
-            && runningYtVid.equals(getAdapter().getItemVideoId(position)))
-            volume = ytp.getVideoVolume();
-
-        if (DB.INVALID_VOLUME == volume)
-            volume = Policy.DEFAULT_VIDEO_VOLUME;
 
         Err err = mDb.insertVideoToPlaylist(plid,
                                             entry.media.title, entry.media.description,
@@ -118,13 +144,91 @@ DBHelper.CheckExistDoneReceiver {
                                             Utils.compressBitmap(bm), volume);
         if (Err.NO_ERR != err) {
             if (Err.DB_DUPLICATED == err)
-                UiUtils.showTextToast(this, R.string.msg_existing_muisc);
+                return R.string.msg_existing_muisc;
             else
-                UiUtils.showTextToast(this, err.getMessage());
-            return;
+                return err.getMessage();
         }
 
-        getAdapter().markEntryExist(position);
+        runOnUiThread(new Runnable() {
+            @Override
+            public void
+            run() {
+                getAdapter().markEntryExist(pos);
+            }
+        });
+
+        return 0;
+    }
+
+    private void
+    addCheckedMusicsToPlaylist() {
+        // Scan to check all thumbnails are loaded.
+        // And prepare data for background execution.
+        YTVideoSearchAdapter adpr = getAdapter();
+        final LinkedList<Integer> iteml = new LinkedList<Integer>();
+        final LinkedList<Integer> volumel = new LinkedList<Integer>();
+        for (int i = 0; i < adpr.getCount(); i++) {
+            if (adpr.getItemMarkState(i)) {
+                if (null == adpr.getItemThumbnail(i)) {
+                    UiUtils.showTextToast(this, R.string.msg_no_all_thumbnail);
+                    return;
+                }
+                iteml.add(i);
+                volumel.add(adpr.getItemVolume(i));
+            }
+        }
+
+        UiUtils.OnPlaylistSelectedListener action = new UiUtils.OnPlaylistSelectedListener() {
+            private int failedCnt = 0;
+
+            @Override
+            public void onPlaylist(final long plid, Object user) {
+                DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
+                    @Override
+                    public void
+                    onPostExecute(DiagAsyncTask task, Err result) {
+                        Iterator<Integer> iIter = iteml.iterator();
+                        while (iIter.hasNext())
+                            getAdapter().unmarkItemCheck(iIter.next());
+
+                        if (failedCnt > 0) {
+                            CharSequence msg = YTVideoSearchActivity.this.getResources().getText(R.string.msg_fails_to_add);
+                            UiUtils.showTextToast(YTVideoSearchActivity.this,
+                                                  msg + " : " + failedCnt);
+                        }
+                    }
+                    @Override
+                    public void
+                    onCancel(DiagAsyncTask task) {
+                    }
+                    @Override
+                    public Err
+                    doBackgroundWork(DiagAsyncTask task, Object... objs) {
+                        mDb.beginTransaction();
+                        try {
+                            Iterator<Integer> iIter = iteml.iterator();
+                            Iterator<Integer> vIter = volumel.iterator();
+                            while (iIter.hasNext()) {
+                                if (0 != addToPlaylist(plid, iIter.next(), vIter.next()))
+                                    failedCnt++;
+                            }
+
+                            mDb.setTransactionSuccessful();
+                        } finally {
+                            mDb.endTransaction();
+                        }
+                        return Err.NO_ERR;
+                    }
+                };
+
+                new DiagAsyncTask(YTVideoSearchActivity.this, worker,
+                                  DiagAsyncTask.Style.SPIN,
+                                  R.string.adding, false).execute();
+
+            }
+        };
+
+        UiUtils.buildSelectPlaylistDialog(mDb, this, action, DB.INVALID_PLAYLIST_ID, null).show();
     }
 
     private void
@@ -132,7 +236,11 @@ DBHelper.CheckExistDoneReceiver {
         UiUtils.OnPlaylistSelectedListener action = new UiUtils.OnPlaylistSelectedListener() {
             @Override
             public void onPlaylist(long plid, Object user) {
-                addToPlaylist(plid, (Integer)user);
+                int pos = (Integer)user;
+                int volume = getAdapter().getItemVolume(pos);
+                int msg = addToPlaylist(plid, pos, volume);
+                if (0 != msg)
+                    UiUtils.showTextToast(YTVideoSearchActivity.this, msg);
             }
         };
 
@@ -242,6 +350,7 @@ DBHelper.CheckExistDoneReceiver {
         // helper's event receiver is changed to adapter in adapter's constructor.
         YTVideoSearchAdapter adapter = new YTVideoSearchAdapter(this,
                                                                mSearchHelper,
+                                                               mAdapterCheckListener,
                                                                arg.ents);
         YTVideoSearchAdapter oldAdapter = getAdapter();
         mListv.setAdapter(adapter);
@@ -317,16 +426,15 @@ DBHelper.CheckExistDoneReceiver {
             }
         }
 
-        int iconDrawable = 0;
         final int diagTitle;
         switch (stype) {
         case VID_KEYWORD:
-            iconDrawable = R.drawable.ic_ytsearch;
+            mToolBtnDefaultIcon = R.drawable.ic_ytsearch;
             diagTitle = R.string.enter_keyword;
             break;
 
         case VID_AUTHOR:
-            iconDrawable = R.drawable.ic_ytsearch;
+            mToolBtnDefaultIcon = R.drawable.ic_ytsearch;
             diagTitle = R.string.enter_user_name;
             break;
 
@@ -340,13 +448,13 @@ DBHelper.CheckExistDoneReceiver {
         }
 
         final YTSearchHelper.SearchType searchType = stype;
-        setupToolBtn(iconDrawable,
-                     new View.OnClickListener() {
+        mToolBtnDefaultAction = new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 doNewSearch(searchType, diagTitle);
             }
-        });
+        };
+        setupBottomBar(mToolBtnDefaultIcon, mToolBtnDefaultAction);
 
         if (null == stext)
             doNewSearch(searchType, R.string.enter_keyword);

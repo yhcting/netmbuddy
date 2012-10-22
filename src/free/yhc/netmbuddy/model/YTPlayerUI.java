@@ -381,6 +381,7 @@ public class YTPlayerUI {
         playerLDrawer.setVisibility(View.VISIBLE);
         YTPlayerVidArrayAdapter adapter = new YTPlayerVidArrayAdapter(mVActivity, mMp.getVideoList());
         adapter.setActiveItem(mMp.getActiveVideoIndex());
+        adapter.notifyDataSetChanged();
         lv.setAdapter(adapter);
         drawer.close();
     }
@@ -623,10 +624,8 @@ public class YTPlayerUI {
                     if (mMp.hasActiveVideo()) {
                         ListView lv = (ListView)mPlayerLDrawer.findViewById(R.id.mplayer_list);
                         YTPlayerVidArrayAdapter adapter = (YTPlayerVidArrayAdapter)lv.getAdapter();
-                        if (null != adapter) {
+                        if (null != adapter)
                             adapter.setVidArray(mMp.getVideoList());
-                            adapter.notifyDataSetChanged();
-                        }
                     } else
                         pvDisableLDrawer(mPlayerLDrawer);
                 }

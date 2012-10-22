@@ -50,7 +50,7 @@ public class YTPlaylistSearchAdapter extends YTSearchAdapter {
         titlev.setText(e.title);
         summaryv.setText(e.summary);
 
-        v.setTag(VTAGKEY_VALID, true);
+        markViewValid(v);
     }
 
     public String

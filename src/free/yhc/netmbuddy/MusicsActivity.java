@@ -85,7 +85,8 @@ public class MusicsActivity extends Activity {
         long plid = isUserPlaylist(mPlid)? mPlid: DB.INVALID_PLAYLIST_ID;
         UiUtils.OnPlaylistSelectedListener action = new UiUtils.OnPlaylistSelectedListener() {
             @Override
-            public void onPlaylist(long plid, Object user) {
+            public void
+            onPlaylist(long plid, Object user) {
                 addToPlaylist(plid, musicId, move);
             }
         };
@@ -99,14 +100,17 @@ public class MusicsActivity extends Activity {
     onDeleteMusicCompletely(final long mid) {
         DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
             @Override
-            public void onPostExecute(DiagAsyncTask task, Err result) {
+            public void
+            onPostExecute(DiagAsyncTask task, Err result) {
                 getAdapter().reloadCursorAsync();
             }
             @Override
-            public void onCancel(DiagAsyncTask task) {
+            public void
+            onCancel(DiagAsyncTask task) {
             }
             @Override
-            public Err doBackgroundWork(DiagAsyncTask task, Object... objs) {
+            public Err
+            doBackgroundWork(DiagAsyncTask task, Object... objs) {
                 mDb.deleteVideoAndRefsCompletely(mid);
                 return Err.NO_ERR;
             }
@@ -124,7 +128,8 @@ public class MusicsActivity extends Activity {
         } else {
             UiUtils.ConfirmAction action = new UiUtils.ConfirmAction() {
                 @Override
-                public void onOk(Dialog dialog) {
+                public void
+                onOk(Dialog dialog) {
                     onDeleteMusicCompletely(musicId);
                 }
             };
@@ -172,10 +177,12 @@ public class MusicsActivity extends Activity {
     onContextMenuRename(final long itemId, final int itemPos) {
         UiUtils.EditTextAction action = new UiUtils.EditTextAction() {
             @Override
-            public void prepare(Dialog dialog, EditText edit) { }
+            public void
+            prepare(Dialog dialog, EditText edit) { }
 
             @Override
-            public void onOk(Dialog dialog, EditText edit) {
+            public void
+            onOk(Dialog dialog, EditText edit) {
                 mDb.updateVideo(DB.ColVideo.ID, itemId,
                                 DB.ColVideo.TITLE, edit.getText().toString());
                 getAdapter().reloadCursorAsync();

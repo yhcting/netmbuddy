@@ -64,7 +64,7 @@ YTSearchHelper.LoadThumbnailDoneReceiver {
         long delay = 0;
         for (int i = 0; i < mItemViews.length; i++) {
             mItemViews[i] = UiUtils.inflateLayout(Utils.getAppContext(), rowLayout);
-            markViewInvalid(i);
+            markViewInvalid(mItemViews[i]);
             final YTSearchHelper.LoadThumbnailArg arg
                 = new YTSearchHelper.LoadThumbnailArg(i,
                                                       mEntries[i].media.thumbnailUrl,
@@ -90,8 +90,18 @@ YTSearchHelper.LoadThumbnailDoneReceiver {
     }
 
     protected void
+    markViewInvalid(View v) {
+        v.setTag(VTAGKEY_VALID, false);
+    }
+
+    protected void
     markViewInvalid(int pos) {
-        mItemViews[pos].setTag(VTAGKEY_VALID, false);
+        markViewInvalid(mItemViews[pos]);
+    }
+
+    protected void
+    markViewValid(View v) {
+        v.setTag(VTAGKEY_VALID, true);
     }
 
     protected boolean

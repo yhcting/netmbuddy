@@ -16,6 +16,18 @@ public class YTPlayerVidArrayAdapter extends BaseAdapter {
     private YTPlayer.Video[]    mVs;
     private int                 mActivePos = -1;
 
+    private void
+    setToActive(View v) {
+        TextView tv = (TextView)v;
+        tv.setTextColor(mActiveTextColor);
+    }
+
+    private void
+    setToInactive(View v) {
+        TextView tv = (TextView)v;
+        tv.setTextColor(mInactiveTextColor);
+    }
+
     YTPlayerVidArrayAdapter(Context context, YTPlayer.Video[] vs) {
         super();
         eAssert(null != vs);
@@ -62,18 +74,21 @@ public class YTPlayerVidArrayAdapter extends BaseAdapter {
     @Override
     public View
     getView(int position, View convertView, ViewGroup parent) {
-        TextView tv;
+        View v;
         if (null != convertView)
-            tv = (TextView)convertView;
+            v = convertView;
         else
-            tv = (TextView)UiUtils.inflateLayout(mContext, R.layout.mplayer_ldrawer_row);
+            v = UiUtils.inflateLayout(mContext, R.layout.mplayer_ldrawer_row);
+
+        TextView tv = (TextView)v;
+        tv.setText(((YTPlayer.Video)getItem(position)).title);
 
         if (mActivePos >=0
             && position == mActivePos)
-            tv.setTextColor(mActiveTextColor);
+            setToActive(v);
         else
-            tv.setTextColor(mInactiveTextColor);
-        tv.setText(((YTPlayer.Video)getItem(position)).title);
+            setToInactive(v);
+
         return tv;
     }
 }
