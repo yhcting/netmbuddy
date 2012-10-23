@@ -57,7 +57,7 @@ import android.preference.PreferenceManager;
 import android.util.Log;
 
 public class Utils {
-    private static final boolean DBG    = true;
+    private static final boolean DBG    = false;
     private static final boolean LOGF   = false;
     private static final String  TAG    = "[YoutubeMusicPlayer]";
 
