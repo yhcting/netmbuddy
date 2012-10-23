@@ -381,7 +381,6 @@ public class YTPlayerUI {
         playerLDrawer.setVisibility(View.VISIBLE);
         YTPlayerVidArrayAdapter adapter = new YTPlayerVidArrayAdapter(mVActivity, mMp.getVideoList());
         adapter.setActiveItem(mMp.getActiveVideoIndex());
-        adapter.notifyDataSetChanged();
         lv.setAdapter(adapter);
         drawer.close();
     }
@@ -414,7 +413,6 @@ public class YTPlayerUI {
         if (null != adapter
             && mMp.getActiveVideoIndex() != adapter.getActiveItemPos()) {
             adapter.setActiveItem(mMp.getActiveVideoIndex());
-            adapter.notifyDataSetChanged();
         }
     }
 
