@@ -279,6 +279,13 @@ public class Utils {
         return l;
     }
 
+    public static int[]
+    convertArrayIntegerToint(Integer[] I) {
+        int[] i = new int[I.length];
+        for (int j = 0; j < I.length; j++)
+            i[j] = I[j];
+        return i;
+    }
     // ------------------------------------------------------------------------
     //
     // Image Handling

@@ -53,6 +53,19 @@ public class MusicsActivity extends Activity {
     private final DB            mDb = DB.get();
     private final YTPlayer      mMp = YTPlayer.get();
 
+    private final MusicsAdapter.CheckStateListener mCheckListener
+        = new MusicsAdapter.CheckStateListener() {
+            @Override
+            public void
+            onStateChanged(int nrChecked, int pos, boolean checked) {
+                if (0 >= nrChecked)
+                    findViewById(R.id.toolbar).setVisibility(View.GONE);
+                else
+                    findViewById(R.id.toolbar).setVisibility(View.VISIBLE);
+            }
+        };
+
+
     private long        mPlid   = PLID_INVALID;
     private ListView    mListv  = null;
 
@@ -81,18 +94,18 @@ public class MusicsActivity extends Activity {
     }
 
     private void
-    onAddTo(final long musicId, final int itemPos, final boolean move) {
+    onAddTo(final long mid, final int itemPos, final boolean move) {
         long plid = isUserPlaylist(mPlid)? mPlid: DB.INVALID_PLAYLIST_ID;
         UiUtils.OnPlaylistSelectedListener action = new UiUtils.OnPlaylistSelectedListener() {
             @Override
             public void
             onPlaylist(long plid, Object user) {
-                addToPlaylist(plid, musicId, move);
+                addToPlaylist(plid, mid, move);
             }
         };
 
         // exclude current playlist
-        AlertDialog diag = UiUtils.buildSelectPlaylistDialog(mDb, this, action, plid, musicId);
+        AlertDialog diag = UiUtils.buildSelectPlaylistDialog(mDb, this, action, plid, mid);
         diag.show();
     }
 
@@ -158,6 +171,57 @@ public class MusicsActivity extends Activity {
     }
 
     private void
+    onToolPlay(View anchor) {
+
+    }
+
+    private void
+    onToolCopy(View anchor) {
+
+    }
+
+    private void
+    onToolMove(View anchor) {
+
+    }
+
+    private void
+    onToolDelete(View anchor) {
+
+    }
+
+    private void
+    setupToolButtons() {
+        ((ImageView)findViewById(R.id.play)).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                onToolPlay(v);
+            }
+        });
+
+        ((ImageView)findViewById(R.id.copy)).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                onToolCopy(v);
+            }
+        });
+
+        ((ImageView)findViewById(R.id.move)).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                onToolMove(v);
+            }
+        });
+
+        ((ImageView)findViewById(R.id.delete)).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                onToolDelete(v);
+            }
+        });
+    }
+
+    private void
     onContextMenuVolume(final long itemId, final int itemPos) {
         YTPlayer.get().changeVideoVolume(getAdapter().getMusicTitle(itemPos),
                                          getAdapter().getMusicYtid(itemPos));
@@ -201,6 +265,11 @@ public class MusicsActivity extends Activity {
         UiUtils.playAsVideo(this, getAdapter().getMusicYtid(itemPos));
     }
 
+    // ========================================================================
+    //
+    // Overriding Activity Member Functions
+    //
+    // ========================================================================
     @Override
     public boolean
     onContextItemSelected(MenuItem mItem) {
@@ -290,6 +359,8 @@ public class MusicsActivity extends Activity {
             ((ImageView)findViewById(R.id.thumbnail)).setImageResource(R.drawable.ic_search_list_up);
         }
 
+        setupToolButtons();
+
         mListv = (ListView)findViewById(R.id.list);
         //mListv.setEmptyView(UiUtils.inflateLayout(this, R.layout.ytsearch_empty_list));
         registerForContextMenu(mListv);
@@ -300,7 +371,9 @@ public class MusicsActivity extends Activity {
                 onListItemClick(view, position, itemId);
             }
         });
-        MusicsAdapter adapter = new MusicsAdapter(this, new MusicsAdapter.CursorArg(mPlid, searchWord));
+        MusicsAdapter adapter = new MusicsAdapter(this,
+                                                  new MusicsAdapter.CursorArg(mPlid, searchWord),
+                                                  mCheckListener);
         mListv.setAdapter(adapter);
         adapter.reloadCursorAsync();
     }

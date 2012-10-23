@@ -66,8 +66,8 @@ DBHelper.CheckExistDoneReceiver {
     private int             mToolBtnSearchIcon = 0;
     private View.OnClickListener mToolBtnSearchAction;
 
-    private YTVideoSearchAdapter.OnCheckStateListener mAdapterCheckListener
-        = new YTVideoSearchAdapter.OnCheckStateListener() {
+    private YTVideoSearchAdapter.CheckStateListener mAdapterCheckListener
+        = new YTVideoSearchAdapter.CheckStateListener() {
         @Override
         public void
         onStateChanged(int nrChecked, int pos, boolean checked) {

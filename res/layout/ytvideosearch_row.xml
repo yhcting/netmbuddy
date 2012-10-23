@@ -5,7 +5,7 @@
     android:layout_height="match_parent"
     android:paddingTop="2dip"
     android:paddingBottom="2dip"
-    android:weightSum="1.0"
+    android:weightSum="1"
     android:orientation="horizontal"
     >
     <ImageView
@@ -22,7 +22,7 @@
         android:layout_height="wrap_content"
         android:layout_marginLeft="3dip"
         android:gravity="center_vertical"
-        android:layout_weight="1.0"
+        android:layout_weight="1"
         >
         <TextView
             android:id="@+id/title"

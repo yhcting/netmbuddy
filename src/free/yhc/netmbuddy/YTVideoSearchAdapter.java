@@ -46,9 +46,9 @@ public class YTVideoSearchAdapter extends YTSearchAdapter {
 
     // Check Button Tag Key
     private static final int TAGKEY_POS         = R.drawable.btncheck_on;
-    private static final int TAGKEY_MARK_STATE  = R.drawable.btncheck_off;
+    private static final int TAGKEY_CHECK_STATE = R.drawable.btncheck_off;
 
-    private final OnCheckStateListener  mCheckListener;
+    private final CheckStateListener  mCheckListener;
     private int mNrChecked = 0;
 
     private final View.OnClickListener mMarkOnClick = new View.OnClickListener() {
@@ -56,7 +56,7 @@ public class YTVideoSearchAdapter extends YTSearchAdapter {
         public void onClick(View v) {
             ImageView iv = (ImageView)v;
             int pos = (Integer)iv.getTag(TAGKEY_POS);
-            if ((Boolean)iv.getTag(TAGKEY_MARK_STATE))
+            if ((Boolean)iv.getTag(TAGKEY_CHECK_STATE))
                 unmarkItemCheck(pos);
             else
                 markItemCheck(pos);
@@ -65,7 +65,7 @@ public class YTVideoSearchAdapter extends YTSearchAdapter {
         }
     };
 
-    public interface OnCheckStateListener {
+    public interface CheckStateListener {
         /**
          *
          * @param nrChecked
@@ -94,14 +94,14 @@ public class YTVideoSearchAdapter extends YTSearchAdapter {
 
     YTVideoSearchAdapter(Context context,
                          YTSearchHelper helper,
-                         OnCheckStateListener listener,
+                         CheckStateListener listener,
                          YTVideoFeed.Entry[] entries) {
         super(context, helper, R.layout.ytvideosearch_row, entries);
         mCheckListener = listener;
         for (int i = 0; i < mItemViews.length; i++) {
             View v = mItemViews[i].findViewById(R.id.checkbtn);
             v.setOnClickListener(mMarkOnClick);
-            v.setTag(TAGKEY_MARK_STATE, false);
+            v.setTag(TAGKEY_CHECK_STATE, false);
             v.setTag(TAGKEY_POS, i);
         }
         // initial notification to callback.
@@ -185,7 +185,7 @@ public class YTVideoSearchAdapter extends YTSearchAdapter {
 
     public boolean
     getItemMarkState(int pos) {
-        return (Boolean)mItemViews[pos].findViewById(R.id.checkbtn).getTag(TAGKEY_MARK_STATE);
+        return (Boolean)mItemViews[pos].findViewById(R.id.checkbtn).getTag(TAGKEY_CHECK_STATE);
     }
 
     public void
@@ -200,9 +200,9 @@ public class YTVideoSearchAdapter extends YTSearchAdapter {
         eAssert(Utils.isUiThread());
         ImageView iv = (ImageView)mItemViews[pos].findViewById(R.id.checkbtn);
         iv.setImageResource(R.drawable.btncheck_on);
-        iv.setTag(TAGKEY_MARK_STATE, true);
+        iv.setTag(TAGKEY_CHECK_STATE, true);
         mNrChecked++;
-        mCheckListener.onStateChanged(mNrChecked, pos, (Boolean)iv.getTag(TAGKEY_MARK_STATE));
+        mCheckListener.onStateChanged(mNrChecked, pos, (Boolean)iv.getTag(TAGKEY_CHECK_STATE));
     }
 
     public void
@@ -210,8 +210,8 @@ public class YTVideoSearchAdapter extends YTSearchAdapter {
         eAssert(Utils.isUiThread());
         ImageView iv = (ImageView)mItemViews[pos].findViewById(R.id.checkbtn);
         iv.setImageResource(R.drawable.btncheck_off);
-        iv.setTag(TAGKEY_MARK_STATE, false);
+        iv.setTag(TAGKEY_CHECK_STATE, false);
         mNrChecked--;
-        mCheckListener.onStateChanged(mNrChecked, pos, (Boolean)iv.getTag(TAGKEY_MARK_STATE));
+        mCheckListener.onStateChanged(mNrChecked, pos, (Boolean)iv.getTag(TAGKEY_CHECK_STATE));
     }
 }

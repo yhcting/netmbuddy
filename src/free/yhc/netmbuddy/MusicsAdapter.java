@@ -21,6 +21,9 @@
 package free.yhc.netmbuddy;
 
 import static free.yhc.netmbuddy.model.Utils.eAssert;
+
+import java.util.HashSet;
+
 import android.content.Context;
 import android.database.Cursor;
 import android.view.View;
@@ -43,6 +46,10 @@ public class MusicsAdapter extends ResourceCursorAdapter {
     private static final int COLI_VOLUME    = 4;
     private static final int COLI_PLAYTIME  = 5;
 
+    // Check Button Tag Key
+    private static final int TAGKEY_POS         = R.drawable.btncheck_on;
+    private static final int TAGKEY_CHECK_STATE = R.drawable.btncheck_off;
+
     private static final DB.ColVideo[] sQueryCols
         = new DB.ColVideo[] { DB.ColVideo.ID,
                               DB.ColVideo.VIDEOID,
@@ -53,6 +60,40 @@ public class MusicsAdapter extends ResourceCursorAdapter {
 
     private final Context       mContext;
     private final CursorArg     mCurArg;
+    private final HashSet<Integer> mCheckedItemSet   = new HashSet<Integer>();
+    private final CheckStateListener  mCheckListener;
+
+    private final View.OnClickListener  mItemCheckOnClick = new View.OnClickListener() {
+        @Override
+        public void
+        onClick(View v) {
+            ImageView iv = (ImageView)v;
+            int pos = (Integer)iv.getTag(TAGKEY_POS);
+            boolean state = (Boolean)iv.getTag(TAGKEY_CHECK_STATE);
+
+            if (state) {
+                eAssert(mCheckedItemSet.contains(pos));
+                setToUnchecked(pos, iv);
+            } else {
+                eAssert(!mCheckedItemSet.contains(pos));
+                setToChecked(pos, iv);
+            }
+            mCheckListener.onStateChanged(mCheckedItemSet.size(), pos, !state);
+        }
+    };
+
+    public interface CheckStateListener {
+        /**
+         *
+         * @param nrChecked
+         *   total number of check item of this adapter.
+         * @param pos
+         *   item position that check state is changed on.
+         * @param checked
+         *   new check state after changing.
+         */
+        void onStateChanged(int nrChecked, int pos, boolean checked);
+    }
 
     public static class CursorArg {
         long    plid;
@@ -61,6 +102,26 @@ public class MusicsAdapter extends ResourceCursorAdapter {
             plid = aPlid;
             extra = aExtra;
         }
+    }
+
+    private void
+    setToChecked(int pos, ImageView v) {
+        mCheckedItemSet.add(pos);
+        v.setTag(TAGKEY_CHECK_STATE, true);
+        v.setImageResource(R.drawable.btncheck_on);
+    }
+
+    private void
+    setToUnchecked(int pos, ImageView v) {
+        mCheckedItemSet.remove(pos);
+        v.setTag(TAGKEY_CHECK_STATE, false);
+        v.setImageResource(R.drawable.btncheck_off);
+    }
+
+    private void
+    clearCheckState() {
+        mCheckedItemSet.clear();
+        mCheckListener.onStateChanged(0, -1, false);
     }
 
     private Cursor
@@ -73,11 +134,14 @@ public class MusicsAdapter extends ResourceCursorAdapter {
             return DB.get().queryVideos(mCurArg.plid, sQueryCols, DB.ColVideo.TITLE, true);
     }
 
-    public MusicsAdapter(Context context, CursorArg arg) {
+    public MusicsAdapter(Context context,
+                         CursorArg arg,
+                         CheckStateListener listener) {
         super(context, LAYOUT, null);
         eAssert(null != arg);
         mContext = context;
         mCurArg = arg;
+        mCheckListener = listener;
     }
 
     public String
@@ -120,6 +184,16 @@ public class MusicsAdapter extends ResourceCursorAdapter {
         return c.getInt(COLI_PLAYTIME);
     }
 
+    /**
+     *
+     * @return
+     *   array of music positions.
+     */
+    public int[]
+    getCheckedMusics() {
+        return Utils.convertArrayIntegerToint(mCheckedItemSet.toArray(new Integer[0]));
+    }
+
     public void
     reloadCursor() {
         changeCursor(createCursor());
@@ -127,6 +201,7 @@ public class MusicsAdapter extends ResourceCursorAdapter {
 
     public void
     reloadCursorAsync() {
+        clearCheckState();
         DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
             private Cursor newCursor;
             @Override
@@ -159,10 +234,23 @@ public class MusicsAdapter extends ResourceCursorAdapter {
     }
 
     @Override
-    public void bindView(View view, Context context, Cursor cur) {
-        ImageView thumbnailv = (ImageView)view.findViewById(R.id.thumbnail);
-        TextView  titlev     = (TextView)view.findViewById(R.id.title);
-        TextView  playtmv    = (TextView)view.findViewById(R.id.playtime);
+    public void bindView(View v, Context context, Cursor cur) {
+        ImageView checkv     = (ImageView)v.findViewById(R.id.checkbtn);
+        ImageView thumbnailv = (ImageView)v.findViewById(R.id.thumbnail);
+        TextView  titlev     = (TextView)v.findViewById(R.id.title);
+        TextView  playtmv    = (TextView)v.findViewById(R.id.playtime);
+
+        int pos = cur.getPosition();
+        checkv.setTag(TAGKEY_POS, pos);
+        if (null == checkv.getTag(TAGKEY_CHECK_STATE)) {
+            checkv.setTag(TAGKEY_CHECK_STATE, false);
+            checkv.setOnClickListener(mItemCheckOnClick);
+        }
+
+        if (mCheckedItemSet.contains(pos))
+            checkv.setImageResource(R.drawable.btncheck_on);
+        else
+            checkv.setImageResource(R.drawable.btncheck_off);
 
         titlev.setText(cur.getString(COLI_TITLE));
         playtmv.setText(Utils.secsToMinSecText(cur.getInt(COLI_PLAYTIME)));
