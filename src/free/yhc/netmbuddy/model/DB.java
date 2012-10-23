@@ -647,16 +647,6 @@ public class DB extends SQLiteOpenHelper {
         return id;
     }
 
-    private long
-    getPlaylistInfoLong(long plid, ColPlaylist col) {
-        Cursor c = queryPlaylist(plid, col);
-        if (!c.moveToFirst())
-            eAssert(false);
-        long v = c.getLong(0);
-        c.close();
-        return v;
-    }
-
     private Cursor
     queryPlaylist(long plid, ColPlaylist col) {
         return mDb.query(TABLE_PLAYLIST,
@@ -677,7 +667,7 @@ public class DB extends SQLiteOpenHelper {
 
     private void
     incPlaylistSize(long plid) {
-        long sz = getPlaylistInfoLong(plid, ColPlaylist.SIZE);
+        long sz = (Long)getPlaylistInfo(plid, ColPlaylist.SIZE);
         eAssert(sz >= 0);
         sz++;
         updatePlaylistSize(plid, sz);
@@ -685,7 +675,7 @@ public class DB extends SQLiteOpenHelper {
 
     private void
     decPlaylistSize(long plid) {
-        long sz = getPlaylistInfoLong(plid, ColPlaylist.SIZE);
+        long sz = (Long)getPlaylistInfo(plid, ColPlaylist.SIZE);
         eAssert(sz > 0);
         sz--;
         updatePlaylistSize(plid, sz);
@@ -1019,6 +1009,19 @@ public class DB extends SQLiteOpenHelper {
                 getColNames(cols),
                 null, null, null, null,
                 ColPlaylist.TITLE.getName());
+    }
+
+    public Object
+    getPlaylistInfo(long plid, ColPlaylist col) {
+        Cursor c = queryPlaylist(plid, col);
+        try {
+            if (c.moveToFirst())
+                return getCursorVal(c, col);
+            else
+                return null;
+        } finally {
+            c.close();
+        }
     }
 
     public boolean

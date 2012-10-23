@@ -42,9 +42,8 @@ public class MusicsAdapter extends ResourceCursorAdapter {
     private static final int COLI_ID        = 0;
     private static final int COLI_VIDEOID   = 1;
     private static final int COLI_TITLE     = 2;
-    private static final int COLI_THUMBNAIL = 3;
-    private static final int COLI_VOLUME    = 4;
-    private static final int COLI_PLAYTIME  = 5;
+    private static final int COLI_VOLUME    = 3;
+    private static final int COLI_PLAYTIME  = 4;
 
     // Check Button Tag Key
     private static final int TAGKEY_POS         = R.drawable.btncheck_on;
@@ -54,9 +53,9 @@ public class MusicsAdapter extends ResourceCursorAdapter {
         = new DB.ColVideo[] { DB.ColVideo.ID,
                               DB.ColVideo.VIDEOID,
                               DB.ColVideo.TITLE,
-                              DB.ColVideo.THUMBNAIL,
                               DB.ColVideo.VOLUME,
-                              DB.ColVideo.PLAYTIME };
+                              DB.ColVideo.PLAYTIME,
+                              };
 
     private final Context       mContext;
     private final CursorArg     mCurArg;
@@ -165,7 +164,7 @@ public class MusicsAdapter extends ResourceCursorAdapter {
         Cursor c = getCursor();
         if (!c.moveToPosition(pos))
             eAssert(false);
-        return c.getBlob(COLI_THUMBNAIL);
+        return (byte[])DB.get().getVideoInfo(c.getString(COLI_VIDEOID), DB.ColVideo.THUMBNAIL);
     }
 
     public int
@@ -254,6 +253,7 @@ public class MusicsAdapter extends ResourceCursorAdapter {
 
         titlev.setText(cur.getString(COLI_TITLE));
         playtmv.setText(Utils.secsToMinSecText(cur.getInt(COLI_PLAYTIME)));
-        UiUtils.setThumbnailImageView(thumbnailv, cur.getBlob(COLI_THUMBNAIL));
+        byte[] thumbnailData = (byte[])DB.get().getVideoInfo(cur.getString(COLI_VIDEOID), DB.ColVideo.THUMBNAIL);
+        UiUtils.setThumbnailImageView(thumbnailv, thumbnailData);
     }
 }

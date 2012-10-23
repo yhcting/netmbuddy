@@ -36,8 +36,7 @@ public class PlaylistAdapter extends ResourceCursorAdapter {
 
     private static final int COLI_ID        = 0;
     private static final int COLI_TITLE     = 1;
-    private static final int COLI_THUMBNAIL = 2;
-    private static final int COLI_SIZE      = 3;
+    private static final int COLI_SIZE      = 2;
 
     private final Context                     mContext;
     private final OnItemButtonClickListener   mOnItemBtnClick;
@@ -62,7 +61,6 @@ public class PlaylistAdapter extends ResourceCursorAdapter {
         return DB.get().queryPlaylist(new DB.ColPlaylist[] {
                 DB.ColPlaylist.ID,
                 DB.ColPlaylist.TITLE,
-                DB.ColPlaylist.THUMBNAIL,
                 DB.ColPlaylist.SIZE
         });
     }
@@ -116,7 +114,7 @@ public class PlaylistAdapter extends ResourceCursorAdapter {
     getItemThumbnail(int pos) {
         Cursor c = getCursor();
         if (c.moveToPosition(pos))
-            return c.getBlob(COLI_THUMBNAIL);
+            return (byte[])DB.get().getPlaylistInfo(c.getLong(COLI_ID), DB.ColPlaylist.THUMBNAIL);
         eAssert(false);
         return null;
     }
@@ -133,6 +131,7 @@ public class PlaylistAdapter extends ResourceCursorAdapter {
 
         titlev.setText(cur.getString(COLI_TITLE));
         nritemsv.setText(cur.getLong(COLI_SIZE) + "");
-        UiUtils.setThumbnailImageView(thumbnailv, cur.getBlob(COLI_THUMBNAIL));
+        byte[] thumbnailData = (byte[])DB.get().getPlaylistInfo(cur.getLong(COLI_ID), DB.ColPlaylist.THUMBNAIL);
+        UiUtils.setThumbnailImageView(thumbnailv, thumbnailData);
     }
 }
