@@ -346,12 +346,13 @@ public class YTPlaylistSearchActivity extends YTSearchActivity {
         });
 
         setupBottomBar(R.drawable.ic_ytsearch,
-                     new View.OnClickListener() {
+                       new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 doNewPlaylistSearch();
             }
-        });
+        },
+                       0, null);
         doNewPlaylistSearch();
     }
 

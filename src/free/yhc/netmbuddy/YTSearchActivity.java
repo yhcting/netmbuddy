@@ -189,6 +189,19 @@ YTSearchHelper.SearchDoneReceiver {
         loadPage(mSearchSt.type, mSearchSt.text, mSearchSt.title, mSearchSt.curPage - 1);
     }
 
+    private void
+    setupButton(ImageView iv,
+                int drawable,
+                View.OnClickListener onClick) {
+        if (drawable <= 0 || null == onClick) {
+            iv.setVisibility(View.GONE);
+            iv.setOnClickListener(null);
+        } else {
+            iv.setImageResource(drawable);
+            iv.setVisibility(View.VISIBLE);
+            iv.setOnClickListener(onClick);
+        }
+    }
 
     // ========================================================================
     //
@@ -208,25 +221,22 @@ YTSearchHelper.SearchDoneReceiver {
     }
 
     protected void
-    setupToolBtn(int toolBtnDrawable,
-                 View.OnClickListener toolOnClick) {
-        View barv = findViewById(R.id.bottombar);
-        barv = barv.findViewById(R.id.toolbar);
-        ImageView iv = (ImageView)barv.findViewById(R.id.toolbtn);
-        if (toolBtnDrawable <= 0 || null == toolOnClick) {
-            iv.setVisibility(View.GONE);
-            iv.setOnClickListener(null);
-        } else {
-            iv.setImageResource(toolBtnDrawable);
-            iv.setVisibility(View.VISIBLE);
-            iv.setOnClickListener(toolOnClick);
-        }
-
+    setupToolBtn1(int drawable,
+                  View.OnClickListener onClick) {
+        setupButton((ImageView)findViewById(R.id.toolbtn1), drawable, onClick);
     }
 
     protected void
-    setupBottomBar(int toolBtnDrawable,
-                   View.OnClickListener toolOnClick) {
+    setupToolBtn2(int drawable,
+                  View.OnClickListener onClick) {
+        setupButton((ImageView)findViewById(R.id.toolbtn2), drawable, onClick);
+    }
+
+    protected void
+    setupBottomBar(int tool1Drawable,
+                   View.OnClickListener tool1OnClick,
+                   int tool2Drawable,
+                   View.OnClickListener tool2OnClick) {
         View barv = findViewById(R.id.bottombar);
         ImageView iv = (ImageView)barv.findViewById(R.id.next);
         iv.setOnClickListener(new View.OnClickListener() {
@@ -246,7 +256,8 @@ YTSearchHelper.SearchDoneReceiver {
         });
         iv.setVisibility(View.GONE);
 
-        setupToolBtn(toolBtnDrawable, toolOnClick);
+        setupToolBtn1(tool1Drawable, tool1OnClick);
+        setupToolBtn2(tool2Drawable, tool2OnClick);
     }
 
     protected void

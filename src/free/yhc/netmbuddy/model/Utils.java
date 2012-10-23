@@ -34,7 +34,9 @@ import java.io.PrintWriter;
 import java.text.DateFormat;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.zip.ZipEntry;
@@ -55,7 +57,7 @@ import android.preference.PreferenceManager;
 import android.util.Log;
 
 public class Utils {
-    private static final boolean DBG    = false;
+    private static final boolean DBG    = true;
     private static final boolean LOGF   = false;
     private static final String  TAG    = "[YoutubeMusicPlayer]";
 
@@ -682,5 +684,16 @@ public class Utils {
                 throw new InterruptedException();
             os.write(buf, 0, len);
         }
+    }
+
+    public static <K,V> K
+    findKey(HashMap<K, V> map, V value) {
+        Iterator<K> iter = map.keySet().iterator();
+        while(iter.hasNext()) {
+            K key = iter.next();
+            if (map.get(key).equals(value))
+                return key;
+        }
+        return null;
     }
 }

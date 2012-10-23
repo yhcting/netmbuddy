@@ -39,7 +39,6 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.TextView;
 import free.yhc.netmbuddy.model.DB;
 import free.yhc.netmbuddy.model.DBHelper;
@@ -64,19 +63,18 @@ DBHelper.CheckExistDoneReceiver {
     private final DB        mDb = DB.get();
 
     private DBHelper        mDbHelper;
-    private int             mToolBtnDefaultIcon = 0;
-    private View.OnClickListener mToolBtnDefaultAction;
+    private int             mToolBtnSearchIcon = 0;
+    private View.OnClickListener mToolBtnSearchAction;
 
     private YTVideoSearchAdapter.OnCheckStateListener mAdapterCheckListener
         = new YTVideoSearchAdapter.OnCheckStateListener() {
         @Override
         public void
         onStateChanged(int nrChecked, int pos, boolean checked) {
-            ImageView toolbtn = (ImageView)findViewById(R.id.toolbtn);
             if (0 == nrChecked) {
-                setupToolBtn(mToolBtnDefaultIcon, mToolBtnDefaultAction);
+                setupToolBtn1(mToolBtnSearchIcon, mToolBtnSearchAction);
             } else {
-                setupToolBtn(R.drawable.ic_add, new View.OnClickListener() {
+                setupToolBtn1(R.drawable.ic_add, new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
                         addCheckedMusicsToPlaylist();
@@ -429,12 +427,12 @@ DBHelper.CheckExistDoneReceiver {
         final int diagTitle;
         switch (stype) {
         case VID_KEYWORD:
-            mToolBtnDefaultIcon = R.drawable.ic_ytsearch;
+            mToolBtnSearchIcon = R.drawable.ic_ytsearch;
             diagTitle = R.string.enter_keyword;
             break;
 
         case VID_AUTHOR:
-            mToolBtnDefaultIcon = R.drawable.ic_ytsearch;
+            mToolBtnSearchIcon = R.drawable.ic_ytsearch;
             diagTitle = R.string.enter_user_name;
             break;
 
@@ -448,13 +446,15 @@ DBHelper.CheckExistDoneReceiver {
         }
 
         final YTSearchHelper.SearchType searchType = stype;
-        mToolBtnDefaultAction = new View.OnClickListener() {
+        mToolBtnSearchAction = new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 doNewSearch(searchType, diagTitle);
             }
         };
-        setupBottomBar(mToolBtnDefaultIcon, mToolBtnDefaultAction);
+        setupBottomBar(mToolBtnSearchIcon, mToolBtnSearchAction,
+                       0, null);
+
 
         if (null == stext)
             doNewSearch(searchType, R.string.enter_keyword);

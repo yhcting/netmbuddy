@@ -46,12 +46,22 @@
                 android:orientation="horizontal"
                 >
                 <ImageView
-                    android:id="@+id/toolbtn"
+                    android:id="@+id/toolbtn1"
                     android:layout_width="@dimen/toolbtn_width"
                     android:layout_height="@dimen/toolbtn_height"
                     android:gravity="center"
                     android:scaleType="fitCenter"
                     android:clickable="true"
+                    android:visibility="gone"
+                    />
+                <ImageView
+                    android:id="@+id/toolbtn2"
+                    android:layout_width="@dimen/toolbtn_width"
+                    android:layout_height="@dimen/toolbtn_height"
+                    android:gravity="center"
+                    android:scaleType="fitCenter"
+                    android:clickable="true"
+                    android:visibility="gone"
                     />
             </LinearLayout>
             <ImageView
