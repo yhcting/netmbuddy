@@ -12,6 +12,7 @@
     <string name="loading">Loading</string>
     <string name="deleting">Deleting</string>
     <string name="adding">Adding</string>
+    <string name="moving">Moving</string>
     <string name="error">Error</string>
     <string name="buffering">Buffering</string>
     <string name="preparing">Preparing</string>
@@ -103,6 +104,7 @@
     <string name="msg_autostop_not_allowed">Fails to set auto-stop. Player is not active. Auto-stop can be set only on current playing session.</string>
     <string name="msg_no_all_thumbnail">Some thumbnails are not loaded yet.\nTry again after loading all thumbnail is done.</string>
     <string name="msg_fails_to_add">Adding fails for some items.</string>
+    <string name="msg_no_items_selected">No items selected.</string>
 
     <string name="err_no_err">Success.</string>
     <string name="err_unknown">Unknown error.</string>

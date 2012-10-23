@@ -38,7 +38,6 @@
         android:layout_height="@dimen/toolbtn_height"
         android:layout_alignParentBottom="true"
         android:fillViewport="true"
-        android:visibility="gone"
         >
         <LinearLayout
             android:layout_width="wrap_content"

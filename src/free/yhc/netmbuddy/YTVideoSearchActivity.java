@@ -226,7 +226,13 @@ DBHelper.CheckExistDoneReceiver {
             }
         };
 
-        UiUtils.buildSelectPlaylistDialog(mDb, this, action, DB.INVALID_PLAYLIST_ID, null).show();
+        UiUtils.buildSelectPlaylistDialog(mDb,
+                                          this,
+                                          R.string.add_to,
+                                          action,
+                                          DB.INVALID_PLAYLIST_ID,
+                                          null)
+               .show();
     }
 
     private void
@@ -242,7 +248,13 @@ DBHelper.CheckExistDoneReceiver {
             }
         };
 
-        UiUtils.buildSelectPlaylistDialog(mDb, this, action, DB.INVALID_PLAYLIST_ID, position).show();
+        UiUtils.buildSelectPlaylistDialog(mDb,
+                                          this,
+                                          R.string.add_to,
+                                          action,
+                                          DB.INVALID_PLAYLIST_ID,
+                                          position)
+               .show();
     }
 
     private void

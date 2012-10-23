@@ -238,18 +238,10 @@ public class UiUtils {
         return buildOneLineEditTextDialog(context, context.getResources().getText(title), action);
     }
 
-    /**
-     *
-     * @param db
-     * @param context
-     * @param action
-     * @param excludedPlid
-     * @param user
-     * @return
-     */
     public static AlertDialog
     buildSelectPlaylistDialog(final DB                          db,
                               final Context                     context,
+                              final int                         diagTitle,
                               final OnPlaylistSelectedListener  action,
                               long                              excludedPlid,
                               final Object                      user) {
@@ -281,6 +273,8 @@ public class UiUtils {
         final long[]   ids   = Utils.convertArrayLongTolong(idl.toArray(new Long[0]));
 
         AlertDialog.Builder bldr = new AlertDialog.Builder(context);
+        if (diagTitle > 0)
+            bldr.setTitle(diagTitle);
         ArrayAdapter<String> adapter
             = new ArrayAdapter<String>(context, android.R.layout.select_dialog_item, menus);
         bldr.setAdapter(adapter, new DialogInterface.OnClickListener() {

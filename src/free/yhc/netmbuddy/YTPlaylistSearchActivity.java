@@ -282,7 +282,13 @@ public class YTPlaylistSearchActivity extends YTSearchActivity {
             }
         };
 
-        UiUtils.buildSelectPlaylistDialog(DB.get(), this, action, DB.INVALID_PLAYLIST_ID, pos).show();
+        UiUtils.buildSelectPlaylistDialog(DB.get(),
+                                          this,
+                                          R.string.merge_to,
+                                          action,
+                                          DB.INVALID_PLAYLIST_ID,
+                                          pos)
+               .show();
     }
 
     @Override

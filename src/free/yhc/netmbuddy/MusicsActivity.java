@@ -58,10 +58,7 @@ public class MusicsActivity extends Activity {
             @Override
             public void
             onStateChanged(int nrChecked, int pos, boolean checked) {
-                if (0 >= nrChecked)
-                    findViewById(R.id.toolbar).setVisibility(View.GONE);
-                else
-                    findViewById(R.id.toolbar).setVisibility(View.VISIBLE);
+                // do nothing.
             }
         };
 
@@ -81,36 +78,86 @@ public class MusicsActivity extends Activity {
     }
 
     private void
-    addToPlaylist(long plid, long mid, boolean move) {
-        eAssert(isUserPlaylist(plid));
-        Err err = mDb.insertVideoToPlaylist(plid, mid);
-        if (Err.NO_ERR != err)
-            UiUtils.showTextToast(MusicsActivity.this, err.getMessage());
-        else if (move) {
-            eAssert(isUserPlaylist(mPlid));
-            mDb.deleteVideoFromPlaylist(mPlid, mid);
-            getAdapter().reloadCursorAsync();
-        }
+    startVideos(YTPlayer.Video[] vs) {
+        ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
+        playerv.setVisibility(View.VISIBLE);
+        mMp.startVideos(vs);
     }
 
     private void
-    onAddTo(final long mid, final int itemPos, final boolean move) {
+    doAddTo(final long plid, final long[] mids, final boolean move) {
+        eAssert(isUserPlaylist(plid));
+        DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
+            @Override
+            public void
+            onPostExecute(DiagAsyncTask task, Err result) {
+                if (Err.NO_ERR != result)
+                    UiUtils.showTextToast(MusicsActivity.this, result.getMessage());
+                else
+                    getAdapter().reloadCursorAsync();
+            }
+
+            @Override
+            public void
+            onCancel(DiagAsyncTask task) {
+            }
+
+            @Override
+            public Err
+            doBackgroundWork(DiagAsyncTask task, Object... objs) {
+                mDb.beginTransaction();
+                try {
+                    for (long mid : mids) {
+                        Err err = mDb.insertVideoToPlaylist(plid, mid);
+                        if (Err.NO_ERR != err
+                            && (1 == mids.length || Err.DB_DUPLICATED != err)) {
+                            return err;
+                        } else if (move && isUserPlaylist(mPlid))
+                            mDb.deleteVideoFromPlaylist(mPlid, mid);
+                    }
+                    mDb.setTransactionSuccessful();
+                } finally {
+                    mDb.endTransaction();
+                }
+                return Err.NO_ERR;
+            }
+        };
+        new DiagAsyncTask(this,
+                          worker,
+                          DiagAsyncTask.Style.SPIN,
+                          move? R.string.moving: R.string.adding,
+                          false)
+            .execute();
+    }
+
+    private void
+    addTo(final int[] poss, final boolean move) {
         long plid = isUserPlaylist(mPlid)? mPlid: DB.INVALID_PLAYLIST_ID;
+        MusicsAdapter adpr = getAdapter();
+        final long[] mids = new long[poss.length];
+        for (int i = 0; i < mids.length; i++)
+            mids[i] = adpr.getItemId(poss[i]);
+
         UiUtils.OnPlaylistSelectedListener action = new UiUtils.OnPlaylistSelectedListener() {
             @Override
             public void
             onPlaylist(long plid, Object user) {
-                addToPlaylist(plid, mid, move);
+                doAddTo(plid, mids, move);
             }
         };
 
         // exclude current playlist
-        AlertDialog diag = UiUtils.buildSelectPlaylistDialog(mDb, this, action, plid, mid);
-        diag.show();
+        UiUtils.buildSelectPlaylistDialog(mDb,
+                                          this,
+                                          move? R.string.move_to: R.string.add_to,
+                                          action,
+                                          plid,
+                                          null)
+               .show();
     }
 
     private void
-    onDeleteMusicCompletely(final long mid) {
+    doDeleteMusics(final long plid, final long[] mids) {
         DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
             @Override
             public void
@@ -124,26 +171,39 @@ public class MusicsActivity extends Activity {
             @Override
             public Err
             doBackgroundWork(DiagAsyncTask task, Object... objs) {
-                mDb.deleteVideoAndRefsCompletely(mid);
+                mDb.beginTransaction();
+                try {
+                    for (long mid : mids) {
+                        if (isUserPlaylist(plid))
+                            mDb.deleteVideoFromPlaylist(plid, mid);
+                        else
+                            mDb.deleteVideoAndRefsCompletely(mid);
+                    }
+                    mDb.setTransactionSuccessful();
+                } finally {
+                    mDb.endTransaction();
+                }
                 return Err.NO_ERR;
             }
         };
-        new DiagAsyncTask(this, worker,
+        new DiagAsyncTask(this,
+                          worker,
                           DiagAsyncTask.Style.SPIN,
-                          R.string.deleting, false).execute();
+                          R.string.deleting,
+                          false)
+            .execute();
     }
 
     private void
-    onDeleteMusic(final long musicId) {
-        if (isUserPlaylist(mPlid)) {
-            mDb.deleteVideoFromPlaylist(mPlid, musicId);
-            getAdapter().reloadCursorAsync();
-        } else {
+    deleteMusics(final long[] mids) {
+        if (isUserPlaylist(mPlid))
+            doDeleteMusics(mPlid, mids);
+        else {
             UiUtils.ConfirmAction action = new UiUtils.ConfirmAction() {
                 @Override
                 public void
                 onOk(Dialog dialog) {
-                    onDeleteMusicCompletely(musicId);
+                    doDeleteMusics(mPlid, mids);
                 }
             };
             UiUtils.buildConfirmDialog(this, R.string.delete, R.string.msg_delete_music, action).show();
@@ -165,55 +225,100 @@ public class MusicsActivity extends Activity {
                                                 getAdapter().getMusicTitle(position),
                                                 getAdapter().getMusicVolume(position),
                                                 getAdapter().getMusicPlaytime(position));
-        ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
-        playerv.setVisibility(View.VISIBLE);
-        mMp.startVideos(new YTPlayer.Video[] { vid });
+        startVideos(new YTPlayer.Video[] { vid });
     }
 
     private void
     onToolPlay(View anchor) {
+        MusicsAdapter adpr = getAdapter();
+        int[] poss = adpr.getCheckedMusics();
+        if (0 == poss.length) {
+            UiUtils.showTextToast(this, R.string.msg_no_items_selected);
+            return;
+        }
 
+        YTPlayer.Video[] vs = new YTPlayer.Video[poss.length];
+        for (int i = 0; i < poss.length; i++)
+            vs[i] = new YTPlayer.Video(adpr.getMusicYtid(poss[i]),
+                                       adpr.getMusicTitle(poss[i]),
+                                       adpr.getMusicVolume(poss[i]),
+                                       adpr.getMusicPlaytime(poss[i]));
+        startVideos(vs);
+        adpr.clearCheckState();
+        adpr.notifyDataSetChanged();
     }
 
     private void
     onToolCopy(View anchor) {
+        MusicsAdapter adpr = getAdapter();
+        int[] poss = adpr.getCheckedMusics();
+        if (0 == poss.length) {
+            UiUtils.showTextToast(this, R.string.msg_no_items_selected);
+            return;
+        }
 
+        addTo(poss, false);
     }
 
     private void
     onToolMove(View anchor) {
+        MusicsAdapter adpr = getAdapter();
+        int[] poss = adpr.getCheckedMusics();
+        if (0 == poss.length) {
+            UiUtils.showTextToast(this, R.string.msg_no_items_selected);
+            return;
+        }
 
+        addTo(poss, true);
     }
 
     private void
     onToolDelete(View anchor) {
+        MusicsAdapter adpr = getAdapter();
+        int[] poss = adpr.getCheckedMusics();
+        if (0 == poss.length) {
+            UiUtils.showTextToast(this, R.string.msg_no_items_selected);
+            return;
+        }
 
+        long[] mids = new long[poss.length];
+        for (int i = 0; i < poss.length; i++)
+            mids[i] = adpr.getItemId(poss[i]);
+
+        deleteMusics(mids);
     }
 
     private void
     setupToolButtons() {
-        ((ImageView)findViewById(R.id.play)).setOnClickListener(new View.OnClickListener() {
+        ImageView iv = (ImageView)findViewById(R.id.play);
+        iv.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 onToolPlay(v);
             }
         });
 
-        ((ImageView)findViewById(R.id.copy)).setOnClickListener(new View.OnClickListener() {
+        iv = (ImageView)findViewById(R.id.copy);
+        iv.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 onToolCopy(v);
             }
         });
 
-        ((ImageView)findViewById(R.id.move)).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                onToolMove(v);
-            }
-        });
+        iv = (ImageView)findViewById(R.id.move);
+        if (isUserPlaylist(mPlid)) {
+            iv.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    onToolMove(v);
+                }
+            });
+        } else
+            iv.setVisibility(View.GONE);
 
-        ((ImageView)findViewById(R.id.delete)).setOnClickListener(new View.OnClickListener() {
+        iv = (ImageView)findViewById(R.id.delete);
+        iv.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 onToolDelete(v);
@@ -276,11 +381,11 @@ public class MusicsActivity extends Activity {
         AdapterContextMenuInfo info = (AdapterContextMenuInfo)mItem.getMenuInfo();
         switch (mItem.getItemId()) {
         case R.id.add_to:
-            onAddTo(info.id, info.position, false);
+            addTo(new int[] { info.position }, false);
             return true;
 
         case R.id.move_to:
-            onAddTo(info.id, info.position, true);
+            addTo(new int[] { info.position }, true);
             return true;
 
         case R.id.volume:
@@ -304,7 +409,7 @@ public class MusicsActivity extends Activity {
             return true;
 
         case R.id.delete:
-            onDeleteMusic(info.id);
+            deleteMusics(new long[] { info.id });
             return true;
         }
         eAssert(false);

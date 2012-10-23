@@ -22,6 +22,7 @@ package free.yhc.netmbuddy;
 
 import static free.yhc.netmbuddy.model.Utils.eAssert;
 
+import java.util.Arrays;
 import java.util.HashSet;
 
 import android.content.Context;
@@ -47,7 +48,6 @@ public class MusicsAdapter extends ResourceCursorAdapter {
 
     // Check Button Tag Key
     private static final int TAGKEY_POS         = R.drawable.btncheck_on;
-    private static final int TAGKEY_CHECK_STATE = R.drawable.btncheck_off;
 
     private static final DB.ColVideo[] sQueryCols
         = new DB.ColVideo[] { DB.ColVideo.ID,
@@ -68,15 +68,12 @@ public class MusicsAdapter extends ResourceCursorAdapter {
         onClick(View v) {
             ImageView iv = (ImageView)v;
             int pos = (Integer)iv.getTag(TAGKEY_POS);
-            boolean state = (Boolean)iv.getTag(TAGKEY_CHECK_STATE);
-
-            if (state) {
-                eAssert(mCheckedItemSet.contains(pos));
+            boolean state = mCheckedItemSet.contains(pos);
+            if (state)
                 setToUnchecked(pos, iv);
-            } else {
-                eAssert(!mCheckedItemSet.contains(pos));
+            else
                 setToChecked(pos, iv);
-            }
+
             mCheckListener.onStateChanged(mCheckedItemSet.size(), pos, !state);
         }
     };
@@ -106,21 +103,13 @@ public class MusicsAdapter extends ResourceCursorAdapter {
     private void
     setToChecked(int pos, ImageView v) {
         mCheckedItemSet.add(pos);
-        v.setTag(TAGKEY_CHECK_STATE, true);
         v.setImageResource(R.drawable.btncheck_on);
     }
 
     private void
     setToUnchecked(int pos, ImageView v) {
         mCheckedItemSet.remove(pos);
-        v.setTag(TAGKEY_CHECK_STATE, false);
         v.setImageResource(R.drawable.btncheck_off);
-    }
-
-    private void
-    clearCheckState() {
-        mCheckedItemSet.clear();
-        mCheckListener.onStateChanged(0, -1, false);
     }
 
     private Cursor
@@ -190,7 +179,15 @@ public class MusicsAdapter extends ResourceCursorAdapter {
      */
     public int[]
     getCheckedMusics() {
-        return Utils.convertArrayIntegerToint(mCheckedItemSet.toArray(new Integer[0]));
+        int[] poss = Utils.convertArrayIntegerToint(mCheckedItemSet.toArray(new Integer[0]));
+        Arrays.sort(poss);
+        return poss;
+    }
+
+    public void
+    clearCheckState() {
+        mCheckedItemSet.clear();
+        mCheckListener.onStateChanged(0, -1, false);
     }
 
     public void
@@ -241,10 +238,7 @@ public class MusicsAdapter extends ResourceCursorAdapter {
 
         int pos = cur.getPosition();
         checkv.setTag(TAGKEY_POS, pos);
-        if (null == checkv.getTag(TAGKEY_CHECK_STATE)) {
-            checkv.setTag(TAGKEY_CHECK_STATE, false);
-            checkv.setOnClickListener(mItemCheckOnClick);
-        }
+        checkv.setOnClickListener(mItemCheckOnClick);
 
         if (mCheckedItemSet.contains(pos))
             checkv.setImageResource(R.drawable.btncheck_on);
