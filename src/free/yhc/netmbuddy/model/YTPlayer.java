@@ -699,7 +699,7 @@ SurfaceHolder.Callback {
         switch(mpGetState()) {
         case INVALID:
         case END:
-            logI("MP [" + mpGetState().name() + "] : getCurrentPosition ignored : ");
+            logI("MP [" + mpGetState().name() + "] : mpGetVolume ignored : ");
             return Policy.DEFAULT_VIDEO_VOLUME;
         }
         return mMpVol;
@@ -710,9 +710,11 @@ SurfaceHolder.Callback {
         if (null == mMp)
             return 0;
 
+        // NOTE : Android BUG
+        // Android document says that 'getCurrentPosition()' can be called at 'idle' or 'initialized' state.
+        // But, in ICS, experimentally, this leads MediaPlayer to 'error' state.
+        // So, 'getCurrentPosition()' SHOULD NOT be called at 'idle' and 'initialized' state.
         switch (mpGetState()) {
-        case IDLE:
-        case INITIALIZED:
         case PREPARED_AUDIO:
         case PREPARED:
         case STARTED:
