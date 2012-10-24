@@ -1033,6 +1033,14 @@ SurfaceHolder.Callback {
         return Policy.APPDATA_CACHEDIR + ytvid + "-" + quality.name() + ".mp4";
     }
 
+    private static String
+    getYtVideoIdOfCachedFile(String path) {
+        int idStartI = path.lastIndexOf('/') + 1;
+        int idEndI   = path.lastIndexOf('-');
+        eAssert(11 == path.substring(idStartI, idEndI).length());
+        return path.substring(idStartI, idEndI);
+    }
+
     private static File
     getCachedVideo(String ytvid) {
         // Only mp4 is supported by YTHacker.
@@ -1126,16 +1134,29 @@ SurfaceHolder.Callback {
     }
 
     private void
-    cleanCache(boolean allClear) {
-        if (!mVlm.hasActiveVideo())
+    stopCaching(final String ytvid) {
+        // If current downloading video is same with current active video
+        //   it's wasting operation. So, stop it!
+        String dningFile = mYtDnr.getCurrentDownloadingFile();
+        if (null == dningFile)
             return;
 
+        String dnvid = getYtVideoIdOfCachedFile(dningFile);
+        if (dnvid.equals(ytvid))
+            mYtDnr.close();
+    }
+
+    private void
+    cleanCache(boolean allClear) {
+        if (!mVlm.hasActiveVideo())
+            allClear = true;
+
         HashSet<String> skipSet = new HashSet<String>();
+        // DO NOT delete cache directory itself!
+        skipSet.add(sCacheDir.getAbsolutePath());
         if (!allClear) {
             // delete all cached videos except for
             //   current and next video.
-            // DO NOT delete cache directory itself!
-            skipSet.add(sCacheDir.getAbsolutePath());
             for (Utils.PrefQuality pq : Utils.PrefQuality.values()) {
                 skipSet.add(new File(getCachedVideoFilePath(mVlm.getActiveVideo().videoId, pq)).getAbsolutePath());
                 Video nextVid = mVlm.getNextVideo();
@@ -1347,6 +1368,7 @@ SurfaceHolder.Callback {
 
         }).start();
 
+        stopCaching(videoId);
         File cachedVid = getCachedVideo(videoId);
         if (cachedVid.exists() && cachedVid.canRead())
             prepareCachedVideo(cachedVid);
