@@ -63,6 +63,7 @@
     <string name="time30m">30분</string>
     <string name="time1h">1시간</string>
     <string name="time2h">2시간</string>
+    <string name="set_video_quality">화질 설정</string>
 
     <string name="pref_cat_operation">재생 방식 설정</string>
     <string name="pref_shuffle">임의 순서로 재생</string>

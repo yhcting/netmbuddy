@@ -303,7 +303,11 @@ DBHelper.CheckExistDoneReceiver {
                 getAdapter().getItemTitle(position),
                 Policy.DEFAULT_VIDEO_VOLUME,
                 playtime);
-        mMp.setController(this, playerv, (ViewGroup)findViewById(R.id.list_drawer), null);
+        mMp.setController(this,
+                          playerv,
+                          (ViewGroup)findViewById(R.id.list_drawer),
+                          null,
+                          mMp.getVideoToolButton());
         mMp.startVideos(new YTPlayer.Video[] { v });
     }
 

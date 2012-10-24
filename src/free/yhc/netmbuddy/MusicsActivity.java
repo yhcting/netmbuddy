@@ -489,7 +489,11 @@ public class MusicsActivity extends Activity {
     onResume() {
         super.onResume();
         ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
-        mMp.setController(this, playerv, (ViewGroup)findViewById(R.id.list_drawer), null);
+        mMp.setController(this,
+                          playerv,
+                          (ViewGroup)findViewById(R.id.list_drawer),
+                          null,
+                          null);
         if (mMp.hasActiveVideo())
             playerv.setVisibility(View.VISIBLE);
         else

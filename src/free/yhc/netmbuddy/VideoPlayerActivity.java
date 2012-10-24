@@ -1,6 +1,12 @@
 package free.yhc.netmbuddy;
 
+import static free.yhc.netmbuddy.model.Utils.eAssert;
+
+import java.util.HashMap;
+
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.view.SurfaceView;
@@ -10,22 +16,38 @@ import android.view.WindowManager;
 import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
 import android.widget.TextView;
+import free.yhc.netmbuddy.model.Utils;
 import free.yhc.netmbuddy.model.YTPlayer;
 import free.yhc.netmbuddy.model.YTPlayer.StopState;
 
 public class VideoPlayerActivity extends Activity implements
 YTPlayer.PlayerStateListener,
 YTPlayer.VideosStateListener {
-    private final YTPlayer  mMp = YTPlayer.get();
-    private SurfaceView     mSurfv;
-    private void
 
+    private static HashMap<Utils.PrefQuality, Integer> sQ2StrMap = new HashMap<Utils.PrefQuality, Integer>();
+
+    private final YTPlayer      mMp = YTPlayer.get();
+    private SurfaceView         mSurfv;
+    private Utils.PrefQuality   mVQuality = Utils.getPrefQuality();
+
+    private void
     setController(boolean withSurface) {
         SurfaceView surfv = withSurface? (SurfaceView)findViewById(R.id.surface): null;
+        View.OnClickListener onClick = new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                changeVideoQuality(v);
+            }
+        };
+        // toolBtn for changing video quality is not implemented yet.
+        // This is for future use.
+        YTPlayer.ToolButton toolBtn = new YTPlayer.ToolButton(R.drawable.ic_resolution, onClick);
+
         mMp.setController(VideoPlayerActivity.this,
                           (ViewGroup)findViewById(R.id.player),
                           (ViewGroup)findViewById(R.id.list_drawer),
-                          surfv);
+                          surfv,
+                          null);
     }
 
     private void
@@ -65,6 +87,38 @@ YTPlayer.VideosStateListener {
         infov.setVisibility(View.GONE);
     }
 
+    private void
+    doChangeVideoQuality(Utils.PrefQuality quality) {
+        // Not implemented yet.
+        eAssert(false);
+    }
+
+    private void
+    changeVideoQuality(View anchor) {
+        final int[] optStringIds = new int[Utils.PrefQuality.values().length - 1];
+        int i = 0;
+        for (Utils.PrefQuality q : Utils.PrefQuality.values()) {
+            if (mVQuality != q)
+                optStringIds[i++] = q.getText();
+        }
+
+        final CharSequence[] items = new CharSequence[optStringIds.length];
+        for (i = 0; i < optStringIds.length; i++)
+            items[i] = getResources().getText(optStringIds[i]);
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle(R.string.set_video_quality);
+        builder.setItems(items, new DialogInterface.OnClickListener() {
+            @Override
+            public void
+            onClick(DialogInterface dialog, int item) {
+                doChangeVideoQuality(Utils.PrefQuality.getMatchingQuality(optStringIds[item]));
+            }
+        });
+        builder.create().show();
+
+    }
+
     // ========================================================================
     //
     // Overriding 'YTPlayer.VideosStateListener'
@@ -97,6 +151,7 @@ YTPlayer.VideosStateListener {
     onStateChanged(YTPlayer.MPState from, YTPlayer.MPState to) {
         switch(to) {
         case IDLE:
+            mVQuality = Utils.getPrefQuality();
             showLoadingSpinProgress();
             break;
 

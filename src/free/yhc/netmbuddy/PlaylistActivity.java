@@ -99,7 +99,8 @@ public class PlaylistActivity extends Activity {
         mMp.setController(this,
                           playerv,
                           (ViewGroup)findViewById(R.id.list_drawer),
-                          null);
+                          null,
+                          mMp.getVideoToolButton());
         mMp.startVideos(c, 0, 1, 2, 3, Utils.isPrefSuffle());
     }
 
@@ -686,7 +687,8 @@ public class PlaylistActivity extends Activity {
         mMp.setController(this,
                           playerv,
                           (ViewGroup)findViewById(R.id.list_drawer),
-                          null);
+                          null,
+                          mMp.getVideoToolButton());
         if (mMp.hasActiveVideo())
             playerv.setVisibility(View.VISIBLE);
         else

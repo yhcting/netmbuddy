@@ -4,7 +4,6 @@ import static free.yhc.netmbuddy.model.Utils.eAssert;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.content.res.Resources;
 import android.view.SurfaceView;
 import android.view.View;
@@ -17,7 +16,6 @@ import android.widget.SeekBar;
 import android.widget.SlidingDrawer;
 import android.widget.TextView;
 import free.yhc.netmbuddy.R;
-import free.yhc.netmbuddy.VideoPlayerActivity;
 
 public class YTPlayerUI {
     private static final int    SEEKBAR_MAX         = 1000;
@@ -30,6 +28,7 @@ public class YTPlayerUI {
     private final UpdateProgress    mUpdateProg = new UpdateProgress();
     private final YTPlayer          mMp;
 
+
     // ------------------------------------------------------------------------
     // UI Control.
     // ------------------------------------------------------------------------
@@ -39,14 +38,8 @@ public class YTPlayerUI {
 
     // To support video
     private SurfaceView         mSurfacev       = null;
-
     // For extra Button
-    private CustomExtraButton  mCustomExtraBtn  = null;
-
-    public static class CustomExtraButton {
-        public int                  mDrawable       = 0;
-        public View.OnClickListener mExtraBtnClick  = null;
-    }
+    private YTPlayer.ToolButton mToolBtn        = null;
 
     private class UpdateProgress implements Runnable {
         private static final int UPDATE_INTERVAL_MS = 1000;
@@ -496,28 +489,12 @@ public class YTPlayerUI {
         });
 
         btn = (ImageView)playerv.findViewById(R.id.mplayer_btnextra);
-        View.OnClickListener onClick;
-        if (null == mCustomExtraBtn) {
-            btn.setImageResource(R.drawable.ic_media_video);
-            onClick = new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    if (!mMp.hasActiveVideo()
-                        || null == mVActivity)
-                        return;
-                    mMp.backupPlayerState();
-                    mMp.playerStop();
-                    mVActivity.startActivity(new Intent(mVActivity, VideoPlayerActivity.class));
-                }
-            };
-        } else {
-            btn.setImageResource(mCustomExtraBtn.mDrawable);
-            onClick = mCustomExtraBtn.mExtraBtnClick;
-        }
-        btn.setOnClickListener(onClick);
-
-        if (null != mSurfacev)
+        if (null == mToolBtn)
             btn.setVisibility(View.INVISIBLE);
+        else {
+            btn.setImageResource(mToolBtn.drawable);
+            btn.setOnClickListener(mToolBtn.onClick);
+        }
     }
 
     private void
@@ -672,7 +649,7 @@ public class YTPlayerUI {
                   ViewGroup playerv,
                   ViewGroup playerLDrawer,
                   SurfaceView surfacev,
-                  CustomExtraButton customExtraBtn) {
+                  YTPlayer.ToolButton toolBtn) {
         // update notification by force
         notiConfigure(YTPlayer.MPState.INVALID, mMp.playerGetState());
 
@@ -685,7 +662,7 @@ public class YTPlayerUI {
         mPlayerv = (LinearLayout)playerv;
         mPlayerLDrawer = (LinearLayout)playerLDrawer;
         mSurfacev = surfacev;
-        mCustomExtraBtn = customExtraBtn;
+        mToolBtn = toolBtn;
 
         if (null == mPlayerv) {
             eAssert(null == mPlayerLDrawer);
@@ -706,6 +683,11 @@ public class YTPlayerUI {
             mPlayerLDrawer = null;
             mSurfacev = null;
         }
+    }
+
+    Activity
+    getActivity() {
+        return mVActivity;
     }
 
     SurfaceView

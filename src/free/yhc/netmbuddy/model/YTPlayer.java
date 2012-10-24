@@ -50,8 +50,11 @@ import android.os.PowerManager.WakeLock;
 import android.telephony.TelephonyManager;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import free.yhc.netmbuddy.R;
+import free.yhc.netmbuddy.VideoPlayerActivity;
 import free.yhc.netmbuddy.model.YTDownloader.DnArg;
 import free.yhc.netmbuddy.model.YTDownloader.DownloadDoneReceiver;
 
@@ -93,11 +96,10 @@ SurfaceHolder.Callback {
 
     private static YTPlayer sInstance = null;
 
-    private final DB            mDb         = DB.get();
-
     // ------------------------------------------------------------------------
     //
     // ------------------------------------------------------------------------
+    private final DB                    mDb         = DB.get();
     private final YTPlayerUI            mUi         = new YTPlayerUI(this); // for UI control
     private final AutoStop              mAutoStop   = new AutoStop();
     private final StartVideoRecovery    mStartVideoRecovery = new StartVideoRecovery();
@@ -215,6 +217,16 @@ SurfaceHolder.Callback {
         Video   vidobj      = null;
         int     pos         = -1;
         int     vol         = -1;
+    }
+
+
+    public static class ToolButton {
+        public int                  drawable    = 0;
+        public View.OnClickListener onClick     = null;
+        public ToolButton(int aDrawable, View.OnClickListener aOnClick) {
+            drawable= aDrawable;
+            onClick = aOnClick;
+        }
     }
 
     public static class TelephonyMonitor extends BroadcastReceiver {
@@ -1875,12 +1887,30 @@ SurfaceHolder.Callback {
         }
     }
 
+    public ToolButton
+    getVideoToolButton() {
+        View.OnClickListener onClick = new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (!hasActiveVideo()
+                    || null == mUi.getActivity())
+                        return;
+                    backupPlayerState();
+                    playerStop();
+                    mUi.getActivity().startActivity(new Intent(mUi.getActivity(), VideoPlayerActivity.class));
+            }
+        };
+
+        return new ToolButton(R.drawable.ic_media_video, onClick);
+    }
+
     public Err
     setController(Activity  activity,
                   ViewGroup playerv,
                   ViewGroup playerLDrawer,
-                  SurfaceView surfacev) {
-        Err err = mUi.setController(activity, playerv, playerLDrawer, surfacev, null);
+                  SurfaceView surfacev,
+                  ToolButton toolBtn) {
+        Err err = mUi.setController(activity, playerv, playerLDrawer, surfacev, toolBtn);
 
         if (!mVlm.hasActiveVideo())
             return err;

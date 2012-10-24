@@ -55,6 +55,7 @@ import android.net.NetworkInfo;
 import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.util.Log;
+import free.yhc.netmbuddy.R;
 
 public class Utils {
     private static final boolean DBG    = false;
@@ -88,9 +89,29 @@ public class Utils {
     };
 
     public static enum PrefQuality {
-        LOW,
-        NORMAL,
-        HIGH
+        LOW     (R.string.low),
+        NORMAL  (R.string.normal),
+        HIGH    (R.string.high);
+
+        private int text;
+        private
+        PrefQuality(int aText) {
+            text = aText;
+        }
+
+        public int
+        getText() {
+            return text;
+        }
+
+        public static PrefQuality
+        getMatchingQuality(int text) {
+            for (PrefQuality q : PrefQuality.values()) {
+                if (q.getText() == text)
+                    return q;
+            }
+            return null;
+        }
     }
 
     // ========================================================================
