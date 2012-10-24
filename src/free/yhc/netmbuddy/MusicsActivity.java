@@ -86,7 +86,6 @@ public class MusicsActivity extends Activity {
 
     private void
     doAddTo(final long plid, final long[] mids, final boolean move) {
-        eAssert(isUserPlaylist(plid));
         DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
             @Override
             public void
@@ -112,8 +111,12 @@ public class MusicsActivity extends Activity {
                         if (Err.NO_ERR != err
                             && (1 == mids.length || Err.DB_DUPLICATED != err)) {
                             return err;
-                        } else if (move && isUserPlaylist(mPlid))
-                            mDb.deleteVideoFromPlaylist(mPlid, mid);
+                        } else if (move) {
+                            if (isUserPlaylist(mPlid))
+                                mDb.deleteVideoFrom(mPlid, mid);
+                            else
+                                mDb.deleteVideoExcept(plid, mid);
+                        }
                     }
                     mDb.setTransactionSuccessful();
                 } finally {
@@ -175,9 +178,9 @@ public class MusicsActivity extends Activity {
                 try {
                     for (long mid : mids) {
                         if (isUserPlaylist(plid))
-                            mDb.deleteVideoFromPlaylist(plid, mid);
+                            mDb.deleteVideoFrom(plid, mid);
                         else
-                            mDb.deleteVideoAndRefsCompletely(mid);
+                            mDb.deleteVideoFromAll(mid);
                     }
                     mDb.setTransactionSuccessful();
                 } finally {
@@ -308,15 +311,12 @@ public class MusicsActivity extends Activity {
         });
 
         iv = (ImageView)findViewById(R.id.move);
-        if (isUserPlaylist(mPlid)) {
-            iv.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    onToolMove(v);
-                }
-            });
-        } else
-            iv.setVisibility(View.INVISIBLE);
+        iv.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                onToolMove(v);
+            }
+        });
 
         iv = (ImageView)findViewById(R.id.delete);
         iv.setOnClickListener(new View.OnClickListener() {

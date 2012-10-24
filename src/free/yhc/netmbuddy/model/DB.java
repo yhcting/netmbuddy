@@ -1127,17 +1127,12 @@ public class DB extends SQLiteOpenHelper {
      * @return
      */
     public int
-    deleteVideoFromPlaylist(long plid, long vid) {
+    deleteVideoFrom(long plid, long vid) {
         return deleteVideoRef(plid, vid);
     }
 
-    /**
-     * Delete video from all playlist
-     * @param vid
-     * @return
-     */
     public int
-    deleteVideoAndRefsCompletely(long vid) {
+    deleteVideoExcept(long plid, long vid) {
         Cursor c = queryPlaylist(new ColPlaylist[] { ColPlaylist.ID });
         if (!c.moveToFirst()) {
             c.close();
@@ -1148,10 +1143,21 @@ public class DB extends SQLiteOpenHelper {
         // So, calling "deleteVideoFromPlaylist()" for all playlist table is very expensive.
         int cnt = 0;
         do {
-            cnt += deleteVideoFromPlaylist(c.getLong(0), vid);
+            if (c.getLong(0) != plid)
+                cnt += deleteVideoFrom(c.getLong(0), vid);
         } while (c.moveToNext());
         c.close();
         return cnt;
+    }
+
+    /**
+     * Delete video from all playlists
+     * @param vid
+     * @return
+     */
+    public int
+    deleteVideoFromAll(long vid) {
+        return deleteVideoExcept(-1, vid);
     }
 
     public Cursor
