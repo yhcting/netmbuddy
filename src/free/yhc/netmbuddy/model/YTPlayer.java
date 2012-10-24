@@ -1973,6 +1973,14 @@ SurfaceHolder.Callback {
     }
 
     public void
+    restartFromCurrentPosition() {
+        if (!mVlm.hasActiveVideo())
+            return;
+        backupPlayerState();
+        startVideo(mVlm.getActiveVideo(), false);
+    }
+
+    public void
     startVideos(final Video[] vs) {
         eAssert(Utils.isUiThread());
 

@@ -1,14 +1,15 @@
 package free.yhc.netmbuddy;
 
-import static free.yhc.netmbuddy.model.Utils.eAssert;
-
 import java.util.HashMap;
 
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
+import android.view.Gravity;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,6 +17,7 @@ import android.view.WindowManager;
 import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 import free.yhc.netmbuddy.model.Utils;
 import free.yhc.netmbuddy.model.YTPlayer;
 import free.yhc.netmbuddy.model.YTPlayer.StopState;
@@ -41,13 +43,13 @@ YTPlayer.VideosStateListener {
         };
         // toolBtn for changing video quality is not implemented yet.
         // This is for future use.
-        YTPlayer.ToolButton toolBtn = new YTPlayer.ToolButton(R.drawable.ic_resolution, onClick);
+        YTPlayer.ToolButton toolBtn = new YTPlayer.ToolButton(R.drawable.ic_preferences, onClick);
 
         mMp.setController(VideoPlayerActivity.this,
                           (ViewGroup)findViewById(R.id.player),
                           (ViewGroup)findViewById(R.id.list_drawer),
                           surfv,
-                          null);
+                          toolBtn);
     }
 
     private void
@@ -89,8 +91,16 @@ YTPlayer.VideosStateListener {
 
     private void
     doChangeVideoQuality(Utils.PrefQuality quality) {
-        // Not implemented yet.
-        eAssert(false);
+        SharedPreferences.Editor prefEdit = PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).edit();
+        prefEdit.putString(Utils.getResText(R.string.csquality), quality.name());
+        prefEdit.commit();
+
+        // To show toast to bottom of screen, UiUtils is not used here!
+        Toast t = Toast.makeText(this, R.string.msg_post_changing_video_quality, Toast.LENGTH_LONG);
+        t.setGravity(Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL, 0, 50);
+        t.show();
+
+        mMp.restartFromCurrentPosition();
     }
 
     private void

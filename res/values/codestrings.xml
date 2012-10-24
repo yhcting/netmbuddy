@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+This strings are NOT SHOWN TO USERS.
+So, internationalization is NOT required.
+Usually, used for matching resource and code.
+-->
+<resources>
+    <string name="cson">on</string>
+    <string name="csoff">off</string>
+    
+    <string name="csshuffle">shuffle</string>
+    <string name="csrepeat">repeat</string>
+    <string name="csquality">quality</string>
+    
+    <string name="csLOW">LOW</string>
+    <string name="csNORMAL">NORMAL</string>
+    <string name="csHIGH">HIGH</string>
+</resources>

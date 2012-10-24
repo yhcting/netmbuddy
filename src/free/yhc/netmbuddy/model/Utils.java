@@ -48,6 +48,7 @@ import org.apache.http.impl.cookie.DateUtils;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.ConnectivityManager;
@@ -235,6 +236,16 @@ public class Utils {
     public static Context
     getAppContext() {
         return sAppContext;
+    }
+
+    public static Resources
+    getResources() {
+        return getAppContext().getResources();
+    }
+
+    public static String
+    getResText(int id) {
+        return (String)getResources().getText(id);
     }
 
     public static Handler
@@ -645,21 +656,34 @@ public class Utils {
     // Accessing preference
     //
     // ------------------------------------------------------------------------
+    private static String
+    getPreference(String key, String defvalue) {
+        String value = RTState.get().getOverridingPreference(key);
+        if (null == value)
+            value =  sPrefs.getString(key, defvalue);
+        return value;
+    }
+
     public static boolean
     isPrefSuffle() {
-        return sPrefs.getString("shuffle", "off").equals("on");
+        String v = getPreference(getResText(R.string.csshuffle),
+                                 getResText(R.string.csoff));
+        return v.equals(getResText(R.string.cson));
     }
 
     public static boolean
     isPrefRepeat() {
-        return sPrefs.getString("repeat", "off").equals("on");
+        String v = getPreference(getResText(R.string.csrepeat),
+                                 getResText(R.string.csoff));
+        return v.equals(getResText(R.string.cson));
     }
 
     public static PrefQuality
     getPrefQuality() {
-        String qstr = sPrefs.getString("quality", PrefQuality.NORMAL.name());
+        String v = getPreference(getResText(R.string.csquality),
+                                 getResText(R.string.csNORMAL));
         for (PrefQuality q : PrefQuality.values()) {
-            if (q.name().equals(qstr))
+            if (q.name().equals(v))
                 return q;
         }
         eAssert(false);

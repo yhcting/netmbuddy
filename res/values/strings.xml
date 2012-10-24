@@ -107,6 +107,7 @@
     <string name="msg_no_all_thumbnail">Some thumbnails are not loaded yet.\nTry again after loading all thumbnail is done.</string>
     <string name="msg_fails_to_add">Adding fails for some items.</string>
     <string name="msg_no_items_selected">No items selected.</string>
+    <string name="msg_post_changing_video_quality">Main audio quality setting is changed too, accordingly.</string>
 
     <string name="err_no_err">Success.</string>
     <string name="err_unknown">Unknown error.</string>

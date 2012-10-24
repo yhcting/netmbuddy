@@ -493,7 +493,7 @@ public class MusicsActivity extends Activity {
                           playerv,
                           (ViewGroup)findViewById(R.id.list_drawer),
                           null,
-                          null);
+                          mMp.getVideoToolButton());
         if (mMp.hasActiveVideo())
             playerv.setVisibility(View.VISIBLE);
         else

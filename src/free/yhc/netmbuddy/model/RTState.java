@@ -22,6 +22,8 @@ package free.yhc.netmbuddy.model;
 
 import static free.yhc.netmbuddy.model.Utils.eAssert;
 
+import java.util.HashMap;
+
 public class RTState {
     private static RTState sInstance = null;
 
@@ -30,6 +32,16 @@ public class RTState {
     // TODO
     // Proxy string should be changed if user changes proxy setting.
     private String  mProxy          = "";
+    private HashMap<String, MapValue> mOverridingPref = new HashMap<String, MapValue>();
+
+    private static class MapValue {
+        Object  owner;
+        Object  value;
+        MapValue(Object aOwner, Object aValue) {
+            owner = aOwner;
+            value = aValue;
+        }
+    }
 
     private RTState() {
         mProxy = System.getenv("http_proxy");
@@ -68,5 +80,37 @@ public class RTState {
     public YTHacker
     getLastSuccessfulHacker() {
         return mLastSuccessfulHacker;
+    }
+
+    public void
+    setOverridingPreference(String key, Object owner, String value) {
+        mOverridingPref.put(key, new MapValue(owner, value));
+    }
+
+    public boolean
+    unsetOverridingPreference(String key, Object owner) {
+        MapValue v = mOverridingPref.get(key);
+        if (null != v && owner != v.owner)
+            return false;
+        mOverridingPref.remove(key);
+        return true;
+    }
+
+    public String
+    getOverridingPreference(String key) {
+        MapValue v = mOverridingPref.get(key);
+        return null == v? null: (String)v.value;
+    }
+
+    /**
+     *
+     * @param key
+     * @return
+     *   null if overriding value DOESN'T EXIST.
+     */
+    public Object
+    getOverridingPreferenceOwner(String key) {
+        MapValue v = mOverridingPref.get(key);
+        return null == v? null: v.owner;
     }
 }

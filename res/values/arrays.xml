@@ -5,18 +5,18 @@
         <item>@string/off</item>
     </string-array>
     <string-array name="strarr_on_off_value">
-        <item>"on"</item>
-        <item>"off"</item>
+        <item>@string/cson</item>
+        <item>@string/csoff</item>
     </string-array>
     <string-array name="strarr_pref_quality_entry">
         <item>@string/low</item>
         <item>@string/normal</item>
         <item>@string/high</item>
     </string-array>
-    <!-- Value should match Utils.PrefAudioQuality enum name -->
+    <!-- Value should match Utils.PrefQuality enum name -->
     <string-array name="strarr_pref_quality_value">
-        <item>"LOW"</item>
-        <item>"NORMAL"</item>
-        <item>"HIGH"</item>
+        <item>@string/csLOW</item>
+        <item>@string/csNORMAL</item>
+        <item>@string/csHIGH</item>
     </string-array>
 </resources>

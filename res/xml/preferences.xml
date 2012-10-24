@@ -4,24 +4,24 @@
         <ListPreference
             android:title="@string/pref_shuffle"
             android:summary="@string/pref_shuffle_desc"
-            android:key="shuffle"
-            android:defaultValue="off"
+            android:key="@string/csshuffle"
+            android:defaultValue="@string/csoff"
             android:entries="@array/strarr_on_off_entry"
             android:entryValues="@array/strarr_on_off_value"
             />
         <ListPreference
             android:title="@string/pref_repeat"
             android:summary="@string/pref_repeat_desc"
-            android:key="repeat"
-            android:defaultValue="off"
+            android:key="@string/csrepeat"
+            android:defaultValue="@string/csoff"
             android:entries="@array/strarr_on_off_entry"
             android:entryValues="@array/strarr_on_off_value"
             />
         <ListPreference
             android:title="@string/pref_quality"
             android:summary="@string/pref_quality_desc"
-            android:key="quality"
-            android:defaultValue="NORMAL"
+            android:key="@string/csquality"
+            android:defaultValue="@string/csNORMAL"
             android:entries="@array/strarr_pref_quality_entry"
             android:entryValues="@array/strarr_pref_quality_value"
             />
