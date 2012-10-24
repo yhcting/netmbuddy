@@ -100,7 +100,8 @@
     <string name="msg_empty_playlist">Playlist is empty.</string>
     <string name="msg_fail_find_app">Fail in finding appropriate application.</string>
     <string name="msg_fail_access_exdb">Fail in accessing external database file.</string>
-    <string name="msg_delete_music">Delete from all playlists.</string>
+    <string name="msg_delete_musics">Delete from current playlist.</string>
+    <string name="msg_delete_musics_completely">Delete from all playlists.</string>
     <string name="msg_autostop_not_allowed">Fails to set auto-stop. Player is not active. Auto-stop can be set only on current playing session.</string>
     <string name="msg_no_all_thumbnail">Some thumbnails are not loaded yet.\nTry again after loading all thumbnail is done.</string>
     <string name="msg_fails_to_add">Adding fails for some items.</string>

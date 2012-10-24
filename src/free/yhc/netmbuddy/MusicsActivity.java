@@ -196,18 +196,19 @@ public class MusicsActivity extends Activity {
 
     private void
     deleteMusics(final long[] mids) {
-        if (isUserPlaylist(mPlid))
-            doDeleteMusics(mPlid, mids);
-        else {
-            UiUtils.ConfirmAction action = new UiUtils.ConfirmAction() {
-                @Override
-                public void
-                onOk(Dialog dialog) {
-                    doDeleteMusics(mPlid, mids);
-                }
-            };
-            UiUtils.buildConfirmDialog(this, R.string.delete, R.string.msg_delete_music, action).show();
-        }
+        UiUtils.ConfirmAction action = new UiUtils.ConfirmAction() {
+            @Override
+            public void
+            onOk(Dialog dialog) {
+                doDeleteMusics(mPlid, mids);
+            }
+        };
+        UiUtils.buildConfirmDialog(this,
+                                   R.string.delete,
+                                   isUserPlaylist(mPlid)? R.string.msg_delete_musics
+                                                        : R.string.msg_delete_musics_completely,
+                                   action)
+               .show();
     }
 
     private void
@@ -315,7 +316,7 @@ public class MusicsActivity extends Activity {
                 }
             });
         } else
-            iv.setVisibility(View.GONE);
+            iv.setVisibility(View.INVISIBLE);
 
         iv = (ImageView)findViewById(R.id.delete);
         iv.setOnClickListener(new View.OnClickListener() {
