@@ -517,7 +517,7 @@ public class YTPlayerUI {
         btn.setOnClickListener(onClick);
 
         if (null != mSurfacev)
-            btn.setVisibility(View.GONE);
+            btn.setVisibility(View.INVISIBLE);
     }
 
     private void
