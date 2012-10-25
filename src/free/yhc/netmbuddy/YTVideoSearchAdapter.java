@@ -82,14 +82,12 @@ public class YTVideoSearchAdapter extends YTSearchAdapter {
     setToNew(View v) {
         TextView titlev = (TextView)v.findViewById(R.id.title);
         titlev.setTextColor(Utils.getAppContext().getResources().getColor(R.color.title_text_color_new));
-        v.findViewById(R.id.checkbtn).setVisibility(View.VISIBLE);
     }
 
     private void
     setToExist(View v) {
         TextView titlev = (TextView)v.findViewById(R.id.title);
         titlev.setTextColor(Utils.getAppContext().getResources().getColor(R.color.title_text_color_existing));
-        v.findViewById(R.id.checkbtn).setVisibility(View.GONE);
     }
 
     YTVideoSearchAdapter(Context context,
@@ -213,5 +211,16 @@ public class YTVideoSearchAdapter extends YTSearchAdapter {
         iv.setTag(TAGKEY_CHECK_STATE, false);
         mNrChecked--;
         mCheckListener.onStateChanged(mNrChecked, pos, (Boolean)iv.getTag(TAGKEY_CHECK_STATE));
+    }
+
+    public void
+    cleanItemCheck() {
+        for (View v : mItemViews) {
+            ImageView iv = (ImageView)v.findViewById(R.id.checkbtn);
+            iv.setImageResource(R.drawable.btncheck_off);
+            iv.setTag(TAGKEY_CHECK_STATE, false);
+        }
+        mNrChecked = 0;
+        mCheckListener.onStateChanged(mNrChecked, -1, false);
     }
 }

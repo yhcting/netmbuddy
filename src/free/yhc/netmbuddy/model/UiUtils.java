@@ -58,6 +58,7 @@ public class UiUtils {
     }
 
     public interface OnPlaylistSelectedListener {
+        void onUserMenu(int pos, Object user);
         void onPlaylist(long plid, Object user);
     }
     // ========================================================================
@@ -242,9 +243,12 @@ public class UiUtils {
     buildSelectPlaylistDialog(final DB                          db,
                               final Context                     context,
                               final int                         diagTitle,
+                              final String[]                    userMenuStrings,
                               final OnPlaylistSelectedListener  action,
                               long                              excludedPlid,
                               final Object                      user) {
+        final String[] userMenus = (null == userMenuStrings)? new String[0]: userMenuStrings;
+
         // Create menu list
         final Cursor c = db.queryPlaylist(new DB.ColPlaylist[] { DB.ColPlaylist.ID,
                                                                  DB.ColPlaylist.TITLE });
@@ -255,9 +259,14 @@ public class UiUtils {
         LinkedList<String> menul = new LinkedList<String>();
         LinkedList<Long>   idl   = new LinkedList<Long>();
 
+        for (int i = 0; i < userMenus.length; i++) {
+            menul.add(userMenus[i]);
+            idl.add((long)i);
+        }
+
         // Add slot for 'new list' menu
         menul.add(context.getResources().getText(R.string.new_playlist).toString());
-        idl.add(0L); // dummy value
+        idl.add((long)userMenus.length); // dummy value
 
         if (c.moveToFirst()) {
             do {
@@ -282,7 +291,10 @@ public class UiUtils {
             public void onClick(DialogInterface dialog, int which) {
                 eAssert(which >= 0);
                 dialog.dismiss();
-                if (0 == which) {
+                if (userMenus.length > which) {
+                    // User menu is selected.
+                    action.onUserMenu(which,  user);
+                } else if (userMenus.length == which) {
                     // Need to get new playlist name.
                     UiUtils.EditTextAction edAction = new UiUtils.EditTextAction() {
                         @Override

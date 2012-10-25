@@ -77,7 +77,7 @@ DBHelper.CheckExistDoneReceiver {
                 setupToolBtn1(R.drawable.ic_add, new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        addCheckedMusicsToPlaylist();
+                        addCheckedMusicsTo();
                     }
                 });
             }
@@ -159,7 +159,26 @@ DBHelper.CheckExistDoneReceiver {
     }
 
     private void
-    addCheckedMusicsToPlaylist() {
+    appendCheckMusicsToPlayQ() {
+        // # of adapter items are at most Policy.YTSEARCH_MAX_RESULTS
+        // So, just do it at main UI thread!
+        YTVideoSearchAdapter adpr = getAdapter();
+        for (int i = 0; i < adpr.getCount(); i++) {
+            if (adpr.getItemMarkState(i)) {
+                mMp.appendToCurrentPlayQ(new YTPlayer.Video(
+                        adpr.getItemVideoId(i),
+                        adpr.getItemTitle(i),
+                        adpr.getItemVolume(i),
+                        Integer.parseInt(adpr.getItemPlaytime(i))));
+            }
+        }
+        adpr.cleanItemCheck();
+        adpr.notifyDataSetChanged();
+    }
+
+
+    private void
+    addCheckedMusicsToPlaylist(final long plid) {
         // Scan to check all thumbnails are loaded.
         // And prepare data for background execution.
         YTVideoSearchAdapter adpr = getAdapter();
@@ -176,59 +195,93 @@ DBHelper.CheckExistDoneReceiver {
             }
         }
 
-        UiUtils.OnPlaylistSelectedListener action = new UiUtils.OnPlaylistSelectedListener() {
+
+        DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
             private int failedCnt = 0;
 
             @Override
+            public void
+            onPostExecute(DiagAsyncTask task, Err result) {
+                Iterator<Integer> iIter = iteml.iterator();
+                while (iIter.hasNext())
+                    getAdapter().unmarkItemCheck(iIter.next());
+
+                if (failedCnt > 0) {
+                    CharSequence msg = YTVideoSearchActivity.this.getResources().getText(R.string.msg_fails_to_add);
+                    UiUtils.showTextToast(YTVideoSearchActivity.this,
+                                          msg + " : " + failedCnt);
+                }
+            }
+            @Override
+            public void
+            onCancel(DiagAsyncTask task) {
+            }
+            @Override
+            public Err
+            doBackgroundWork(DiagAsyncTask task, Object... objs) {
+                mDb.beginTransaction();
+                try {
+                    Iterator<Integer> iIter = iteml.iterator();
+                    Iterator<Integer> vIter = volumel.iterator();
+                    while (iIter.hasNext()) {
+                        int r = addToPlaylist(plid, iIter.next(), vIter.next());
+                        if (0 != r && R.string.msg_existing_muisc != r)
+                            failedCnt++;
+                    }
+
+                    mDb.setTransactionSuccessful();
+                } finally {
+                    mDb.endTransaction();
+                }
+                return Err.NO_ERR;
+            }
+        };
+
+        new DiagAsyncTask(YTVideoSearchActivity.this, worker,
+                          DiagAsyncTask.Style.SPIN,
+                          R.string.adding, false).execute();
+
+    }
+
+    private void
+    addCheckedMusicsTo() {
+        final int[] menuTextIds = new int[] { R.string.append_to_playq };
+
+        final String[] userMenu;
+        if (YTPlayer.get().hasActiveVideo()) {
+            userMenu = new String[menuTextIds.length];
+            for (int i = 0; i < menuTextIds.length; i++)
+                userMenu[i] = Utils.getResText(menuTextIds[i]);
+        } else
+            userMenu = null;
+
+        UiUtils.OnPlaylistSelectedListener action = new UiUtils.OnPlaylistSelectedListener() {
+            @Override
             public void onPlaylist(final long plid, Object user) {
-                DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
-                    @Override
-                    public void
-                    onPostExecute(DiagAsyncTask task, Err result) {
-                        Iterator<Integer> iIter = iteml.iterator();
-                        while (iIter.hasNext())
-                            getAdapter().unmarkItemCheck(iIter.next());
+                addCheckedMusicsToPlaylist(plid);
+            }
 
-                        if (failedCnt > 0) {
-                            CharSequence msg = YTVideoSearchActivity.this.getResources().getText(R.string.msg_fails_to_add);
-                            UiUtils.showTextToast(YTVideoSearchActivity.this,
-                                                  msg + " : " + failedCnt);
-                        }
-                    }
-                    @Override
-                    public void
-                    onCancel(DiagAsyncTask task) {
-                    }
-                    @Override
-                    public Err
-                    doBackgroundWork(DiagAsyncTask task, Object... objs) {
-                        mDb.beginTransaction();
-                        try {
-                            Iterator<Integer> iIter = iteml.iterator();
-                            Iterator<Integer> vIter = volumel.iterator();
-                            while (iIter.hasNext()) {
-                                if (0 != addToPlaylist(plid, iIter.next(), vIter.next()))
-                                    failedCnt++;
-                            }
+            @Override
+            public void
+            onUserMenu(int pos, Object user) {
+                eAssert(0 <= pos && pos < menuTextIds.length);
+                switch (menuTextIds[pos]) {
+                case R.string.append_to_playq:
+                    appendCheckMusicsToPlayQ();
+                    break;
 
-                            mDb.setTransactionSuccessful();
-                        } finally {
-                            mDb.endTransaction();
-                        }
-                        return Err.NO_ERR;
-                    }
-                };
-
-                new DiagAsyncTask(YTVideoSearchActivity.this, worker,
-                                  DiagAsyncTask.Style.SPIN,
-                                  R.string.adding, false).execute();
+                default:
+                    eAssert(false);
+                }
 
             }
+
         };
 
         UiUtils.buildSelectPlaylistDialog(mDb,
                                           this,
                                           R.string.add_to,
+                                          userMenu,
                                           action,
                                           DB.INVALID_PLAYLIST_ID,
                                           null)
@@ -246,11 +299,17 @@ DBHelper.CheckExistDoneReceiver {
                 if (0 != msg)
                     UiUtils.showTextToast(YTVideoSearchActivity.this, msg);
             }
+
+            @Override
+            public void
+            onUserMenu(int pos, Object user) {}
+
         };
 
         UiUtils.buildSelectPlaylistDialog(mDb,
                                           this,
                                           R.string.add_to,
+                                          null,
                                           action,
                                           DB.INVALID_PLAYLIST_ID,
                                           position)
