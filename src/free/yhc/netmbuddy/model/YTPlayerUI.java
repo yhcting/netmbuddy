@@ -271,12 +271,14 @@ public class YTPlayerUI {
         ImageView volv  = (ImageView)controlv.findViewById(R.id.mplayer_btnvol);
 
         switch (to) {
+        case INITIALIZED:
         case BUFFERING:
         case PREPARED:
         case PAUSED:
         case STARTED:
             pvEnableButton(volv, 0);
-
+            // break is missed intentionally.
+        case IDLE:
             if (mMp.hasNextVideo())
                 pvEnableButton(nextv, 0);
             else
@@ -308,8 +310,9 @@ public class YTPlayerUI {
             playv.setTag(YTPlayer.MPState.PAUSED);
             break;
 
-        case BUFFERING:
+        case IDLE:
         case INITIALIZED:
+        case BUFFERING:
         case PREPARED_AUDIO:
         case PREPARING:
             pvEnableButton(playv, R.drawable.ic_media_stop);
