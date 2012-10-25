@@ -162,7 +162,7 @@ public class YTDownloader {
         }
 
         String
-        getCurrentDownloadingFile() {
+        getCurrentTargetFile() {
             // NOTE.
             // curOutF is volatile and assigning object reference is atomic operation in JAVA.
             // So, synchronization is not required here.
@@ -199,8 +199,8 @@ public class YTDownloader {
     }
 
     public String
-    getCurrentDownloadingFile() {
-        return (null == mBgHandler)? null: mBgHandler.getCurrentDownloadingFile();
+    getCurrentTargetFile() {
+        return (null == mBgHandler)? null: mBgHandler.getCurrentTargetFile();
     }
 
     /**

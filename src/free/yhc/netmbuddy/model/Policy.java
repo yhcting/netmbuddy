@@ -59,11 +59,19 @@ public class Policy {
     // Youtube Player
     // --------------------------------------------------------------------
     public static final int     YTPLAYER_RETRY_ON_ERROR = 3;
-    // caching-ahead next video will started if current buffering reaches this value.
+
+    // NOTE
+    // Below is now DEPRECATED comments.
+    //
+    // It is not deleted for future REFERENCE.
+    // caching-ahead next video will started when
+    //   "current buffering percent - current progress percent" reaches this value.
     // Most of time for downloading is waiting network response.
-    // Therefore, downloading multiple contents doens't damage to device performance severely.
-    // So, try to trigger caching at the early point of playing.
-    public static final int     YTPLAYER_CACHING_TRIGGER_POINT = 30; // percent.
+    // But in case of high quality video, it may be big burden to network traffic.
+    // And MediaPlayer has buffer for progressive download.
+    // So, if percent is too large, MediaPlayer never reaches buffering ahead enough because of buffer size.
+    // So, tuning this value is NOT easy.
+    //public static final int     YTPLAYER_CACHING_TRIGGER_POINT = 30; // percent.
 
     // --------------------------------------------------------------------
     // Network access

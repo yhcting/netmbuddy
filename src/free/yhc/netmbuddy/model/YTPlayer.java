@@ -128,7 +128,6 @@ SurfaceHolder.Callback {
     // ------------------------------------------------------------------------
     private int                     mErrRetry = PLAYER_ERR_RETRY;
     private YTPState                mYtpS   = YTPState.IDLE;
-    private int                     mLastBuffering  = -1;
     private PlayerState             mStoredPState = null;
 
     // ------------------------------------------------------------------------
@@ -1092,7 +1091,7 @@ SurfaceHolder.Callback {
         if ((cacheFile.exists() && cacheFile.canRead())
             // previous operation is same with current request. And it is still running.
             // So, ignore current request.
-            || cacheFile.getAbsolutePath().equals(mYtDnr.getCurrentDownloadingFile()))
+            || cacheFile.getAbsolutePath().equals(mYtDnr.getCurrentTargetFile()))
             return;
 
         mYtDnr.close();
@@ -1134,10 +1133,15 @@ SurfaceHolder.Callback {
     }
 
     private void
+    stopCaching() {
+        mYtDnr.close();
+    }
+
+    private void
     stopCaching(final String ytvid) {
         // If current downloading video is same with current active video
         //   it's wasting operation. So, stop it!
-        String dningFile = mYtDnr.getCurrentDownloadingFile();
+        String dningFile = mYtDnr.getCurrentTargetFile();
         if (null == dningFile)
             return;
 
@@ -1169,8 +1173,10 @@ SurfaceHolder.Callback {
 
     private void
     prepareNext() {
-        if (!mVlm.hasNextVideo())
+        if (!mVlm.hasNextVideo()) {
+            stopCaching();
             return;
+        }
 
         cachingVideo(mVlm.getNextVideo().videoId);
     }
@@ -1299,11 +1305,6 @@ SurfaceHolder.Callback {
         }
 
         preparePlayerAsync();
-
-        // In this case, player doens't need to buffering video.
-        // So, player doens't need to wait until buffering is 100% done.
-        // Therefore let's prepare next video immediately.
-        prepareNext();
     }
 
     private void
@@ -1354,9 +1355,6 @@ SurfaceHolder.Callback {
         mpReset();
         mpSetVolume(volume);
 
-        // Initialize lastBuffering value.
-        mLastBuffering = -1;
-
         // Update DB at this moment.
         // It's not perfectly right moment but it's fair enough
         new Thread(new Runnable() {
@@ -1368,7 +1366,24 @@ SurfaceHolder.Callback {
 
         }).start();
 
-        stopCaching(videoId);
+        // NOTE
+        // With early-caching, in case of first video - actually not-cached video,
+        //   player tries to streaming main video and simultaneously it also tries to caching next video.
+        // There are two concern points regarding early-caching.
+        //
+        // The 1st is "System performance drop"
+        // The 2nd is "Network bandwidth burden"
+        //
+        // 1st one can be resolve by dropping caching thread's priority.
+        // (Priority of YTDownloader thread, is already set as THREAD_PRIORITY_BACKGROUND.)
+        //
+        // 2nd one is actually, main concern point.
+        // But usually, in Wifi environment, network bandwidth is large enough versus video-bits-rate.
+        // In mobile network environment, network condition is very unstable.
+        // So, in general, user doens't try to high-quality-video.
+        //
+        // Above two reasons, caching is started as soon as video is started.
+        prepareNext();
         File cachedVid = getCachedVideo(videoId);
         if (cachedVid.exists() && cachedVid.canRead())
             prepareCachedVideo(cachedVid);
@@ -1556,20 +1571,12 @@ SurfaceHolder.Callback {
     @Override
     public void
     onBufferingUpdate (MediaPlayer mp, int percent) {
-        //logD("MPlayer - onBufferingUpdate : " + percent + " %");
+        logD("MPlayer - onBufferingUpdate : " + percent + " %");
         // See comments around MEDIA_INFO_BUFFERING_START in onInfo()
         //mpSetState(MPState.BUFFERING);
-
-        if (mLastBuffering < Policy.YTPLAYER_CACHING_TRIGGER_POINT
-            && Policy.YTPLAYER_CACHING_TRIGGER_POINT <= percent)
-            // This is the first moment that buffering is reached to trigger-point
-            prepareNext();
-
         Iterator<PlayerStateListener> iter = mPStateLsnrl.iterator();
         while (iter.hasNext())
             iter.next().onBufferingChanged(percent);
-
-        mLastBuffering = percent;
     }
 
     @Override
@@ -2091,4 +2098,12 @@ SurfaceHolder.Callback {
         return null;
     }
 
+    public int
+    getProgressPercent() {
+        int progPercent = 0;
+        if (mVlm.hasActiveVideo() && mpGetDuration() > 0)
+            progPercent = (int)(mpGetCurrentPosition() * 100L / mpGetDuration());
+
+        return progPercent;
+    }
 }
