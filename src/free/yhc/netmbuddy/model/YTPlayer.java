@@ -113,6 +113,7 @@ SurfaceHolder.Callback {
     private WifiLock            mWfl        = null;
     private MediaPlayer         mMp         = null;
     private MPState             mMpS        = MPState.INVALID; // state of mMp;
+    private MPSubState          mMpSubS     = MPSubState.IDLE;
     private boolean             mMpSurfAttached = false;
     private SurfaceHolder       mSurfHolder = null; // To support video
     private boolean             mSurfReady  = false;
@@ -152,7 +153,8 @@ SurfaceHolder.Callback {
     }
 
     public interface PlayerStateListener {
-        void onStateChanged(MPState from, MPState to);
+        void onStateChanged(MPState from, MPSubState subFrom,
+                            MPState to,   MPSubState subTo);
         void onBufferingChanged(int percent);
     }
 
@@ -170,8 +172,13 @@ SurfaceHolder.Callback {
         PAUSED,
         PLAYBACK_COMPLETED,
         END,
-        BUFFERING, // Not in mediaplayer state but useful
         ERROR
+    }
+
+    public static enum MPSubState {
+        IDLE,
+        SEEKING,
+        BUFFERING,
     }
 
     public static enum StopState {
@@ -191,7 +198,7 @@ SurfaceHolder.Callback {
         public final String   videoId;
         public final int      volume;
         public final int      playtime; // This is to workaround not-correct value returns from getDuration() function
-                           //   of youtube player (Seconds).
+                                        //   of youtube player (Seconds).
         public Video(String aVideoId, String aTitle,
                      int aVolume, int aPlaytime) {
             videoId = aVideoId;
@@ -213,6 +220,7 @@ SurfaceHolder.Callback {
 
     private static class PlayerState {
         MPState mpState     = MPState.INVALID;
+        MPSubState mpSubState = MPSubState.IDLE;
         Video   vidobj      = null;
         int     pos         = -1;
         int     vol         = -1;
@@ -547,17 +555,39 @@ SurfaceHolder.Callback {
                && MPState.END != mpGetState()
                && MPState.INVALID != mpGetState();
     }
+
     private void
     mpSetState(MPState newState) {
         logD("MusicPlayer : State : " + mMpS.name() + " => " + newState.name());
-        MPState old = mMpS;
+        // NOTE
+        // DO NOT write CODE like "if (oldS == mMpS) return;"
+        // most case, this is MediaPlay's state.
+        // So, even if state is same, this might be the state of different MediaPlayer instance.
+        // (Ex. videoA : IDLE -> videB : IDLE).
+        MPState oldS = mMpS;
         mMpS = newState;
-        onMpStateChanged(old, newState);
+
+        // If main state is changed, sub-state should be reset to IDLE
+        mMpSubS = MPSubState.IDLE;
+        onMpStateChanged(oldS, mMpSubS, mMpS, mMpSubS);
     }
 
     private MPState
     mpGetState() {
         return mMpS;
+    }
+
+    private void
+    mpSetSubState(MPSubState newSubState) {
+        logD("MusicPlayer : SubState : " + mMpSubS.name() + " => " + newSubState.name());
+        MPSubState oldSubS = mMpSubS;
+        mMpSubS = newSubState;
+        onMpStateChanged(mMpS, oldSubS, mMpS, mMpSubS);
+    }
+
+    private MPSubState
+    mpGetSubState() {
+        return mMpSubS;
     }
 
     private void
@@ -580,6 +610,7 @@ SurfaceHolder.Callback {
         mMpVol = Policy.DEFAULT_VIDEO_VOLUME;
         initMediaPlayer(mMp);
         mpSetState(MPState.IDLE);
+        mpSetSubState(MPSubState.IDLE);
     }
 
     private MediaPlayer
@@ -840,6 +871,7 @@ SurfaceHolder.Callback {
         case STARTED:
         case PAUSED:
         case PLAYBACK_COMPLETED:
+            mpSetSubState(MPSubState.SEEKING);
             mMp.seekTo(pos);
             return;
         }
@@ -978,13 +1010,11 @@ SurfaceHolder.Callback {
     //
     // ========================================================================
     private void
-    onMpStateChanged(MPState from, MPState to) {
-        if (from == to)
-            return;
-
+    onMpStateChanged(MPState from, MPSubState subFrom,
+                     MPState to, MPSubState subTo) {
         Iterator<PlayerStateListener> iter = mPStateLsnrl.iterator();
         while (iter.hasNext())
-            iter.next().onStateChanged(from, to);
+            iter.next().onStateChanged(from, subFrom, to, subTo);
 
         switch (to) {
         case PAUSED:
@@ -1473,6 +1503,22 @@ SurfaceHolder.Callback {
         if (null == mMp)
             return;
 
+        // NOTE
+        // Even if last stored player state is not restored and used yet,
+        //   new store is requested.
+        // So, play need to keep last state.
+        int storedPos = 0;
+        int storedVol = Policy.DEFAULT_VIDEO_VOLUME;
+        if (mVlm.hasActiveVideo()) {
+            Long vol = (Long)mDb.getVideoInfo(mVlm.getActiveVideo().videoId, DB.ColVideo.VOLUME);
+            if (null != vol)
+                storedVol = vol.intValue();
+        }
+
+        if (haveStoredPlayerState()) {
+            storedPos = mStoredPState.pos;
+            storedVol = mStoredPState.vol;
+        }
         clearStoredPlayerState();
 
         mStoredPState = new PlayerState();
@@ -1484,6 +1530,10 @@ SurfaceHolder.Callback {
             mStoredPState.pos = mpGetCurrentPosition();
             mStoredPState.vol = mpGetVolume();
             break;
+
+        default:
+            mStoredPState.pos = storedPos;
+            mStoredPState.vol = storedVol;
         }
     }
 
@@ -1492,12 +1542,7 @@ SurfaceHolder.Callback {
         if (!haveStoredPlayerState())
             return;
 
-        if (mVlm.getActiveVideo() == mStoredPState.vidobj
-            && (MPState.STARTED == mStoredPState.mpState
-                || MPState.PAUSED == mStoredPState.mpState)) {
-            // Android MediaPlayer seek to previous position automatically.
-            // And volume is preserved.
-            // Below two line is useless.
+        if (mVlm.getActiveVideo() == mStoredPState.vidobj) {
             mpSeekTo(mStoredPState.pos);
             mpSetVolume(mStoredPState.vol);
         }
@@ -1598,7 +1643,6 @@ SurfaceHolder.Callback {
             autoStart = !isStoredPlayerStatePaused();
             restorePlayerState();
         }
-
         clearStoredPlayerState();
 
         mpSetState(MPState.PREPARED);
@@ -1642,6 +1686,10 @@ SurfaceHolder.Callback {
     public void
     onSeekComplete(MediaPlayer mp) {
         logD("MPlayer - onSeekComplete");
+        if (mp != mpGet())
+            return;
+
+        mpSetSubState(MPSubState.IDLE);
     }
 
     @Override
@@ -1772,6 +1820,11 @@ SurfaceHolder.Callback {
     MPState
     playerGetState() {
         return mpGetState();
+    }
+
+    MPSubState
+    playerGetSubState() {
+        return mpGetSubState();
     }
 
     void

@@ -1,7 +1,5 @@
 package free.yhc.netmbuddy;
 
-import java.util.HashMap;
-
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
@@ -25,9 +23,6 @@ import free.yhc.netmbuddy.model.YTPlayer.StopState;
 public class VideoPlayerActivity extends Activity implements
 YTPlayer.PlayerStateListener,
 YTPlayer.VideosStateListener {
-
-    private static HashMap<Utils.PrefQuality, Integer> sQ2StrMap = new HashMap<Utils.PrefQuality, Integer>();
-
     private final YTPlayer      mMp = YTPlayer.get();
     private SurfaceView         mSurfv;
     private Utils.PrefQuality   mVQuality = Utils.getPrefQuality();
@@ -71,6 +66,9 @@ YTPlayer.VideosStateListener {
     private void
     showLoadingSpinProgress() {
         View infov = findViewById(R.id.infolayout);
+        if (View.VISIBLE == infov.getVisibility())
+            return; // nothing to do
+
         ImageView iv = (ImageView)infov.findViewById(R.id.infoimg);
         TextView  tv = (TextView)infov.findViewById(R.id.infomsg);
         tv.setText(R.string.loading);
@@ -81,6 +79,9 @@ YTPlayer.VideosStateListener {
     private void
     hideLoadingSpinProgress() {
         View infov = findViewById(R.id.infolayout);
+        if (View.GONE == infov.getVisibility())
+            return; // nothing to do
+
         ImageView iv = (ImageView)infov.findViewById(R.id.infoimg);
         if (null != iv.getAnimation()) {
             iv.getAnimation().cancel();
@@ -158,17 +159,28 @@ YTPlayer.VideosStateListener {
     // ========================================================================
     @Override
     public void
-    onStateChanged(YTPlayer.MPState from, YTPlayer.MPState to) {
-        switch(to) {
+    onStateChanged(YTPlayer.MPState from, YTPlayer.MPSubState subFrom,
+                   YTPlayer.MPState to, YTPlayer.MPSubState subTo) {
+        switch (to) {
         case IDLE:
             mVQuality = Utils.getPrefQuality();
             showLoadingSpinProgress();
             break;
 
+        case STARTED:
+        case PAUSED:
         case PREPARED:
         case STOPPED:
         case ERROR:
-            hideLoadingSpinProgress();
+            switch (subTo) {
+            case SEEKING:
+            case BUFFERING:
+                showLoadingSpinProgress();
+                break;
+
+            default:
+                hideLoadingSpinProgress();
+            }
             break;
         }
     }
@@ -227,6 +239,19 @@ YTPlayer.VideosStateListener {
         }
 
         setController(true);
+        // This is for workaround SlidingDrawer bug of Android Widget.
+        // See comments of onCreate() for details.
+        // Without below code, handler View of SlidingDrawer is always shown
+        //   even if after 'hideController()' is called.
+        // Step for issues.
+        // - enter this activity by viewing video
+        // - touching outside controller to hide controller.
+        // - turn off backlight by pushing power key
+        // - turn on backlight again and this activity is resumed.
+        // ==> Handler View of SlidingDrawer is shown.
+        //
+        // To workaround, player is always shown at onResume().
+        showController();
     }
 
     @Override

@@ -280,11 +280,17 @@ public class YTPlaylistSearchActivity extends YTSearchActivity {
                                   true)
                 .execute();
             }
+
+            @Override
+            public void
+            onUserMenu(int pos, Object user) {}
+
         };
 
         UiUtils.buildSelectPlaylistDialog(DB.get(),
                                           this,
                                           R.string.merge_to,
+                                          null,
                                           action,
                                           DB.INVALID_PLAYLIST_ID,
                                           pos)

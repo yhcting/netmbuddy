@@ -147,12 +147,17 @@ public class MusicsActivity extends Activity {
             onPlaylist(long plid, Object user) {
                 doAddTo(plid, mids, move);
             }
+
+            @Override
+            public void
+            onUserMenu(int pos, Object user) {}
         };
 
         // exclude current playlist
         UiUtils.buildSelectPlaylistDialog(mDb,
                                           this,
                                           move? R.string.move_to: R.string.add_to,
+                                          null,
                                           action,
                                           plid,
                                           null)

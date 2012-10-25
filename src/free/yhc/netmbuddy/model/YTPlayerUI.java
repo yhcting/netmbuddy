@@ -153,7 +153,8 @@ public class YTPlayerUI {
     //
     // ========================================================================
     private void
-    notiConfigure(YTPlayer.MPState from, YTPlayer.MPState to) {
+    notiConfigure(YTPlayer.MPState from, YTPlayer.MPSubState subFrom,
+                  YTPlayer.MPState to,   YTPlayer.MPSubState subTo) {
         NotiManager nm = NotiManager.get();
         if (!mMp.hasActiveVideo()) {
             nm.removeNotification();
@@ -175,7 +176,7 @@ public class YTPlayerUI {
             nm.putNotification(NotiManager.NotiType.ALERT, title);
             break;
 
-        case BUFFERING:
+        case IDLE:
         case INITIALIZED:
         case PREPARED_AUDIO:
         case PREPARING:
@@ -211,7 +212,9 @@ public class YTPlayerUI {
     }
 
     private void
-    pvConfigureTitle(TextView titlev, YTPlayer.MPState from, YTPlayer.MPState to) {
+    pvConfigureTitle(TextView titlev,
+                     YTPlayer.MPState from, YTPlayer.MPSubState subFrom,
+                     YTPlayer.MPState to,   YTPlayer.MPSubState subTo) {
         if (null == titlev)
             return;
 
@@ -220,15 +223,16 @@ public class YTPlayerUI {
             videoTitle = mMp.getActiveVideo().title;
 
         switch (to) {
-        case BUFFERING: {
-            eAssert(null != videoTitle);
-            pvSetTitle(titlev, "(" + mRes.getText(R.string.buffering) + ") " + videoTitle);
-        } break;
-
         case PREPARED:
         case PAUSED:
         case STARTED:
             eAssert(null != videoTitle);
+            switch (subTo) {
+            case SEEKING:
+            case BUFFERING:
+                videoTitle = "(" + mRes.getText(R.string.buffering) + ") " + videoTitle;
+            }
+
             if (null != videoTitle)
                 pvSetTitle(titlev, videoTitle);
             break;
@@ -255,7 +259,9 @@ public class YTPlayerUI {
     }
 
     private void
-    pvConfigureControl(ViewGroup controlv, YTPlayer.MPState from, YTPlayer.MPState to) {
+    pvConfigureControl(ViewGroup controlv,
+                       YTPlayer.MPState from, YTPlayer.MPSubState subFrom,
+                       YTPlayer.MPState to,   YTPlayer.MPSubState subTo) {
         if (null == controlv)
             return;
 
@@ -271,14 +277,15 @@ public class YTPlayerUI {
         ImageView volv  = (ImageView)controlv.findViewById(R.id.mplayer_btnvol);
 
         switch (to) {
-        case INITIALIZED:
-        case BUFFERING:
+        case PREPARED_AUDIO:
         case PREPARED:
         case PAUSED:
         case STARTED:
             pvEnableButton(volv, 0);
             // break is missed intentionally.
         case IDLE:
+        case INITIALIZED:
+        case PREPARING:
             if (mMp.hasNextVideo())
                 pvEnableButton(nextv, 0);
             else
@@ -312,7 +319,6 @@ public class YTPlayerUI {
 
         case IDLE:
         case INITIALIZED:
-        case BUFFERING:
         case PREPARED_AUDIO:
         case PREPARING:
             pvEnableButton(playv, R.drawable.ic_media_stop);
@@ -327,7 +333,9 @@ public class YTPlayerUI {
     }
 
     private void
-    pvConfigureProgress(ViewGroup progressv, YTPlayer.MPState from, YTPlayer.MPState to) {
+    pvConfigureProgress(ViewGroup progressv,
+                        YTPlayer.MPState from, YTPlayer.MPSubState subFrom,
+                        YTPlayer.MPState to,   YTPlayer.MPSubState subTo) {
 
         if (null == progressv)
             return;
@@ -355,7 +363,6 @@ public class YTPlayerUI {
         case INITIALIZED:
         case PREPARING:
         case PREPARED_AUDIO:
-        case BUFFERING:
             ; // do nothing progress is now under update..
             break;
 
@@ -395,7 +402,9 @@ public class YTPlayerUI {
     }
 
     private void
-    pvConfigureLDrawer(ViewGroup playerLDrawer, YTPlayer.MPState from, YTPlayer.MPState to) {
+    pvConfigureLDrawer(ViewGroup playerLDrawer,
+                      YTPlayer.MPState from, YTPlayer.MPSubState subFrom,
+                      YTPlayer.MPState to,   YTPlayer.MPSubState subTo) {
         if (null == playerLDrawer)
             return;
 
@@ -414,19 +423,20 @@ public class YTPlayerUI {
 
     private void
     pvConfigureAll(ViewGroup playerv, ViewGroup playerLDrawer,
-                   YTPlayer.MPState from, YTPlayer.MPState to) {
+                   YTPlayer.MPState from, YTPlayer.MPSubState subFrom,
+                   YTPlayer.MPState to,   YTPlayer.MPSubState subTo) {
         if (null == playerv) {
             eAssert(null == playerLDrawer);
             return; // nothing to do
         }
 
         pvConfigureTitle((TextView)playerv.findViewById(R.id.mplayer_title),
-                          from, to);
+                          from, subFrom, to, subTo);
         pvConfigureProgress((ViewGroup)playerv.findViewById(R.id.mplayer_progress),
-                           from, to);
+                            from, subFrom, to, subTo);
         pvConfigureControl((ViewGroup)playerv.findViewById(R.id.mplayer_control),
-                           from, to);
-        pvConfigureLDrawer(playerLDrawer, from, to);
+                           from, subFrom, to, subTo);
+        pvConfigureLDrawer(playerLDrawer, from, subFrom, to, subTo);
     }
 
     private void
@@ -504,9 +514,10 @@ public class YTPlayerUI {
     pvInit(ViewGroup playerv, ViewGroup playerLDrawer, SurfaceView surfacev) {
         mMp.addPlayerStateListener(this, new YTPlayer.PlayerStateListener() {
             @Override
-            public void onStateChanged(YTPlayer.MPState from, YTPlayer.MPState to) {
-                pvConfigureAll(mPlayerv, mPlayerLDrawer, from, to);
-                notiConfigure(from, to);
+            public void onStateChanged(YTPlayer.MPState from, YTPlayer.MPSubState subFrom,
+                                       YTPlayer.MPState to,   YTPlayer.MPSubState subTo) {
+                pvConfigureAll(mPlayerv, mPlayerLDrawer, from, subFrom, to, subTo);
+                notiConfigure(from, subFrom, to, subTo);
             }
 
             @Override
@@ -594,7 +605,8 @@ public class YTPlayerUI {
                     // Control button should be re-checked due to 'next' and 'prev' button.
                     if (null != mPlayerv)
                         pvConfigureControl((ViewGroup)mPlayerv.findViewById(R.id.mplayer_control),
-                                           mMp.playerGetState(), mMp.playerGetState());
+                                           YTPlayer.MPState.INVALID, YTPlayer.MPSubState.IDLE,
+                                           mMp.playerGetState(), mMp.playerGetSubState());
 
                     if (null == mPlayerLDrawer)
                         return;
@@ -635,7 +647,9 @@ public class YTPlayerUI {
         // Set progress state to right position.
         mUpdateProg.update(mMp.playerGetDuration(), mMp.playerGetPosition());
 
-        pvConfigureAll(playerv, playerLDrawer, YTPlayer.MPState.INVALID, mMp.playerGetState());
+        pvConfigureAll(playerv, playerLDrawer,
+                       YTPlayer.MPState.INVALID, YTPlayer.MPSubState.IDLE,
+                       mMp.playerGetState(), mMp.playerGetSubState());
     }
 
     // ============================================================================
@@ -654,7 +668,8 @@ public class YTPlayerUI {
                   SurfaceView surfacev,
                   YTPlayer.ToolButton toolBtn) {
         // update notification by force
-        notiConfigure(YTPlayer.MPState.INVALID, mMp.playerGetState());
+        notiConfigure(YTPlayer.MPState.INVALID, YTPlayer.MPSubState.IDLE,
+                      mMp.playerGetState(), mMp.playerGetSubState());
 
         if (activity == mVActivity && mPlayerv == playerv)
             // controller is already set for this context.
