@@ -86,6 +86,13 @@ public class UiUtils {
         t.show();
     }
 
+    public static void
+    showTextToastAtBottom(Context context, int textid, boolean lengthLong) {
+        Toast t = Toast.makeText(context, textid, lengthLong? Toast.LENGTH_LONG: Toast.LENGTH_SHORT);
+        t.setGravity(Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL, 0, 50);
+        t.show();
+    }
+
     // ------------------------------------------------------------------------
     //
     // Dialog

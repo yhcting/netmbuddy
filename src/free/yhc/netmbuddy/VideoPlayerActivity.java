@@ -7,7 +7,6 @@ import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.view.Gravity;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,7 +14,7 @@ import android.view.WindowManager;
 import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
+import free.yhc.netmbuddy.model.UiUtils;
 import free.yhc.netmbuddy.model.Utils;
 import free.yhc.netmbuddy.model.YTPlayer;
 import free.yhc.netmbuddy.model.YTPlayer.StopState;
@@ -92,15 +91,13 @@ YTPlayer.VideosStateListener {
 
     private void
     doChangeVideoQuality(Utils.PrefQuality quality) {
-        SharedPreferences.Editor prefEdit = PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).edit();
+        SharedPreferences.Editor prefEdit = PreferenceManager.getDefaultSharedPreferences(getApplicationContext())
+                                                             .edit();
         prefEdit.putString(Utils.getResText(R.string.csquality), quality.name());
         prefEdit.commit();
 
-        // To show toast to bottom of screen, UiUtils is not used here!
-        Toast t = Toast.makeText(this, R.string.msg_post_changing_video_quality, Toast.LENGTH_LONG);
-        t.setGravity(Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL, 0, 50);
-        t.show();
-
+        // Show toast to bottom of screen
+        UiUtils.showTextToastAtBottom(this, R.string.msg_post_changing_video_quality, false);
         mMp.restartFromCurrentPosition();
     }
 
