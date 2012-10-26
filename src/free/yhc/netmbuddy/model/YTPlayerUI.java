@@ -594,8 +594,8 @@ public class YTPlayerUI {
 
                 @Override
                 public void onStarted() {
-                    eAssert(null != mPlayerv);
-                    pvEnableLDrawer(mPlayerLDrawer);
+                    if (null != mPlayerv)
+                        pvEnableLDrawer(mPlayerLDrawer);
                 }
 
                 @Override
