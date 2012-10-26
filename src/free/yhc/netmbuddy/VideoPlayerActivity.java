@@ -12,6 +12,7 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -109,6 +110,26 @@ YTPlayer.VideosStateListener {
                           toolBtn);
     }
 
+    private void
+    startAnimation(View v, int animation, Animation.AnimationListener listener) {
+        if (null != v.getAnimation()) {
+            v.getAnimation().cancel();
+            v.getAnimation().reset();
+        }
+        Animation anim = AnimationUtils.loadAnimation(this, animation);
+        if (null != listener)
+            anim.setAnimationListener(listener);
+        v.startAnimation(anim);
+    }
+
+    private void
+    stopAnimation(View v) {
+        if (null != v.getAnimation()) {
+            v.getAnimation().cancel();
+            v.getAnimation().reset();
+        }
+    }
+
     private boolean
     isUserInterfaceShown() {
         return View.VISIBLE == findViewById(R.id.player).getVisibility();
@@ -145,7 +166,7 @@ YTPlayer.VideosStateListener {
         TextView  tv = (TextView)infov.findViewById(R.id.infomsg);
         tv.setText(R.string.loading);
         infov.setVisibility(View.VISIBLE);
-        iv.startAnimation(AnimationUtils.loadAnimation(this, R.anim.rotate));
+        startAnimation(iv, R.anim.rotate, null);
     }
 
     private void
@@ -154,11 +175,7 @@ YTPlayer.VideosStateListener {
         if (View.GONE == infov.getVisibility())
             return; // nothing to do
 
-        ImageView iv = (ImageView)infov.findViewById(R.id.infoimg);
-        if (null != iv.getAnimation()) {
-            iv.getAnimation().cancel();
-            iv.getAnimation().reset();
-        }
+        stopAnimation(infov.findViewById(R.id.infoimg));
         infov.setVisibility(View.GONE);
     }
 
