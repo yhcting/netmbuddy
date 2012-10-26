@@ -246,30 +246,26 @@ YTPlayer.VideosStateListener {
     // ========================================================================
     @Override
     public void
-    onStateChanged(YTPlayer.MPState from, YTPlayer.MPSubState subFrom,
-                   YTPlayer.MPState to, YTPlayer.MPSubState subTo) {
+    onStateChanged(YTPlayer.MPState from, int fromFlag,
+                   YTPlayer.MPState to,   int toFlag) {
         switch (to) {
         case IDLE:
             mVQuality = Utils.getPrefQuality();
             showLoadingSpinProgress();
             break;
 
-        case STARTED:
-        case PAUSED:
         case PREPARED:
             fitVideoSurfaceToScreen(isUserInterfaceShown());
             // missing break is intentional.
+        case STARTED:
+        case PAUSED:
         case STOPPED:
         case ERROR:
-            switch (subTo) {
-            case SEEKING:
-            case BUFFERING:
+            if (mMp.isPlayerSeeking(toFlag)
+                || mMp.isPlayerBuffering(toFlag))
                 showLoadingSpinProgress();
-                break;
-
-            default:
+            else
                 hideLoadingSpinProgress();
-            }
             break;
         }
     }

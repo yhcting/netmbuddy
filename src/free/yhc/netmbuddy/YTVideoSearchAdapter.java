@@ -138,7 +138,7 @@ public class YTVideoSearchAdapter extends YTSearchAdapter {
 
         ((TextView)v.findViewById(R.id.uploadedtime)).setText("< " + dateText + " >");
 
-        if (Utils.bitIsSet(e.uflag, FENT_EXIST_DUP, MENT_EXIST))
+        if (Utils.bitCompare(e.uflag, FENT_EXIST_DUP, MENT_EXIST))
             setToExist(v);
         else
             setToNew(v);

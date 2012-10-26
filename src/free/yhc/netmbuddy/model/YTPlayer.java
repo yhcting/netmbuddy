@@ -67,6 +67,12 @@ MediaPlayer.OnVideoSizeChangedListener,
 MediaPlayer.OnSeekCompleteListener,
 // To support video
 SurfaceHolder.Callback {
+    // State Flags - Package private.
+    static final int    MPSTATE_FLAG_IDLE       = 0x0;
+    static final int    MPSTATE_FLAG_SEEKING    = 0x1;
+    static final int    MPSTATE_FLAG_BUFFERING  = 0x2;
+
+
     private static final String WLTAG               = "YTPlayer";
     private static final int    PLAYER_ERR_RETRY    = Policy.YTPLAYER_RETRY_ON_ERROR;
 
@@ -112,7 +118,7 @@ SurfaceHolder.Callback {
     private WifiLock            mWfl        = null;
     private MediaPlayer         mMp         = null;
     private MPState             mMpS        = MPState.INVALID; // state of mMp;
-    private MPSubState          mMpSubS     = MPSubState.IDLE;
+    private int                 mMpSFlag    = MPSTATE_FLAG_IDLE;
     private boolean             mMpSurfAttached = false;
     private SurfaceHolder       mSurfHolder = null; // To support video
     private boolean             mSurfReady  = false;
@@ -152,8 +158,8 @@ SurfaceHolder.Callback {
     }
 
     public interface PlayerStateListener {
-        void onStateChanged(MPState from, MPSubState subFrom,
-                            MPState to,   MPSubState subTo);
+        void onStateChanged(MPState from, int fromFlag,
+                            MPState to,   int toFlag);
         void onBufferingChanged(int percent);
     }
 
@@ -172,12 +178,6 @@ SurfaceHolder.Callback {
         PLAYBACK_COMPLETED,
         END,
         ERROR
-    }
-
-    public static enum MPSubState {
-        IDLE,
-        SEEKING,
-        BUFFERING,
     }
 
     public static enum StopState {
@@ -219,7 +219,7 @@ SurfaceHolder.Callback {
 
     private static class PlayerState {
         MPState mpState     = MPState.INVALID;
-        MPSubState mpSubState = MPSubState.IDLE;
+        int     mpStateFlag = MPSTATE_FLAG_IDLE;
         Video   vidobj      = null;
         int     pos         = -1;
         int     vol         = -1;
@@ -567,8 +567,8 @@ SurfaceHolder.Callback {
         mMpS = newState;
 
         // If main state is changed, sub-state should be reset to IDLE
-        mMpSubS = MPSubState.IDLE;
-        onMpStateChanged(oldS, mMpSubS, mMpS, mMpSubS);
+        mMpSFlag = MPSTATE_FLAG_IDLE;
+        onMpStateChanged(oldS, mMpSFlag, mMpS, mMpSFlag);
     }
 
     private MPState
@@ -577,16 +577,26 @@ SurfaceHolder.Callback {
     }
 
     private void
-    mpSetSubState(MPSubState newSubState) {
-        logD("MusicPlayer : SubState : " + mMpSubS.name() + " => " + newSubState.name());
-        MPSubState oldSubS = mMpSubS;
-        mMpSubS = newSubState;
-        onMpStateChanged(mMpS, oldSubS, mMpS, mMpSubS);
+    mpSetStateFlag(int newStateFlag) {
+        logD("MusicPlayer : StateFlag : " + mMpSFlag + " => " + newStateFlag);
+        int old = mMpSFlag;
+        mMpSFlag = newStateFlag;
+        onMpStateChanged(mMpS, old, mMpS, mMpSFlag);
     }
 
-    private MPSubState
-    mpGetSubState() {
-        return mMpSubS;
+    private int
+    mpGetStateFlag() {
+        return mMpSFlag;
+    }
+
+    private void
+    mpSetStateFlagBit(int mask) {
+        mpSetStateFlag(Utils.bitSet(mMpSFlag, mask, mask));
+    }
+
+    private void
+    mpClearStateFlagBit(int mask) {
+        mpSetStateFlag(Utils.bitClear(mMpSFlag, mask));
     }
 
     private void
@@ -609,7 +619,7 @@ SurfaceHolder.Callback {
         mMpVol = Policy.DEFAULT_VIDEO_VOLUME;
         initMediaPlayer(mMp);
         mpSetState(MPState.IDLE);
-        mpSetSubState(MPSubState.IDLE);
+        mpSetStateFlag(MPSTATE_FLAG_IDLE);
     }
 
     private MediaPlayer
@@ -870,7 +880,7 @@ SurfaceHolder.Callback {
         case STARTED:
         case PAUSED:
         case PLAYBACK_COMPLETED:
-            mpSetSubState(MPSubState.SEEKING);
+            mpSetStateFlagBit(MPSTATE_FLAG_SEEKING);
             mMp.seekTo(pos);
             return;
         }
@@ -978,11 +988,11 @@ SurfaceHolder.Callback {
     //
     // ========================================================================
     private void
-    onMpStateChanged(MPState from, MPSubState subFrom,
-                     MPState to, MPSubState subTo) {
+    onMpStateChanged(MPState from, int fromFlag,
+                     MPState to,   int toFlag) {
         Iterator<PlayerStateListener> iter = mPStateLsnrl.iterator();
         while (iter.hasNext())
-            iter.next().onStateChanged(from, subFrom, to, subTo);
+            iter.next().onStateChanged(from, fromFlag, to, toFlag);
 
         switch (to) {
         case PAUSED:
@@ -1654,7 +1664,7 @@ SurfaceHolder.Callback {
         if (mp != mpGet())
             return;
 
-        mpSetSubState(MPSubState.IDLE);
+        mpClearStateFlagBit(MPSTATE_FLAG_SEEKING);
     }
 
     @Override
@@ -1712,18 +1722,11 @@ SurfaceHolder.Callback {
             break;
 
         case MediaPlayer.MEDIA_INFO_BUFFERING_START:
-            // NOTE
-            // In case of progressive download, media player tries to buffering continuously.
-            // Even if media is playing, media info keep notifying 'buffering'
-            // This is not expected behavior of player.
-            // So, just ignore buffering state.
-            //mpSetState(MPState.BUFFERING);
+            mpSetStateFlagBit(MPSTATE_FLAG_BUFFERING);
             break;
 
         case MediaPlayer.MEDIA_INFO_BUFFERING_END:
-            Iterator<PlayerStateListener> iter = mPStateLsnrl.iterator();
-            while (iter.hasNext())
-                iter.next().onBufferingChanged(100);
+            mpClearStateFlagBit(MPSTATE_FLAG_BUFFERING);
             break;
 
         case MediaPlayer.MEDIA_INFO_BAD_INTERLEAVING:
@@ -1787,9 +1790,9 @@ SurfaceHolder.Callback {
         return mpGetState();
     }
 
-    MPSubState
-    playerGetSubState() {
-        return mpGetSubState();
+    int
+    playerGetStateFlag() {
+        return mpGetStateFlag();
     }
 
     void
@@ -2005,6 +2008,16 @@ SurfaceHolder.Callback {
         return mVlm.hasActiveVideo()
                && MPState.ERROR != mMpS
                && MPState.END != mMpS;
+    }
+
+    public boolean
+    isPlayerSeeking(int stateFlag) {
+        return Utils.bitIsSet(mpGetStateFlag(), MPSTATE_FLAG_SEEKING);
+    }
+
+    public boolean
+    isPlayerBuffering(int stateFlag) {
+        return Utils.bitIsSet(mpGetStateFlag(), MPSTATE_FLAG_BUFFERING);
     }
 
     /**

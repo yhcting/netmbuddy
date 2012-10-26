@@ -695,10 +695,9 @@ public class Utils {
 
     // ------------------------------------------------------------------------
     //
-    // Misc
+    // Bit mask handling
     //
     // ------------------------------------------------------------------------
-    // Bit mask handling
     public static long
     bitClear(long flag, long mask) {
         return flag & ~mask;
@@ -711,10 +710,51 @@ public class Utils {
     }
 
     public static boolean
-    bitIsSet(long flag, long value, long mask) {
+    bitCompare(long flag, long value, long mask) {
         return value == (flag & mask);
     }
 
+    public static boolean
+    bitIsSet(long flag, long mask) {
+        return bitCompare(flag, mask, mask);
+    }
+
+    public static boolean
+    bitIsClear(long flag, long mask) {
+        return bitCompare(flag, 0, mask);
+    }
+
+    public static int
+    bitClear(int flag, int mask) {
+        return flag & ~mask;
+    }
+
+    public static int
+    bitSet(int flag, int value, int mask) {
+        flag = bitClear(flag, mask);
+        return flag | (value & mask);
+    }
+
+    public static boolean
+    bitCompare(int flag, int value, int mask) {
+        return value == (flag & mask);
+    }
+
+    public static boolean
+    bitIsSet(int flag, int mask) {
+        return bitCompare(flag, mask, mask);
+    }
+
+    public static boolean
+    bitIsClear(int flag, int mask) {
+        return bitCompare(flag, 0, mask);
+    }
+
+    // ------------------------------------------------------------------------
+    //
+    // Misc
+    //
+    // ------------------------------------------------------------------------
     public static String
     secsToTimeText(int secs) {
         int h = secs / 60 / 60;
