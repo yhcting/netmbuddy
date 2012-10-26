@@ -50,7 +50,7 @@
     <string name="choose_app">어플리케이션 선택</string>
     <string name="play_video">비디오 재생</string>
     <string name="videos_of_this_author">제작자의 다른 비디오들</string>
-    <string name="videos_with_author">제작자로 비디오</string>
+    <string name="videos_with_author">제작자로 비디오 검색</string>
     <string name="user_playlist">사용자 재생목록</string>
     <string name="user_playlist_title_suffix">의 재생목록</string>
     <string name="importing_db">DB를 가져오는 중</string>
@@ -136,8 +136,8 @@
 E-mail : yhcting77@gmail.com\n
 블로그 : yhcting.tistory.com\n
 \n
-소프트웨어 엔지니어 하면서 가족한테 무언가 해 준 기억이 없었습니다.\n
-그런데, 새로 스마트폰을 장만한 아내가 유튜브에서 음악을 쉽게 그리고, 여러개를 계속해서 들을 수 있으면 좋겠다고 하더군요.\n
+소프트웨어 엔지니어로 일 하면서 가족한테 무언가 해 준 기억이 없었습니다.\n
+그런데, 새로 스마트폰을 장만한 아내가 유튜브에서 음악을 쉽게, 그리고 여러개를 계속해서 들을 수 있으면 좋겠다고 하더군요.\n
 그래서 틈틈히 만들었습니다.\n
 사랑하는 아내의 사진을 기념으로 넣었습니다.
     </string>
