@@ -130,6 +130,7 @@ public class PlaylistActivity extends Activity {
                                                     ColVideo.VOLUME,
                                                     ColVideo.PLAYTIME},
                                    null, false));
+        UiUtils.showTextToast(this, R.string.msg_play_all_musics);
     }
 
     // ------------------------------------------------------------------------

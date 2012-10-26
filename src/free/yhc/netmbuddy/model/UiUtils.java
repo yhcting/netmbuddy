@@ -74,14 +74,14 @@ public class UiUtils {
 
     public static void
     showTextToast(Context context, CharSequence text) {
-        Toast t = Toast.makeText(context, text, Toast.LENGTH_LONG);
+        Toast t = Toast.makeText(context, text, Toast.LENGTH_SHORT);
         t.setGravity(Gravity.CENTER, 0, 0);
         t.show();
     }
 
     public static void
     showTextToast(Context context, int textid) {
-        Toast t = Toast.makeText(context, textid, Toast.LENGTH_LONG);
+        Toast t = Toast.makeText(context, textid, Toast.LENGTH_SHORT);
         t.setGravity(Gravity.CENTER, 0, 0);
         t.show();
     }

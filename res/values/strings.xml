@@ -109,6 +109,7 @@
     <string name="msg_no_items_selected">No items selected.</string>
     <string name="msg_post_changing_video_quality">Main audio quality setting is changed too, accordingly.</string>
     <string name="msg_appended_to_playq">appended to play queue.</string>
+    <string name="msg_play_all_musics">All musics are played.</string>
 
     <string name="err_no_err">Success.</string>
     <string name="err_unknown">Unknown error.</string>

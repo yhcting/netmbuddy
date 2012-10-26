@@ -286,7 +286,7 @@ public class MusicsActivity extends Activity {
         adpr.clearCheckState();
         adpr.notifyDataSetChanged();
 
-        UiUtils.showTextToastAtBottom(this, R.string.msg_appended_to_playq, false);
+        UiUtils.showTextToast(this, R.string.msg_appended_to_playq);
     }
 
     private void
