@@ -42,7 +42,7 @@
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:weightSum="4"
+            android:weightSum="5"
             android:orientation="horizontal"
             >
             <ImageView
@@ -53,6 +53,16 @@
                 android:gravity="center"
                 android:scaleType="fitCenter"
                 android:src="@drawable/ic_play"
+                android:clickable="true"
+                />
+            <ImageView
+                android:id="@+id/append_playq"
+                android:layout_width="@dimen/toolbtn_width"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_append_playq"
                 android:clickable="true"
                 />
             <ImageView

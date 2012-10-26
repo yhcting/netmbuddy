@@ -21,10 +21,6 @@
 package free.yhc.netmbuddy;
 
 import static free.yhc.netmbuddy.model.Utils.eAssert;
-
-import java.util.Iterator;
-import java.util.LinkedList;
-
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.res.Configuration;
@@ -61,6 +57,7 @@ DBHelper.CheckExistDoneReceiver {
     public static final String  INTENT_KEY_SEARCH_TITLE = "searchtitle";
 
     private final DB        mDb = DB.get();
+    private final YTPlayer  mMp = YTPlayer.get();
 
     private DBHelper        mDbHelper;
     private int             mToolBtnSearchIcon = 0;
@@ -90,6 +87,12 @@ DBHelper.CheckExistDoneReceiver {
     }
 
     private void
+    showPlayer() {
+        ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
+        playerv.setVisibility(View.VISIBLE);
+    }
+
+    private void
     doNewSearch(final YTSearchHelper.SearchType type, int title) {
         UiUtils.EditTextAction action = new UiUtils.EditTextAction() {
             @Override
@@ -107,7 +110,6 @@ DBHelper.CheckExistDoneReceiver {
                                                               action);
         diag.show();
     }
-
 
     /**
      * @return
@@ -159,19 +161,26 @@ DBHelper.CheckExistDoneReceiver {
     }
 
     private void
+    appendToPlayQ(YTPlayer.Video[] vids) {
+        mMp.appendToPlayQ(vids);
+        showPlayer();
+    }
+
+    private void
     appendCheckMusicsToPlayQ() {
         // # of adapter items are at most Policy.YTSEARCH_MAX_RESULTS
         // So, just do it at main UI thread!
         YTVideoSearchAdapter adpr = getAdapter();
-        for (int i = 0; i < adpr.getCount(); i++) {
-            if (adpr.getItemMarkState(i)) {
-                mMp.appendToCurrentPlayQ(new YTPlayer.Video(
-                        adpr.getItemVideoId(i),
-                        adpr.getItemTitle(i),
-                        adpr.getItemVolume(i),
-                        Integer.parseInt(adpr.getItemPlaytime(i))));
-            }
+        int[] checkedItems = adpr.getCheckedItemPositions();
+        YTPlayer.Video[] vids = new YTPlayer.Video[checkedItems.length];
+        int j = 0;
+        for (int i : checkedItems) {
+            vids[j++] = new YTPlayer.Video(adpr.getItemVideoId(i),
+                                           adpr.getItemTitle(i),
+                                           adpr.getItemVolume(i),
+                                           Integer.parseInt(adpr.getItemPlaytime(i)));
         }
+        appendToPlayQ(vids);
         adpr.cleanItemCheck();
         adpr.notifyDataSetChanged();
     }
@@ -181,20 +190,14 @@ DBHelper.CheckExistDoneReceiver {
     addCheckedMusicsToPlaylist(final long plid) {
         // Scan to check all thumbnails are loaded.
         // And prepare data for background execution.
-        YTVideoSearchAdapter adpr = getAdapter();
-        final LinkedList<Integer> iteml = new LinkedList<Integer>();
-        final LinkedList<Integer> volumel = new LinkedList<Integer>();
-        for (int i = 0; i < adpr.getCount(); i++) {
-            if (adpr.getItemMarkState(i)) {
-                if (null == adpr.getItemThumbnail(i)) {
-                    UiUtils.showTextToast(this, R.string.msg_no_all_thumbnail);
-                    return;
-                }
-                iteml.add(i);
-                volumel.add(adpr.getItemVolume(i));
+        final YTVideoSearchAdapter adpr = getAdapter();
+        final int[] checkedItems = adpr.getCheckedItemPositions();
+        for (int i : checkedItems) {
+            if (null == adpr.getItemThumbnail(i)) {
+                UiUtils.showTextToast(this, R.string.msg_no_all_thumbnail);
+                return;
             }
         }
-
 
         DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
             private int failedCnt = 0;
@@ -202,33 +205,29 @@ DBHelper.CheckExistDoneReceiver {
             @Override
             public void
             onPostExecute(DiagAsyncTask task, Err result) {
-                Iterator<Integer> iIter = iteml.iterator();
-                while (iIter.hasNext())
-                    getAdapter().unmarkItemCheck(iIter.next());
-
+                adpr.cleanItemCheck();
                 if (failedCnt > 0) {
-                    CharSequence msg = YTVideoSearchActivity.this.getResources().getText(R.string.msg_fails_to_add);
+                    CharSequence msg = getResources().getText(R.string.msg_fails_to_add);
                     UiUtils.showTextToast(YTVideoSearchActivity.this,
                                           msg + " : " + failedCnt);
                 }
             }
+
             @Override
             public void
             onCancel(DiagAsyncTask task) {
             }
+
             @Override
             public Err
             doBackgroundWork(DiagAsyncTask task, Object... objs) {
                 mDb.beginTransaction();
                 try {
-                    Iterator<Integer> iIter = iteml.iterator();
-                    Iterator<Integer> vIter = volumel.iterator();
-                    while (iIter.hasNext()) {
-                        int r = addToPlaylist(plid, iIter.next(), vIter.next());
+                    for (int i : checkedItems) {
+                        int r = addToPlaylist(plid, i, adpr.getItemVolume(i));
                         if (0 != r && R.string.msg_existing_muisc != r)
                             failedCnt++;
                     }
-
                     mDb.setTransactionSuccessful();
                 } finally {
                     mDb.endTransaction();
@@ -247,13 +246,9 @@ DBHelper.CheckExistDoneReceiver {
     addCheckedMusicsTo() {
         final int[] menuTextIds = new int[] { R.string.append_to_playq };
 
-        final String[] userMenu;
-        if (YTPlayer.get().hasActiveVideo()) {
-            userMenu = new String[menuTextIds.length];
-            for (int i = 0; i < menuTextIds.length; i++)
-                userMenu[i] = Utils.getResText(menuTextIds[i]);
-        } else
-            userMenu = null;
+        final String[] userMenu = new String[menuTextIds.length];
+        for (int i = 0; i < menuTextIds.length; i++)
+            userMenu[i] = Utils.getResText(menuTextIds[i]);
 
         UiUtils.OnPlaylistSelectedListener action = new UiUtils.OnPlaylistSelectedListener() {
             @Override
@@ -273,9 +268,7 @@ DBHelper.CheckExistDoneReceiver {
                 default:
                     eAssert(false);
                 }
-
             }
-
         };
 
         UiUtils.buildSelectPlaylistDialog(mDb,
@@ -330,9 +323,8 @@ DBHelper.CheckExistDoneReceiver {
                                                 getAdapter().getItemTitle(position),
                                                 Policy.DEFAULT_VIDEO_VOLUME,
                                                 playtime);
+        appendToPlayQ(new YTPlayer.Video[] { vid });
 
-        if (!YTPlayer.get().appendToCurrentPlayQ(vid))
-            UiUtils.showTextToast(this, R.string.err_unknown);
     }
 
     private void
@@ -349,9 +341,6 @@ DBHelper.CheckExistDoneReceiver {
 
     private void
     onListItemClick(View view, int position, long itemId) {
-        ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
-        playerv.setVisibility(View.VISIBLE);
-
         int playtime = 0;
         try {
             playtime = Integer.parseInt(getAdapter().getItemPlaytime(position));
@@ -362,11 +351,7 @@ DBHelper.CheckExistDoneReceiver {
                 getAdapter().getItemTitle(position),
                 Policy.DEFAULT_VIDEO_VOLUME,
                 playtime);
-        mMp.setController(this,
-                          playerv,
-                          (ViewGroup)findViewById(R.id.list_drawer),
-                          null,
-                          mMp.getVideoToolButton());
+        showPlayer();
         mMp.startVideos(new YTPlayer.Video[] { v });
     }
 
@@ -466,9 +451,6 @@ DBHelper.CheckExistDoneReceiver {
         // AdapterContextMenuInfo mInfo = (AdapterContextMenuInfo)menuInfo;
         boolean visible = (YTSearchHelper.SearchType.VID_AUTHOR == getSearchType())? false: true;
         menu.findItem(R.id.videos_of_this_author).setVisible(visible);
-
-        visible = YTPlayer.get().hasActiveVideo();
-        menu.findItem(R.id.append_to_playq).setVisible(visible);
     }
 
     @Override

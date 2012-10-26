@@ -441,11 +441,11 @@ SurfaceHolder.Callback {
         }
 
         void
-        appendVideo(Video v) {
+        appendVideo(Video vids[]) {
             eAssert(Utils.isUiThread());
-            Video[] newvs = new Video[vs.length + 1];
+            Video[] newvs = new Video[vs.length + vids.length];
             System.arraycopy(vs, 0, newvs, 0, vs.length);
-            newvs[newvs.length - 1] = v;
+            System.arraycopy(vids, 0, newvs, vs.length, vids.length);
             // assigning reference is atomic operation in JAVA!
             vs = newvs;
             notifyToListChangedListener();
@@ -2110,19 +2110,12 @@ SurfaceHolder.Callback {
         storePlayerState();
     }
 
-    /**
-     *
-     * @param v
-     * @return
-     *   false if error, otherwise true
-     */
-    public boolean
-    appendToCurrentPlayQ(Video v) {
-        if (!mVlm.hasActiveVideo())
-            return false;
-
-        mVlm.appendVideo(v);
-        return true;
+    public void
+    appendToPlayQ(Video[] vids) {
+        if (mVlm.hasActiveVideo())
+            mVlm.appendVideo(vids);
+        else
+            startVideos(vids);
     }
 
     /**

@@ -182,8 +182,24 @@ public class YTVideoSearchAdapter extends YTSearchAdapter {
     }
 
     public boolean
-    getItemMarkState(int pos) {
+    isItemChecked(int pos) {
         return (Boolean)mItemViews[pos].findViewById(R.id.checkbtn).getTag(TAGKEY_CHECK_STATE);
+    }
+
+    public int
+    getNrCheckedItems() {
+        return mNrChecked;
+    }
+
+    public int[]
+    getCheckedItemPositions() {
+        int[] poss = new int[getNrCheckedItems()];
+        int i = 0;
+        for (int j = 0; j < mItemViews.length; j++) {
+            if (isItemChecked(j))
+                poss[i++] = j;
+        }
+        return poss;
     }
 
     public void

@@ -22,7 +22,6 @@ package free.yhc.netmbuddy;
 
 import static free.yhc.netmbuddy.model.Utils.eAssert;
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Intent;
 import android.content.res.Configuration;
@@ -62,10 +61,8 @@ public class MusicsActivity extends Activity {
             }
         };
 
-
     private long        mPlid   = PLID_INVALID;
     private ListView    mListv  = null;
-
 
     private static boolean
     isUserPlaylist(long plid) {
@@ -78,10 +75,21 @@ public class MusicsActivity extends Activity {
     }
 
     private void
-    startVideos(YTPlayer.Video[] vs) {
+    showPlayer() {
         ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
         playerv.setVisibility(View.VISIBLE);
+    }
+
+    private void
+    startVideos(YTPlayer.Video[] vs) {
+        showPlayer();
         mMp.startVideos(vs);
+    }
+
+    private void
+    appendToPlayQ(YTPlayer.Video[] vids) {
+        mMp.appendToPlayQ(vids);
+        showPlayer();
     }
 
     private void
@@ -98,8 +106,7 @@ public class MusicsActivity extends Activity {
 
             @Override
             public void
-            onCancel(DiagAsyncTask task) {
-            }
+            onCancel(DiagAsyncTask task) { }
 
             @Override
             public Err
@@ -172,10 +179,11 @@ public class MusicsActivity extends Activity {
             onPostExecute(DiagAsyncTask task, Err result) {
                 getAdapter().reloadCursorAsync();
             }
+
             @Override
             public void
-            onCancel(DiagAsyncTask task) {
-            }
+            onCancel(DiagAsyncTask task) { }
+
             @Override
             public Err
             doBackgroundWork(DiagAsyncTask task, Object... objs) {
@@ -216,7 +224,7 @@ public class MusicsActivity extends Activity {
                                    isUserPlaylist(mPlid)? R.string.msg_delete_musics
                                                         : R.string.msg_delete_musics_completely,
                                    action)
-               .show();
+                .show();
     }
 
     private void
@@ -253,6 +261,28 @@ public class MusicsActivity extends Activity {
                                        adpr.getMusicVolume(poss[i]),
                                        adpr.getMusicPlaytime(poss[i]));
         startVideos(vs);
+        adpr.clearCheckState();
+        adpr.notifyDataSetChanged();
+    }
+
+    private void
+    onToolAppendPlayQ(View anchor) {
+        MusicsAdapter adpr = getAdapter();
+        int[] poss = adpr.getCheckedMusics();
+        if (0 == poss.length) {
+            UiUtils.showTextToast(this, R.string.msg_no_items_selected);
+            return;
+        }
+
+        YTPlayer.Video[] vids = new YTPlayer.Video[poss.length];
+        int j = 0;
+        for (int i : poss)
+            vids[j++] = new YTPlayer.Video(adpr.getMusicYtid(i),
+                                           adpr.getMusicTitle(i),
+                                           adpr.getMusicVolume(i),
+                                           adpr.getMusicPlaytime(i));
+        appendToPlayQ(vids);
+
         adpr.clearCheckState();
         adpr.notifyDataSetChanged();
     }
@@ -307,6 +337,14 @@ public class MusicsActivity extends Activity {
             }
         });
 
+        iv = (ImageView)findViewById(R.id.append_playq);
+        iv.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                onToolAppendPlayQ(v);
+            }
+        });
+
         iv = (ImageView)findViewById(R.id.copy);
         iv.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -334,8 +372,8 @@ public class MusicsActivity extends Activity {
 
     private void
     onContextMenuVolume(final long itemId, final int itemPos) {
-        YTPlayer.get().changeVideoVolume(getAdapter().getMusicTitle(itemPos),
-                                         getAdapter().getMusicYtid(itemPos));
+        mMp.changeVideoVolume(getAdapter().getMusicTitle(itemPos),
+                              getAdapter().getMusicYtid(itemPos));
     }
 
     private void
@@ -344,8 +382,7 @@ public class MusicsActivity extends Activity {
                                                 getAdapter().getMusicTitle(itemPos),
                                                 getAdapter().getMusicVolume(itemPos),
                                                 getAdapter().getMusicPlaytime(itemPos));
-        if (!YTPlayer.get().appendToCurrentPlayQ(vid))
-            UiUtils.showTextToast(this, R.string.err_unknown);
+        appendToPlayQ(new YTPlayer.Video[] { vid });
     }
 
     private void
@@ -363,11 +400,12 @@ public class MusicsActivity extends Activity {
                 getAdapter().reloadCursorAsync();
             }
         };
-        AlertDialog diag = UiUtils.buildOneLineEditTextDialog(this,
-                                                              R.string.rename,
-                                                              getAdapter().getMusicTitle(itemPos),
-                                                              action);
-        diag.show();
+
+        UiUtils.buildOneLineEditTextDialog(this,
+                                           R.string.rename,
+                                           getAdapter().getMusicTitle(itemPos),
+                                           action)
+               .show();
 
     }
 
@@ -438,9 +476,6 @@ public class MusicsActivity extends Activity {
         boolean visible = isUserPlaylist(mPlid)? true: false;
         menu.findItem(R.id.move_to).setVisible(visible);
         menu.findItem(R.id.plthumbnail).setVisible(visible);
-
-        visible = YTPlayer.get().hasActiveVideo();
-        menu.findItem(R.id.append_to_playq).setVisible(visible);
     }
 
     @Override
