@@ -45,17 +45,20 @@ import java.util.zip.ZipFile;
 import org.apache.http.impl.cookie.DateParseException;
 import org.apache.http.impl.cookie.DateUtils;
 
+import android.app.Activity;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Rect;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.util.Log;
+import android.view.Window;
 import free.yhc.netmbuddy.R;
 
 public class Utils {
@@ -689,6 +692,7 @@ public class Utils {
         eAssert(false);
         return null;
     }
+
     // ------------------------------------------------------------------------
     //
     // Misc
@@ -747,5 +751,38 @@ public class Utils {
                 return key;
         }
         return null;
+    }
+
+    // ------------------------------------------------------------------------
+    //
+    // Other android specifics.
+    //
+    // ------------------------------------------------------------------------
+    public static int
+    getStatusBarHeight(Activity activity) {
+        Rect rect= new Rect();
+        Window window= activity.getWindow();
+        window.getDecorView().getWindowVisibleDisplayFrame(rect);
+        // Below is for future reference.
+        // int StatusBarHeight = rect.top;
+        // int contentViewTop = window.findViewById(Window.ID_ANDROID_CONTENT).getTop();
+        // int TitleBarHeight= contentViewTop - StatusBarHeight;
+        return rect.top;
+    }
+
+    public static int
+    getVisibleFrameWidth(Activity activity) {
+        Rect rect= new Rect();
+        Window window= activity.getWindow();
+        window.getDecorView().getWindowVisibleDisplayFrame(rect);
+        return rect.right - rect.left;
+    }
+
+    public static int
+    getVisibleFrameHeight(Activity activity) {
+        Rect rect= new Rect();
+        Window window= activity.getWindow();
+        window.getDecorView().getWindowVisibleDisplayFrame(rect);
+        return rect.bottom - rect.top;
     }
 }

@@ -52,7 +52,6 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.WindowManager;
 import free.yhc.netmbuddy.R;
 import free.yhc.netmbuddy.VideoPlayerActivity;
 import free.yhc.netmbuddy.model.YTDownloader.DnArg;
@@ -949,58 +948,6 @@ SurfaceHolder.Callback {
     isVideoSizeReady() {
         return mVSzReady;
     }
-
-    private void
-    fitVideoSurfaceToScreen(SurfaceHolder holder) {
-        if (null == holder)
-            return;
-
-        //Scale video with fixed-ratio.
-        int vw = mpGetVideoWidth();
-        int vh = mpGetVideoHeight();
-
-        if (0 >= vw || 0 >= vh)
-            return;
-
-        int sw = ((WindowManager)Utils.getAppContext().getSystemService(Context.WINDOW_SERVICE))
-                    .getDefaultDisplay().getWidth();
-        int sh = ((WindowManager)Utils.getAppContext().getSystemService(Context.WINDOW_SERVICE))
-                    .getDefaultDisplay().getHeight();
-
-        // NOTE
-        // Workaround for Android Framework's bug.
-        //
-        // Only landscape mode is supported for video and that is described at manifest.xml.
-        // But, in case of playing local video, reaching here so quickly since activity is resumed.
-        // And at that moment, sometimes, activity's mode is still portrait which is default mode
-        //   before completely changing to target mode(in this case, landscape mode).
-        // So, even if activity uses landscape as fixed screen mode, width and height values may
-        //   be read as portrait mode here, in case as follows
-        //   - playing local video.
-        //   - video player activity enters pause state and then resumed.
-        //     (ex. turn off backlight and then turn on again.)
-        // To workaround, value of longer axis is used as width regardless of direction - width or height of window.
-        if (sw < sh) {
-            // swap
-            int tmp = sw;
-            sw = sh;
-            sh = tmp;
-        }
-
-        // Now, sw is always length of longer axis.
-        int[] sz = new int[2];
-        Utils.fitFixedRatio(sw, sh, vw, vh, sz);
-        holder.setFixedSize(sz[0], sz[1]);
-
-        SurfaceView surfv = mUi.getSurfaceView();
-        eAssert(null != surfv);
-        ViewGroup.LayoutParams lp = surfv.getLayoutParams();
-        lp.width = sz[0];
-        lp.height = sz[1];
-        surfv.setLayoutParams(lp);
-        surfv.requestLayout();
-    }
-
     // ========================================================================
     //
     // Suspending/Resuming Control
@@ -1656,9 +1603,6 @@ SurfaceHolder.Callback {
     private void
     onPreparedCompletely() {
         logD("MPlayer - onPreparedInternal");
-
-        fitVideoSurfaceToScreen(mSurfHolder);
-
         boolean autoStart = true;
         if (haveStoredPlayerState()) {
             autoStart = !isStoredPlayerStatePaused();
@@ -2163,6 +2107,16 @@ SurfaceHolder.Callback {
         if (isVideoPlaying())
             return mVlm.getActiveVideo().videoId;
         return null;
+    }
+
+    public int
+    getVideoWidth() {
+        return mpGetVideoWidth();
+    }
+
+    public int
+    getVideoHeight() {
+        return mpGetVideoHeight();
     }
 
     public int

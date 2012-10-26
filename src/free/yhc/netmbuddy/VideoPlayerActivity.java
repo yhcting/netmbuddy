@@ -2,11 +2,13 @@ package free.yhc.netmbuddy;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
@@ -25,6 +27,68 @@ YTPlayer.VideosStateListener {
     private final YTPlayer      mMp = YTPlayer.get();
     private SurfaceView         mSurfv;
     private Utils.PrefQuality   mVQuality = Utils.getPrefQuality();
+
+
+    private void
+    fitVideoSurfaceToScreen(boolean statusBarShown) {
+        SurfaceHolder holder = mSurfv.getHolder();
+
+        //Scale video with fixed-ratio.
+        int vw = mMp.getVideoWidth();
+        int vh = mMp.getVideoHeight();
+
+        if (0 >= vw || 0 >= vh)
+            return;
+
+        // TODO
+        // Is there good way to get screen size without branching two cases?
+        // Below codes looks dirty to me....
+        // But, at this moment, I failed to find any other way...
+
+        int sw, sh;
+        if (statusBarShown) {
+            sw = Utils.getVisibleFrameWidth(this);
+            sh = Utils.getVisibleFrameHeight(this);
+        } else {
+            sw = ((WindowManager)Utils.getAppContext().getSystemService(Context.WINDOW_SERVICE))
+                    .getDefaultDisplay().getWidth();
+            sh = ((WindowManager)Utils.getAppContext().getSystemService(Context.WINDOW_SERVICE))
+                    .getDefaultDisplay().getHeight();
+        }
+
+        // NOTE
+        // Workaround for Android Framework's bug.
+        //
+        // Only landscape mode is supported for video and that is described at manifest.xml.
+        // But, in case of playing local video, reaching here so quickly since activity is resumed.
+        // And at that moment, sometimes, activity's mode is still portrait which is default mode
+        //   before completely changing to target mode(in this case, landscape mode).
+        // So, even if activity uses landscape as fixed screen mode, width and height values may
+        //   be read as portrait mode here, in case as follows
+        //   - playing local video.
+        //   - video player activity enters pause state and then resumed.
+        //     (ex. turn off backlight and then turn on again.)
+        // To workaround, value of longer axis is used as width regardless of direction - width or height of window.
+        if (sw < sh) {
+            // swap
+            int tmp = sw;
+            sw = sh;
+            sh = tmp;
+        }
+
+        // Now, sw is always length of longer axis.
+        int[] sz = new int[2];
+        Utils.fitFixedRatio(sw, sh, vw, vh, sz);
+        holder.setFixedSize(sz[0], sz[1]);
+
+        ViewGroup.LayoutParams lp = mSurfv.getLayoutParams();
+        lp.width = sz[0];
+        lp.height = sz[1];
+        mSurfv.setLayoutParams(lp);
+        mSurfv.requestLayout();
+    }
+
+
 
     private void
     setController(boolean withSurface) {
@@ -46,20 +110,30 @@ YTPlayer.VideosStateListener {
                           toolBtn);
     }
 
+    private boolean
+    isUserInterfaceShown() {
+        return View.VISIBLE == findViewById(R.id.player).getVisibility();
+    }
+
     private void
-    showController() {
+    showUserInterface() {
+        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
         ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
         ViewGroup drawer = (ViewGroup)findViewById(R.id.list_drawer);
         playerv.setVisibility(View.VISIBLE);
         drawer.setVisibility(View.VISIBLE);
+        fitVideoSurfaceToScreen(true);
     }
 
     private void
-    hideController() {
+    hideUserInterface() {
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                             WindowManager.LayoutParams.FLAG_FULLSCREEN);
         ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
         ViewGroup drawer = (ViewGroup)findViewById(R.id.list_drawer);
         playerv.setVisibility(View.GONE);
         drawer.setVisibility(View.GONE);
+        fitVideoSurfaceToScreen(false);
     }
 
     private void
@@ -167,6 +241,8 @@ YTPlayer.VideosStateListener {
         case STARTED:
         case PAUSED:
         case PREPARED:
+            fitVideoSurfaceToScreen(isUserInterfaceShown());
+            // missing break is intentional.
         case STOPPED:
         case ERROR:
             switch (subTo) {
@@ -208,11 +284,10 @@ YTPlayer.VideosStateListener {
         findViewById(R.id.touch_ground).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
-                if (View.GONE == playerv.getVisibility())
-                    showController();
+                if (isUserInterfaceShown())
+                    hideUserInterface();
                 else
-                    hideController();
+                    showUserInterface();
             }
         });
 
@@ -248,7 +323,7 @@ YTPlayer.VideosStateListener {
         // ==> Handler View of SlidingDrawer is shown.
         //
         // To workaround, player is always shown at onResume().
-        showController();
+        showUserInterface();
     }
 
     @Override
