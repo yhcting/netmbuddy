@@ -783,6 +783,6 @@ public class Utils {
         Rect rect= new Rect();
         Window window= activity.getWindow();
         window.getDecorView().getWindowVisibleDisplayFrame(rect);
-        return rect.bottom - rect.top;
+        return rect.bottom;
     }
 }

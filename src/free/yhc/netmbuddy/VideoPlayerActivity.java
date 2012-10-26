@@ -2,7 +2,6 @@ package free.yhc.netmbuddy;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
@@ -25,6 +24,7 @@ public class VideoPlayerActivity extends Activity implements
 YTPlayer.PlayerStateListener,
 YTPlayer.VideosStateListener {
     private final YTPlayer      mMp = YTPlayer.get();
+    private int                 mStatusBarHeight = 0;
     private SurfaceView         mSurfv;
     private Utils.PrefQuality   mVQuality = Utils.getPrefQuality();
 
@@ -44,17 +44,16 @@ YTPlayer.VideosStateListener {
         // Is there good way to get screen size without branching two cases?
         // Below codes looks dirty to me....
         // But, at this moment, I failed to find any other way...
-
-        int sw, sh;
-        if (statusBarShown) {
-            sw = Utils.getVisibleFrameWidth(this);
-            sh = Utils.getVisibleFrameHeight(this);
-        } else {
-            sw = ((WindowManager)Utils.getAppContext().getSystemService(Context.WINDOW_SERVICE))
-                    .getDefaultDisplay().getWidth();
-            sh = ((WindowManager)Utils.getAppContext().getSystemService(Context.WINDOW_SERVICE))
-                    .getDefaultDisplay().getHeight();
-        }
+        //
+        // NOTE
+        // Status bar hiding/showing has animation effect.
+        // So, getting status bar height sometimes returns unexpected value.
+        // (Not perfectly matching window's FLAG_FULLSCREEN flag)
+        // So, saving height of status bar at the beginning and that value is used.
+        int sw = Utils.getVisibleFrameWidth(this);
+        int sh = Utils.getVisibleFrameHeight(this);
+        if (statusBarShown)
+            sh -= mStatusBarHeight;
 
         // NOTE
         // Workaround for Android Framework's bug.
@@ -276,8 +275,8 @@ YTPlayer.VideosStateListener {
         // Even if Visibility of SlidingDrawer is set to "GONE" here or "layout xml"
         //   'handler' of SlidingDrawer is still shown!!
         // So, to workaround this issue, "VISIBILE" is used as default visibility of controller.
-
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.videoplayer);
         mSurfv = (SurfaceView)findViewById(R.id.surface);
         mMp.setSurfaceHolder(mSurfv.getHolder());
@@ -302,6 +301,7 @@ YTPlayer.VideosStateListener {
     protected void
     onResume() {
         super.onResume();
+
         if (!mMp.hasActiveVideo()) {
             // There is no video to play.
             // So, exit from video player
@@ -324,6 +324,16 @@ YTPlayer.VideosStateListener {
         //
         // To workaround, player is always shown at onResume().
         showUserInterface();
+    }
+
+    @Override
+    public void
+    onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        // Below code is a kind of hack to get height of status bar.
+        // Need to find any better way....
+        if (0 == mStatusBarHeight)
+            mStatusBarHeight = Utils.getStatusBarHeight(this);
     }
 
     @Override
