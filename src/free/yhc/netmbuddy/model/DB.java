@@ -28,6 +28,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 
@@ -1222,6 +1223,26 @@ public class DB extends SQLiteOpenHelper {
             c.close();
         }
     }
+
+    public long[]
+    getPlaylistsContainVideo(long vid) {
+        Cursor plc = queryPlaylist(new ColPlaylist[] { ColPlaylist.ID });
+        if (!plc.moveToFirst()) {
+            plc.close();
+            return new long[0];
+        }
+
+        ArrayList<Long> pls = new ArrayList<Long>();
+        do {
+            long plid = plc.getLong(0);
+            if (containsVideo(plid, vid))
+                pls.add(plid);
+        } while (plc.moveToNext());
+        plc.close();
+
+        return Utils.convertArrayLongTolong(pls.toArray(new Long[0]));
+    }
+
 
     // ----------------------------------------------------------------------
     //

@@ -64,6 +64,10 @@
     <string name="time1h">1시간</string>
     <string name="time2h">2시간</string>
     <string name="set_video_quality">화질 설정</string>
+    <string name="detail_info">상세정보</string>
+    <string name="playback_time">재생시간</string>
+    <string name="time_added">추가된 시간</string>
+    <string name="time_last_played">마지막으로 재생된 시간</string>
 
     <string name="pref_cat_operation">재생 방식 설정</string>
     <string name="pref_shuffle">임의 순서로 재생</string>

@@ -21,6 +21,10 @@
 package free.yhc.netmbuddy;
 
 import static free.yhc.netmbuddy.model.Utils.eAssert;
+
+import java.text.DateFormat;
+import java.util.Date;
+
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.Intent;
@@ -63,6 +67,16 @@ public class MusicsActivity extends Activity {
 
     private long        mPlid   = PLID_INVALID;
     private ListView    mListv  = null;
+
+    private static class VideoDetailInfo {
+        String      title           = "";
+        String      timeAdded       = "";
+        String      timeLastPlayed  = "";
+        String      volume          = "";
+        String      playTime        = "";
+        // titles of playlists contain the video
+        String[]    pls             = new String[0];
+    }
 
     private static boolean
     isUserPlaylist(long plid) {
@@ -228,20 +242,20 @@ public class MusicsActivity extends Activity {
     }
 
     private void
-    setToPlaylistThumbnail(long musicId, int itemPos) {
+    setToPlaylistThumbnail(long mid, int pos) {
         eAssert(isUserPlaylist(mPlid));
-        byte[] data = getAdapter().getMusicThumbnail(itemPos);
+        byte[] data = getAdapter().getMusicThumbnail(pos);
         mDb.updatePlaylist(mPlid, DB.ColPlaylist.THUMBNAIL, data);
         // update current screen's thumbnail too.
         UiUtils.setThumbnailImageView(((ImageView)findViewById(R.id.thumbnail)), data);
     }
 
     private void
-    onListItemClick(View view, int position, long itemId) {
-        YTPlayer.Video vid = new YTPlayer.Video(getAdapter().getMusicYtid(position),
-                                                getAdapter().getMusicTitle(position),
-                                                getAdapter().getMusicVolume(position),
-                                                getAdapter().getMusicPlaytime(position));
+    onListItemClick(View view, int pos, long id) {
+        YTPlayer.Video vid = new YTPlayer.Video(getAdapter().getMusicYtid(pos),
+                                                getAdapter().getMusicTitle(pos),
+                                                getAdapter().getMusicVolume(pos),
+                                                getAdapter().getMusicPlaytime(pos));
         startVideos(new YTPlayer.Video[] { vid });
     }
 
@@ -373,22 +387,22 @@ public class MusicsActivity extends Activity {
     }
 
     private void
-    onContextMenuVolume(final long itemId, final int itemPos) {
-        mMp.changeVideoVolume(getAdapter().getMusicTitle(itemPos),
-                              getAdapter().getMusicYtid(itemPos));
+    onContextMenuVolume(final long id, final int pos) {
+        mMp.changeVideoVolume(getAdapter().getMusicTitle(pos),
+                              getAdapter().getMusicYtid(pos));
     }
 
     private void
-    onContextMenuAppendToPlayQ(final long itemId, final int itemPos) {
-        YTPlayer.Video vid = new YTPlayer.Video(getAdapter().getMusicYtid(itemPos),
-                                                getAdapter().getMusicTitle(itemPos),
-                                                getAdapter().getMusicVolume(itemPos),
-                                                getAdapter().getMusicPlaytime(itemPos));
+    onContextMenuAppendToPlayQ(final long id, final int pos) {
+        YTPlayer.Video vid = new YTPlayer.Video(getAdapter().getMusicYtid(pos),
+                                                getAdapter().getMusicTitle(pos),
+                                                getAdapter().getMusicVolume(pos),
+                                                getAdapter().getMusicPlaytime(pos));
         appendToPlayQ(new YTPlayer.Video[] { vid });
     }
 
     private void
-    onContextMenuRename(final long itemId, final int itemPos) {
+    onContextMenuRename(final long id, final int pos) {
         UiUtils.EditTextAction action = new UiUtils.EditTextAction() {
             @Override
             public void
@@ -397,7 +411,7 @@ public class MusicsActivity extends Activity {
             @Override
             public void
             onOk(Dialog dialog, EditText edit) {
-                mDb.updateVideo(DB.ColVideo.ID, itemId,
+                mDb.updateVideo(DB.ColVideo.ID, id,
                                 DB.ColVideo.TITLE, edit.getText().toString());
                 getAdapter().reloadCursorAsync();
             }
@@ -405,15 +419,70 @@ public class MusicsActivity extends Activity {
 
         UiUtils.buildOneLineEditTextDialog(this,
                                            R.string.rename,
-                                           getAdapter().getMusicTitle(itemPos),
+                                           getAdapter().getMusicTitle(pos),
                                            action)
                .show();
 
     }
 
     private void
-    onContextMenuPlayVideo(final long itemId, final int itemPos) {
-        UiUtils.playAsVideo(this, getAdapter().getMusicYtid(itemPos));
+    onContextMenuPlayVideo(final long id, final int pos) {
+        UiUtils.playAsVideo(this, getAdapter().getMusicYtid(pos));
+    }
+
+    private void
+    onContextMenuDetailInfo(final long id, final int pos) {
+        final MusicsAdapter adpr = getAdapter();
+        final VideoDetailInfo vdi = new VideoDetailInfo();
+        final String ytvid = adpr.getMusicYtid(pos);
+        vdi.title = adpr.getMusicTitle(pos);
+        vdi.volume = adpr.getMusicVolume(pos) + "";
+        vdi.playTime = Utils.secsToMinSecText(adpr.getMusicPlaytime(pos));
+        DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
+            @Override
+            public void
+            onPostExecute(DiagAsyncTask task, Err result) {
+                String msg = "";
+                msg += vdi.title + "\n\n" +
+                       Utils.getResText(R.string.playback_time) + " : " + vdi.playTime + "\n" +
+                       Utils.getResText(R.string.volume) + " : " + vdi.volume + "\n" +
+                       Utils.getResText(R.string.time_added) + " : " + vdi.timeAdded + "\n" +
+                       Utils.getResText(R.string.time_last_played) + " : " + vdi.timeLastPlayed + "\n\n" +
+                       "[ " + Utils.getResText(R.string.playlist) + " ]\n";
+                for (String title : vdi.pls)
+                    msg += "* " + title + "\n";
+
+                UiUtils.createAlertDialog(MusicsActivity.this,
+                                          0,
+                                          Utils.getResText(R.string.detail_info),
+                                          msg)
+                       .show();
+            }
+
+            @Override
+            public void
+            onCancel(DiagAsyncTask task) { }
+
+            @Override
+            public Err
+            doBackgroundWork(DiagAsyncTask task, Object... objs) {
+                DateFormat df = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM);
+                vdi.timeAdded = df.format(new Date((Long)mDb.getVideoInfo(ytvid, DB.ColVideo.TIME_ADD)));
+                vdi.timeLastPlayed = df.format(new Date((Long)mDb.getVideoInfo(ytvid, DB.ColVideo.TIME_PLAYED)));
+                long[] plids = mDb.getPlaylistsContainVideo(id);
+                vdi.pls = new String[plids.length];
+                for (int i = 0; i < plids.length; i++)
+                    vdi.pls[i] = (String)mDb.getPlaylistInfo(plids[i], DB.ColPlaylist.TITLE);
+
+                return Err.NO_ERR;
+            }
+        };
+        new DiagAsyncTask(this,
+                          worker,
+                          DiagAsyncTask.Style.SPIN,
+                          R.string.loading,
+                          false)
+            .execute();
     }
 
     // ========================================================================
@@ -456,6 +525,10 @@ public class MusicsActivity extends Activity {
 
         case R.id.delete:
             deleteMusics(new long[] { info.id });
+            return true;
+
+        case R.id.detail_info:
+            onContextMenuDetailInfo(info.id, info.position);
             return true;
         }
         eAssert(false);
@@ -515,8 +588,8 @@ public class MusicsActivity extends Activity {
         mListv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void
-            onItemClick(AdapterView<?> parent, View view, int position, long itemId) {
-                onListItemClick(view, position, itemId);
+            onItemClick(AdapterView<?> parent, View view, int pos, long id) {
+                onListItemClick(view, pos, id);
             }
         });
         MusicsAdapter adapter = new MusicsAdapter(this,
