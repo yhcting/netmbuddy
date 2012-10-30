@@ -1505,6 +1505,8 @@ SurfaceHolder.Callback {
         switch(mpGetState()) {
         case STARTED:
         case PAUSED:
+        case PREPARED_AUDIO:
+        case PREPARED:
             mStoredPState.pos = mpGetCurrentPosition();
             mStoredPState.vol = mpGetVolume();
             break;
@@ -1540,7 +1542,13 @@ SurfaceHolder.Callback {
 
     private boolean
     isStoredPlayerStatePaused() {
-        return MPState.PAUSED == mStoredPState.mpState;
+        switch (mStoredPState.mpState) {
+        case PAUSED:
+        case PREPARED_AUDIO:
+        case PREPARED:
+            return true;
+        }
+        return false;
     }
 
     // ============================================================================
