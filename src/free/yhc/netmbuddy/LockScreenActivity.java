@@ -16,18 +16,16 @@ import free.yhc.netmbuddy.model.YTPlayer.StopState;
 
 public class LockScreenActivity extends Activity implements
 YTPlayer.VideosStateListener {
-    static final String INTENT_KEY_SCREEN   = "screen";
+    static final String INTENT_KEY_APP_FOREGROUND   = "app_foreground";
 
     private final YTPlayer  mMp = YTPlayer.get();
 
-
-
+    private boolean         mForeground = false;
 
     public static class ScreenMonitor extends BroadcastReceiver {
         public static void
         init() {
             IntentFilter filter = new IntentFilter();
-            filter.addAction(Intent.ACTION_SCREEN_OFF);
             filter.addAction(Intent.ACTION_SCREEN_ON);
             ScreenMonitor rcvr = new ScreenMonitor();
             Utils.getAppContext().registerReceiver(rcvr, filter);
@@ -40,10 +38,8 @@ YTPlayer.VideosStateListener {
             i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
                        | Intent.FLAG_ACTIVITY_SINGLE_TOP
                        | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
-            if (Intent.ACTION_SCREEN_OFF.equals(intent.getAction())) {
-                i.putExtra(INTENT_KEY_SCREEN, false);
-            } else if (Intent.ACTION_SCREEN_ON.equals(intent.getAction())) {
-                i.putExtra(INTENT_KEY_SCREEN, true);
+            if (Intent.ACTION_SCREEN_ON.equals(intent.getAction())) {
+                i.putExtra(INTENT_KEY_APP_FOREGROUND, Utils.isAppForeground());
                 if (Utils.isPrefLockScreen()
                     && YTPlayer.get().hasActiveVideo())
                     context.startActivity(i);
@@ -65,6 +61,12 @@ YTPlayer.VideosStateListener {
         return new YTPlayer.ToolButton(R.drawable.ic_media_stop, onClick);
     }
 
+    private void
+    close() {
+        if (!mForeground)
+            moveTaskToBack(true);
+        finish();
+    }
     // ========================================================================
     //
     // Overriding 'YTPlayer.VideosStateListener'
@@ -78,7 +80,7 @@ YTPlayer.VideosStateListener {
     @Override
     public void
     onStopped(StopState state) {
-        finish();
+        close();
     }
 
     @Override
@@ -91,12 +93,15 @@ YTPlayer.VideosStateListener {
     public void
     onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        mForeground = getIntent().getBooleanExtra(INTENT_KEY_APP_FOREGROUND, false);
+
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED);
         setContentView(R.layout.lockscreen);
         findViewById(R.id.close).setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) {
-                finish();
+            public void
+            onClick(View v) {
+                close();
             }
         });
 
@@ -152,6 +157,7 @@ YTPlayer.VideosStateListener {
     @Override
     public void
     onBackPressed() {
+        close();
         super.onBackPressed();
     }
 }

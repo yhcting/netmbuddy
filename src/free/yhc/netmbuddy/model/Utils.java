@@ -301,6 +301,11 @@ public class Utils {
         return ar.topActivity.getClassName().toString();
     }
 
+    public static boolean
+    isAppForeground() {
+        return getCurrentTopActivity().startsWith(getAppContext().getPackageName()+".");
+    }
+
     // ------------------------------------------------------------------------
     //
     //
