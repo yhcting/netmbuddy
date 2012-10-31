@@ -192,11 +192,14 @@ DBHelper.CheckExistDoneReceiver {
         // And prepare data for background execution.
         final YTVideoSearchAdapter adpr = getAdapter();
         final int[] checkedItems = adpr.getCheckedItemPositions();
-        for (int i : checkedItems) {
-            if (null == adpr.getItemThumbnail(i)) {
+        final int[] itemVolumes = new int[checkedItems.length];
+        for (int i = 0; i < checkedItems.length; i++) {
+            int pos = checkedItems[i];
+            if (null == adpr.getItemThumbnail(pos)) {
                 UiUtils.showTextToast(this, R.string.msg_no_all_thumbnail);
                 return;
             }
+            itemVolumes[i] = adpr.getItemVolume(pos);
         }
 
         DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
@@ -223,8 +226,9 @@ DBHelper.CheckExistDoneReceiver {
             doBackgroundWork(DiagAsyncTask task, Object... objs) {
                 mDb.beginTransaction();
                 try {
-                    for (int i : checkedItems) {
-                        int r = addToPlaylist(plid, i, adpr.getItemVolume(i));
+                    for (int i = 0; i < checkedItems.length; i++) {
+                        int pos = checkedItems[i];
+                        int r = addToPlaylist(plid, pos, itemVolumes[i]);
                         if (0 != r && R.string.msg_existing_muisc != r)
                             failedCnt++;
                     }
@@ -236,9 +240,12 @@ DBHelper.CheckExistDoneReceiver {
             }
         };
 
-        new DiagAsyncTask(YTVideoSearchActivity.this, worker,
+        new DiagAsyncTask(this,
+                          worker,
                           DiagAsyncTask.Style.SPIN,
-                          R.string.adding, false).execute();
+                          R.string.adding,
+                          false)
+            .execute();
 
     }
 

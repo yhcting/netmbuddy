@@ -324,11 +324,11 @@ public class UiUtils {
                             action.onPlaylist(plid, user);
                         }
                     };
-                    AlertDialog diag = UiUtils.buildOneLineEditTextDialog(context,
-                                                                          R.string.enter_playlist_title,
-                                                                          R.string.enter_playlist_title,
-                                                                          edAction);
-                    diag.show();
+                    UiUtils.buildOneLineEditTextDialog(context,
+                                                       R.string.enter_playlist_title,
+                                                       R.string.enter_playlist_title,
+                                                       edAction)
+                           .show();
                 } else
                     action.onPlaylist(ids[which], user);
             }
