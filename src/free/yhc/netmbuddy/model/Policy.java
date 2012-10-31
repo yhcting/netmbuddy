@@ -73,6 +73,11 @@ public class Policy {
     // So, tuning this value is NOT easy.
     //public static final int     YTPLAYER_CACHING_TRIGGER_POINT = 30; // percent.
 
+    // NOTE
+    // At the beginning of streaming, device is very busy.
+    // So, caching need to be started with delay.
+    public static final long    YTPLAYER_CACHING_DELAY  = 10000; // 10 seconds.
+
     // --------------------------------------------------------------------
     // Network access
     // --------------------------------------------------------------------

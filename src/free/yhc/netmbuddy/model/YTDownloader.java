@@ -42,10 +42,6 @@ public class YTDownloader {
     private String                      mProxy      = null;
     private DownloadDoneReceiver        mDnDoneRcvr = null;
     private BGHandler                   mBgHandler  = null;
-
-    // Initialize with dummy NetLoader instance.
-    private NetLoader                   mLoader     = new NetLoader();
-
     private Object                      mUserTag    = null; // user tag value
 
     public interface DownloadDoneReceiver {
@@ -75,24 +71,32 @@ public class YTDownloader {
         }
     }
 
-    private class BGHandler extends Handler {
-        private File    tmpF = null;
+    private static class BGHandler extends Handler {
+        private final DownloadDoneReceiver  dnDoneRcvr;
+        private final YTDownloader          ytDownloader;
+
+        private NetLoader       loader  = new NetLoader();
+        private File            tmpF    = null;
         private volatile File   curOutF = null;
 
-        BGHandler(Looper looper) {
+        BGHandler(Looper                looper,
+                  YTDownloader          aYtDownloader,
+                  DownloadDoneReceiver  aDnDoneRcvr) {
             super(looper);
+            dnDoneRcvr = aDnDoneRcvr;
+            ytDownloader = aYtDownloader;
         }
 
         private void
         sendResult(final DnArg arg, final Err result) {
-            if (null == mDnDoneRcvr)
+            if (null == dnDoneRcvr)
                 return;
 
             Utils.getUiHandler().post(new Runnable() {
                 @Override
                 public void run() {
-                    if (null != mDnDoneRcvr)
-                        mDnDoneRcvr.downloadDone(YTDownloader.this, arg, result);
+                    if (null != dnDoneRcvr)
+                        dnDoneRcvr.downloadDone(ytDownloader, arg, result);
                 }
             });
         }
@@ -116,10 +120,10 @@ public class YTDownloader {
                     sendResult(arg, result);
                     return;
                 }
-                mLoader = hack.getNetLoader();
+                loader = hack.getNetLoader();
                 YTHacker.YtVideo vid = hack.getVideo(arg.qscore);
                 eAssert(null != vid);
-                NetLoader.HttpRespContent content = mLoader.getHttpContent(Uri.parse(vid.url), false);
+                NetLoader.HttpRespContent content = loader.getHttpContent(Uri.parse(vid.url), false);
                 if (HttpUtils.SC_NO_CONTENT == content.stcode) {
                     sendResult(arg, Err.YTHTTPGET);
                     return;
@@ -146,7 +150,7 @@ public class YTDownloader {
             } catch (YTMPException e) {
                 sendResult(arg, e.getError());
             } finally {
-                mLoader.close();
+                loader.close();
 
                 if (null != fos)
                     try {
@@ -168,6 +172,17 @@ public class YTDownloader {
             // So, synchronization is not required here.
             File outF = curOutF;
             return (null == outF)? null: outF.getAbsolutePath();
+        }
+
+        void
+        close() {
+            getLooper().getThread().interrupt();
+            getLooper().quit();
+            if (null != loader)
+                loader.close();
+
+            // Remove all messages
+            removeMessages(MSG_WHAT_DOWNLOAD);
         }
 
         @Override
@@ -207,9 +222,11 @@ public class YTDownloader {
      *
      * @param ytvid
      *   11-character-long youtube video id
+     * @param delay
+     *   real-downloading will be started after 'delay' milliseconds.
      */
     public Err
-    download(final String ytvid, final File outf, final int qscore) {
+    download(final String ytvid, final File outf, final int qscore, final long delay) {
         eAssert(Utils.isUiThread());
 
         if (outf.exists()) {
@@ -230,7 +247,7 @@ public class YTDownloader {
         if (Utils.isNetworkAvailable()) {
             Message msg = mBgHandler.obtainMessage(MSG_WHAT_DOWNLOAD,
                                                    new DnArg(ytvid, outf, qscore));
-            mBgHandler.sendMessage(msg);
+            mBgHandler.sendMessageDelayed(msg, delay);
             return Err.NO_ERR;
         }
         return Err.NETWORK_UNAVAILABLE;
@@ -243,19 +260,18 @@ public class YTDownloader {
 
         HandlerThread hThread = new BGThread();
         hThread.start();
-        mBgHandler = new BGHandler(hThread.getLooper());
+        mBgHandler = new BGHandler(hThread.getLooper(),
+                                   this,
+                                   dnDoneRcvr);
     }
 
     public void
     close() {
-        mLoader.close();
         // TODO
         // Stop running thread!
         // Need to check that below code works as expected perfectly.
         // "interrupting thread" is quite annoying and unpredictable job!
-        if (null != mBgHandler) {
-            mBgHandler.getLooper().getThread().interrupt();
-            mBgHandler.removeMessages(MSG_WHAT_DOWNLOAD);
-        }
+        if (null != mBgHandler)
+            mBgHandler.close();
     }
 }

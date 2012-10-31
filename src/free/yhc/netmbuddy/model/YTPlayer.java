@@ -1037,6 +1037,9 @@ SurfaceHolder.Callback {
 
     private static String
     getCachedVideoFilePath(String ytvid, Utils.PrefQuality quality) {
+        // Only mp4 is supported by YTHacker.
+        // WebM and Flv is not supported directly in Android's MediaPlayer.
+        // So, Mpeg is only option we can choose.
         return Policy.APPDATA_CACHEDIR + ytvid + "-" + quality.name() + ".mp4";
     }
 
@@ -1050,9 +1053,6 @@ SurfaceHolder.Callback {
 
     private static File
     getCachedVideo(String ytvid) {
-        // Only mp4 is supported by YTHacker.
-        // WebM and Flv is not supported directly in Android's MediaPlayer.
-        // So, Mpeg is only option we can choose.
         return new File(getCachedVideoFilePath(ytvid, Utils.getPrefQuality()));
     }
 
@@ -1121,10 +1121,7 @@ SurfaceHolder.Callback {
                     // retry.
                     retryTag--;
                     downloader.setTag(retryTag);
-                    try {
-                        Thread.sleep(500);
-                    } catch (InterruptedException e) {}
-                    downloader.download(vid, getCachedVideo(vid), getVideoQualityScore());
+                    downloader.download(vid, getCachedVideo(vid), getVideoQualityScore(), 500);
                 } else
                     downloader.close();
                 // Ignore other cases even if it is fails.
@@ -1134,10 +1131,8 @@ SurfaceHolder.Callback {
         mYtDnr.open("", rcvr);
         // to retry in case of YTHTTPGET.
         mYtDnr.setTag(Policy.NETOWRK_CONN_RETRY);
-        // NOTE
-        // Only mp4 is supported at YTHacker!
-        // So, YTDownloader also supports only mpeg4
-        mYtDnr.download(vid, getCachedVideo(vid), getVideoQualityScore());
+        mYtDnr.download(vid, getCachedVideo(vid), getVideoQualityScore(),
+                        Policy.YTPLAYER_CACHING_DELAY);
     }
 
     private void
