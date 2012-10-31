@@ -26,4 +26,14 @@
             android:entryValues="@array/strarr_pref_quality_value"
             />
     </PreferenceCategory>
+    <PreferenceCategory android:title="@string/pref_cat_ux">
+        <ListPreference
+            android:title="@string/pref_lockscreen"
+            android:summary="@string/pref_lockscreen_desc"
+            android:key="@string/cslockscreen"
+            android:defaultValue="@string/csoff"
+            android:entries="@array/strarr_on_off_entry"
+            android:entryValues="@array/strarr_on_off_value"
+            />
+    </PreferenceCategory>
 </PreferenceScreen>

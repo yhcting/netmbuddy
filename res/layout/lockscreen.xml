@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    >
+    <Button
+        android:id="@+id/close"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:paddingTop="5dip"
+        android:paddingBottom="5dip"
+        android:text="@string/close"
+        />
+    <LinearLayout
+        android:id="@+id/player"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@id/close"
+        >
+        <include layout="@layout/mplayer" />
+    </LinearLayout>
+    <LinearLayout
+        android:id="@+id/list_drawer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@id/player"
+        >
+        <include layout="@layout/mplayer_ldrawer" />
+    </LinearLayout>
+</RelativeLayout>

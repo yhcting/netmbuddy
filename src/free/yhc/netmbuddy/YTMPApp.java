@@ -44,6 +44,7 @@ public class YTMPApp extends Application {
         RTState.get();
         NotiManager.get();
         YTPlayer.get();
+        LockScreenActivity.ScreenMonitor.init();
     }
 
     @Override

@@ -151,8 +151,7 @@ YTPlayer.VideosStateListener {
 
     private void
     hideUserInterface() {
-        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
-                             WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
         ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
         ViewGroup drawer = (ViewGroup)findViewById(R.id.list_drawer);
         playerv.setVisibility(View.GONE);

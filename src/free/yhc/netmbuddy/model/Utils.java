@@ -692,6 +692,13 @@ public class Utils {
         return null;
     }
 
+    public static boolean
+    isPrefLockScreen() {
+        String v = getPreference(getResText(R.string.cslockscreen),
+                                            getResText(R.string.csoff));
+        return v.equals(getResText(R.string.cson));
+    }
+
     // ------------------------------------------------------------------------
     //
     // Bit mask handling
