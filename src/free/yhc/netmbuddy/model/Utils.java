@@ -434,7 +434,6 @@ public class Utils {
      */
     public static void
     fitFixedRatio(int boundW, int boundH, int width, int height, int[] out) {
-        boolean ret;
         // Check size of picture..
         float rw = (float) boundW / (float) width; // width ratio
         float rh = (float) boundH / (float) height; // height ratio
