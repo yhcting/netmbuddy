@@ -5,6 +5,7 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
+import android.graphics.Rect;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.view.SurfaceHolder;
@@ -51,10 +52,13 @@ YTPlayer.VideosStateListener {
         // So, getting status bar height sometimes returns unexpected value.
         // (Not perfectly matching window's FLAG_FULLSCREEN flag)
         // So, saving height of status bar at the beginning and that value is used.
-        int sw = Utils.getVisibleFrameWidth(this);
-        int sh = Utils.getVisibleFrameHeight(this);
-        if (statusBarShown)
-            sh -= mStatusBarHeight;
+        Rect rect = Utils.getVisibleFrame(this);
+        int sw = rect.width();
+        // visible frame's height depends on statusbar's visibility.
+        // And due to same reason of status bar above, rect.height() should not be used.
+        // We have pre-stored exact height of status bar. So, that value should be used
+        //   with visible frame's bottom value.
+        int sh = rect.bottom - (statusBarShown? mStatusBarHeight: 0);
 
         // NOTE
         // Workaround for Android Framework's bug.

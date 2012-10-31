@@ -798,6 +798,11 @@ public class Utils {
     // Other android specifics.
     //
     // ------------------------------------------------------------------------
+    /**
+     * Only available when status bar is showing.
+     * @param activity
+     * @return
+     */
     public static int
     getStatusBarHeight(Activity activity) {
         Rect rect= new Rect();
@@ -810,19 +815,11 @@ public class Utils {
         return rect.top;
     }
 
-    public static int
-    getVisibleFrameWidth(Activity activity) {
+    public static Rect
+    getVisibleFrame(Activity activity) {
         Rect rect= new Rect();
         Window window= activity.getWindow();
         window.getDecorView().getWindowVisibleDisplayFrame(rect);
-        return rect.right - rect.left;
-    }
-
-    public static int
-    getVisibleFrameHeight(Activity activity) {
-        Rect rect= new Rect();
-        Window window= activity.getWindow();
-        window.getDecorView().getWindowVisibleDisplayFrame(rect);
-        return rect.bottom;
+        return rect;
     }
 }

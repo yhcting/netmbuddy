@@ -82,6 +82,11 @@ DialogInterface.OnClickListener
         constructor(context, listener, style, msgid, cancelable);
     }
 
+    /**
+     * Set name of this AsyncTask.
+     * This is usually for debugging purpose.
+     * @param newName
+     */
     public void
     setName(String newName) {
         mName = newName;

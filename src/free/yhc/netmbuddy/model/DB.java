@@ -1012,6 +1012,15 @@ public class DB extends SQLiteOpenHelper {
                 ColPlaylist.TITLE.getName());
     }
 
+    /**
+     * Returned object can be type-casted to one of follows
+     *  - Long
+     *  - String
+     *  - byte[]
+     * @param plid
+     * @param col
+     * @return
+     */
     public Object
     getPlaylistInfo(long plid, ColPlaylist col) {
         Cursor c = queryPlaylist(plid, col);
@@ -1025,6 +1034,11 @@ public class DB extends SQLiteOpenHelper {
         }
     }
 
+    /**
+     * Any of playlists contain given video?
+     * @param ytvid
+     * @return
+     */
     public boolean
     containsVideo(String ytvid) {
         Cursor c = queryVideos(new ColVideo[] { ColVideo.ID }, ColVideo.VIDEOID, ytvid);
@@ -1033,16 +1047,33 @@ public class DB extends SQLiteOpenHelper {
         return r;
     }
 
+    /**
+     * Does playlist contains given video?
+     * @param plid
+     * @param ytvid
+     * @return
+     */
     public boolean
     containsVideo(long plid, String ytvid) {
-        Cursor c = mDb.rawQuery(buildQueryVideosSQL(plid, new ColVideo[] { ColVideo.ID },
-                                                    ColVideo.VIDEOID, ytvid,
-                                                    null, true), null);
+        Cursor c = mDb.rawQuery(buildQueryVideosSQL(plid,
+                                                    new ColVideo[] { ColVideo.ID },
+                                                    ColVideo.VIDEOID,
+                                                    ytvid,
+                                                    null,
+                                                    true),
+                                null);
         boolean r = c.getCount() > 0;
         c.close();
         return r;
     }
 
+    /**
+     * Insert video.
+     * @param plid
+     * @param vid
+     * @return
+     *   Err.DB_DUPLICATED if video is duplicated one.
+     */
     public Err
     insertVideoToPlaylist(long plid, long vid) {
         if (containsVideo(plid, vid))
@@ -1104,6 +1135,19 @@ public class DB extends SQLiteOpenHelper {
         return Err.NO_ERR;
     }
 
+    /**
+     * Update video value
+     * @param where
+     *   field of where clause
+     * @param wherev
+     *   field value of where clause
+     * @param field
+     *   field to update
+     * @param v
+     *   new field value
+     * @return
+     *   number of rows that are updated.
+     */
     public int
     updateVideo(ColVideo where, Object wherev,
                 ColVideo field, Object v) {
@@ -1121,7 +1165,7 @@ public class DB extends SQLiteOpenHelper {
     }
 
     /**
-     *
+     * Delete video from given playlist.
      * @param plid
      * @param vid
      *   NOTE : Video id (NOT Video reference id).
@@ -1132,6 +1176,12 @@ public class DB extends SQLiteOpenHelper {
         return deleteVideoRef(plid, vid);
     }
 
+    /**
+     * Delete video from all playlists except for given playlist.
+     * @param plid
+     * @param vid
+     * @return
+     */
     public int
     deleteVideoExcept(long plid, long vid) {
         Cursor c = queryPlaylist(new ColPlaylist[] { ColPlaylist.ID });
@@ -1181,6 +1231,18 @@ public class DB extends SQLiteOpenHelper {
         return mDb.rawQuery(buildQueryVideosSQL(plid, cols, null, null, colOrderBy, asc), null);
     }
 
+    // NOTE
+    // Usually, number of videos in the playlist at most 10,000;
+    // And user usually expects so-called "sub string search" (Not token search).
+    // That's the reason why 'LIKE' is used instead of FTS3/FTS4.
+    // If performance is critical, using FTS3/FTS4 should be considered seriously.
+    /**
+     *
+     * @param cols
+     * @param titleLikes
+     *   sub strings to search(Not token). So, search with 'ab' may find '123abcd'.
+     * @return
+     */
     public Cursor
     queryVideosSearchTitle(ColVideo[] cols, String[] titleLikes) {
         String selection;
@@ -1207,6 +1269,15 @@ public class DB extends SQLiteOpenHelper {
                          null, null, null, null);
     }
 
+    /**
+     * Returned value can be type-casted to one of follows
+     *  - Long
+     *  - String
+     *  - byte[]
+     * @param ytvid
+     * @param col
+     * @return
+     */
     public Object
     getVideoInfo(String ytvid, ColVideo col) {
         Cursor c = mDb.query(TABLE_VIDEO,
@@ -1224,6 +1295,12 @@ public class DB extends SQLiteOpenHelper {
         }
     }
 
+    /**
+     * Get playlist's DB-ids which contains given video.
+     * @param vid
+     *   DB-id of video in Video Table(TABLE_VIDEO).
+     * @return
+     */
     public long[]
     getPlaylistsContainVideo(long vid) {
         Cursor plc = queryPlaylist(new ColPlaylist[] { ColPlaylist.ID });
@@ -1249,6 +1326,12 @@ public class DB extends SQLiteOpenHelper {
     // For watchers
     //
     // ----------------------------------------------------------------------
+    /**
+     * Playlist watcher is to tell whether playlist table is changed or not.
+     * Not only inserting/deleting, but also updating values of fields.
+     * @param key
+     *   owner key of this wathcer.
+     */
     public void
     registerToPlaylistTableWatcher(Object key) {
         registerToBooleanWatcher(mPlTblWM, key);
