@@ -376,8 +376,10 @@ DBHelper.CheckExistDoneReceiver {
     public void
     checkExistDone(DBHelper helper, CheckExistArg arg,
                    boolean[] results, Err err) {
-        if (null == mDbHelper || helper != mDbHelper)
+        if (null == mDbHelper || helper != mDbHelper) {
+            helper.close();
             return; // invalid callback.
+        }
 
         stopLoadingLookAndFeel();
         if (Err.NO_ERR != err || results.length != arg.ents.length) {
