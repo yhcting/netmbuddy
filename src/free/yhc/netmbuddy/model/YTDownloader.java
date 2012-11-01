@@ -60,7 +60,7 @@ public class YTDownloader {
         }
     }
 
-    private class BGThread extends HandlerThread {
+    private static class BGThread extends HandlerThread {
         BGThread() {
             super("YTDownloader.BGThread",Process.THREAD_PRIORITY_BACKGROUND);
         }
@@ -72,7 +72,6 @@ public class YTDownloader {
     }
 
     private static class BGHandler extends Handler {
-        private final DownloadDoneReceiver  dnDoneRcvr;
         private final YTDownloader          ytDownloader;
 
         private NetLoader       loader  = new NetLoader();
@@ -80,23 +79,22 @@ public class YTDownloader {
         private volatile File   curOutF = null;
 
         BGHandler(Looper                looper,
-                  YTDownloader          aYtDownloader,
-                  DownloadDoneReceiver  aDnDoneRcvr) {
+                  YTDownloader          aYtDownloader) {
             super(looper);
-            dnDoneRcvr = aDnDoneRcvr;
             ytDownloader = aYtDownloader;
         }
 
         private void
         sendResult(final DnArg arg, final Err result) {
-            if (null == dnDoneRcvr)
+            if (null == ytDownloader.getDownloadDoneReceiver())
                 return;
 
             Utils.getUiHandler().post(new Runnable() {
                 @Override
                 public void run() {
-                    if (null != dnDoneRcvr)
-                        dnDoneRcvr.downloadDone(ytDownloader, arg, result);
+                    DownloadDoneReceiver rcvr = ytDownloader.getDownloadDoneReceiver();
+                    if (null != rcvr)
+                        rcvr.downloadDone(ytDownloader, arg, result);
                 }
             });
         }
@@ -176,13 +174,10 @@ public class YTDownloader {
 
         void
         close() {
-            getLooper().getThread().interrupt();
-            getLooper().quit();
+            removeMessages(MSG_WHAT_DOWNLOAD);
+            ((HandlerThread)getLooper().getThread()).quit();
             if (null != loader)
                 loader.close();
-
-            // Remove all messages
-            removeMessages(MSG_WHAT_DOWNLOAD);
         }
 
         @Override
@@ -199,7 +194,16 @@ public class YTDownloader {
         }
     }
 
+    DownloadDoneReceiver
+    getDownloadDoneReceiver() {
+        return mDnDoneRcvr;
+    }
 
+    // ======================================================================
+    //
+    //
+    //
+    // ======================================================================
     public YTDownloader() {
     }
 
@@ -260,9 +264,7 @@ public class YTDownloader {
 
         HandlerThread hThread = new BGThread();
         hThread.start();
-        mBgHandler = new BGHandler(hThread.getLooper(),
-                                   this,
-                                   dnDoneRcvr);
+        mBgHandler = new BGHandler(hThread.getLooper(), this);
     }
 
     public void

@@ -166,6 +166,9 @@ YTSearchHelper.SearchDoneReceiver {
         // close helper to cancel all existing work.
         mSearchHelper.close();
 
+        // Create new helper instance to know owner instance at callback from helper.
+        mSearchHelper = new YTSearchHelper();
+        mSearchHelper.setSearchDoneRecevier(this);
         // open again to support new search.
         mSearchHelper.open();
         YTSearchHelper.SearchArg arg
@@ -266,29 +269,27 @@ YTSearchHelper.SearchDoneReceiver {
 
     protected void
     showLoadingLookAndFeel() {
-        View contentv = findViewById(R.id.content);
-        View infov = findViewById(R.id.infolayout);
-
-        ImageView iv = (ImageView)infov.findViewById(R.id.infoimg);
-        TextView  tv = (TextView)infov.findViewById(R.id.infomsg);
+        View listv = findViewById(R.id.list);
+        View loadingv = findViewById(R.id.loading);
+        ImageView iv = (ImageView)loadingv.findViewById(R.id.loading_img);
+        TextView  tv = (TextView)loadingv.findViewById(R.id.loading_msg);
         tv.setText(R.string.loading);
-        infov.setVisibility(View.VISIBLE);
-        contentv.setVisibility(View.GONE);
+        loadingv.setVisibility(View.VISIBLE);
+        listv.setVisibility(View.GONE);
         iv.startAnimation(AnimationUtils.loadAnimation(YTSearchActivity.this, R.anim.rotate));
     }
 
     protected void
     stopLoadingLookAndFeel() {
-        View contentv = findViewById(R.id.content);
-        View infov = findViewById(R.id.infolayout);
-
-        ImageView iv = (ImageView)infov.findViewById(R.id.infoimg);
+        View listv = findViewById(R.id.list);
+        View loadingv = findViewById(R.id.loading);
+        ImageView iv = (ImageView)loadingv.findViewById(R.id.loading_img);
         if (null != iv.getAnimation()) {
             iv.getAnimation().cancel();
             iv.getAnimation().reset();
         }
-        infov.setVisibility(View.GONE);
-        contentv.setVisibility(View.VISIBLE);
+        loadingv.setVisibility(View.GONE);
+        listv.setVisibility(View.VISIBLE);
     }
 
     /**
@@ -303,6 +304,9 @@ YTSearchHelper.SearchDoneReceiver {
     protected boolean
     handleSearchResult(YTSearchHelper helper, YTSearchHelper.SearchArg arg,
                        YTFeed.Result result, Err err) {
+        if (null == mSearchHelper || mSearchHelper != helper)
+            return false;
+
         Err r = Err.NO_ERR;
         do {
             if (Err.NO_ERR != err) {
@@ -349,8 +353,7 @@ YTSearchHelper.SearchDoneReceiver {
         mListv = (ListView)findViewById(R.id.list);
         mListv.setEmptyView(UiUtils.inflateLayout(this, R.layout.ytsearch_empty_list));
         registerForContextMenu(mListv);
-        mSearchHelper = new YTSearchHelper();
-        mSearchHelper.setSearchDoneRecevier(this);
+        mSearchHelper = new YTSearchHelper(); // initialization.
 
         preparePageButtons();
     }

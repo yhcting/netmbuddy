@@ -141,25 +141,14 @@ public class YTSearchHelper {
     }
 
     private static class BGHandler extends Handler {
-        private final YTSearchHelper        searchHelper;
+        private final YTSearchHelper        helper;
         private SearchDoneReceiver          searchRcvr     = null;
         private LoadThumbnailDoneReceiver   thumbnailRcvr  = null;
         private LinkedList<Thread>          activeLoadThumbnaill = new LinkedList<Thread>();
-        BGHandler(Looper looper, YTSearchHelper aSearchHelper) {
+        BGHandler(Looper looper, YTSearchHelper aHelper) {
             super(looper);
-            searchHelper = aSearchHelper;
+            helper = aHelper;
         }
-
-        private void
-        cleanup() {
-            Iterator<Thread> iter = activeLoadThumbnaill.iterator();
-            while (iter.hasNext())
-                iter.next().interrupt();
-            activeLoadThumbnaill.clear();
-            searchRcvr = null;
-            thumbnailRcvr = null;
-        }
-
 
         private void
         sendFeedDone(final SearchArg arg, final YTFeed.Result res, final Err err) {
@@ -168,7 +157,7 @@ public class YTSearchHelper {
                 public void
                 run() {
                     if (null != searchRcvr)
-                        searchRcvr.searchDone(searchHelper, arg, res, err);
+                        searchRcvr.searchDone(helper, arg, res, err);
                 }
             });
             return;
@@ -181,23 +170,24 @@ public class YTSearchHelper {
                 public void
                 run() {
                     if (null != thumbnailRcvr)
-                        thumbnailRcvr.loadThumbnailDone(searchHelper, arg, bm, err);
+                        thumbnailRcvr.loadThumbnailDone(helper, arg, bm, err);
                 }
             });
             return;
         }
 
-        @Override
-        protected void
-        finalize() throws Throwable {
-            super.finalize();
-            cleanup();
-        }
-
         void
         close() {
-            Message msg = BGHandler.this.obtainMessage(MSG_WHAT_CLOSE, null);
-            BGHandler.this.sendMessage(msg);
+            removeMessages(MSG_WHAT_SEARCH);
+            removeMessages(MSG_WHAT_LOAD_THUMBNAIL);
+            removeMessages(MSG_WHAT_LOAD_THUMBNAIL_DONE);
+            ((HandlerThread)getLooper().getThread()).quit();
+            Iterator<Thread> iter = activeLoadThumbnaill.iterator();
+            while (iter.hasNext())
+                iter.next().interrupt();
+            activeLoadThumbnaill.clear();
+            searchRcvr = null;
+            thumbnailRcvr = null;
         }
 
         void
@@ -213,16 +203,7 @@ public class YTSearchHelper {
         @Override
         public void
         handleMessage(final Message msg) {
-            if (getLooper().getThread().isInterrupted()) {
-                cleanup();
-                return;
-            }
-
             switch (msg.what) {
-            case MSG_WHAT_CLOSE:
-                cleanup();
-                break;
-
             case MSG_WHAT_SEARCH: {
                 SearchArg arg = (SearchArg)msg.obj;
                 SearchReturn r = doSearch(arg);
@@ -360,7 +341,6 @@ public class YTSearchHelper {
         return new SearchReturn(r, Err.NO_ERR);
     }
 
-
     public YTSearchHelper() {
     }
 
@@ -424,12 +404,7 @@ public class YTSearchHelper {
         // Stop running thread!
         // Need to check that below code works as expected perfectly.
         // "interrupting thread" is quite annoying and unpredictable job!
-        if (null != mBgHandler) {
-            mBgHandler.removeMessages(MSG_WHAT_SEARCH);
-            mBgHandler.removeMessages(MSG_WHAT_LOAD_THUMBNAIL);
-            mBgHandler.removeMessages(MSG_WHAT_LOAD_THUMBNAIL_DONE);
+        if (null != mBgHandler)
             mBgHandler.close();
-            mBgHandler.getLooper().getThread().interrupt();
-        }
     }
 }

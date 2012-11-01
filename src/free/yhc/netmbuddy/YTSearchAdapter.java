@@ -137,6 +137,9 @@ YTSearchHelper.LoadThumbnailDoneReceiver {
     public void
     loadThumbnailDone(YTSearchHelper helper, YTSearchHelper.LoadThumbnailArg arg,
                       Bitmap bm, Err err) {
+        if (null == mHelper || mHelper != helper)
+            return; // invalid callback.
+
         if (Err.NO_ERR != err) {
             ; // TODO set to something else...
         } else {

@@ -365,6 +365,10 @@ DBHelper.CheckExistDoneReceiver {
         if (!handleSearchResult(helper, arg, result, err))
             return; // There is an error in search
 
+        // Create new instance whenever it used to know owner of each callback.
+        mDbHelper = new DBHelper();
+        mDbHelper.setCheckExistDoneReceiver(this);
+        mDbHelper.open();
         mDbHelper.checkExistAsync(new DBHelper.CheckExistArg(arg, (YTVideoFeed.Entry[])result.entries));
     }
 
@@ -372,6 +376,9 @@ DBHelper.CheckExistDoneReceiver {
     public void
     checkExistDone(DBHelper helper, CheckExistArg arg,
                    boolean[] results, Err err) {
+        if (null == mDbHelper || helper != mDbHelper)
+            return; // invalid callback.
+
         stopLoadingLookAndFeel();
         if (Err.NO_ERR != err || results.length != arg.ents.length) {
             UiUtils.showTextToast(this, R.string.err_db_unknown);
@@ -469,9 +476,6 @@ DBHelper.CheckExistDoneReceiver {
         });
 
         mDbHelper = new DBHelper();
-        mDbHelper.setCheckExistDoneReceiver(this);
-        mDbHelper.open();
-
         String stypeStr = getIntent().getStringExtra(INTENT_KEY_SEARCH_TYPE);
         final String stext = getIntent().getStringExtra(INTENT_KEY_SEARCH_TEXT);
         final String stitle = getIntent().getStringExtra(INTENT_KEY_SEARCH_TITLE);

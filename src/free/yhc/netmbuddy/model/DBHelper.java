@@ -30,8 +30,6 @@ import android.os.Process;
 public class DBHelper {
     private static final int MSG_WHAT_CHECK_EXIST  = 0;
 
-    private final DB    mDb = DB.get();
-
     private BGHandler               mBgHandler  = null;
     private CheckExistDoneReceiver  mDupRcvr    = null;
 
@@ -49,7 +47,7 @@ public class DBHelper {
         }
     }
 
-    private class BGThread extends HandlerThread {
+    private static class BGThread extends HandlerThread {
         BGThread() {
             super("YTSearchHelper.BGThread",Process.THREAD_PRIORITY_BACKGROUND);
         }
@@ -61,9 +59,12 @@ public class DBHelper {
         }
     }
 
-    private class BGHandler extends Handler {
-        BGHandler(Looper looper) {
+    private static class BGHandler extends Handler {
+        private final DBHelper  helper;
+        BGHandler(Looper    looper,
+                  DBHelper  aHelper) {
             super(looper);
+            helper = aHelper;
         }
 
         private boolean[]
@@ -72,8 +73,22 @@ public class DBHelper {
             // Should I check "entries[i].available" flag???
             boolean[] r = new boolean[entries.length];
             for (int i = 0; i < r.length; i++)
-                r[i] = mDb.containsVideo(entries[i].media.videoId);
+                r[i] = DB.get().containsVideo(entries[i].media.videoId);
             return r;
+        }
+
+        private void
+        sendCheckExistDone(final CheckExistArg arg, final boolean[] results, final Err err) {
+            Utils.getUiHandler().post(new Runnable() {
+                @Override
+                public void
+                run() {
+                    CheckExistDoneReceiver rcvr = helper.getCheckExistDoneReceiver();
+                    if (null != rcvr)
+                        rcvr.checkExistDone(helper, arg, results, err);
+                }
+            });
+            return;
         }
 
         private void
@@ -87,6 +102,12 @@ public class DBHelper {
                 return;
             }
             sendCheckExistDone(arg, r, Err.NO_ERR);
+        }
+
+        void
+        close() {
+            removeMessages(MSG_WHAT_CHECK_EXIST);
+            ((HandlerThread)getLooper().getThread()).quit();
         }
 
         @Override
@@ -103,18 +124,16 @@ public class DBHelper {
         }
     }
 
-    private void
-    sendCheckExistDone(final CheckExistArg arg, final boolean[] results, final Err err) {
-        Utils.getUiHandler().post(new Runnable() {
-            @Override
-            public void
-            run() {
-                mDupRcvr.checkExistDone(DBHelper.this, arg, results, err);
-            }
-        });
-        return;
+    CheckExistDoneReceiver
+    getCheckExistDoneReceiver() {
+        return mDupRcvr;
     }
 
+    // ======================================================================
+    //
+    //
+    //
+    // ======================================================================
     public void
     setCheckExistDoneReceiver(CheckExistDoneReceiver rcvr) {
         mDupRcvr = rcvr;
@@ -133,7 +152,7 @@ public class DBHelper {
     open() {
         HandlerThread hThread = new BGThread();
         hThread.start();
-        mBgHandler = new BGHandler(hThread.getLooper());
+        mBgHandler = new BGHandler(hThread.getLooper(), this);
     }
 
     public void
@@ -142,9 +161,7 @@ public class DBHelper {
         // Stop running thread!
         // Need to check that below code works as expected perfectly.
         // "interrupting thread" is quite annoying and unpredictable job!
-        if (null != mBgHandler) {
-            mBgHandler.getLooper().getThread().interrupt();
-            mBgHandler.removeMessages(MSG_WHAT_CHECK_EXIST);
-        }
+        if (null != mBgHandler)
+            mBgHandler.close();
     }
 }
