@@ -42,6 +42,10 @@ import free.yhc.netmbuddy.model.YTSearchHelper;
 
 public abstract class YTSearchActivity extends Activity implements
 YTSearchHelper.SearchDoneReceiver {
+    public static final String  INTENT_KEY_SEARCH_TYPE  = "searchtype";
+    public static final String  INTENT_KEY_SEARCH_TEXT  = "searchtext";
+    public static final String  INTENT_KEY_SEARCH_TITLE = "searchtitle";
+
     private static final int NR_ENTRY_PER_PAGE = Policy.YTSEARCH_MAX_RESULTS;
 
     protected   final YTPlayer  mMp = YTPlayer.get();

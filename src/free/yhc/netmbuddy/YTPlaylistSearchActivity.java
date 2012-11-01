@@ -95,12 +95,12 @@ public class YTPlaylistSearchActivity extends YTSearchActivity {
     private void
     onListItemClick(View view, int position, long itemId) {
         Intent i = new Intent(this, YTVideoSearchActivity.class);
-        i.putExtra(YTVideoSearchActivity.INTENT_KEY_SEARCH_TYPE,
+        i.putExtra(INTENT_KEY_SEARCH_TYPE,
                    YTSearchHelper.SearchType.VID_PLAYLIST.name());
-        i.putExtra(YTVideoSearchActivity.INTENT_KEY_SEARCH_TEXT,
+        i.putExtra(INTENT_KEY_SEARCH_TEXT,
                    getAdapter().getItemPlaylistId(position));
-        i.putExtra(YTVideoSearchActivity.INTENT_KEY_SEARCH_TITLE,
-                getAdapter().getItemTitle(position));
+        i.putExtra(INTENT_KEY_SEARCH_TITLE,
+                   getAdapter().getItemTitle(position));
         startActivity(i);
     }
 

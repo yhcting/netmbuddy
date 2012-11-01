@@ -377,7 +377,7 @@ public class PlaylistActivity extends Activity {
     private void
     onMenuMoreYtSearchAuthor(final View anchor) {
         Intent i = new Intent(this, YTVideoSearchActivity.class);
-        i.putExtra(YTVideoSearchActivity.INTENT_KEY_SEARCH_TYPE,
+        i.putExtra(YTSearchActivity.INTENT_KEY_SEARCH_TYPE,
                    YTSearchHelper.SearchType.VID_AUTHOR.name());
         startActivity(i);
     }
@@ -547,8 +547,8 @@ public class PlaylistActivity extends Activity {
             @Override
             public void onClick(View v) {
                 Intent i = new Intent(PlaylistActivity.this, YTVideoSearchActivity.class);
-                i.putExtra(YTVideoSearchActivity.INTENT_KEY_SEARCH_TYPE,
-                        YTSearchHelper.SearchType.VID_KEYWORD.name());
+                i.putExtra(YTSearchActivity.INTENT_KEY_SEARCH_TYPE,
+                           YTSearchHelper.SearchType.VID_KEYWORD.name());
                 startActivity(i);
             }
         });

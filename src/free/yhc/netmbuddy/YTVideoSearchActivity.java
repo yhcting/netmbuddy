@@ -52,10 +52,6 @@ import free.yhc.netmbuddy.model.YTVideoFeed;
 public class YTVideoSearchActivity extends YTSearchActivity implements
 YTSearchHelper.SearchDoneReceiver,
 DBHelper.CheckExistDoneReceiver {
-    public static final String  INTENT_KEY_SEARCH_TYPE  = "searchtype";
-    public static final String  INTENT_KEY_SEARCH_TEXT  = "searchtext";
-    public static final String  INTENT_KEY_SEARCH_TITLE = "searchtitle";
-
     private final DB        mDb = DB.get();
     private final YTPlayer  mMp = YTPlayer.get();
 
