@@ -28,7 +28,8 @@ import android.os.Message;
 import android.os.Process;
 
 public class DBHelper {
-    private static final int MSG_WHAT_CHECK_EXIST  = 0;
+    private static final int MSG_WHAT_CLOSE         = 0;
+    private static final int MSG_WHAT_CHECK_EXIST   = 1;
 
     private BGHandler               mBgHandler  = null;
     private CheckExistDoneReceiver  mDupRcvr    = null;
@@ -49,7 +50,7 @@ public class DBHelper {
 
     private static class BGThread extends HandlerThread {
         BGThread() {
-            super("YTSearchHelper.BGThread",Process.THREAD_PRIORITY_BACKGROUND);
+            super("DBHelper.BGThread",Process.THREAD_PRIORITY_BACKGROUND);
         }
 
         @Override
@@ -61,6 +62,9 @@ public class DBHelper {
 
     private static class BGHandler extends Handler {
         private final DBHelper  helper;
+
+        private boolean         closed  = false;
+
         BGHandler(Looper    looper,
                   DBHelper  aHelper) {
             super(looper);
@@ -107,13 +111,21 @@ public class DBHelper {
         void
         close() {
             removeMessages(MSG_WHAT_CHECK_EXIST);
-            ((HandlerThread)getLooper().getThread()).quit();
+            sendEmptyMessage(MSG_WHAT_CLOSE);
         }
 
         @Override
         public void
         handleMessage(Message msg) {
+            if (closed)
+                return;
+
             switch (msg.what) {
+            case MSG_WHAT_CLOSE:
+                closed = true;
+                ((HandlerThread)getLooper().getThread()).quit();
+                break;
+
             case MSG_WHAT_CHECK_EXIST:
                 handleCheckExist((CheckExistArg)msg.obj);
                 break;

@@ -365,6 +365,8 @@ DBHelper.CheckExistDoneReceiver {
         if (!handleSearchResult(helper, arg, result, err))
             return; // There is an error in search
 
+        mDbHelper.close();
+
         // Create new instance whenever it used to know owner of each callback.
         mDbHelper = new DBHelper();
         mDbHelper.setCheckExistDoneReceiver(this);

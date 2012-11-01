@@ -37,7 +37,8 @@ import android.os.Process;
 
 
 public class YTDownloader {
-    private static final int MSG_WHAT_DOWNLOAD  = 0;
+    private static final int MSG_WHAT_CLOSE     = 0;
+    private static final int MSG_WHAT_DOWNLOAD  = 1;
 
     private String                      mProxy      = null;
     private DownloadDoneReceiver        mDnDoneRcvr = null;
@@ -77,6 +78,7 @@ public class YTDownloader {
         private NetLoader       loader  = new NetLoader();
         private File            tmpF    = null;
         private volatile File   curOutF = null;
+        private boolean         closed  = false;
 
         BGHandler(Looper                looper,
                   YTDownloader          aYtDownloader) {
@@ -175,15 +177,23 @@ public class YTDownloader {
         void
         close() {
             removeMessages(MSG_WHAT_DOWNLOAD);
-            ((HandlerThread)getLooper().getThread()).quit();
-            if (null != loader)
-                loader.close();
+            sendEmptyMessage(MSG_WHAT_CLOSE);
         }
 
         @Override
         public void
         handleMessage(Message msg) {
+            if (closed)
+                return;
+
             switch (msg.what) {
+            case MSG_WHAT_CLOSE:
+                closed = true;
+                if (null != loader)
+                    loader.close();
+                ((HandlerThread)getLooper().getThread()).quit();
+                break;
+
             case MSG_WHAT_DOWNLOAD:
                 handleDownload((DnArg)msg.obj);
                 break;
