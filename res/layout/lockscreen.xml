@@ -3,14 +3,16 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     >
-    <Button
+    <ImageView
         android:id="@+id/close"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:paddingTop="5dip"
-        android:paddingBottom="5dip"
-        android:text="@string/close"
+        android:gravity="center"
+        android:scaleType="fitCenter"
+        android:src="@drawable/ic_close"
+        android:background="@color/dark_gray"
+        android:clickable="true"
         />
     <LinearLayout
         android:id="@+id/player"
