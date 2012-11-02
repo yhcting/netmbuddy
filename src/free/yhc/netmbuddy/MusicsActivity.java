@@ -129,10 +129,18 @@ public class MusicsActivity extends Activity {
                 try {
                     for (long mid : mids) {
                         Err err = mDb.insertVideoToPlaylist(plid, mid);
-                        if (Err.NO_ERR != err
-                            && (1 == mids.length || Err.DB_DUPLICATED != err)) {
-                            return err;
-                        } else if (move) {
+                        if (Err.NO_ERR != err) {
+                            // Error Case
+                            if (Err.DB_DUPLICATED != err)
+                                return err;
+                            // From here : DB_DUPLICATED Case.
+                            else if (1 == mids.length && !move)
+                                return err;
+                        }
+
+                        // "Insertion is OK"
+                        // OR "DB_DUPLICATED but [ 'move == true' or "mids.length > 1" ]
+                        if (move) {
                             if (isUserPlaylist(mPlid))
                                 mDb.deleteVideoFrom(mPlid, mid);
                             else
@@ -543,13 +551,7 @@ public class MusicsActivity extends Activity {
         inflater.inflate(R.menu.musics_context, menu);
         //AdapterContextMenuInfo mInfo = (AdapterContextMenuInfo)menuInfo;
 
-        // NOTE
-        // Html5 Youtube player doens't support setVolume / mute functionality.
-        // (Only stream volume is available.)
-        // But SWF player supports this.
-        // So, enable volume menu by default.
         boolean visible = isUserPlaylist(mPlid)? true: false;
-        menu.findItem(R.id.move_to).setVisible(visible);
         menu.findItem(R.id.plthumbnail).setVisible(visible);
     }
 
