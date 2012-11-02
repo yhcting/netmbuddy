@@ -114,7 +114,7 @@ public class MusicsActivity extends Activity {
             onPostExecute(DiagAsyncTask task, Err result) {
                 if (Err.NO_ERR != result)
                     UiUtils.showTextToast(MusicsActivity.this, result.getMessage());
-                else
+                else if (move)
                     getAdapter().reloadCursorAsync();
             }
 
