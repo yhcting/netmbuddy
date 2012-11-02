@@ -712,6 +712,12 @@ public class YTPlayerUI {
     }
 
     void
+    notifyToUser(String msg) {
+        if (null != mVActivity)
+            UiUtils.showTextToast(mVActivity, msg);
+    }
+
+    void
     changeVideoVolume(final String title, final String videoId) {
         if (null == mVActivity)
             return;

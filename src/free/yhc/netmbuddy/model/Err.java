@@ -44,6 +44,7 @@ public enum Err {
     YTSEARCH                    (R.string.err_ytsearch),
     YTHTTPGET                   (R.string.err_ytprotocol),
     YTPARSEHTML                 (R.string.err_ytparsehtml),
+    YTNOT_SUPPORTED_VIDFORMAT   (R.string.err_ytnot_supported_vidformat),
     YTINVALID_PARAM             (R.string.err_ytinvalid_param),
     END_OF_DATA                 (R.string.err_end_of_data);
 

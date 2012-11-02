@@ -122,7 +122,11 @@ public class YTDownloader {
                 }
                 loader = hack.getNetLoader();
                 YTHacker.YtVideo vid = hack.getVideo(arg.qscore);
-                eAssert(null != vid);
+                if (null == vid) {
+                    sendResult(arg, Err.YTNOT_SUPPORTED_VIDFORMAT);
+                    return;
+                }
+
                 NetLoader.HttpRespContent content = loader.getHttpContent(Uri.parse(vid.url), false);
                 if (HttpUtils.SC_NO_CONTENT == content.stcode) {
                     sendResult(arg, Err.YTHTTPGET);

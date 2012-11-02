@@ -1115,7 +1115,7 @@ SurfaceHolder.Callback {
                 }
 
                 int retryTag = (Integer)downloader.getTag();
-                if (Err.NO_ERR != err
+                if (!(Err.NO_ERR == err || Err.YTNOT_SUPPORTED_VIDFORMAT == err)
                     && Utils.isNetworkAvailable()
                     && retryTag > 0) {
                     // retry.
@@ -1217,6 +1217,14 @@ SurfaceHolder.Callback {
     private void
     prepareVideoStreamingFromYtHack(YTHacker ythack) {
         YTHacker.YtVideo ytv = ythack.getVideo(getVideoQualityScore());
+        if (null == ytv) {
+            // Video format is not supported...
+            // Just skip it with toast!
+            mUi.notifyToUser(Utils.getResText(R.string.err_ytnot_supported_vidformat));
+            startNext();
+            return;
+        }
+
         try {
             mpSetDataSource(ytv.url);
         } catch (IOException e) {

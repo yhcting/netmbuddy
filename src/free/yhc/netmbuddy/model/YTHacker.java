@@ -400,8 +400,10 @@ public class YTHacker {
                 }
             }
         }
-        eAssert(null != ve);
-        return new YtVideo(ve.url, ve.type);
+        if (null != ve)
+            return new YtVideo(ve.url, ve.type);
+        else
+            return null;
     }
 
     public Err

@@ -136,6 +136,7 @@
     <string name="err_ytsearch">Fail in searching Youtube.</string>
     <string name="err_ytprotocol">Error in communication with Youtube.</string>
     <string name="err_ytparsehtml">Error getting video from Youtube.\nThis can be caused by one of below reasons.\n* Temporal error.\n* Video is removed from Youtube.\n* Old NetMBuddy version.</string>
+    <string name="err_ytnot_supported_vidformat">Not supported video format.</string>
     <string name="err_ytinvalid_param">Invalid Youtube parameter.</string>
     <string name="err_network_unavailable">Network is unavailable.</string>
     <string name="err_end_of_data">End of data.</string>
