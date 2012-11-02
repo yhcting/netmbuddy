@@ -32,17 +32,17 @@ public class DBHelper {
     private static final int MSG_WHAT_CHECK_EXIST   = 1;
 
     private BGHandler               mBgHandler  = null;
-    private CheckExistDoneReceiver  mDupRcvr    = null;
+    private CheckDupDoneReceiver    mDupRcvr    = null;
 
-    public interface CheckExistDoneReceiver {
-        void checkExistDone(DBHelper helper, CheckExistArg arg,
+    public interface CheckDupDoneReceiver {
+        void checkDupDone(DBHelper helper, CheckDupArg arg,
                           boolean[] results, Err err);
     }
 
-    public static class CheckExistArg {
+    public static class CheckDupArg {
         public final Object                 tag;
         public final YTVideoFeed.Entry[]    ents;
-        public CheckExistArg(Object aTag, YTVideoFeed.Entry[] aEnts) {
+        public CheckDupArg(Object aTag, YTVideoFeed.Entry[] aEnts) {
             tag = aTag;
             ents = aEnts;
         }
@@ -72,7 +72,7 @@ public class DBHelper {
         }
 
         private boolean[]
-        checkExist(YTVideoFeed.Entry[] entries) throws YTMPException {
+        checkDup(YTVideoFeed.Entry[] entries) throws YTMPException {
             // TODO
             // Should I check "entries[i].available" flag???
             boolean[] r = new boolean[entries.length];
@@ -82,30 +82,30 @@ public class DBHelper {
         }
 
         private void
-        sendCheckExistDone(final CheckExistArg arg, final boolean[] results, final Err err) {
+        sendCheckDupDone(final CheckDupArg arg, final boolean[] results, final Err err) {
             Utils.getUiHandler().post(new Runnable() {
                 @Override
                 public void
                 run() {
-                    CheckExistDoneReceiver rcvr = helper.getCheckExistDoneReceiver();
+                    CheckDupDoneReceiver rcvr = helper.getCheckDupDoneReceiver();
                     if (null != rcvr)
-                        rcvr.checkExistDone(helper, arg, results, err);
+                        rcvr.checkDupDone(helper, arg, results, err);
                 }
             });
             return;
         }
 
         private void
-        handleCheckExist(CheckExistArg arg) {
+        handleCheckDup(CheckDupArg arg) {
             boolean[] r;
             try {
-                r = checkExist(arg.ents);
+                r = checkDup(arg.ents);
             } catch (YTMPException e) {
                 eAssert(Err.NO_ERR != e.getError());
-                sendCheckExistDone(arg, null, e.getError());
+                sendCheckDupDone(arg, null, e.getError());
                 return;
             }
-            sendCheckExistDone(arg, r, Err.NO_ERR);
+            sendCheckDupDone(arg, r, Err.NO_ERR);
         }
 
         void
@@ -127,14 +127,14 @@ public class DBHelper {
                 break;
 
             case MSG_WHAT_CHECK_EXIST:
-                handleCheckExist((CheckExistArg)msg.obj);
+                handleCheckDup((CheckDupArg)msg.obj);
                 break;
             }
         }
     }
 
-    CheckExistDoneReceiver
-    getCheckExistDoneReceiver() {
+    CheckDupDoneReceiver
+    getCheckDupDoneReceiver() {
         return mDupRcvr;
     }
 
@@ -144,12 +144,12 @@ public class DBHelper {
     //
     // ======================================================================
     public void
-    setCheckExistDoneReceiver(CheckExistDoneReceiver rcvr) {
+    setCheckDupDoneReceiver(CheckDupDoneReceiver rcvr) {
         mDupRcvr = rcvr;
     }
 
     public void
-    checkExistAsync(CheckExistArg arg) {
+    checkDupAsync(CheckDupArg arg) {
         Message msg = mBgHandler.obtainMessage(MSG_WHAT_CHECK_EXIST, arg);
         mBgHandler.sendMessage(msg);
     }

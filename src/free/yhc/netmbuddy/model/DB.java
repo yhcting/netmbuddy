@@ -58,7 +58,9 @@ public class DB extends SQLiteOpenHelper {
 
     // mPlTblWM : PLaylist TaBLe Watcher Map
     // Watcher for playlist table is changed
-    private final HashMap<Object, Boolean> mPlTblWM = new HashMap<Object, Boolean>();
+    private final HashMap<Object, Boolean> mPlTblWM     = new HashMap<Object, Boolean>();
+    // Video table Watcher Map
+    private final HashMap<Object, Boolean> mVidTblWM    = new HashMap<Object, Boolean>();
 
 
     public interface Col {
@@ -493,7 +495,10 @@ public class DB extends SQLiteOpenHelper {
     // ----------------------------------------------------------------------
     private long
     insertVideo(ContentValues cvs) {
-        return mDb.insert(TABLE_VIDEO, null, cvs);
+        long r = mDb.insert(TABLE_VIDEO, null, cvs);
+        if (r >= 0)
+            markBooleanWatcherChanged(mVidTblWM);
+        return r;
     }
 
     private long
@@ -516,22 +521,51 @@ public class DB extends SQLiteOpenHelper {
 
     private int
     deleteVideo(long id) {
-        return mDb.delete(TABLE_VIDEO, ColVideo.ID.getName() + " = " + id, null);
+        int r = mDb.delete(TABLE_VIDEO, ColVideo.ID.getName() + " = " + id, null);
+        if (r > 0)
+            markBooleanWatcherChanged(mVidTblWM);
+        return r;
     }
 
+    /**
+     * Update video value
+     * @param where
+     *   field of where clause
+     * @param wherev
+     *   field value of where clause
+     * @param fields
+     *   fields to update
+     * @param vs
+     *   new field values
+     * @return
+     *   number of rows that are updated.
+     */
     private int
-    updateVideo(long id, ColVideo[] cols, Object[] vs) {
-        eAssert(cols.length == vs.length);
+    updateVideo(ColVideo where, Object wherev,
+                ColVideo[] fields, Object[] vs) {
+        eAssert(fields.length == vs.length);
         ContentValues cvs = new ContentValues();
-        for (int i = 0; i < cols.length; i++) {
+        for (int i = 0; i < fields.length; i++) {
             try {
                 Method m = cvs.getClass().getMethod("put", String.class, vs[i].getClass());
-                m.invoke(cvs, cols[i].getName(), vs[i]);
+                m.invoke(cvs, fields[i].getName(), vs[i]);
             } catch (Exception e) {
                 eAssert(false);
             }
         }
-        return mDb.update(TABLE_VIDEO, cvs, ColVideo.ID.getName() + " = " + id, null);
+
+        int r = mDb.update(TABLE_VIDEO,
+                           cvs,
+                           where.getName() + " = " + DatabaseUtils.sqlEscapeString(wherev.toString()),
+                           null);
+        if (r > 0)
+            markBooleanWatcherChanged(mVidTblWM);
+        return r;
+    }
+
+    private int
+    updateVideo(long id, ColVideo[] cols, Object[] vs) {
+        return updateVideo(ColVideo.ID, id, cols, vs);
     }
 
     private void
@@ -815,6 +849,7 @@ public class DB extends SQLiteOpenHelper {
 
             mDb.setTransactionSuccessful();
             markBooleanWatcherChanged(mPlTblWM);
+            markBooleanWatcherChanged(mVidTblWM);
         } finally {
             exDb.close();
             mDb.endTransaction();
@@ -876,6 +911,7 @@ public class DB extends SQLiteOpenHelper {
         // DB is successfully imported!
         // Mark that playlist table is changed.
         markBooleanWatcherChanged(mPlTblWM);
+        markBooleanWatcherChanged(mVidTblWM);
         return Err.NO_ERR;
     }
 
@@ -1151,17 +1187,10 @@ public class DB extends SQLiteOpenHelper {
     public int
     updateVideo(ColVideo where, Object wherev,
                 ColVideo field, Object v) {
-        ContentValues cvs = new ContentValues();
-        try {
-            Method m = cvs.getClass().getMethod("put", String.class, v.getClass());
-            m.invoke(cvs, field.getName(), v);
-        } catch (Exception e) {
-            eAssert(false);
-        }
-        return mDb.update(TABLE_VIDEO,
-                          cvs,
-                          where.getName() + " = " + DatabaseUtils.sqlEscapeString(wherev.toString()),
-                          null);
+        return updateVideo(where,
+                           wherev,
+                           new ColVideo[] { field },
+                           new Object[] { v });
     }
 
     /**
@@ -1350,5 +1379,27 @@ public class DB extends SQLiteOpenHelper {
     public boolean
     isPlaylistTableUpdated(Object key) {
         return isBooleanWatcherUpdated(mPlTblWM, key);
+    }
+
+    // ------------------------------------------------------------------------
+
+    public void
+    registerToVideoTableWatcher(Object key) {
+        registerToBooleanWatcher(mVidTblWM, key);
+    }
+
+    public boolean
+    isRegisteredToVideoTableWatcher(Object key) {
+        return isRegisteredToBooleanWatcher(mVidTblWM, key);
+    }
+
+    public void
+    unregisterToVideoTableWatcher(Object key) {
+        unregisterToBooleanWatcher(mVidTblWM, key);
+    }
+
+    public boolean
+    isVideoTableUpdated(Object key) {
+        return isBooleanWatcherUpdated(mVidTblWM, key);
     }
 }

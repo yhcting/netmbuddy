@@ -695,17 +695,19 @@ public class PlaylistActivity extends Activity {
         else
             playerv.setVisibility(View.GONE);
 
-        if (mDb.isRegisteredToPlaylistTableWatcher(this)
-            && mDb.isPlaylistTableUpdated(this))
-            getAdapter().reloadCursorAsync();
+        if (mDb.isRegisteredToPlaylistTableWatcher(this)) {
+            if (mDb.isPlaylistTableUpdated(this))
+                getAdapter().reloadCursorAsync();
+            mDb.unregisterToPlaylistTableWatcher(this);
+        }
     }
 
     @Override
     protected void
     onPause() {
         mMp.unsetController(this);
-        super.onPause();
         mDb.registerToPlaylistTableWatcher(this);
+        super.onPause();
     }
 
     @Override
@@ -717,6 +719,7 @@ public class PlaylistActivity extends Activity {
     @Override
     protected void
     onDestroy() {
+        mDb.unregisterToPlaylistTableWatcher(this);
         super.onDestroy();
     }
 

@@ -127,6 +127,11 @@ YTSearchHelper.LoadThumbnailDoneReceiver {
         mHelper = null;
     }
 
+    public YTFeed.Entry[]
+    getEntries() {
+        return mEntries;
+    }
+
     public Bitmap
     getItemThumbnail(int pos) {
         return mThumbnails[pos];

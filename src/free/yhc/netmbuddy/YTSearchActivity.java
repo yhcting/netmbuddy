@@ -269,27 +269,35 @@ YTSearchHelper.SearchDoneReceiver {
 
     protected void
     showLoadingLookAndFeel() {
-        View listv = findViewById(R.id.list);
         View loadingv = findViewById(R.id.loading);
+        if (View.VISIBLE == loadingv.getVisibility()) {
+            eAssert(View.VISIBLE != mListv.getVisibility());
+            return;
+        }
+
         ImageView iv = (ImageView)loadingv.findViewById(R.id.loading_img);
         TextView  tv = (TextView)loadingv.findViewById(R.id.loading_msg);
         tv.setText(R.string.loading);
         loadingv.setVisibility(View.VISIBLE);
-        listv.setVisibility(View.GONE);
+        mListv.setVisibility(View.GONE);
         iv.startAnimation(AnimationUtils.loadAnimation(YTSearchActivity.this, R.anim.rotate));
     }
 
     protected void
     stopLoadingLookAndFeel() {
-        View listv = findViewById(R.id.list);
         View loadingv = findViewById(R.id.loading);
+        if (View.VISIBLE != loadingv.getVisibility()) {
+            eAssert(View.VISIBLE == mListv.getVisibility());
+            return;
+        }
+
         ImageView iv = (ImageView)loadingv.findViewById(R.id.loading_img);
         if (null != iv.getAnimation()) {
             iv.getAnimation().cancel();
             iv.getAnimation().reset();
         }
         loadingv.setVisibility(View.GONE);
-        listv.setVisibility(View.VISIBLE);
+        mListv.setVisibility(View.VISIBLE);
     }
 
     /**

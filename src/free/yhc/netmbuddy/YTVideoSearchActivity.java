@@ -23,6 +23,7 @@ package free.yhc.netmbuddy;
 import static free.yhc.netmbuddy.model.Utils.eAssert;
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.os.Bundle;
@@ -38,7 +39,6 @@ import android.widget.EditText;
 import android.widget.TextView;
 import free.yhc.netmbuddy.model.DB;
 import free.yhc.netmbuddy.model.DBHelper;
-import free.yhc.netmbuddy.model.DBHelper.CheckExistArg;
 import free.yhc.netmbuddy.model.Err;
 import free.yhc.netmbuddy.model.Policy;
 import free.yhc.netmbuddy.model.RTState;
@@ -51,7 +51,7 @@ import free.yhc.netmbuddy.model.YTVideoFeed;
 
 public class YTVideoSearchActivity extends YTSearchActivity implements
 YTSearchHelper.SearchDoneReceiver,
-DBHelper.CheckExistDoneReceiver {
+DBHelper.CheckDupDoneReceiver {
     private final DB        mDb = DB.get();
     private final YTPlayer  mMp = YTPlayer.get();
 
@@ -149,7 +149,7 @@ DBHelper.CheckExistDoneReceiver {
             @Override
             public void
             run() {
-                getAdapter().markEntryExist(pos);
+                getAdapter().markEntryExist(pos, true);
             }
         });
 
@@ -337,9 +337,11 @@ DBHelper.CheckExistDoneReceiver {
 
     private void
     onContextMenuVideosOfThisAuthor(final int position) {
-        loadFirstPage(YTSearchHelper.SearchType.VID_AUTHOR,
-                      getAdapter().getItemAuthor(position),
-                      getAdapter().getItemAuthor(position));
+        Intent i = new Intent(this, YTVideoSearchActivity.class);
+        i.putExtra(INTENT_KEY_SEARCH_TYPE, YTSearchHelper.SearchType.VID_AUTHOR.name());
+        i.putExtra(INTENT_KEY_SEARCH_TEXT, getAdapter().getItemAuthor(position));
+        i.putExtra(INTENT_KEY_SEARCH_TITLE, getAdapter().getItemAuthor(position));
+        startActivity(i);
     }
 
     private void
@@ -358,37 +360,19 @@ DBHelper.CheckExistDoneReceiver {
         mMp.startVideos(new YTPlayer.Video[] { v });
     }
 
-    @Override
-    public void
-    searchDone(YTSearchHelper helper, YTSearchHelper.SearchArg arg,
-               YTFeed.Result result, Err err) {
-        if (!handleSearchResult(helper, arg, result, err))
-            return; // There is an error in search
-
+    private void
+    checkDupAsync(Object tag, YTVideoFeed.Entry[] entries) {
         mDbHelper.close();
 
         // Create new instance whenever it used to know owner of each callback.
         mDbHelper = new DBHelper();
-        mDbHelper.setCheckExistDoneReceiver(this);
+        mDbHelper.setCheckDupDoneReceiver(this);
         mDbHelper.open();
-        mDbHelper.checkExistAsync(new DBHelper.CheckExistArg(arg, (YTVideoFeed.Entry[])result.entries));
+        mDbHelper.checkDupAsync(new DBHelper.CheckDupArg(tag, entries));
     }
 
-    @Override
-    public void
-    checkExistDone(DBHelper helper, CheckExistArg arg,
-                   boolean[] results, Err err) {
-        if (null == mDbHelper || helper != mDbHelper) {
-            helper.close();
-            return; // invalid callback.
-        }
-
-        stopLoadingLookAndFeel();
-        if (Err.NO_ERR != err || results.length != arg.ents.length) {
-            UiUtils.showTextToast(this, R.string.err_db_unknown);
-            return;
-        }
-
+    private void
+    checkDupDoneNewEntries(DBHelper.CheckDupArg arg, boolean[] results) {
         YTSearchHelper.SearchArg sarg = (YTSearchHelper.SearchArg)arg.tag;
         saveSearchArg(sarg.type, sarg.text, sarg.title);
         String titleText = "";
@@ -429,6 +413,50 @@ DBHelper.CheckExistDoneReceiver {
         // Cleanup before as soon as possible to secure memories.
         if (null != oldAdapter)
             oldAdapter.cleanup();
+    }
+
+    private void
+    checkDupDoneExistingEntries(boolean[] results) {
+        // First request is done!
+        // Now we know total Results.
+        // Let's build adapter and enable list.
+        for (int i = 0; i < results.length; i++)
+            getAdapter().markEntryExist(i, results[i]);
+    }
+
+    @Override
+    public void
+    searchDone(YTSearchHelper helper, YTSearchHelper.SearchArg arg,
+               YTFeed.Result result, Err err) {
+        if (!handleSearchResult(helper, arg, result, err))
+            return; // There is an error in search
+        checkDupAsync(arg, (YTVideoFeed.Entry[])result.entries);
+    }
+
+    @Override
+    public void
+    checkDupDone(DBHelper helper, DBHelper.CheckDupArg arg,
+                 boolean[] results, Err err) {
+        if (null == mDbHelper || helper != mDbHelper) {
+            helper.close();
+            return; // invalid callback.
+        }
+
+        stopLoadingLookAndFeel();
+
+        if (Err.NO_ERR != err || results.length != arg.ents.length) {
+            UiUtils.showTextToast(this, R.string.err_db_unknown);
+            return;
+        }
+
+        if (null != getAdapter()
+            && arg.ents == getAdapter().getEntries())
+            // Entry is same with current adapter.
+            // That means 'dup. checking is done for exsiting entries"
+            checkDupDoneExistingEntries(results);
+        else
+            checkDupDoneNewEntries(arg, results);
+
     }
 
 
@@ -540,11 +568,20 @@ DBHelper.CheckExistDoneReceiver {
     protected void
     onResume() {
         super.onResume();
+
+        if (mDb.isRegisteredToVideoTableWatcher(this)) {
+            if (mDb.isVideoTableUpdated(this)) {
+                showLoadingLookAndFeel();
+                checkDupAsync(null, (YTVideoFeed.Entry[])getAdapter().getEntries());
+            }
+            mDb.unregisterToVideoTableWatcher(this);
+        }
     }
 
     @Override
     protected void
     onPause() {
+        mDb.registerToVideoTableWatcher(this);
         super.onPause();
     }
 
@@ -558,6 +595,7 @@ DBHelper.CheckExistDoneReceiver {
     protected void
     onDestroy() {
         mDbHelper.close();
+        mDb.unregisterToVideoTableWatcher(this);
         super.onDestroy();
     }
 

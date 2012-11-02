@@ -203,10 +203,14 @@ public class YTVideoSearchAdapter extends YTSearchAdapter {
     }
 
     public void
-    markEntryExist(int pos) {
+    markEntryExist(int pos, boolean exist) {
         YTFeed.Entry e = mEntries[pos];
-        e.uflag = Utils.bitSet(e.uflag, FENT_EXIST_DUP, MENT_EXIST);
-        setToExist(mItemViews[pos]);
+        long olduflag = e.uflag;
+        e.uflag = Utils.bitSet(e.uflag,
+                               exist? FENT_EXIST_DUP: FENT_EXIST_NEW,
+                               MENT_EXIST);
+        if (olduflag != e.uflag)
+            setToExist(mItemViews[pos]);
     }
 
     public void
