@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -184,10 +185,13 @@ public class YTHacker {
                 else if (e.startsWith("sig="))
                     sig = e.substring("sig=".length());
             }
-            eAssert(!ve.url.isEmpty()
-                    && !ve.tag.isEmpty()
-                    && !ve.type.isEmpty()
-                    && !ve.quality.isEmpty());
+
+            if (ve.url.isEmpty()
+                || ve.tag.isEmpty()
+                || ve.type.isEmpty()
+                || ve.quality.isEmpty())
+                return null; // Not supported video.
+
             if (null != sig)
                 ve.url += "&signature=" + sig;
             else
@@ -255,10 +259,13 @@ public class YTHacker {
 
                 line = m.group(1);
                 String[] vidElemUrls = line.split(",");
-                result.vids = new YtVideoElem[vidElemUrls.length];
-                int i = 0;
-                for (String s : vidElemUrls)
-                    result.vids[i++] = YtVideoElem.parse(s);
+                ArrayList<YtVideoElem> al = new ArrayList<YtVideoElem>(vidElemUrls.length);
+                for (String s : vidElemUrls) {
+                    YtVideoElem ve = YtVideoElem.parse(s);
+                    if (null != ve)
+                        al.add(ve);
+                }
+                result.vids = al.toArray(new YtVideoElem[0]);
             }
         }
         result.tmstamp = System.currentTimeMillis();

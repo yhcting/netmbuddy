@@ -1276,7 +1276,16 @@ SurfaceHolder.Callback {
 
                 if (Err.NO_ERR != result) {
                     logW("YTPlayer YTHack Fails : " + result.name());
-                    mStartVideoRecovery.executeRecoveryStart(mVlm.getActiveVideo());
+                    switch (result) {
+                    case YTHTTPGET:
+                    case IO_NET:
+                        mStartVideoRecovery.executeRecoveryStart(mVlm.getActiveVideo());
+                        break;
+
+                    default:
+                        mUi.notifyToUser(Utils.getResText(result.getMessage()));
+                        startNext(); // Move to next video.
+                    }
                     return;
                 }
 
