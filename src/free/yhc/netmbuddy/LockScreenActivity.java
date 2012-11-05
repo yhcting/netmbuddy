@@ -10,6 +10,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import free.yhc.netmbuddy.model.NotiManager;
 import free.yhc.netmbuddy.model.Utils;
 import free.yhc.netmbuddy.model.YTPlayer;
 import free.yhc.netmbuddy.model.YTPlayer.StopState;
@@ -40,9 +41,11 @@ YTPlayer.VideosStateListener {
                        | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
             if (Intent.ACTION_SCREEN_ON.equals(intent.getAction())) {
                 i.putExtra(INTENT_KEY_APP_FOREGROUND, Utils.isAppForeground());
-                if (Utils.isPrefLockScreen()
-                    && YTPlayer.get().hasActiveVideo())
-                    context.startActivity(i);
+                if (YTPlayer.get().hasActiveVideo()) {
+                    if (Utils.isPrefLockScreen())
+                        context.startActivity(i);
+                } else
+                    NotiManager.get().removeNotification();
             }
         }
     }

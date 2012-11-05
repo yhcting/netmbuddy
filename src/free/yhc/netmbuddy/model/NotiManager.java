@@ -173,17 +173,17 @@ public class NotiManager {
         nm.notify(NOTI_ID, n);
     }
 
-    void
-    removeNotification() {
-        // To avoid unexpected race-condition.
-        eAssert(Utils.isUiThread());
-        nm.cancel(NOTI_ID);
-    }
-
     public static NotiManager
     get() {
         if (null == sInstance)
             sInstance = new NotiManager();
         return sInstance;
+    }
+
+    public void
+    removeNotification() {
+        // To avoid unexpected race-condition.
+        eAssert(Utils.isUiThread());
+        nm.cancel(NOTI_ID);
     }
 }
