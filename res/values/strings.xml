@@ -69,6 +69,7 @@
     <string name="playback_time">Playback time</string>
     <string name="time_added">Time added</string>
     <string name="time_last_played">Time last played</string>
+    <string name="clear_search_history">Clear search history</string>
 
     <string name="pref_cat_operation">Playing music</string>
     <string name="pref_shuffle">Shuffle</string>
@@ -118,6 +119,7 @@
     <string name="msg_post_changing_video_quality">Main audio quality setting is changed too, accordingly.</string>
     <string name="msg_appended_to_playq">appended to play queue.</string>
     <string name="msg_play_all_musics">All musics are played.</string>
+    <string name="msg_search_history_cleared">Clearing search history is done.</string>
 
     <string name="err_no_err">Success.</string>
     <string name="err_unknown">Unknown error.</string>

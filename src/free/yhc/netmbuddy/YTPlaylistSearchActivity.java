@@ -25,10 +25,7 @@ import static free.yhc.netmbuddy.model.Utils.eAssert;
 import java.util.Iterator;
 import java.util.LinkedList;
 
-import android.app.AlertDialog;
-import android.app.Dialog;
 import android.content.Intent;
-import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.os.Bundle;
 import android.view.ContextMenu;
@@ -38,12 +35,10 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.AdapterView.AdapterContextMenuInfo;
-import android.widget.EditText;
 import android.widget.TextView;
 import free.yhc.netmbuddy.model.DB;
 import free.yhc.netmbuddy.model.Err;
 import free.yhc.netmbuddy.model.Policy;
-import free.yhc.netmbuddy.model.RTState;
 import free.yhc.netmbuddy.model.UiUtils;
 import free.yhc.netmbuddy.model.Utils;
 import free.yhc.netmbuddy.model.YTFeed;
@@ -75,31 +70,15 @@ public class YTPlaylistSearchActivity extends YTSearchActivity {
 
     private void
     doNewPlaylistSearch() {
-        UiUtils.EditTextAction action = new UiUtils.EditTextAction() {
-            @Override
-            public void prepare(Dialog dialog, EditText edit) { }
-            @Override
-            public void onOk(Dialog dialog, EditText edit) {
-                String user = edit.getText().toString();
-                RTState.get().setLastSearchWord(edit.getText().toString());
-                loadFirstPage(YTSearchHelper.SearchType.PL_USER, user, user);
-            }
-        };
-        AlertDialog diag = UiUtils.buildOneLineEditTextDialog(this,
-                                                              R.string.enter_user_name,
-                                                              RTState.get().getLastSearchWord(),
-                                                              action);
-        diag.show();
+        this.onSearchRequested();
     }
 
     private void
     onListItemClick(View view, int position, long itemId) {
-        Intent i = new Intent(this, YTVideoSearchActivity.class);
-        i.putExtra(INTENT_KEY_SEARCH_TYPE,
-                   YTSearchHelper.SearchType.VID_PLAYLIST.name());
-        i.putExtra(INTENT_KEY_SEARCH_TEXT,
+        Intent i = new Intent(this, YTVideoSearchPlaylistActivity.class);
+        i.putExtra(MAP_KEY_SEARCH_TEXT,
                    getAdapter().getItemPlaylistId(position));
-        i.putExtra(INTENT_KEY_SEARCH_TITLE,
+        i.putExtra(MAP_KEY_SEARCH_TITLE,
                    getAdapter().getItemTitle(position));
         startActivity(i);
     }
@@ -305,7 +284,7 @@ public class YTPlaylistSearchActivity extends YTSearchActivity {
             return; // There is an error in search
 
         stopLoadingLookAndFeel();
-        saveSearchArg(arg.type, arg.text, arg.title);
+        saveSearchArg(arg.text, arg.title);
 
         String titleText = arg.text + getResources().getText(R.string.user_playlist_title_suffix);
         ((TextView)findViewById(R.id.title)).setText(titleText);
@@ -349,6 +328,7 @@ public class YTPlaylistSearchActivity extends YTSearchActivity {
     public void
     onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setSearchType(YTSearchHelper.SearchType.PL_USER);
         mListv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void
@@ -366,42 +346,5 @@ public class YTPlaylistSearchActivity extends YTSearchActivity {
         },
                        0, null);
         doNewPlaylistSearch();
-    }
-
-    @Override
-    protected void
-    onResume() {
-        super.onResume();
-    }
-
-    @Override
-    protected void
-    onPause() {
-        super.onPause();
-    }
-
-    @Override
-    protected void
-    onStop() {
-        super.onStop();
-    }
-
-    @Override
-    protected void
-    onDestroy() {
-        super.onDestroy();
-    }
-
-    @Override
-    public void
-    onConfigurationChanged(Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-        // Do nothing!
-    }
-
-    @Override
-    public void
-    onBackPressed() {
-        super.onBackPressed();
     }
 }

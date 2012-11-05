@@ -27,7 +27,6 @@ import java.util.HashMap;
 public class RTState {
     private static RTState sInstance = null;
 
-    private String      mLastSearchWord = "";
     private YTHacker    mLastSuccessfulHacker = null;
     // TODO
     // Proxy string should be changed if user changes proxy setting.
@@ -54,16 +53,6 @@ public class RTState {
         if (null == sInstance)
             sInstance = new RTState();
         return sInstance;
-    }
-
-    public void
-    setLastSearchWord(String word) {
-        mLastSearchWord = word;
-    }
-
-    public String
-    getLastSearchWord() {
-        return mLastSearchWord;
     }
 
     public String

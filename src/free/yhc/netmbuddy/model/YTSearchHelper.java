@@ -69,8 +69,16 @@ public class YTSearchHelper {
         VID_KEYWORD,
         VID_AUTHOR,
         VID_PLAYLIST,
-        PL_USER,
+        PL_USER;
 
+        public static SearchType
+        convert(String typeName) {
+            for (SearchType ty : SearchType.values()) {
+                if (ty.name().equals(typeName))
+                    return ty;
+            }
+            return null;
+        }
     }
 
     public static class SearchArg {

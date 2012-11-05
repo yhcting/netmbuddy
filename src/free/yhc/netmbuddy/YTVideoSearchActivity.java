@@ -21,10 +21,7 @@
 package free.yhc.netmbuddy;
 
 import static free.yhc.netmbuddy.model.Utils.eAssert;
-import android.app.AlertDialog;
-import android.app.Dialog;
 import android.content.Intent;
-import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.view.ContextMenu;
@@ -35,13 +32,11 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.AdapterView.AdapterContextMenuInfo;
-import android.widget.EditText;
 import android.widget.TextView;
 import free.yhc.netmbuddy.model.DB;
 import free.yhc.netmbuddy.model.DBHelper;
 import free.yhc.netmbuddy.model.Err;
 import free.yhc.netmbuddy.model.Policy;
-import free.yhc.netmbuddy.model.RTState;
 import free.yhc.netmbuddy.model.UiUtils;
 import free.yhc.netmbuddy.model.Utils;
 import free.yhc.netmbuddy.model.YTFeed;
@@ -56,7 +51,6 @@ DBHelper.CheckDupDoneReceiver {
     private final YTPlayer  mMp = YTPlayer.get();
 
     private DBHelper        mDbHelper;
-    private int             mToolBtnSearchIcon = 0;
     private View.OnClickListener mToolBtnSearchAction;
 
     private YTVideoSearchAdapter.CheckStateListener mAdapterCheckListener
@@ -65,7 +59,7 @@ DBHelper.CheckDupDoneReceiver {
         public void
         onStateChanged(int nrChecked, int pos, boolean checked) {
             if (0 == nrChecked) {
-                setupToolBtn1(mToolBtnSearchIcon, mToolBtnSearchAction);
+                setupToolBtn1(getToolButtonSearchIcon(), mToolBtnSearchAction);
             } else {
                 setupToolBtn1(R.drawable.ic_add, new View.OnClickListener() {
                     @Override
@@ -89,22 +83,8 @@ DBHelper.CheckDupDoneReceiver {
     }
 
     private void
-    doNewSearch(final YTSearchHelper.SearchType type, int title) {
-        UiUtils.EditTextAction action = new UiUtils.EditTextAction() {
-            @Override
-            public void prepare(Dialog dialog, EditText edit) { }
-            @Override
-            public void onOk(Dialog dialog, EditText edit) {
-                String word = edit.getText().toString();
-                RTState.get().setLastSearchWord(edit.getText().toString());
-                loadFirstPage(type, word, word);
-            }
-        };
-        AlertDialog diag = UiUtils.buildOneLineEditTextDialog(this,
-                                                              title,
-                                                              RTState.get().getLastSearchWord(),
-                                                              action);
-        diag.show();
+    doNewSearch() {
+        this.onSearchRequested();
     }
 
     /**
@@ -337,10 +317,8 @@ DBHelper.CheckDupDoneReceiver {
 
     private void
     onContextMenuVideosOfThisAuthor(final int position) {
-        Intent i = new Intent(this, YTVideoSearchActivity.class);
-        i.putExtra(INTENT_KEY_SEARCH_TYPE, YTSearchHelper.SearchType.VID_AUTHOR.name());
-        i.putExtra(INTENT_KEY_SEARCH_TEXT, getAdapter().getItemAuthor(position));
-        i.putExtra(INTENT_KEY_SEARCH_TITLE, getAdapter().getItemAuthor(position));
+        Intent i = new Intent(this, YTVideoSearchAuthorActivity.class);
+        i.putExtra(MAP_KEY_SEARCH_TEXT, getAdapter().getItemAuthor(position));
         startActivity(i);
     }
 
@@ -374,25 +352,8 @@ DBHelper.CheckDupDoneReceiver {
     private void
     checkDupDoneNewEntries(DBHelper.CheckDupArg arg, boolean[] results) {
         YTSearchHelper.SearchArg sarg = (YTSearchHelper.SearchArg)arg.tag;
-        saveSearchArg(sarg.type, sarg.text, sarg.title);
-        String titleText = "";
-        switch (sarg.type) {
-        case VID_KEYWORD:
-            titleText += getResources().getText(R.string.keyword);
-            break;
-
-        case VID_AUTHOR:
-            titleText += getResources().getText(R.string.author);
-            break;
-
-        case VID_PLAYLIST:
-            titleText += getResources().getText(R.string.playlist);
-            break;
-
-        default:
-            eAssert(false);
-        }
-        titleText += " : " + sarg.title;
+        saveSearchArg(sarg.text, sarg.title);
+        String titleText = getTitlePrefix() + " : " + sarg.title;
         ((TextView)findViewById(R.id.title)).setText(titleText);
 
         // First request is done!
@@ -424,6 +385,64 @@ DBHelper.CheckDupDoneReceiver {
             getAdapter().markEntryExist(i, results[i]);
     }
 
+    // ========================================================================
+    //
+    //
+    //
+    // ========================================================================
+    protected void
+    onCreateInternal(YTSearchHelper.SearchType stype,
+                     String                    stext,
+                     String                    stitle) {
+        setSearchType(stype);
+        mListv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void
+            onItemClick(AdapterView<?> parent, View view, int position, long itemId) {
+                onListItemClick(view, position, itemId);
+            }
+        });
+
+        mDbHelper = new DBHelper();
+        mToolBtnSearchAction = new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                doNewSearch();
+            }
+        };
+
+        setupBottomBar(getToolButtonSearchIcon(), mToolBtnSearchAction,
+                       0, null);
+
+        if (null != stext)
+            loadFirstPage(getSearchType(), stext, stitle);
+        else
+            doNewSearch();
+    }
+
+    /**
+     * Override it to enabel tool button for search.
+     * @return
+     */
+    protected int
+    getToolButtonSearchIcon() {
+        return 0;
+    }
+
+    /**
+     * Override it.
+     * @return
+     */
+    protected String
+    getTitlePrefix() {
+        return "";
+    }
+
+    // ========================================================================
+    //
+    //
+    //
+    // ========================================================================
     @Override
     public void
     searchDone(YTSearchHelper helper, YTSearchHelper.SearchArg arg,
@@ -458,7 +477,6 @@ DBHelper.CheckDupDoneReceiver {
             checkDupDoneNewEntries(arg, results);
 
     }
-
 
     @Override
     public boolean
@@ -499,69 +517,6 @@ DBHelper.CheckDupDoneReceiver {
     public void
     onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        mListv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void
-            onItemClick(AdapterView<?> parent, View view, int position, long itemId) {
-                onListItemClick(view, position, itemId);
-            }
-        });
-
-        mDbHelper = new DBHelper();
-        String stypeStr = getIntent().getStringExtra(INTENT_KEY_SEARCH_TYPE);
-        final String stext = getIntent().getStringExtra(INTENT_KEY_SEARCH_TEXT);
-        final String stitle = getIntent().getStringExtra(INTENT_KEY_SEARCH_TITLE);
-
-        YTSearchHelper.SearchType stype = YTSearchHelper.SearchType.VID_KEYWORD;
-        if (null != stypeStr) {
-            for (YTSearchHelper.SearchType st : YTSearchHelper.SearchType.values()) {
-                if (st.name().equals(stypeStr))
-                    stype = st;
-            }
-        }
-
-        final int diagTitle;
-        switch (stype) {
-        case VID_KEYWORD:
-            mToolBtnSearchIcon = R.drawable.ic_ytsearch;
-            diagTitle = R.string.enter_keyword;
-            break;
-
-        case VID_AUTHOR:
-            mToolBtnSearchIcon = R.drawable.ic_ytsearch;
-            diagTitle = R.string.enter_user_name;
-            break;
-
-        case VID_PLAYLIST:
-            diagTitle = 0;
-            break;
-
-        default:
-            diagTitle = 0;
-            eAssert(false);
-        }
-
-        final YTSearchHelper.SearchType searchType = stype;
-        mToolBtnSearchAction = new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                doNewSearch(searchType, diagTitle);
-            }
-        };
-        setupBottomBar(mToolBtnSearchIcon, mToolBtnSearchAction,
-                       0, null);
-
-
-        if (null == stext)
-            doNewSearch(searchType, R.string.enter_keyword);
-        else
-            Utils.getUiHandler().post(new Runnable() {
-                @Override
-                public void run() {
-                    String title = (null == stitle)? stext: stitle;
-                    loadFirstPage(searchType, stext, title);
-                }
-            });
     }
 
     @Override
@@ -587,28 +542,9 @@ DBHelper.CheckDupDoneReceiver {
 
     @Override
     protected void
-    onStop() {
-        super.onStop();
-    }
-
-    @Override
-    protected void
     onDestroy() {
         mDbHelper.close();
         mDb.unregisterToVideoTableWatcher(this);
         super.onDestroy();
-    }
-
-    @Override
-    public void
-    onConfigurationChanged(Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-        // Do nothing!
-    }
-
-    @Override
-    public void
-    onBackPressed() {
-        super.onBackPressed();
     }
 }

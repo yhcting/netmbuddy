@@ -22,6 +22,8 @@ package free.yhc.netmbuddy;
 
 import static free.yhc.netmbuddy.model.Utils.eAssert;
 import android.app.Activity;
+import android.app.SearchManager;
+import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.view.Gravity;
@@ -35,16 +37,18 @@ import android.widget.ListView;
 import android.widget.TextView;
 import free.yhc.netmbuddy.model.Err;
 import free.yhc.netmbuddy.model.Policy;
+import free.yhc.netmbuddy.model.SearchSuggestionProvider;
 import free.yhc.netmbuddy.model.UiUtils;
+import free.yhc.netmbuddy.model.Utils;
 import free.yhc.netmbuddy.model.YTFeed;
 import free.yhc.netmbuddy.model.YTPlayer;
 import free.yhc.netmbuddy.model.YTSearchHelper;
 
 public abstract class YTSearchActivity extends Activity implements
 YTSearchHelper.SearchDoneReceiver {
-    public static final String  INTENT_KEY_SEARCH_TYPE  = "searchtype";
-    public static final String  INTENT_KEY_SEARCH_TEXT  = "searchtext";
-    public static final String  INTENT_KEY_SEARCH_TITLE = "searchtitle";
+    public static final String  MAP_KEY_SEARCH_TYPE     = "searchtype";
+    public static final String  MAP_KEY_SEARCH_TEXT     = "searchtext";
+    public static final String  MAP_KEY_SEARCH_TITLE    = "searchtitle";
 
     private static final int NR_ENTRY_PER_PAGE = Policy.YTSEARCH_MAX_RESULTS;
 
@@ -215,14 +219,18 @@ YTSearchHelper.SearchDoneReceiver {
     //
     //
     // ========================================================================
+    protected void
+    setSearchType(YTSearchHelper.SearchType type) {
+        mSearchSt.type = type;
+    }
+
     protected YTSearchHelper.SearchType
     getSearchType() {
         return mSearchSt.type;
     }
 
     protected void
-    saveSearchArg(YTSearchHelper.SearchType type, String text, String title) {
-        mSearchSt.type = type;
+    saveSearchArg(String text, String title) {
         mSearchSt.text = text;
         mSearchSt.title = title;
     }
@@ -364,6 +372,24 @@ YTSearchHelper.SearchDoneReceiver {
         mSearchHelper = new YTSearchHelper(); // initialization.
 
         preparePageButtons();
+    }
+
+    @Override
+    protected void
+    onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        if (!Intent.ACTION_SEARCH.equals(intent.getAction()))
+            return; // ignore unexpected intent
+
+        final String query = intent.getStringExtra(SearchManager.QUERY);
+        SearchSuggestionProvider.saveRecentQuery(query);
+        Utils.getUiHandler().post(new Runnable() {
+            @Override
+            public void run() {
+                loadFirstPage(getSearchType(), query, query);
+            }
+        });
     }
 
     @Override

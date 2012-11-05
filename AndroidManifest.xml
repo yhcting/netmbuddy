@@ -29,19 +29,73 @@
         <activity android:name=".PlaylistActivity"
                   android:configChanges="orientation|keyboardHidden"
                   android:theme="@android:style/Theme.NoTitleBar"
-                  />
+                  android:launchMode="singleTop"
+                  >
+            <meta-data android:name="android.app.default_searchable"
+                       android:value=".PlaylistActivity" />
+            <intent-filter>
+                <action android:name="android.intent.action.SEARCH" />
+            </intent-filter>
+            <meta-data android:name="android.app.searchable"
+                       android:resource="@xml/searchable_keyword"/>
+            </activity>
         <activity android:name=".MusicsActivity"
                   android:configChanges="orientation|keyboardHidden"
                   android:theme="@android:style/Theme.NoTitleBar"
-                  />
-        <activity android:name=".YTVideoSearchActivity"
+                  >
+        </activity>
+        <activity android:name=".YTVideoSearchKeywordActivity"
                   android:configChanges="orientation|keyboardHidden"
                   android:theme="@android:style/Theme.NoTitleBar"
-                  />
+                  android:launchMode="singleTop"
+                  >
+            <meta-data android:name="android.app.default_searchable"
+                       android:value=".YTVideoSearchKeywordActivity" />
+            <intent-filter>
+                <action android:name="android.intent.action.SEARCH" />
+            </intent-filter>
+            <meta-data android:name="android.app.searchable"
+                       android:resource="@xml/searchable_keyword"/>
+        </activity>
+        <activity android:name=".YTVideoSearchAuthorActivity"
+                  android:configChanges="orientation|keyboardHidden"
+                  android:theme="@android:style/Theme.NoTitleBar"
+                  android:launchMode="singleTop"
+                  >
+            <meta-data android:name="android.app.default_searchable"
+                       android:value=".YTVideoSearchAuthorActivity" />
+            <intent-filter>
+                <action android:name="android.intent.action.SEARCH" />
+            </intent-filter>
+            <meta-data android:name="android.app.searchable"
+                       android:resource="@xml/searchable_user"/>
+        </activity>
+        <activity android:name=".YTVideoSearchPlaylistActivity"
+                  android:configChanges="orientation|keyboardHidden"
+                  android:theme="@android:style/Theme.NoTitleBar"
+                  android:launchMode="singleTop"
+                  >
+            <meta-data android:name="android.app.default_searchable"
+                       android:value=".YTVideoSearchPlaylistActivity" />
+            <intent-filter>
+                <action android:name="android.intent.action.SEARCH" />
+            </intent-filter>
+            <meta-data android:name="android.app.searchable"
+                       android:resource="@xml/searchable_user"/>
+        </activity>
         <activity android:name=".YTPlaylistSearchActivity"
                   android:configChanges="orientation|keyboardHidden"
                   android:theme="@android:style/Theme.NoTitleBar"
-                  />
+                  android:launchMode="singleTop"
+                  >
+            <meta-data android:name="android.app.default_searchable"
+                       android:value=".YTPlaylistSearchActivity" />
+            <intent-filter>
+                <action android:name="android.intent.action.SEARCH" />
+            </intent-filter>
+            <meta-data android:name="android.app.searchable"
+                       android:resource="@xml/searchable_user"/>
+        </activity>
         <activity android:name=".YTMPPreferenceActivity"
                   android:configChanges="orientation|keyboardHidden"
                   android:theme="@android:style/Theme.NoTitleBar"
@@ -71,5 +125,7 @@
                 <action android:name="ytmplayer.intent.action.NOTIFICATION_ACTION" />
             </intent-filter>
         </receiver>
+        <provider android:name=".model.SearchSuggestionProvider"
+                  android:authorities="free.yhc.netmbuddy" />
     </application>
 </manifest>

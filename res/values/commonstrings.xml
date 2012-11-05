@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Strings that doens't need to be internationalization.
+(Usually, english...)
+-->
+<resources>
+    <string name="package_name">free.yhc.netmbuddy</string>
+</resources>

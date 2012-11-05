@@ -49,6 +49,11 @@ import free.yhc.netmbuddy.model.Utils;
 import free.yhc.netmbuddy.model.YTPlayer;
 
 public class MusicsActivity extends Activity {
+    public static final String MAP_KEY_PLAYLIST_ID  = "playlistid";
+    public static final String MAP_KEY_TITLE        = "title";
+    public static final String MAP_KEY_KEYWORD      = "keyword";
+    public static final String MAP_KEY_THUMBNAIL    = "thumbnail";
+
     public static final long PLID_INVALID       = DB.INVALID_PLAYLIST_ID;
     public static final long PLID_RECENT_PLAYED = PLID_INVALID - 1;
     public static final long PLID_SEARCHED      = PLID_INVALID - 2;
@@ -562,20 +567,20 @@ public class MusicsActivity extends Activity {
         setContentView(R.layout.musics);
 
         String searchWord = null;
-        mPlid = getIntent().getLongExtra("plid", PLID_INVALID);
+        mPlid = getIntent().getLongExtra(MAP_KEY_PLAYLIST_ID, PLID_INVALID);
         eAssert(PLID_INVALID != mPlid);
 
         if (isUserPlaylist(mPlid)) {
-            String title = getIntent().getStringExtra("title");
+            String title = getIntent().getStringExtra(MAP_KEY_TITLE);
             ((TextView)findViewById(R.id.title)).setText(title);
 
-            byte[] imgdata = getIntent().getByteArrayExtra("thumbnail");
+            byte[] imgdata = getIntent().getByteArrayExtra(MAP_KEY_THUMBNAIL);
             UiUtils.setThumbnailImageView(((ImageView)findViewById(R.id.thumbnail)), imgdata);
         } else if (PLID_RECENT_PLAYED == mPlid) {
             ((TextView)findViewById(R.id.title)).setText(R.string.recently_played);
             ((ImageView)findViewById(R.id.thumbnail)).setImageResource(R.drawable.ic_recently_played_up);
         } else if (PLID_SEARCHED == mPlid) {
-            String word = getIntent().getStringExtra("word");
+            String word = getIntent().getStringExtra(MAP_KEY_KEYWORD);
             searchWord = (null == word)? "": word;
             String title = Utils.getAppContext().getResources().getText(R.string.keyword) + " : " + word;
             ((TextView)findViewById(R.id.title)).setText(title);

@@ -27,6 +27,7 @@ import java.io.File;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.app.SearchManager;
 import android.content.ActivityNotFoundException;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -49,12 +50,17 @@ import free.yhc.netmbuddy.model.DB;
 import free.yhc.netmbuddy.model.DB.ColVideo;
 import free.yhc.netmbuddy.model.Err;
 import free.yhc.netmbuddy.model.Policy;
+import free.yhc.netmbuddy.model.SearchSuggestionProvider;
 import free.yhc.netmbuddy.model.UiUtils;
 import free.yhc.netmbuddy.model.Utils;
 import free.yhc.netmbuddy.model.YTPlayer;
-import free.yhc.netmbuddy.model.YTSearchHelper;
 
 public class PlaylistActivity extends Activity {
+    private static final String MAP_KEY_PLAYLIST_ID  = "playlistid";
+    private static final String MAP_KEY_TITLE        = "title";
+    private static final String MAP_KEY_THUMBNAIL    = "thumbnail";
+
+
     private final DB            mDb = DB.get();
     private final YTPlayer      mMp = YTPlayer.get();
 
@@ -106,21 +112,7 @@ public class PlaylistActivity extends Activity {
 
     private void
     searchMusics(View anchor) {
-        UiUtils.EditTextAction action = new UiUtils.EditTextAction() {
-            @Override
-            public void prepare(Dialog dialog, EditText edit) { }
-            @Override
-            public void onOk(Dialog dialog, EditText edit) {
-                Intent i = new Intent(PlaylistActivity.this, MusicsActivity.class);
-                i.putExtra("plid", MusicsActivity.PLID_SEARCHED);
-                i.putExtra("word", edit.getText().toString());
-                startActivity(i);
-            }
-        };
-        AlertDialog diag = UiUtils.buildOneLineEditTextDialog(this,
-                                                              R.string.enter_keyword,
-                                                              action);
-        diag.show();
+        startSearch(null, false, null, false);
     }
 
     private void
@@ -210,6 +202,12 @@ public class PlaylistActivity extends Activity {
         bldr.setView(UiUtils.inflateLayout(this, R.layout.appinfo));
         AlertDialog aDiag = bldr.create();
         aDiag.show();
+    }
+
+    private void
+    onMenuMoreClearSearchHistory(View anchor) {
+        SearchSuggestionProvider.clearHistory();
+        UiUtils.showTextToast(this, R.string.msg_search_history_cleared);
     }
 
     private void
@@ -376,10 +374,7 @@ public class PlaylistActivity extends Activity {
 
     private void
     onMenuMoreYtSearchAuthor(final View anchor) {
-        Intent i = new Intent(this, YTVideoSearchActivity.class);
-        i.putExtra(YTSearchActivity.INTENT_KEY_SEARCH_TYPE,
-                   YTSearchHelper.SearchType.VID_AUTHOR.name());
-        startActivity(i);
+        startActivity(new Intent(this, YTVideoSearchAuthorActivity.class));
     }
 
     private void
@@ -472,6 +467,7 @@ public class PlaylistActivity extends Activity {
     onMenuMore(final View anchor) {
         final int[] optStringIds = {
                 R.string.app_info,
+                R.string.clear_search_history,
                 R.string.dbmore,
                 R.string.ytsearchmore,
                 R.string.feedback,
@@ -506,6 +502,10 @@ public class PlaylistActivity extends Activity {
                     onMenuMoreYtSearch(anchor);
                     break;
 
+                case R.string.clear_search_history:
+                    onMenuMoreClearSearchHistory(anchor);
+                    break;
+
                 case R.string.app_info:
                     onMenuMoreAppInfo(anchor);
                     break;
@@ -531,7 +531,7 @@ public class PlaylistActivity extends Activity {
             @Override
             public void onClick(View v) {
                 Intent i = new Intent(PlaylistActivity.this, MusicsActivity.class);
-                i.putExtra("plid", MusicsActivity.PLID_RECENT_PLAYED);
+                i.putExtra(MusicsActivity.MAP_KEY_PLAYLIST_ID, MusicsActivity.PLID_RECENT_PLAYED);
                 startActivity(i);
             }
         });
@@ -546,10 +546,7 @@ public class PlaylistActivity extends Activity {
         ((ImageView)findViewById(R.id.ytsearch)).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent i = new Intent(PlaylistActivity.this, YTVideoSearchActivity.class);
-                i.putExtra(YTSearchActivity.INTENT_KEY_SEARCH_TYPE,
-                           YTSearchHelper.SearchType.VID_KEYWORD.name());
-                startActivity(i);
+                startActivity(new Intent(PlaylistActivity.this, YTVideoSearchKeywordActivity.class));
             }
         });
 
@@ -668,9 +665,9 @@ public class PlaylistActivity extends Activity {
                 //eAssert(PlaylistAdapter.ItemButton.LIST == button);
                 Intent i = new Intent(PlaylistActivity.this, MusicsActivity.class);
                 PlaylistAdapter adapter = getAdapter();
-                i.putExtra("plid", adapter.getItemId(pos));
-                i.putExtra("title", adapter.getItemTitle(pos));
-                i.putExtra("thumbnail", adapter.getItemThumbnail(pos));
+                i.putExtra(MusicsActivity.MAP_KEY_PLAYLIST_ID, adapter.getItemId(pos));
+                i.putExtra(MusicsActivity.MAP_KEY_TITLE, adapter.getItemTitle(pos));
+                i.putExtra(MusicsActivity.MAP_KEY_THUMBNAIL, adapter.getItemThumbnail(pos));
                 startActivity(i);
             }
         });
@@ -678,6 +675,21 @@ public class PlaylistActivity extends Activity {
         mListv.setEmptyView(findViewById(R.id.empty_list));
         adapter.reloadCursorAsync();
 
+    }
+
+    @Override
+    protected void
+    onNewIntent(Intent intent) {
+        setIntent(intent);
+        if (!Intent.ACTION_SEARCH.equals(intent.getAction()))
+            return; // ignore unexpected intent
+
+        String query = intent.getStringExtra(SearchManager.QUERY);
+        SearchSuggestionProvider.saveRecentQuery(query);
+        Intent i = new Intent(PlaylistActivity.this, MusicsActivity.class);
+        i.putExtra(MusicsActivity.MAP_KEY_PLAYLIST_ID, MusicsActivity.PLID_SEARCHED);
+        i.putExtra(MusicsActivity.MAP_KEY_KEYWORD, query);
+        startActivity(i);
     }
 
     @Override
