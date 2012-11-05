@@ -69,7 +69,10 @@ public class YTPlaylistFeed extends YTFeed {
     getFeedUrlByUser(String user, int start, int maxCount) {
         return "https://gdata.youtube.com/feeds/api/users/"
                + Uri.encode(user, null)
-               + "/playlists?v=2";
+               + "/playlists?v=2"
+               + "&start-index=" + start
+               + "&max-results=" + maxCount;
+
     }
 
     /**
