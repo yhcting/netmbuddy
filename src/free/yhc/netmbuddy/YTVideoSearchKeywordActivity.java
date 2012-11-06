@@ -5,6 +5,12 @@ import free.yhc.netmbuddy.model.YTSearchHelper;
 
 public class YTVideoSearchKeywordActivity extends YTVideoSearchActivity {
     @Override
+    protected YTSearchHelper.SearchType
+    getSearchType() {
+        return YTSearchHelper.SearchType.VID_KEYWORD;
+    }
+
+    @Override
     protected int
     getToolButtonSearchIcon() {
         return R.drawable.ic_ytsearch;
@@ -21,6 +27,6 @@ public class YTVideoSearchKeywordActivity extends YTVideoSearchActivity {
     onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         String text = getIntent().getStringExtra(MAP_KEY_SEARCH_TEXT);
-        onCreateInternal(YTSearchHelper.SearchType.VID_KEYWORD, text, text);
+        onCreateInternal(text, text);
     }
 }

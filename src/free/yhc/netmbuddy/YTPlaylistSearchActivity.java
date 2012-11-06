@@ -277,6 +277,12 @@ public class YTPlaylistSearchActivity extends YTSearchActivity {
     }
 
     @Override
+    protected YTSearchHelper.SearchType
+    getSearchType() {
+        return YTSearchHelper.SearchType.PL_USER;
+    }
+
+    @Override
     public void
     searchDone(YTSearchHelper helper, YTSearchHelper.SearchArg arg,
                YTFeed.Result result, Err err) {
@@ -328,7 +334,6 @@ public class YTPlaylistSearchActivity extends YTSearchActivity {
     public void
     onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setSearchType(YTSearchHelper.SearchType.PL_USER);
         mListv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void

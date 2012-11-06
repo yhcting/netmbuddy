@@ -56,11 +56,6 @@ import free.yhc.netmbuddy.model.Utils;
 import free.yhc.netmbuddy.model.YTPlayer;
 
 public class PlaylistActivity extends Activity {
-    private static final String MAP_KEY_PLAYLIST_ID  = "playlistid";
-    private static final String MAP_KEY_TITLE        = "title";
-    private static final String MAP_KEY_THUMBNAIL    = "thumbnail";
-
-
     private final DB            mDb = DB.get();
     private final YTPlayer      mMp = YTPlayer.get();
 

@@ -44,7 +44,7 @@ import free.yhc.netmbuddy.model.YTPlayer;
 import free.yhc.netmbuddy.model.YTSearchHelper;
 import free.yhc.netmbuddy.model.YTVideoFeed;
 
-public class YTVideoSearchActivity extends YTSearchActivity implements
+public abstract class YTVideoSearchActivity extends YTSearchActivity implements
 YTSearchHelper.SearchDoneReceiver,
 DBHelper.CheckDupDoneReceiver {
     private final DB        mDb = DB.get();
@@ -390,11 +390,11 @@ DBHelper.CheckDupDoneReceiver {
     //
     //
     // ========================================================================
+    @Override
+    protected abstract YTSearchHelper.SearchType getSearchType();
+
     protected void
-    onCreateInternal(YTSearchHelper.SearchType stype,
-                     String                    stext,
-                     String                    stitle) {
-        setSearchType(stype);
+    onCreateInternal(String stext, String stitle) {
         mListv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void

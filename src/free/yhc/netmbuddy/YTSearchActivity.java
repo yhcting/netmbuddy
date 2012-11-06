@@ -66,16 +66,15 @@ YTSearchHelper.SearchDoneReceiver {
         @Override
         public void onClick(View v) {
             int page = (Integer)v.getTag();
-            loadPage(mSearchSt.type, mSearchSt.text, mSearchSt.title, page);
+            loadPage(getSearchType(), mSearchSt.text, mSearchSt.title, page);
         }
     };
 
     private static class YtSearchState {
-        YTSearchHelper.SearchType   type            = YTSearchHelper.SearchType.VID_KEYWORD;
-        String                      text            = "";
-        String                      title           = "";
-        int                         curPage         = -1;
-        int                         totalResults    = -1;
+        String  text            = "";
+        String  title           = "";
+        int     curPage         = -1;
+        int     totalResults    = -1;
     }
 
 
@@ -191,13 +190,13 @@ YTSearchHelper.SearchDoneReceiver {
 
     private void
     loadNext() {
-        loadPage(mSearchSt.type, mSearchSt.text, mSearchSt.title, mSearchSt.curPage + 1);
+        loadPage(getSearchType(), mSearchSt.text, mSearchSt.title, mSearchSt.curPage + 1);
     }
 
     private void
     loadPrev() {
         eAssert(mSearchSt.curPage > 1);
-        loadPage(mSearchSt.type, mSearchSt.text, mSearchSt.title, mSearchSt.curPage - 1);
+        loadPage(getSearchType(), mSearchSt.text, mSearchSt.title, mSearchSt.curPage - 1);
     }
 
     private void
@@ -219,15 +218,7 @@ YTSearchHelper.SearchDoneReceiver {
     //
     //
     // ========================================================================
-    protected void
-    setSearchType(YTSearchHelper.SearchType type) {
-        mSearchSt.type = type;
-    }
-
-    protected YTSearchHelper.SearchType
-    getSearchType() {
-        return mSearchSt.type;
-    }
+    protected abstract YTSearchHelper.SearchType getSearchType();
 
     protected void
     saveSearchArg(String text, String title) {
