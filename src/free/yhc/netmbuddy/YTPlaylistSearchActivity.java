@@ -69,11 +69,6 @@ public class YTPlaylistSearchActivity extends YTSearchActivity {
     }
 
     private void
-    doNewPlaylistSearch() {
-        this.onSearchRequested();
-    }
-
-    private void
     onListItemClick(View view, int position, long itemId) {
         Intent i = new Intent(this, YTVideoSearchPlaylistActivity.class);
         i.putExtra(MAP_KEY_SEARCH_TEXT,
@@ -346,10 +341,15 @@ public class YTPlaylistSearchActivity extends YTSearchActivity {
                        new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                doNewPlaylistSearch();
+                doNewSearch();
             }
         },
                        0, null);
-        doNewPlaylistSearch();
+
+        String stext = getIntent().getStringExtra(MAP_KEY_SEARCH_TEXT);
+        if (null != stext)
+            loadFirstPage(getSearchType(), stext, stext);
+        else
+            doNewSearch();
     }
 }

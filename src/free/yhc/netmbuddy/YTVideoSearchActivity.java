@@ -82,11 +82,6 @@ DBHelper.CheckDupDoneReceiver {
         playerv.setVisibility(View.VISIBLE);
     }
 
-    private void
-    doNewSearch() {
-        this.onSearchRequested();
-    }
-
     /**
      * @return
      *   0 for success, otherwise error message id.
@@ -323,6 +318,13 @@ DBHelper.CheckDupDoneReceiver {
     }
 
     private void
+    onContextMenuPlaylistsOfThisAuthor(final int position) {
+        Intent i = new Intent(this, YTPlaylistSearchActivity.class);
+        i.putExtra(MAP_KEY_SEARCH_TEXT, getAdapter().getItemAuthor(position));
+        startActivity(i);
+    }
+
+    private void
     onListItemClick(View view, int position, long itemId) {
         int playtime = 0;
         try {
@@ -497,6 +499,10 @@ DBHelper.CheckDupDoneReceiver {
 
         case R.id.videos_of_this_author:
             onContextMenuVideosOfThisAuthor(info.position);
+            return true;
+
+        case R.id.playlists_of_this_author:
+            onContextMenuPlaylistsOfThisAuthor(info.position);
             return true;
         }
         return false;

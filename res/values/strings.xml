@@ -51,6 +51,7 @@
     <string name="choose_app">Choose App.</string>
     <string name="play_video">Play video</string>
     <string name="videos_of_this_author">Videos of this author</string>
+    <string name="playlists_of_this_author">Playlists of this author</string>
     <string name="videos_with_author">Videos with author</string>
     <string name="user_playlist">User playlists</string>
     <string name="user_playlist_title_suffix">\'s playlists</string>

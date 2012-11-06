@@ -352,6 +352,16 @@ YTSearchHelper.SearchDoneReceiver {
         loadPage(type, text, title, 1);
     }
 
+    protected void
+    doNewSearch() {
+        onSearchRequested();
+    }
+
+    // ========================================================================
+    //
+    //
+    //
+    // ========================================================================
     @Override
     public void
     onCreate(Bundle savedInstanceState) {
