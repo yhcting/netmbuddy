@@ -24,7 +24,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 
 public class KBLinkedList<T> {
-    private LinkedList<Elem> l = new LinkedList<Elem>();
+    private LinkedList<Elem> mL = new LinkedList<Elem>();
 
     private static class Elem {
         final Object key;
@@ -36,7 +36,7 @@ public class KBLinkedList<T> {
     }
 
     private class Iter implements Iterator<T> {
-        Iterator<Elem> itr = l.iterator();
+        Iterator<Elem> itr = mL.iterator();
 
         @Override
         public boolean
@@ -62,22 +62,22 @@ public class KBLinkedList<T> {
 
     public boolean
     add(Object key, T item) {
-        return l.add(new Elem(key, item));
+        return mL.add(new Elem(key, item));
     }
 
     public void
     addFirst(Object key, T item) {
-        l.addFirst(new Elem(key, item));
+        mL.addFirst(new Elem(key, item));
     }
 
     public void
     addLast(Object key, T item) {
-        l.addLast(new Elem(key, item));
+        mL.addLast(new Elem(key, item));
     }
 
     public void
     remove(Object key) {
-        Iterator<Elem> itr = l.iterator();
+        Iterator<Elem> itr = mL.iterator();
         while (itr.hasNext()) {
             Elem e = itr.next();
             if (e.key == key)
@@ -87,7 +87,7 @@ public class KBLinkedList<T> {
 
     public boolean
     remove(Object key, T item) {
-        Iterator<Elem> itr = l.iterator();
+        Iterator<Elem> itr = mL.iterator();
         while (itr.hasNext()) {
             Elem e = itr.next();
             if (e.key == key && e.item == item) {
@@ -106,7 +106,7 @@ public class KBLinkedList<T> {
     public T[]
     toArray(T[] a) {
         // NOT TESTED enough yet!
-        Elem[] es = l.toArray(new Elem[0]);
+        Elem[] es = mL.toArray(new Elem[0]);
         if (a.length < es.length)
             a = (T[])Utils.newArray(a.getClass().getComponentType(), es.length);
         for (int i = 0; i < es.length; i++)

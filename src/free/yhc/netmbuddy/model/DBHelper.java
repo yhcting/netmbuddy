@@ -61,14 +61,14 @@ public class DBHelper {
     }
 
     private static class BGHandler extends Handler {
-        private final DBHelper  helper;
+        private final DBHelper  _mHelper;
 
-        private boolean         closed  = false;
+        private boolean         _mClosed  = false;
 
         BGHandler(Looper    looper,
-                  DBHelper  aHelper) {
+                  DBHelper  helper) {
             super(looper);
-            helper = aHelper;
+            _mHelper = helper;
         }
 
         private boolean[]
@@ -87,9 +87,9 @@ public class DBHelper {
                 @Override
                 public void
                 run() {
-                    CheckDupDoneReceiver rcvr = helper.getCheckDupDoneReceiver();
-                    if (null != rcvr)
-                        rcvr.checkDupDone(helper, arg, results, err);
+                    CheckDupDoneReceiver rcvr = _mHelper.getCheckDupDoneReceiver();
+                    if (!_mClosed && null != rcvr)
+                        rcvr.checkDupDone(_mHelper, arg, results, err);
                 }
             });
             return;
@@ -117,12 +117,12 @@ public class DBHelper {
         @Override
         public void
         handleMessage(Message msg) {
-            if (closed)
+            if (_mClosed)
                 return;
 
             switch (msg.what) {
             case MSG_WHAT_CLOSE:
-                closed = true;
+                _mClosed = true;
                 ((HandlerThread)getLooper().getThread()).quit();
                 break;
 

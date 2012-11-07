@@ -54,7 +54,7 @@ public class NotiManager {
 
         // true : for keep notification alive even if app. is killed.
         // false: notification should be removed when app. is killed.
-        private final int           icon;
+        private final int           _mIcon;
 
         static NotiType
         convert(String name) {
@@ -65,12 +65,12 @@ public class NotiManager {
             return null;
         }
 
-        NotiType(int aIcon) {
-            icon   = aIcon;
+        NotiType(int icon) {
+            _mIcon   = icon;
         }
 
         int getIcon() {
-            return icon;
+            return _mIcon;
         }
     }
 

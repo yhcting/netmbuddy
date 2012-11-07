@@ -26,8 +26,6 @@ import static free.yhc.netmbuddy.model.Utils.logW;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.Iterator;
-import java.util.LinkedList;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -46,10 +44,10 @@ import android.os.Process;
 public class YTSearchHelper {
     public static final int MAX_NR_RESULT_PER_PAGE      = 50; // See Youtube API Document
 
-    private static final int MSG_WHAT_CLOSE                 = 0;
-    private static final int MSG_WHAT_SEARCH                = 1;
-    private static final int MSG_WHAT_LOAD_THUMBNAIL        = 2;
-    private static final int MSG_WHAT_LOAD_THUMBNAIL_DONE   = 3;
+    private static final int MSG_WHAT_OPEN                  = 0;
+    private static final int MSG_WHAT_CLOSE                 = 1;
+    private static final int MSG_WHAT_SEARCH                = 2;
+    private static final int MSG_WHAT_LOAD_THUMBNAIL        = 3;
 
     private BGHandler                   mBgHandler      = null;
     private SearchDoneReceiver          mSearchRcvr     = null;
@@ -149,15 +147,16 @@ public class YTSearchHelper {
     }
 
     private static class BGHandler extends Handler {
-        private final YTSearchHelper        helper;
-        private SearchDoneReceiver          searchRcvr      = null;
-        private LoadThumbnailDoneReceiver   thumbnailRcvr   = null;
-        private LinkedList<Thread>          activeLoadThumbnaill = new LinkedList<Thread>();
-        private boolean                     closed          = false;
+        private final YTSearchHelper        _mHelper;
 
-        BGHandler(Looper looper, YTSearchHelper aHelper) {
+        private MultiThreadRunner           _mMtrunner      = null;
+        private SearchDoneReceiver          _mSearchRcvr    = null;
+        private LoadThumbnailDoneReceiver   _mThumbnailRcvr = null;
+        private boolean                     _mClosed        = false;
+
+        BGHandler(Looper looper, YTSearchHelper helper) {
             super(looper);
-            helper = aHelper;
+            _mHelper = helper;
         }
 
         private void
@@ -166,8 +165,8 @@ public class YTSearchHelper {
                 @Override
                 public void
                 run() {
-                    if (null != searchRcvr)
-                        searchRcvr.searchDone(helper, arg, res, err);
+                    if (!_mClosed && null != _mSearchRcvr)
+                        _mSearchRcvr.searchDone(_mHelper, arg, res, err);
                 }
             });
             return;
@@ -179,8 +178,8 @@ public class YTSearchHelper {
                 @Override
                 public void
                 run() {
-                    if (null != thumbnailRcvr)
-                        thumbnailRcvr.loadThumbnailDone(helper, arg, bm, err);
+                    if (!_mClosed && null != _mThumbnailRcvr)
+                        _mThumbnailRcvr.loadThumbnailDone(_mHelper, arg, bm, err);
                 }
             });
             return;
@@ -188,37 +187,40 @@ public class YTSearchHelper {
 
         void
         close() {
+            removeMessages(MSG_WHAT_OPEN);
             removeMessages(MSG_WHAT_SEARCH);
             removeMessages(MSG_WHAT_LOAD_THUMBNAIL);
-            removeMessages(MSG_WHAT_LOAD_THUMBNAIL_DONE);
             sendEmptyMessage(MSG_WHAT_CLOSE);
-            searchRcvr = null;
-            thumbnailRcvr = null;
+            _mSearchRcvr = null;
+            _mThumbnailRcvr = null;
         }
 
         void
         setSearchDoneRecevier(SearchDoneReceiver receiver) {
-            searchRcvr = receiver;
+            _mSearchRcvr = receiver;
         }
 
         void
         setLoadThumbnailDoneRecevier(LoadThumbnailDoneReceiver receiver) {
-            thumbnailRcvr = receiver;
+            _mThumbnailRcvr = receiver;
         }
 
         @Override
         public void
         handleMessage(final Message msg) {
-            if (closed)
+            if (_mClosed)
                 return;
 
             switch (msg.what) {
+            case MSG_WHAT_OPEN: {
+                eAssert(null == _mMtrunner);
+                _mMtrunner = new MultiThreadRunner(this,
+                                                   Policy.YTSEARCH_MAX_LOAD_THUMBNAIL_THREAD);
+            } break;
+
             case MSG_WHAT_CLOSE: {
-                closed = true;
-                Iterator<Thread> iter = activeLoadThumbnaill.iterator();
-                while (iter.hasNext())
-                    iter.next().interrupt();
-                activeLoadThumbnaill.clear();
+                _mClosed = true;
+                _mMtrunner.cancel();
                 ((HandlerThread)getLooper().getThread()).quit();
             } break;
 
@@ -230,29 +232,18 @@ public class YTSearchHelper {
 
             case MSG_WHAT_LOAD_THUMBNAIL: {
                 final LoadThumbnailArg arg = (LoadThumbnailArg)msg.obj;
-                if (activeLoadThumbnaill.size() < Policy.YTSEARCH_MAX_LOAD_THUMBNAIL_THREAD) {
-                    Thread thd = new Thread() {
-                        @Override
-                        public void
-                        run() {
-                            LoadThumbnailReturn r = doLoadThumbnail(arg);
-                            sendLoadThumbnailDone(arg, r.bm, r.err);
-                            Message doneMsg = BGHandler.this.obtainMessage(MSG_WHAT_LOAD_THUMBNAIL_DONE, this);
-                            sendMessage(doneMsg);
-                        }
-                    };
-                    thd.setPriority(Thread.MIN_PRIORITY);
-                    thd.start();
-                    activeLoadThumbnaill.add(thd);
-                } else {
-                    Message retryMsg = BGHandler.this.obtainMessage(MSG_WHAT_LOAD_THUMBNAIL, arg);
-                    sendMessageDelayed(retryMsg, Policy.YTSEARCH_LOAD_THUMBNAIL_INTERVAL);
-                }
+                MultiThreadRunner.Job<Integer> job
+                    = new MultiThreadRunner.Job<Integer>(0) {
+                    @Override
+                    public Integer
+                    doJob() {
+                        LoadThumbnailReturn r = doLoadThumbnail(arg);
+                        sendLoadThumbnailDone(arg, r.bm, r.err);
+                        return 0;
+                    }
+                };
+                _mMtrunner.appendJob(job);
             } break;
-
-            case MSG_WHAT_LOAD_THUMBNAIL_DONE:
-                activeLoadThumbnaill.remove(msg.obj);
-                break;
             }
         }
     }
@@ -359,6 +350,30 @@ public class YTSearchHelper {
         return new SearchReturn(r, Err.NO_ERR);
     }
 
+    /**
+     * Thread safe
+     * @param arg
+     * @return
+     */
+    public static SearchReturn
+    search(SearchArg arg) {
+        if (!Utils.isNetworkAvailable())
+            return new SearchReturn(null, Err.NETWORK_UNAVAILABLE);
+        return doSearch(arg);
+    }
+
+    /**
+     * Thread safe
+     * @param arg
+     * @return
+     */
+    public static LoadThumbnailReturn
+    loadThumbnail(LoadThumbnailArg arg) {
+        if (!Utils.isNetworkAvailable())
+            return new LoadThumbnailReturn(null, Err.NETWORK_UNAVAILABLE);
+        return doLoadThumbnail(arg);
+    }
+
     public YTSearchHelper() {
     }
 
@@ -393,25 +408,12 @@ public class YTSearchHelper {
         return Err.NETWORK_UNAVAILABLE;
     }
 
-    public SearchReturn
-    search(SearchArg arg) {
-        if (!Utils.isNetworkAvailable())
-            return new SearchReturn(null, Err.NETWORK_UNAVAILABLE);
-        return doSearch(arg);
-    }
-
-    public LoadThumbnailReturn
-    loadThumbnail(LoadThumbnailArg arg) {
-        if (!Utils.isNetworkAvailable())
-            return new LoadThumbnailReturn(null, Err.NETWORK_UNAVAILABLE);
-        return doLoadThumbnail(arg);
-    }
-
     public void
     open() {
         HandlerThread hThread = new BGThread();
         hThread.start();
         mBgHandler = new BGHandler(hThread.getLooper(), this);
+        mBgHandler.sendEmptyMessage(MSG_WHAT_OPEN);
         mBgHandler.setSearchDoneRecevier(mSearchRcvr);
         mBgHandler.setLoadThumbnailDoneRecevier(mThumbnailRcvr);
     }

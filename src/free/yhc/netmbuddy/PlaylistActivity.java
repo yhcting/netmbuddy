@@ -231,9 +231,6 @@ public class PlaylistActivity extends Activity {
                     }
 
                     @Override
-                    public void onCancel(DiagAsyncTask task) { }
-
-                    @Override
                     public Err
                     doBackgroundWork(DiagAsyncTask task, Object... objs) {
                         return importDbInBackground(exDbf);
@@ -273,9 +270,6 @@ public class PlaylistActivity extends Activity {
                     }
 
                     @Override
-                    public void onCancel(DiagAsyncTask task) { }
-
-                    @Override
                     public Err
                     doBackgroundWork(DiagAsyncTask task, Object... objs) {
                         return mergeDbInBackground(exDbf);
@@ -312,9 +306,6 @@ public class PlaylistActivity extends Activity {
                             UiUtils.showTextToast(PlaylistActivity.this, result.getMessage());
                         }
                     }
-
-                    @Override
-                    public void onCancel(DiagAsyncTask task) { }
 
                     @Override
                     public Err
@@ -584,13 +575,14 @@ public class PlaylistActivity extends Activity {
     onContextMenuDelete(AdapterContextMenuInfo info) {
         DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
             @Override
-            public void onPostExecute(DiagAsyncTask task, Err result) {
+            public void
+            onPostExecute(DiagAsyncTask task, Err result) {
                 getAdapter().reloadCursor();
             }
+
             @Override
-            public void onCancel(DiagAsyncTask task) { }
-            @Override
-            public Err doBackgroundWork(DiagAsyncTask task, Object... objs) {
+            public Err
+            doBackgroundWork(DiagAsyncTask task, Object... objs) {
                 mDb.deletePlaylist((Long)objs[0]);
                 return Err.NO_ERR;
             }

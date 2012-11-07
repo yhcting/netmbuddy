@@ -77,9 +77,9 @@ public class DB extends SQLiteOpenHelper {
         SIZE            ("size",            "integer",  "not null"), // # of videos in this playlist.
         ID              (BaseColumns._ID,   "integer",  "primary key autoincrement");
 
-        private final String name;
-        private final String type;
-        private final String constraint;
+        private final String _mName;
+        private final String _mType;
+        private final String _mConstraint;
 
         static ContentValues
         createContentValuesForInsert(String title, String desc) {
@@ -95,17 +95,17 @@ public class DB extends SQLiteOpenHelper {
             return cvs;
         }
 
-        ColPlaylist(String aName, String aType, String aConstraint) {
-            name = aName;
-            type = aType;
-            constraint = aConstraint;
+        ColPlaylist(String name, String type, String constraint) {
+            _mName = name;
+            _mType = type;
+            _mConstraint = constraint;
         }
         @Override
-        public String getName() { return name; }
+        public String getName() { return _mName; }
         @Override
-        public String getType() { return type; }
+        public String getType() { return _mType; }
         @Override
-        public String getConstraint() { return constraint; }
+        public String getConstraint() { return _mConstraint; }
     }
 
     // NOTE
@@ -117,21 +117,21 @@ public class DB extends SQLiteOpenHelper {
         ID              (BaseColumns._ID,   "integer",  "primary key autoincrement, "
                 + "FOREIGN KEY(videoid) REFERENCES " + TABLE_VIDEO + "(" + ColVideo.ID.getName() + ")");
 
-        private final String name;
-        private final String type;
-        private final String constraint;
+        private final String _mName;
+        private final String _mType;
+        private final String _mConstraint;
 
-        ColVideoRef(String aName, String aType, String aConstraint) {
-            name = aName;
-            type = aType;
-            constraint = aConstraint;
+        ColVideoRef(String name, String type, String constraint) {
+            _mName = name;
+            _mType = type;
+            _mConstraint = constraint;
         }
         @Override
-        public String getName() { return name; }
+        public String getName() { return _mName; }
         @Override
-        public String getType() { return type; }
+        public String getType() { return _mType; }
         @Override
-        public String getConstraint() { return constraint; }
+        public String getConstraint() { return _mConstraint; }
     }
 
     public static enum ColVideo implements Col {
@@ -171,9 +171,9 @@ public class DB extends SQLiteOpenHelper {
 
         ID              (BaseColumns._ID,   "integer",  "primary key autoincrement");
 
-        private final String name;
-        private final String type;
-        private final String constraint;
+        private final String _mName;
+        private final String _mType;
+        private final String _mConstraint;
 
         static ContentValues
         createContentValuesForInsert(String title, String desc,
@@ -209,16 +209,16 @@ public class DB extends SQLiteOpenHelper {
         }
 
         ColVideo(String aName, String aType, String aConstraint) {
-            name = aName;
-            type = aType;
-            constraint = aConstraint;
+            _mName = aName;
+            _mType = aType;
+            _mConstraint = aConstraint;
         }
         @Override
-        public String getName() { return name; }
+        public String getName() { return _mName; }
         @Override
-        public String getType() { return type; }
+        public String getType() { return _mType; }
         @Override
-        public String getConstraint() { return constraint; }
+        public String getConstraint() { return _mConstraint; }
     }
 
     private static int

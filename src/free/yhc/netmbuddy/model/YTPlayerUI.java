@@ -44,26 +44,26 @@ public class YTPlayerUI {
     private class UpdateProgress implements Runnable {
         private static final int UPDATE_INTERVAL_MS = 1000;
 
-        private SeekBar     seekbar = null;
-        private TextView    curposv = null;
-        private TextView    maxposv = null;
-        private int         lastProgress = -1;
-        private int         lastSecondaryProgress = -1; // For secondary progress
+        private SeekBar     _mSeekbar = null;
+        private TextView    _mCurposv = null;
+        private TextView    _mMaxposv = null;
+        private int         _mLastProgress = -1;
+        private int         _mLastSecondaryProgress = -1; // For secondary progress
 
         private void
         resetProgressView() {
-            if (null != seekbar) {
-                maxposv.setText(Utils.secsToMinSecText(mMp.playerGetDuration() / 1000));
+            if (null != _mSeekbar) {
+                _mMaxposv.setText(Utils.secsToMinSecText(mMp.playerGetDuration() / 1000));
                 update(1, 0);
                 updateSecondary(0);
             }
-            lastProgress = 0;
-            lastSecondaryProgress = 0;
+            _mLastProgress = 0;
+            _mLastSecondaryProgress = 0;
         }
 
         int
         getSecondaryProgressPercent() {
-            int percent =  lastSecondaryProgress * 100 / SEEKBAR_MAX;
+            int percent =  _mLastSecondaryProgress * 100 / SEEKBAR_MAX;
             if (percent > 100)
                 percent = 100;
             if (percent < 0)
@@ -75,22 +75,22 @@ public class YTPlayerUI {
         setProgressView(ViewGroup progv) {
             eAssert(Utils.isUiThread());
             eAssert(null != progv.findViewById(R.id.mplayer_progress));
-            curposv = (TextView)progv.findViewById(R.id.mplayer_curpos);
-            maxposv = (TextView)progv.findViewById(R.id.mplayer_maxpos);
-            seekbar = (SeekBar)progv.findViewById(R.id.mplayer_seekbar);
-            if (null != seekbar) {
-                maxposv.setText(Utils.secsToMinSecText(mMp.playerGetDuration() / 1000));
-                update(mMp.playerGetDuration(), lastProgress);
-                updateSecondary(lastSecondaryProgress);
+            _mCurposv = (TextView)progv.findViewById(R.id.mplayer_curpos);
+            _mMaxposv = (TextView)progv.findViewById(R.id.mplayer_maxpos);
+            _mSeekbar = (SeekBar)progv.findViewById(R.id.mplayer_seekbar);
+            if (null != _mSeekbar) {
+                _mMaxposv.setText(Utils.secsToMinSecText(mMp.playerGetDuration() / 1000));
+                update(mMp.playerGetDuration(), _mLastProgress);
+                updateSecondary(_mLastSecondaryProgress);
             }
         }
 
         void
         start() {
             //logI("Progress Start");
-            maxposv.setText(Utils.secsToMinSecText(mMp.playerGetDuration() / 1000));
-            update(mMp.playerGetDuration(), lastProgress);
-            updateSecondary(lastSecondaryProgress);
+            _mMaxposv.setText(Utils.secsToMinSecText(mMp.playerGetDuration() / 1000));
+            update(mMp.playerGetDuration(), _mLastProgress);
+            updateSecondary(_mLastSecondaryProgress);
             run();
         }
 
@@ -116,12 +116,12 @@ public class YTPlayerUI {
         update(int durms, int curms) {
             // ignore aDuration.
             // Sometimes youtube player returns incorrect duration value!
-            if (null != seekbar) {
+            if (null != _mSeekbar) {
                 int curPv = (durms > 0)? (int)(curms * (long)SEEKBAR_MAX / durms)
                                                : 0;
-                seekbar.setProgress(curPv);
-                curposv.setText(Utils.secsToMinSecText(curms / 1000));
-                lastProgress = curPv;
+                _mSeekbar.setProgress(curPv);
+                _mCurposv.setText(Utils.secsToMinSecText(curms / 1000));
+                _mLastProgress = curPv;
             }
         }
 
@@ -132,10 +132,10 @@ public class YTPlayerUI {
         void
         updateSecondary(int percent) {
             // Update secondary progress
-            if (null != seekbar) {
+            if (null != _mSeekbar) {
                 int pv = percent * SEEKBAR_MAX / 100;
-                seekbar.setSecondaryProgress(pv);
-                lastSecondaryProgress = pv;
+                _mSeekbar.setSecondaryProgress(pv);
+                _mLastSecondaryProgress = pv;
             }
         }
 

@@ -73,30 +73,30 @@ public class YTDownloader {
     }
 
     private static class BGHandler extends Handler {
-        private final YTDownloader          ytDownloader;
+        private final YTDownloader          _mYtDownloader;
 
-        private NetLoader       loader  = new NetLoader();
-        private File            tmpF    = null;
-        private volatile File   curOutF = null;
-        private boolean         closed  = false;
+        private NetLoader       _mLoader    = new NetLoader();
+        private File            _mTmpF      = null;
+        private volatile File   _mCurOutF   = null;
+        private boolean         _mClosed    = false;
 
         BGHandler(Looper                looper,
-                  YTDownloader          aYtDownloader) {
+                  YTDownloader          ytDownloader) {
             super(looper);
-            ytDownloader = aYtDownloader;
+            _mYtDownloader = ytDownloader;
         }
 
         private void
         sendResult(final DnArg arg, final Err result) {
-            if (null == ytDownloader.getDownloadDoneReceiver())
+            if (null == _mYtDownloader.getDownloadDoneReceiver())
                 return;
 
             Utils.getUiHandler().post(new Runnable() {
                 @Override
                 public void run() {
-                    DownloadDoneReceiver rcvr = ytDownloader.getDownloadDoneReceiver();
-                    if (null != rcvr)
-                        rcvr.downloadDone(ytDownloader, arg, result);
+                    DownloadDoneReceiver rcvr = _mYtDownloader.getDownloadDoneReceiver();
+                    if (!_mClosed && null != rcvr)
+                        rcvr.downloadDone(_mYtDownloader, arg, result);
                 }
             });
         }
@@ -106,10 +106,10 @@ public class YTDownloader {
         private void
         handleDownload(DnArg arg) {
             // assigning object reference is atomic operation in JAVA
-            curOutF = arg.outf;
+            _mCurOutF = arg.outf;
 
-            if (null != tmpF)
-                tmpF.delete();
+            if (null != _mTmpF)
+                _mTmpF.delete();
 
             logI("YTDownloader : Start Download : " + arg.ytvid + " => " + arg.outf.getAbsolutePath());
             YTHacker hack = new YTHacker(arg.ytvid);
@@ -120,27 +120,27 @@ public class YTDownloader {
                     sendResult(arg, result);
                     return;
                 }
-                loader = hack.getNetLoader();
+                _mLoader = hack.getNetLoader();
                 YTHacker.YtVideo vid = hack.getVideo(arg.qscore);
                 if (null == vid) {
                     sendResult(arg, Err.YTNOT_SUPPORTED_VIDFORMAT);
                     return;
                 }
 
-                NetLoader.HttpRespContent content = loader.getHttpContent(Uri.parse(vid.url), false);
+                NetLoader.HttpRespContent content = _mLoader.getHttpContent(Uri.parse(vid.url), false);
                 if (HttpUtils.SC_NO_CONTENT == content.stcode) {
                     sendResult(arg, Err.YTHTTPGET);
                     return;
                 }
 
                 // Download to temp file.
-                tmpF = File.createTempFile(arg.ytvid, null, new File(Policy.APPDATA_TMPDIR));
-                fos = new FileOutputStream(tmpF);
+                _mTmpF = File.createTempFile(arg.ytvid, null, new File(Policy.APPDATA_TMPDIR));
+                fos = new FileOutputStream(_mTmpF);
                 Utils.copy(fos, content.stream);
                 fos.close();
                 fos = null;
                 // file returned by YTHacker is mpeg format!
-                tmpF.renameTo(arg.outf);
+                _mTmpF.renameTo(arg.outf);
                 sendResult(arg, Err.NO_ERR);
                 logI("YTDownloader : Download Done : " + arg.ytvid);
             } catch (FileNotFoundException e) {
@@ -154,18 +154,18 @@ public class YTDownloader {
             } catch (YTMPException e) {
                 sendResult(arg, e.getError());
             } finally {
-                loader.close();
+                _mLoader.close();
 
                 if (null != fos)
                     try {
                         fos.close();
                     } catch (IOException e) {}
 
-                if (null != tmpF)
-                    tmpF.delete();
+                if (null != _mTmpF)
+                    _mTmpF.delete();
 
                 // assigning object reference is atomic operation in JAVA
-                curOutF = null;
+                _mCurOutF = null;
             }
         }
 
@@ -174,7 +174,7 @@ public class YTDownloader {
             // NOTE.
             // curOutF is volatile and assigning object reference is atomic operation in JAVA.
             // So, synchronization is not required here.
-            File outF = curOutF;
+            File outF = _mCurOutF;
             return (null == outF)? null: outF.getAbsolutePath();
         }
 
@@ -187,14 +187,14 @@ public class YTDownloader {
         @Override
         public void
         handleMessage(Message msg) {
-            if (closed)
+            if (_mClosed)
                 return;
 
             switch (msg.what) {
             case MSG_WHAT_CLOSE:
-                closed = true;
-                if (null != loader)
-                    loader.close();
+                _mClosed = true;
+                if (null != _mLoader)
+                    _mLoader.close();
                 ((HandlerThread)getLooper().getThread()).quit();
                 break;
 

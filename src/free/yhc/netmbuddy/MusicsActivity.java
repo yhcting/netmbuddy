@@ -124,10 +124,6 @@ public class MusicsActivity extends Activity {
             }
 
             @Override
-            public void
-            onCancel(DiagAsyncTask task) { }
-
-            @Override
             public Err
             doBackgroundWork(DiagAsyncTask task, Object... objs) {
                 mDb.beginTransaction();
@@ -206,10 +202,6 @@ public class MusicsActivity extends Activity {
             onPostExecute(DiagAsyncTask task, Err result) {
                 getAdapter().reloadCursorAsync();
             }
-
-            @Override
-            public void
-            onCancel(DiagAsyncTask task) { }
 
             @Override
             public Err
@@ -471,10 +463,6 @@ public class MusicsActivity extends Activity {
                                           msg)
                        .show();
             }
-
-            @Override
-            public void
-            onCancel(DiagAsyncTask task) { }
 
             @Override
             public Err

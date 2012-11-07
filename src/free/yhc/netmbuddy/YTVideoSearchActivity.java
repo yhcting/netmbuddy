@@ -188,11 +188,6 @@ DBHelper.CheckDupDoneReceiver {
             }
 
             @Override
-            public void
-            onCancel(DiagAsyncTask task) {
-            }
-
-            @Override
             public Err
             doBackgroundWork(DiagAsyncTask task, Object... objs) {
                 mDb.beginTransaction();

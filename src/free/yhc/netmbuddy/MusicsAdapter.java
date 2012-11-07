@@ -204,11 +204,7 @@ public class MusicsAdapter extends ResourceCursorAdapter {
             public void onPostExecute(DiagAsyncTask task, Err result) {
                 changeCursor(newCursor);
             }
-            @Override
-            public void onCancel(DiagAsyncTask task) {
-                // TODO Auto-generated method stub
 
-            }
             @Override
             public Err doBackgroundWork(DiagAsyncTask task, Object... objs) {
                 newCursor = createCursor();

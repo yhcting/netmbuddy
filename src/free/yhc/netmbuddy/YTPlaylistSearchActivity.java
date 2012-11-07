@@ -24,6 +24,7 @@ import static free.yhc.netmbuddy.model.Utils.eAssert;
 
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import android.content.Intent;
 import android.content.res.Resources;
@@ -38,6 +39,8 @@ import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.TextView;
 import free.yhc.netmbuddy.model.DB;
 import free.yhc.netmbuddy.model.Err;
+import free.yhc.netmbuddy.model.MultiThreadRunner;
+import free.yhc.netmbuddy.model.MultiThreadRunner.Job;
 import free.yhc.netmbuddy.model.Policy;
 import free.yhc.netmbuddy.model.UiUtils;
 import free.yhc.netmbuddy.model.Utils;
@@ -49,8 +52,8 @@ import free.yhc.netmbuddy.model.YTVideoFeed;
 public class YTPlaylistSearchActivity extends YTSearchActivity {
 
     private static class MergeToPlaylistResult {
-        int     nrIgnored   = 0;
-        int     nrDone      = 0;
+        volatile int    nrIgnored   = 0;
+        volatile int    nrDone      = 0;
     }
 
     private interface ProgressListener {
@@ -78,14 +81,52 @@ public class YTPlaylistSearchActivity extends YTSearchActivity {
         startActivity(i);
     }
 
+    private boolean
+    insertVideoToPlaylist(long plid, YTVideoFeed.Entry e) {
+        int playtm = 0;
+        try {
+             playtm = Integer.parseInt(e.media.playTime);
+        } catch (NumberFormatException ex) {
+            return false;
+        }
+
+        YTSearchHelper.LoadThumbnailArg targ = new YTSearchHelper.LoadThumbnailArg(
+                null,
+                "", // Not filled yet.
+                Utils.getAppContext().getResources().getDimensionPixelSize(R.dimen.thumbnail_width),
+                Utils.getAppContext().getResources().getDimensionPixelSize(R.dimen.thumbnail_height));
+        YTSearchHelper.LoadThumbnailReturn tr;
+        targ.url = e.media.thumbnailUrl;
+        tr = YTSearchHelper.loadThumbnail(targ);
+        if (Err.NO_ERR != tr.err)
+            return false;
+
+        // Loading thumbnail is done.
+
+        Err err = DB.get().insertVideoToPlaylist(plid,
+                                                 e.media.title,
+                                                 e.media.description,
+                                                 e.media.videoId,
+                                                 playtm,
+                                                 Utils.compressBitmap(tr.bm),
+                                                 Policy.DEFAULT_VIDEO_VOLUME);
+        if (null != tr.bm)
+            tr.bm.recycle();
+
+        if (Err.NO_ERR != err)
+            return false;
+
+        return true;
+    }
+
     private Err
     doBackgroundMergeToPlaylist(MergeToPlaylistResult mtpr,
+                                MultiThreadRunner mtrunner,
                                 final long plid,
                                 final String ytplid,
-                                final ProgressListener prog)
+                                final ProgressListener progl)
         throws InterruptedException {
         DB db = DB.get();
-        YTSearchHelper ytsh = new YTSearchHelper();
         YTSearchHelper.SearchArg sarg = new YTSearchHelper.SearchArg(
                 null,
                 YTSearchHelper.SearchType.VID_PLAYLIST,
@@ -102,11 +143,9 @@ public class YTPlaylistSearchActivity extends YTSearchActivity {
         // PV : progress value
         int pvBase = 0;
         int pvPortion  = 10;
-        // NOTE
-        // ytsh isn't open because, only synchronous interfaces are used here.
         do {
             sarg.starti = YTSearchHelper.MAX_NR_RESULT_PER_PAGE * (curPage - 1) + 1;
-            sr = ytsh.search(sarg);
+            sr = YTSearchHelper.search(sarg);
             checkInterrupted();
             if (Err.NO_ERR != sr.err)
                 return sr.err;
@@ -131,134 +170,144 @@ public class YTPlaylistSearchActivity extends YTSearchActivity {
             }
 
             int curPv = pvBase + (curPage * 100 / maxPage) * pvPortion / 100;
-            if (lastPv < curPv && null != prog) {
+            if (lastPv < curPv && null != progl) {
                 lastPv = curPv;
-                prog.onProgress(curPv);
+                progl.onProgress(curPv);
             }
 
         } while (++curPage <= maxPage);
 
         // Loading video feeds from playlist is done.
         // It's time to load thumbnail and insert to DB.
-        Iterator<YTVideoFeed.Entry> itr = plvl.iterator();
-        YTSearchHelper.LoadThumbnailArg targ = new YTSearchHelper.LoadThumbnailArg(
-                null,
-                "", // Not filled yet.
-                Utils.getAppContext().getResources().getDimensionPixelSize(R.dimen.thumbnail_width),
-                Utils.getAppContext().getResources().getDimensionPixelSize(R.dimen.thumbnail_height));
-
         // Update progress base and portion.
         pvBase += pvPortion;
         pvPortion = 100 - pvBase; // all remains.
-        while (itr.hasNext()) {
-            int curPv = pvBase + (mtpr.nrDone + mtpr.nrIgnored) * 100 / plvl.size() * pvPortion / 100;
-            if (lastPv < curPv && null != prog) {
-                lastPv = curPv;
-                prog.onProgress(curPv);
+
+        Iterator<YTVideoFeed.Entry> itr = plvl.iterator();
+        final int progressBase = pvBase;
+        MultiThreadRunner.OnProgressListener progListener = new MultiThreadRunner.OnProgressListener() {
+            @Override
+            public void
+            onProgress(float prog) {
+                progl.onProgress((int)(progressBase + prog * 100));
+            }
+        };
+        mtrunner.setOnProgressListener(progListener);
+
+        Err err = Err.NO_ERR;
+        final AtomicInteger nrDone = new AtomicInteger(0);
+        final AtomicInteger nrIgnored = new AtomicInteger(0);
+
+        try {
+            while (itr.hasNext()) {
+                final YTVideoFeed.Entry e = itr.next();
+                mtrunner.appendJob(new Job<Integer>((float)pvPortion/ (float)100 / plvl.size()) {
+                    @Override
+                    public Integer
+                    doJob() {
+                        if (insertVideoToPlaylist(plid, e))
+                            nrDone.incrementAndGet();
+                        else
+                            nrIgnored.incrementAndGet();
+                        return 0;
+                    }
+                });
             }
 
-            YTVideoFeed.Entry e = itr.next();
-
-            int playtm = 0;
-            try {
-                 playtm = Integer.parseInt(e.media.playTime);
-            } catch (NumberFormatException ex) {
-                ++mtpr.nrIgnored;
-                continue; // skip
-            }
-
-            YTSearchHelper.LoadThumbnailReturn tr;
-            targ.url = e.media.thumbnailUrl;
-            tr = ytsh.loadThumbnail(targ);
-            checkInterrupted();
-            if (Err.NO_ERR != tr.err) {
-                ++mtpr.nrIgnored;
-                continue; // skip this entry.
-            }
-            // Loading thumbnail is done.
-
-            Err err = db.insertVideoToPlaylist(plid,
-                                               e.media.title,
-                                               e.media.description,
-                                               e.media.videoId,
-                                               playtm,
-                                               Utils.compressBitmap(tr.bm),
-                                               Policy.DEFAULT_VIDEO_VOLUME);
-            if (null != tr.bm)
-                tr.bm.recycle();
-
-            if (Err.NO_ERR != err) {
-                ++mtpr.nrIgnored;
-                continue; // skip
-            }
-
-            ++mtpr.nrDone;
+            mtrunner.waitAllDone();
+            progl.onProgress(100);
+        } finally {
+            mtpr.nrDone = nrDone.get();
+            mtpr.nrIgnored = nrIgnored.get();
         }
-        return Err.NO_ERR;
+        return err;
+    }
+
+    private void
+    onContextMenuMergeToPlaylist(final long plid, final Object user) {
+        final MergeToPlaylistResult mtpr = new MergeToPlaylistResult();
+        final MultiThreadRunner mtrunner = new MultiThreadRunner(
+                Utils.getUiHandler(),
+                Policy.YTSEARCH_MAX_LOAD_THUMBNAIL_THREAD);
+
+        DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
+            private CharSequence
+            getReportText() {
+                Resources res = Utils.getAppContext().getResources();
+                return res.getText(R.string.done) + " : " + mtpr.nrDone + ", "
+                           + res.getText(R.string.error) + " : " + mtpr.nrIgnored;
+            }
+
+            @Override
+            public void
+            onPostExecute(DiagAsyncTask task, Err result) {
+                if (Err.NO_ERR != result)
+                    UiUtils.showTextToast(YTPlaylistSearchActivity.this, result.getMessage());
+                else
+                    UiUtils.showTextToast(YTPlaylistSearchActivity.this, getReportText());
+            }
+
+            @Override
+            public void
+            onCancel(DiagAsyncTask task) {
+                mtrunner.cancel();
+            }
+
+            @Override
+            public void
+            onCancelled(DiagAsyncTask task) {
+                UiUtils.showTextToast(YTPlaylistSearchActivity.this, getReportText());
+            }
+
+            @Override
+            public Err
+            doBackgroundWork(final DiagAsyncTask task, Object... objs) {
+                ProgressListener prog = new ProgressListener() {
+                    private int _mLastPercent = -1;
+                    @Override
+                    public void
+                    onProgress(int percent) {
+                        if (_mLastPercent < percent) {
+                            task.publishProgress(percent);
+                            _mLastPercent = percent;
+                        }
+                    }
+                };
+
+                Err err = Err.NO_ERR;
+                try {
+                    err = doBackgroundMergeToPlaylist(mtpr,
+                                                      mtrunner,
+                                                      plid,
+                                                      getAdapter().getItemPlaylistId((Integer)user),
+                                                      prog);
+                } catch (InterruptedException e) {
+                    err = Err.INTERRUPTED;
+                }
+                return err;
+            }
+        };
+        new DiagAsyncTask(YTPlaylistSearchActivity.this,
+                          worker,
+                          DiagAsyncTask.Style.PROGRESS,
+                          R.string.merging_playlist,
+                          true,
+                          false)
+            .execute();
     }
 
     private void
     onContextMenuMergeTo(int pos) {
         UiUtils.OnPlaylistSelectedListener action = new UiUtils.OnPlaylistSelectedListener() {
-            MergeToPlaylistResult mtpr = new MergeToPlaylistResult();
-
             @Override
-            public void onPlaylist(final long plid, final Object user) {
-                DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
-                    private CharSequence
-                    getReportText() {
-                        Resources res = Utils.getAppContext().getResources();
-                        return res.getText(R.string.done) + " : " + mtpr.nrDone + ", "
-                                   + res.getText(R.string.error) + " : " + mtpr.nrIgnored;
-                    }
-
-                    @Override
-                    public void
-                    onPostExecute(DiagAsyncTask task, Err result) {
-                        if (Err.NO_ERR != result)
-                            UiUtils.showTextToast(YTPlaylistSearchActivity.this, result.getMessage());
-                        else
-                            UiUtils.showTextToast(YTPlaylistSearchActivity.this, getReportText());
-                    }
-
-                    @Override
-                    public void
-                    onCancel(DiagAsyncTask task) {
-                        UiUtils.showTextToast(YTPlaylistSearchActivity.this, getReportText());
-                    }
-
-                    @Override
-                    public Err
-                    doBackgroundWork(final DiagAsyncTask task, Object... objs) {
-                        ProgressListener prog = new ProgressListener() {
-                            @Override
-                            public void onProgress(int percent) {
-                                task.publishProgress(percent);
-                            }
-                        };
-
-                        try {
-                            return doBackgroundMergeToPlaylist(mtpr,
-                                                               plid,
-                                                               getAdapter().getItemPlaylistId((Integer)user),
-                                                               prog);
-                        } catch (InterruptedException e) {
-                            return Err.INTERRUPTED;
-                        }
-                    }
-                };
-                new DiagAsyncTask(YTPlaylistSearchActivity.this,
-                                  worker,
-                                  DiagAsyncTask.Style.PROGRESS,
-                                  R.string.merging_playlist,
-                                  true)
-                .execute();
+            public void
+            onPlaylist(final long plid, final Object user) {
+                onContextMenuMergeToPlaylist(plid, user);
             }
 
             @Override
             public void
-            onUserMenu(int pos, Object user) {}
-
+            onUserMenu(int pos, Object user) { }
         };
 
         UiUtils.buildSelectPlaylistDialog(DB.get(),

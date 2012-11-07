@@ -329,7 +329,7 @@ SurfaceHolder.Callback {
     }
 
     private class StartVideoRecovery implements Runnable {
-        private Video v = null;
+        private Video _mV = null;
 
         void
         cancel() {
@@ -338,10 +338,10 @@ SurfaceHolder.Callback {
 
         // USE THIS FUNCTION
         void
-        executeRecoveryStart(Video aV, long delays) {
+        executeRecoveryStart(Video v, long delays) {
             eAssert(Utils.isUiThread());
             cancel();
-            v = aV;
+            _mV = v;
             if (delays > 0)
                 Utils.getUiHandler().postDelayed(this, delays);
             else
@@ -358,41 +358,41 @@ SurfaceHolder.Callback {
         public
         void run() {
             eAssert(Utils.isUiThread());
-            if (null != v)
-                startVideo(v, true);
+            if (null != _mV)
+                startVideo(_mV, true);
         }
     }
 
 
     private static class VideoListManager {
-        private Video[]     vs  = null; // video array
-        private int         vi  = -1; // video index
-        private OnListChangedListener lcListener = null;
+        private Video[]     _mVs = null; // video array
+        private int         _mVi = -1; // video index
+        private OnListChangedListener _mListener = null;
 
         interface OnListChangedListener {
             void onChanged(VideoListManager vm);
         }
 
         VideoListManager(OnListChangedListener listener) {
-            lcListener = listener;
+            _mListener = listener;
         }
 
         void
         setOnListChangedListener(OnListChangedListener listener) {
             eAssert(Utils.isUiThread());
-            lcListener = listener;
+            _mListener = listener;
         }
 
         void
         clearOnListChangedListener() {
             eAssert(Utils.isUiThread());
-            lcListener = null;
+            _mListener = null;
         }
 
         void
         notifyToListChangedListener() {
-            if (null != lcListener)
-                lcListener.onChanged(this);
+            if (null != _mListener)
+                _mListener.onChanged(this);
         }
 
         boolean
@@ -405,61 +405,61 @@ SurfaceHolder.Callback {
         hasNextVideo() {
             eAssert(Utils.isUiThread());
             return hasActiveVideo()
-                   && vi < (vs.length - 1);
+                   && _mVi < (_mVs.length - 1);
         }
 
         boolean
         hasPrevVideo() {
             eAssert(Utils.isUiThread());
-            return hasActiveVideo() && 0 < vi;
+            return hasActiveVideo() && 0 < _mVi;
         }
 
         void
         reset() {
             eAssert(Utils.isUiThread());
-            vs = null;
-            vi = -1;
+            _mVs = null;
+            _mVi = -1;
             notifyToListChangedListener();
         }
 
         void
-        setVideoList(Video[] aVs) {
+        setVideoList(Video[] vs) {
             eAssert(Utils.isUiThread());
-            vs = aVs;
-            if (null == vs || 0 >= vs.length)
+            _mVs = vs;
+            if (null == _mVs || 0 >= _mVs.length)
                 reset();
-            else if(vs.length > 0)
-                vi = 0;
+            else if(_mVs.length > 0)
+                _mVi = 0;
             notifyToListChangedListener();
         }
 
         Video[]
         getVideoList() {
             eAssert(Utils.isUiThread());
-            return vs;
+            return _mVs;
         }
 
         void
         appendVideo(Video vids[]) {
             eAssert(Utils.isUiThread());
-            Video[] newvs = new Video[vs.length + vids.length];
-            System.arraycopy(vs, 0, newvs, 0, vs.length);
-            System.arraycopy(vids, 0, newvs, vs.length, vids.length);
+            Video[] newvs = new Video[_mVs.length + vids.length];
+            System.arraycopy(_mVs, 0, newvs, 0, _mVs.length);
+            System.arraycopy(vids, 0, newvs, _mVs.length, vids.length);
             // assigning reference is atomic operation in JAVA!
-            vs = newvs;
+            _mVs = newvs;
             notifyToListChangedListener();
         }
 
         int
         getActiveVideoIndex() {
-            return vi;
+            return _mVi;
         }
 
         Video
         getActiveVideo() {
             eAssert(Utils.isUiThread());
-            if (null != vs && 0 <= vi && vi < vs.length)
-                return vs[vi];
+            if (null != _mVs && 0 <= _mVi && _mVi < _mVs.length)
+                return _mVs[_mVi];
             return null;
         }
 
@@ -468,15 +468,15 @@ SurfaceHolder.Callback {
             eAssert(Utils.isUiThread());
             if (!hasNextVideo())
                 return null;
-            return vs[vi + 1];
+            return _mVs[_mVi + 1];
         }
 
         boolean
         moveTo(int index) {
             eAssert(Utils.isUiThread());
-            if (index < 0 || index >= vs.length)
+            if (index < 0 || index >= _mVs.length)
                 return false;
-            vi = index;
+            _mVi = index;
             return true;
         }
 
@@ -489,13 +489,13 @@ SurfaceHolder.Callback {
         boolean
         moveToNext() {
             eAssert(Utils.isUiThread());
-            return moveTo(vi + 1);
+            return moveTo(_mVi + 1);
         }
 
         boolean
         moveToPrev() {
             eAssert(Utils.isUiThread());
-            return moveTo(vi - 1);
+            return moveTo(_mVi - 1);
         }
     }
 

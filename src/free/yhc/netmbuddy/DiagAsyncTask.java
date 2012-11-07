@@ -39,11 +39,20 @@ DialogInterface.OnClickListener
     private Worker          mWorker         = null;
     private boolean         mUserCancelled  = false;
     private boolean         mCancelable     = true;
+    private boolean         mInterruptOnCancel = true;
 
-    public interface Worker {
-        Err  doBackgroundWork(DiagAsyncTask task, Object... objs);
-        void onPostExecute(DiagAsyncTask task, Err result);
-        void onCancel(DiagAsyncTask task);
+    public static abstract class Worker {
+        public abstract Err
+        doBackgroundWork(DiagAsyncTask task, Object... objs);
+
+        public void
+        onPostExecute(DiagAsyncTask task, Err result) { }
+
+        public void
+        onCancel(DiagAsyncTask task) { }
+
+        public void
+        onCancelled(DiagAsyncTask task) { }
     }
 
     public static enum Style {
@@ -62,24 +71,34 @@ DialogInterface.OnClickListener
         }
     }
 
-    private void
-    constructor(Context context, Worker worker, Style style, int msgid, boolean cancelable) {
+    DiagAsyncTask(Context context,
+            Worker listener,
+            Style style,
+            int msgid,
+            boolean cancelable,
+            boolean interruptOnCancel) {
+        super();
         mContext= context;
-        mWorker = worker;
+        mWorker = listener;
         mMsgid  = msgid;
         mStyle  = style;
         mCancelable = cancelable;
+        mInterruptOnCancel = interruptOnCancel;
     }
 
-    DiagAsyncTask(Context context, Worker listener, Style style, int msgid) {
-        super();
-        constructor(context, listener, style, msgid, true);
+    DiagAsyncTask(Context context,
+            Worker listener,
+            Style style,
+            int msgid,
+            boolean cancelable) {
+        this(context, listener, style, msgid, cancelable, true);
     }
 
-    DiagAsyncTask(Context context, Worker listener,
-                  Style style, int msgid, boolean cancelable) {
-        super();
-        constructor(context, listener, style, msgid, cancelable);
+    DiagAsyncTask(Context context,
+                  Worker listener,
+                  Style style,
+                  int msgid) {
+        this(context, listener, style, msgid, true, true);
     }
 
     /**
@@ -111,20 +130,12 @@ DialogInterface.OnClickListener
         return ret;
     }
 
-    private boolean
-    cancelWork() {
-        if (!mCancelable)
-            return false;
-        // See comments in BGTaskUpdateChannel.cancel()
-        mUserCancelled = true;
-        cancel(true);
-        return true;
-    }
-
     @Override
     public void
     onCancelled() {
         mDialog.dismiss();
+        if (null != mWorker)
+            mWorker.onCancelled(this);
     }
 
     @Override
@@ -132,9 +143,11 @@ DialogInterface.OnClickListener
     onCancel(DialogInterface dialogI) {
         if (!mCancelable)
             return;
-        cancelWork();
+
+        mUserCancelled = true;
         if (null != mWorker)
             mWorker.onCancel(this);
+        cancel(mInterruptOnCancel);
     }
 
     @Override

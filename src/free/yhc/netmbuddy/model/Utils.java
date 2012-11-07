@@ -257,8 +257,13 @@ public class Utils {
     }
 
     public static boolean
+    isUiThread(Thread thread) {
+        return thread == sUiHandler.getLooper().getThread();
+    }
+
+    public static boolean
     isUiThread() {
-        return Thread.currentThread() == sUiHandler.getLooper().getThread();
+        return isUiThread(Thread.currentThread());
     }
     // ========================================================================
     //
