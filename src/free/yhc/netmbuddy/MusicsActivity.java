@@ -243,7 +243,7 @@ public class MusicsActivity extends Activity {
                                    isUserPlaylist(mPlid)? R.string.msg_delete_musics
                                                         : R.string.msg_delete_musics_completely,
                                    action)
-                .show();
+               .show();
     }
 
     private void

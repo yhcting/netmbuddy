@@ -572,7 +572,8 @@ public class PlaylistActivity extends Activity {
     }
 
     private void
-    onContextMenuDelete(AdapterContextMenuInfo info) {
+    onContextMenuDeleteDo(long plid) {
+
         DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
             @Override
             public void
@@ -590,7 +591,23 @@ public class PlaylistActivity extends Activity {
         new DiagAsyncTask(this, worker,
                           DiagAsyncTask.Style.SPIN,
                           R.string.deleting, false)
-        .execute(info.id);
+            .execute(plid);
+    }
+
+    private void
+    onContextMenuDelete(final AdapterContextMenuInfo info) {
+        UiUtils.ConfirmAction action = new UiUtils.ConfirmAction() {
+            @Override
+            public void
+            onOk(Dialog dialog) {
+                onContextMenuDeleteDo(info.id);
+            }
+        };
+        UiUtils.buildConfirmDialog(this,
+                                   R.string.delete,
+                                   R.string.msg_delete_playlist,
+                                   action)
+               .show();
     }
 
     private void

@@ -121,6 +121,7 @@
     <string name="msg_appended_to_playq">appended to play queue.</string>
     <string name="msg_play_all_musics">All musics are played.</string>
     <string name="msg_search_history_cleared">Clearing search history is done.</string>
+    <string name="msg_delete_playlist">Delete the playlist.</string>
 
     <string name="err_no_err">Success.</string>
     <string name="err_unknown">Unknown error.</string>
