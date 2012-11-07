@@ -34,8 +34,6 @@ import android.os.Handler;
 // Runnable => Job
 // Thread   => Task
 public class MultiThreadRunner {
-    private static final String TAG = MultiThreadRunner.class.getName();
-
     private final Handler               mOwner;
     private final Object                mQLock      = new Object();
     private final LinkedList<Job<?>>    mReadyQ     = new LinkedList<Job<?>>();
@@ -79,6 +77,10 @@ public class MultiThreadRunner {
 
         public Job(float progWeight) {
             this(true, progWeight);
+        }
+
+        public Job() {
+            this(0);
         }
 
         /**
@@ -294,6 +296,9 @@ public class MultiThreadRunner {
      */
     private void
     runJobLocked(Job<?> job) {
+        // TODO
+        // Is there any to instantiate generic 'task' whose generic type is
+        //   same with generic type of 'job' instead of raw-type?
         Task<?> t = new Task(this, job);
         t.setName("MultiThreadRunner-Task-" + mSeqN++);
         mRunQ.addLast(t);
