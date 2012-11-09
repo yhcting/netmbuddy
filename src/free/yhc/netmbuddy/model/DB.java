@@ -62,11 +62,20 @@ public class DB extends SQLiteOpenHelper {
     // Video table Watcher Map
     private final HashMap<Object, Boolean> mVidTblWM    = new HashMap<Object, Boolean>();
 
-
     public interface Col {
         String getName();
         String getType();
         String getConstraint();
+    }
+
+    public static enum Err {
+        NO_ERR,
+        VERSION_MISMATCH,
+        IO_FILE,
+        INVALID_DB,
+        DUPLICATED,
+        INTERRUPTED,
+        UNKNOWN,   // err inside module
     }
 
     public static enum ColPlaylist implements Col {
@@ -340,7 +349,7 @@ public class DB extends SQLiteOpenHelper {
     private static Err
     verifyDB(SQLiteDatabase db) {
         if (VERSION != db.getVersion())
-            return Err.DB_VERSION_MISMATCH;
+            return Err.VERSION_MISMATCH;
 
         final int iTblName = 0;
         final int iTblSql  = 1;
@@ -370,7 +379,7 @@ public class DB extends SQLiteOpenHelper {
             String tssql = ts[iTblSql].substring(0, ts[iTblSql].length() - 1);
             String sql = map.get(ts[iTblName]);
             if (null == sql || !sql.equalsIgnoreCase(tssql))
-                return Err.DB_UNKNOWN;
+                return Err.UNKNOWN;
         }
         return Err.NO_ERR;
     }
@@ -730,7 +739,7 @@ public class DB extends SQLiteOpenHelper {
         try {
             exDb = SQLiteDatabase.openDatabase(exDbf.getAbsolutePath(), null, SQLiteDatabase.OPEN_READONLY);
         } catch (SQLiteException e) {
-            return Err.DB_INVALID;
+            return Err.INVALID_DB;
         }
 
         Err err = DB.verifyDB(exDb);
@@ -757,7 +766,7 @@ public class DB extends SQLiteOpenHelper {
         try {
             exDb = SQLiteDatabase.openDatabase(exDbf.getAbsolutePath(), null, SQLiteDatabase.OPEN_READONLY);
         } catch (SQLiteException e) {
-            return Err.DB_INVALID;
+            return Err.INVALID_DB;
         }
         // Merging Algorithm
         // -----------------
@@ -880,7 +889,7 @@ public class DB extends SQLiteOpenHelper {
         File inDbfBackup = new File(inDbf.getAbsolutePath() + "____backup");
 
         if (!inDbf.renameTo(inDbfBackup))
-            return Err.DB_UNKNOWN;
+            return Err.IO_FILE;
 
         try {
             FileInputStream fis = new FileInputStream(exDbf);
@@ -892,7 +901,7 @@ public class DB extends SQLiteOpenHelper {
             err = Err.IO_FILE;
         } catch (InterruptedException e) {
             // Unexpected interrupt!!
-            err = Err.UNKNOWN;
+            err = Err.INTERRUPTED;
         } catch (IOException e) {
             err = Err.IO_FILE;
         } finally {
@@ -1113,10 +1122,10 @@ public class DB extends SQLiteOpenHelper {
     public Err
     insertVideoToPlaylist(long plid, long vid) {
         if (containsVideo(plid, vid))
-            return Err.DB_DUPLICATED;
+            return Err.DUPLICATED;
 
         if (0 > insertVideoRef(plid, vid))
-            return Err.DB_UNKNOWN;
+            return Err.UNKNOWN;
 
         return Err.NO_ERR;
     }
@@ -1149,10 +1158,10 @@ public class DB extends SQLiteOpenHelper {
             try {
                 vid = insertVideo(title, desc, videoId, playtime, thumbnail, volume);
                 if (vid < 0)
-                    return Err.DB_UNKNOWN;
+                    return Err.UNKNOWN;
 
                 if (0 > insertVideoRef(plid, vid))
-                    return Err.DB_UNKNOWN;
+                    return Err.UNKNOWN;
 
                 mDb.setTransactionSuccessful();
             } finally {
@@ -1163,10 +1172,10 @@ public class DB extends SQLiteOpenHelper {
             vid = c.getLong(0);
             c.close();
             if (containsVideo(plid, vid))
-                return Err.DB_DUPLICATED;
+                return Err.DUPLICATED;
 
             if (0 > insertVideoRef(plid, vid))
-                return Err.DB_UNKNOWN;
+                return Err.UNKNOWN;
         }
         return Err.NO_ERR;
     }

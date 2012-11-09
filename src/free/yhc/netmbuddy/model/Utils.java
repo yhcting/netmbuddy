@@ -182,9 +182,9 @@ public class Utils {
 
         private String pref; // prefix string
         private int    pri;  // priority
-        LogLV(String pref, int pri) {
-            this.pref = pref;
-            this.pri = pri;
+        LogLV(String aPref, int aPri) {
+            pref = aPref;
+            pri = aPri;
         }
 
         String pref() {

@@ -27,7 +27,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
-import free.yhc.netmbuddy.model.Err;
 import free.yhc.netmbuddy.model.Policy;
 import free.yhc.netmbuddy.model.UiUtils;
 import free.yhc.netmbuddy.model.Utils;
@@ -141,13 +140,13 @@ YTSearchHelper.LoadThumbnailDoneReceiver {
     @Override
     public void
     loadThumbnailDone(YTSearchHelper helper, YTSearchHelper.LoadThumbnailArg arg,
-                      Bitmap bm, Err err) {
+                      Bitmap bm, YTSearchHelper.Err err) {
         if (null == mHelper || mHelper != helper) {
             helper.close();
             return; // invalid callback.
         }
 
-        if (Err.NO_ERR != err) {
+        if (YTSearchHelper.Err.NO_ERR != err) {
             ; // TODO set to something else...
         } else {
             // View is NOT reused here.

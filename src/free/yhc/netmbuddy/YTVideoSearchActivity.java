@@ -35,7 +35,6 @@ import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.TextView;
 import free.yhc.netmbuddy.model.DB;
 import free.yhc.netmbuddy.model.DBHelper;
-import free.yhc.netmbuddy.model.Err;
 import free.yhc.netmbuddy.model.Policy;
 import free.yhc.netmbuddy.model.UiUtils;
 import free.yhc.netmbuddy.model.Utils;
@@ -109,15 +108,15 @@ DBHelper.CheckDupDoneReceiver {
             return R.string.msg_unknown_format;
         }
 
-        Err err = mDb.insertVideoToPlaylist(plid,
-                                            entry.media.title, entry.media.description,
-                                            entry.media.videoId, playtm,
-                                            Utils.compressBitmap(bm), volume);
-        if (Err.NO_ERR != err) {
-            if (Err.DB_DUPLICATED == err)
+        DB.Err err = mDb.insertVideoToPlaylist(plid,
+                                               entry.media.title, entry.media.description,
+                                               entry.media.videoId, playtm,
+                                               Utils.compressBitmap(bm), volume);
+        if (DB.Err.NO_ERR != err) {
+            if (DB.Err.DUPLICATED == err)
                 return R.string.msg_existing_muisc;
             else
-                return err.getMessage();
+                return Err.map(err).getMessage();
         }
 
         runOnUiThread(new Runnable() {
@@ -443,7 +442,7 @@ DBHelper.CheckDupDoneReceiver {
     @Override
     public void
     searchDone(YTSearchHelper helper, YTSearchHelper.SearchArg arg,
-               YTFeed.Result result, Err err) {
+               YTFeed.Result result, YTSearchHelper.Err err) {
         if (!handleSearchResult(helper, arg, result, err))
             return; // There is an error in search
         checkDupAsync(arg, (YTVideoFeed.Entry[])result.entries);
@@ -452,7 +451,7 @@ DBHelper.CheckDupDoneReceiver {
     @Override
     public void
     checkDupDone(DBHelper helper, DBHelper.CheckDupArg arg,
-                 boolean[] results, Err err) {
+                 boolean[] results, DBHelper.Err err) {
         if (null == mDbHelper || helper != mDbHelper) {
             helper.close();
             return; // invalid callback.
@@ -460,7 +459,8 @@ DBHelper.CheckDupDoneReceiver {
 
         stopLoadingLookAndFeel();
 
-        if (Err.NO_ERR != err || results.length != arg.ents.length) {
+        if (DBHelper.Err.NO_ERR != err
+            || results.length != arg.ents.length) {
             UiUtils.showTextToast(this, R.string.err_db_unknown);
             return;
         }

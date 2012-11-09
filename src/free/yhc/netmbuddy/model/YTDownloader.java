@@ -49,6 +49,17 @@ public class YTDownloader {
         void downloadDone(YTDownloader downloader, DnArg arg, Err err);
     }
 
+    public static enum Err {
+        NO_ERR,
+        IO_NET,
+        IO_FILE,
+        PROTOCOL, // unexpected response from Youtube
+        NETWORK_UNAVAILABLE,
+        UNSUPPORTED_VIDFORMAT,
+        INTERRUPTED,
+        UNKNOWN,   // err inside module
+    }
+
     public static class DnArg {
         String  ytvid;
         File    outf;
@@ -115,21 +126,21 @@ public class YTDownloader {
             YTHacker hack = new YTHacker(arg.ytvid);
             FileOutputStream fos = null;
             try {
-                Err result = hack.start();
-                if (Err.NO_ERR != result) {
-                    sendResult(arg, result);
+                YTHacker.Err hkerr = hack.start();
+                if (YTHacker.Err.NO_ERR != hkerr) {
+                    sendResult(arg, map(hkerr));
                     return;
                 }
                 _mLoader = hack.getNetLoader();
                 YTHacker.YtVideo vid = hack.getVideo(arg.qscore);
                 if (null == vid) {
-                    sendResult(arg, Err.YTNOT_SUPPORTED_VIDFORMAT);
+                    sendResult(arg, Err.UNSUPPORTED_VIDFORMAT);
                     return;
                 }
 
                 NetLoader.HttpRespContent content = _mLoader.getHttpContent(Uri.parse(vid.url), false);
                 if (HttpUtils.SC_NO_CONTENT == content.stcode) {
-                    sendResult(arg, Err.YTHTTPGET);
+                    sendResult(arg, Err.IO_NET);
                     return;
                 }
 
@@ -151,8 +162,9 @@ public class YTDownloader {
             } catch (IOException e) {
                 logI("YTDownloader : Download IOException!");
                 sendResult(arg, Err.IO_FILE);
-            } catch (YTMPException e) {
-                sendResult(arg, e.getError());
+            } catch (NetLoader.LocalException e) {
+                logI("YTDownloader : NetLoader Exception!");
+                sendResult(arg, map(e.error()));
             } finally {
                 _mLoader.close();
 
@@ -202,6 +214,47 @@ public class YTDownloader {
                 handleDownload((DnArg)msg.obj);
                 break;
             }
+        }
+    }
+
+    private static Err
+    map(YTHacker.Err err) {
+        switch (err) {
+        case NO_ERR:
+            return Err.NO_ERR;
+
+        case IO_NET:
+            return Err.IO_NET;
+
+        case NETWORK_UNAVAILABLE:
+            return Err.NETWORK_UNAVAILABLE;
+
+        case PARSE_HTML:
+            return Err.PROTOCOL;
+
+        case INTERRUPTED:
+            return Err.INTERRUPTED;
+
+        default:
+            return Err.UNKNOWN;
+        }
+    }
+
+    private static Err
+    map(NetLoader.Err err) {
+        switch (err) {
+        case NO_ERR:
+            return Err.NO_ERR;
+
+        case HTTPGET:
+        case IO_NET:
+            return Err.IO_NET;
+
+        case INTERRUPTED:
+            return Err.INTERRUPTED;
+
+        default:
+            return Err.UNKNOWN;
         }
     }
 

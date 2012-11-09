@@ -63,20 +63,22 @@ public class YTSearchHelper {
                                Bitmap bm, Err err);
     }
 
+    public static enum Err {
+        NO_ERR,
+        IO_NET,
+        INTERRUPTED,
+        NETWORK_UNAVAILABLE,
+        PARAMETER,
+        FEED_FORMAT,
+        BAD_REQUEST,
+        UNKNOWN
+    }
+
     public static enum SearchType {
         VID_KEYWORD,
         VID_AUTHOR,
         VID_PLAYLIST,
-        PL_USER;
-
-        public static SearchType
-        convert(String typeName) {
-            for (SearchType ty : SearchType.values()) {
-                if (ty.name().equals(typeName))
-                    return ty;
-            }
-            return null;
-        }
+        PL_USER
     }
 
     public static class SearchArg {
@@ -248,20 +250,54 @@ public class YTSearchHelper {
         }
     }
 
+    private static Err
+    map(NetLoader.Err err, Object extra) {
+        switch (err) {
+        case IO_NET:
+            return Err.IO_NET;
+        case HTTPGET:
+            if (!(extra instanceof Integer))
+                return Err.IO_NET;
+
+            int stcode = (Integer)extra;
+            switch (stcode) {
+            case HttpUtils.SC_BAD_REQUEST:
+                return Err.BAD_REQUEST;
+
+            case HttpUtils.SC_NOT_FOUND:
+                return Err.PARAMETER;
+
+            default:
+                return Err.IO_NET;
+            }
+
+        case INTERRUPTED:
+            return Err.INTERRUPTED;
+
+        case NO_ERR:
+            eAssert(false);
+
+        default:
+            return Err.UNKNOWN;
+        }
+    }
+
     private static LoadThumbnailReturn
     doLoadThumbnail(LoadThumbnailArg arg) {
         Bitmap bm;
         try {
             bm = Utils.decodeImage(loadUrl(arg.url), arg.width, arg.height);
-        } catch (YTMPException e) {
-            eAssert(Err.NO_ERR != e.getError());
-            return new LoadThumbnailReturn(null, e.getError());
+        } catch (NetLoader.LocalException e) {
+            eAssert(NetLoader.Err.NO_ERR != e.error());
+            return new LoadThumbnailReturn(null, map(e.error(), e.extra()));
+        } catch (IOException e) {
+            return new LoadThumbnailReturn(null, Err.UNKNOWN);
         }
         return new LoadThumbnailReturn(bm, Err.NO_ERR);
     }
 
     private static byte[]
-    loadUrl(String urlStr) throws YTMPException {
+    loadUrl(String urlStr) throws NetLoader.LocalException, IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         Uri uri = Uri.parse(urlStr);
         NetLoader loader = new NetLoader().open(null);
@@ -269,32 +305,16 @@ public class YTSearchHelper {
         loader.close();
 
         byte[] data = baos.toByteArray();
-        try {
-            baos.close();
-        } catch (IOException e) {
-            throw new YTMPException(Err.IO_UNKNOWN);
-        }
-
+        baos.close();
         return data;
     }
 
     private static YTFeed.Result
-    parse(byte[] xmlData, FeedType type) throws YTMPException {
-        Document dom;
-        try {
-            dom = DocumentBuilderFactory.newInstance()
-                                        .newDocumentBuilder()
-                                        .parse(new ByteArrayInputStream(xmlData));
-        } catch (IOException ie) {
-            logW("YTSearchHelper.JobHandler : DOM IO error!");
-            throw new YTMPException(Err.IO_UNKNOWN);
-        } catch (SAXException se) {
-            logW("YTSearchHelper.JobHandler : Parse unexpected format!");
-            throw new YTMPException(Err.PARSER_UNEXPECTED_FORMAT);
-        } catch (ParserConfigurationException pe) {
-            logW("YTSearchHelper.JobHandler : Parse cofiguration exception!");
-            throw new YTMPException(Err.PARSER_UNKNOWN);
-        }
+    parse(byte[] xmlData, FeedType type) throws
+        IOException, SAXException, ParserConfigurationException {
+        Document dom = DocumentBuilderFactory.newInstance()
+                                             .newDocumentBuilder()
+                                             .parse(new ByteArrayInputStream(xmlData));
 
         switch (type) {
         case VIDEO:
@@ -337,15 +357,22 @@ public class YTSearchHelper {
             default:
                 eAssert(false);
             }
-        } catch (YTMPException e) {
-            eAssert(Err.NO_ERR != e.getError());
-            Object extra = e.getExtra();
-            if (Err.YTHTTPGET == e.getError()
-                && extra instanceof Integer
-                && ((Integer)extra) == HttpUtils.SC_NOT_FOUND)
-                e = new YTMPException(Err.YTINVALID_PARAM);
+        } catch (IOException e) {
+            logW("YTSearchHelper.JobHandler : DOM IO error!");
+            return new SearchReturn(null, Err.IO_NET);
+        } catch (SAXException e) {
+            logW("YTSearchHelper.JobHandler : Parse unexpected format!");
+            return new SearchReturn(null, Err.FEED_FORMAT);
+        } catch (ParserConfigurationException pe) {
+            logW("YTSearchHelper.JobHandler : Parse cofiguration exception!");
+            return new SearchReturn(null, Err.UNKNOWN);
+        } catch (NetLoader.LocalException e) {
+            eAssert(NetLoader.Err.NO_ERR != e.error());
+            Object extra = e.extra();
+            Err reterr = map(e.error(), extra);
 
-            return new SearchReturn(null, e.getError());
+
+            return new SearchReturn(null, reterr);
         }
         return new SearchReturn(r, Err.NO_ERR);
     }

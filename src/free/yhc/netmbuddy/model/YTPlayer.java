@@ -1108,14 +1108,15 @@ SurfaceHolder.Callback {
         YTDownloader.DownloadDoneReceiver rcvr = new DownloadDoneReceiver() {
             @Override
             public void
-            downloadDone(YTDownloader downloader, DnArg arg, Err err) {
+            downloadDone(YTDownloader downloader, DnArg arg, YTDownloader.Err err) {
                 if (mYtDnr != downloader) {
                     downloader.close();
                     return;
                 }
 
                 int retryTag = (Integer)downloader.getTag();
-                if (!(Err.NO_ERR == err || Err.YTNOT_SUPPORTED_VIDFORMAT == err)
+                if (!(YTDownloader.Err.NO_ERR == err
+                      || YTDownloader.Err.UNSUPPORTED_VIDFORMAT == err)
                     && Utils.isNetworkAvailable()
                     && retryTag > 0) {
                     // retry.
@@ -1259,7 +1260,7 @@ SurfaceHolder.Callback {
 
             @Override
             public void
-            onPostHack(final YTHacker ythack, Err result, final NetLoader loader,
+            onPostHack(final YTHacker ythack, YTHacker.Err result, final NetLoader loader,
                        String ytvid, Object user) {
                 if (mYtHack != ythack) {
                     // Another try is already done.
@@ -1274,16 +1275,18 @@ SurfaceHolder.Callback {
                     mLoader.close();
                 mLoader = loader;
 
-                if (Err.NO_ERR != result) {
+                if (YTHacker.Err.NO_ERR != result) {
                     logW("YTPlayer YTHack Fails : " + result.name());
                     switch (result) {
-                    case YTHTTPGET:
                     case IO_NET:
                         mStartVideoRecovery.executeRecoveryStart(mVlm.getActiveVideo());
                         break;
 
                     default:
-                        mUi.notifyToUser(Utils.getResText(result.getMessage()));
+                        // NOTE : Dirty!!!
+                        // But, extremely exceptional case that model referencing UI code
+                        mUi.notifyToUser(Utils.getResText(
+                                free.yhc.netmbuddy.Err.map(result).getMessage()));
                         startNext(); // Move to next video.
                     }
                     return;
@@ -1974,16 +1977,16 @@ SurfaceHolder.Callback {
         return new ToolButton(R.drawable.ic_media_video, onClick);
     }
 
-    public Err
+    public void
     setController(Activity  activity,
                   ViewGroup playerv,
                   ViewGroup playerLDrawer,
                   SurfaceView surfacev,
                   ToolButton toolBtn) {
-        Err err = mUi.setController(activity, playerv, playerLDrawer, surfacev, toolBtn);
+        mUi.setController(activity, playerv, playerLDrawer, surfacev, toolBtn);
 
         if (!mVlm.hasActiveVideo())
-            return err;
+            return;
 
         // controller is set again.
         // Than new surface may have to be used.
@@ -2004,8 +2007,6 @@ SurfaceHolder.Callback {
 
         if (haveStoredPlayerState())
             startVideo(mVlm.getActiveVideo(), false);
-
-        return err;
     }
 
     public void

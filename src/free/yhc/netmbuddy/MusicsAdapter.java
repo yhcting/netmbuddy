@@ -32,7 +32,6 @@ import android.widget.ImageView;
 import android.widget.ResourceCursorAdapter;
 import android.widget.TextView;
 import free.yhc.netmbuddy.model.DB;
-import free.yhc.netmbuddy.model.Err;
 import free.yhc.netmbuddy.model.UiUtils;
 import free.yhc.netmbuddy.model.Utils;
 

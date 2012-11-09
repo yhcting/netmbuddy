@@ -24,7 +24,6 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.os.AsyncTask;
-import free.yhc.netmbuddy.model.Err;
 
 public class DiagAsyncTask extends AsyncTask<Object, Integer, Err> implements
 DialogInterface.OnDismissListener,

@@ -56,15 +56,6 @@ public class NotiManager {
         // false: notification should be removed when app. is killed.
         private final int           _mIcon;
 
-        static NotiType
-        convert(String name) {
-            for (NotiType n : NotiType.values()) {
-                if (n.name().equals(name))
-                    return n;
-            }
-            return null;
-        }
-
         NotiType(int icon) {
             _mIcon   = icon;
         }
@@ -86,7 +77,7 @@ public class NotiManager {
                 YTPlayer ytp = YTPlayer.get();
                 String typeName = intent.getStringExtra("type");
                 eAssert(null != typeName);
-                NotiType nt = NotiType.convert(typeName);
+                NotiType nt = NotiType.valueOf(typeName);
                 eAssert(null != nt);
                 switch (nt) {
                 case BASE:

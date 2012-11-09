@@ -26,6 +26,11 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
 public abstract class YTFeed {
+    public static enum Err {
+        NO_ERR,
+        UNKNOWN,   // err inside module
+    }
+
     public static class Result {
         public Header   header          = null;
         public Entry[]  entries         = null;

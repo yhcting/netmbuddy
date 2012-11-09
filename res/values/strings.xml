@@ -127,6 +127,7 @@
     <string name="err_unknown">Unknown error.</string>
     <string name="err_interrupted">Interrupted.</string>
     <string name="err_cancelled">Cancelled.</string>
+    <string name="err_bad_request">Bad request.</string>
     <string name="err_io_net">Error in accessing network.</string>
     <string name="err_io_file">Error in accessing local file.</string>
     <string name="err_io_unknown">Error in IO operation - network or file etc.</string>

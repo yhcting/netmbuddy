@@ -113,7 +113,7 @@ public class YTPlaylistFeed extends YTFeed {
      * @return
      */
     public static Result
-    parseFeed(Document dom) throws YTMPException {
+    parseFeed(Document dom) {
         Element root = dom.getDocumentElement();
         LinkedList<Entry> entryl = new LinkedList<Entry>();
         Result res = new Result();

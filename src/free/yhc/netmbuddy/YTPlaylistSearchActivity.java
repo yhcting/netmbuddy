@@ -38,7 +38,6 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.TextView;
 import free.yhc.netmbuddy.model.DB;
-import free.yhc.netmbuddy.model.Err;
 import free.yhc.netmbuddy.model.MultiThreadRunner;
 import free.yhc.netmbuddy.model.MultiThreadRunner.Job;
 import free.yhc.netmbuddy.model.Policy;
@@ -98,22 +97,22 @@ public class YTPlaylistSearchActivity extends YTSearchActivity {
         YTSearchHelper.LoadThumbnailReturn tr;
         targ.url = e.media.thumbnailUrl;
         tr = YTSearchHelper.loadThumbnail(targ);
-        if (Err.NO_ERR != tr.err)
+        if (YTSearchHelper.Err.NO_ERR != tr.err)
             return false;
 
         // Loading thumbnail is done.
 
-        Err err = DB.get().insertVideoToPlaylist(plid,
-                                                 e.media.title,
-                                                 e.media.description,
-                                                 e.media.videoId,
-                                                 playtm,
-                                                 Utils.compressBitmap(tr.bm),
-                                                 Policy.DEFAULT_VIDEO_VOLUME);
+        DB.Err err = DB.get().insertVideoToPlaylist(plid,
+                                                    e.media.title,
+                                                    e.media.description,
+                                                    e.media.videoId,
+                                                    playtm,
+                                                    Utils.compressBitmap(tr.bm),
+                                                    Policy.DEFAULT_VIDEO_VOLUME);
         if (null != tr.bm)
             tr.bm.recycle();
 
-        if (Err.NO_ERR != err)
+        if (DB.Err.NO_ERR != err)
             return false;
 
         return true;
@@ -147,8 +146,8 @@ public class YTPlaylistSearchActivity extends YTSearchActivity {
             sarg.starti = YTSearchHelper.MAX_NR_RESULT_PER_PAGE * (curPage - 1) + 1;
             sr = YTSearchHelper.search(sarg);
             checkInterrupted();
-            if (Err.NO_ERR != sr.err)
-                return sr.err;
+            if (YTSearchHelper.Err.NO_ERR != sr.err)
+                return Err.map(sr.err);
 
             if (maxPage < 0) {
                 int total;
@@ -329,7 +328,7 @@ public class YTPlaylistSearchActivity extends YTSearchActivity {
     @Override
     public void
     searchDone(YTSearchHelper helper, YTSearchHelper.SearchArg arg,
-               YTFeed.Result result, Err err) {
+               YTFeed.Result result, YTSearchHelper.Err err) {
         if (!handleSearchResult(helper, arg, result, err))
             return; // There is an error in search
 

@@ -43,7 +43,6 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import free.yhc.netmbuddy.model.DB;
-import free.yhc.netmbuddy.model.Err;
 import free.yhc.netmbuddy.model.UiUtils;
 import free.yhc.netmbuddy.model.Utils;
 import free.yhc.netmbuddy.model.YTPlayer;
@@ -129,14 +128,14 @@ public class MusicsActivity extends Activity {
                 mDb.beginTransaction();
                 try {
                     for (long mid : mids) {
-                        Err err = mDb.insertVideoToPlaylist(plid, mid);
-                        if (Err.NO_ERR != err) {
+                        DB.Err err = mDb.insertVideoToPlaylist(plid, mid);
+                        if (DB.Err.NO_ERR != err) {
                             // Error Case
-                            if (Err.DB_DUPLICATED != err)
-                                return err;
+                            if (DB.Err.DUPLICATED != err)
+                                return Err.DB_DUPLICATED;
                             // From here : DB_DUPLICATED Case.
                             else if (1 == mids.length && !move)
-                                return err;
+                                return Err.map(err);
                         }
 
                         // "Insertion is OK"

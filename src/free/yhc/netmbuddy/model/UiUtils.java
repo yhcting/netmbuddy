@@ -61,11 +61,18 @@ public class UiUtils {
         void onUserMenu(int pos, Object user);
         void onPlaylist(long plid, Object user);
     }
+
     // ========================================================================
     //
     // Functions
     //
     // ========================================================================
+
+    // ------------------------------------------------------------------------
+    //
+    // Error to feedback message
+    //
+    // ------------------------------------------------------------------------
     public static View
     inflateLayout(Context context, int layout) {
         LayoutInflater inflater = (LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);

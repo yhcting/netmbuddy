@@ -103,6 +103,30 @@ public class YTHacker {
         public void onPostHack(YTHacker ythack, Err result, NetLoader loader, String ytvid, Object user);
     }
 
+    public static enum Err {
+        NO_ERR,
+        IO_NET,
+        NETWORK_UNAVAILABLE,
+        PARSE_HTML,
+        INTERRUPTED,
+        UNKNOWN,   // err inside module
+    }
+
+    public static class LocalException extends java.lang.Exception {
+        static final long serialVersionUID = 0; // to make compiler be happy
+
+        private final Err   _mErr;
+
+        public LocalException(Err err) {
+            _mErr = err;
+        }
+
+        public Err
+        error() {
+            return _mErr;
+        }
+    }
+
     public static class YtVideo {
         public final String   url;
         public final String   type; // mime
@@ -217,6 +241,24 @@ public class YTHacker {
         YtVideoElem[]   vids = new YtVideoElem[0];
     }
 
+    private static Err
+    map(NetLoader.Err err) {
+        switch (err) {
+        case NO_ERR:
+            return Err.NO_ERR;
+
+        case IO_NET:
+        case HTTPGET:
+            return Err.IO_NET;
+
+        case INTERRUPTED:
+            return Err.INTERRUPTED;
+
+        default:
+            return Err.UNKNOWN;
+        }
+    }
+
     private static String
     getYtUri(String ytvid) {
         eAssert(YTVID_LENGTH == ytvid.length());
@@ -230,14 +272,14 @@ public class YTHacker {
 
     private static YtVideoHtmlResult
     parseYtVideoHtml(BufferedReader brdr)
-            throws YTMPException {
+            throws LocalException {
         YtVideoHtmlResult result = new YtVideoHtmlResult();
         String line = "";
         while (null != line) {
             try {
                 line = brdr.readLine();
             } catch (IOException e) {
-                throw new YTMPException(Err.IO_UNKNOWN);
+                throw new LocalException(Err.IO_NET);
             }
 
             if (null == line)
@@ -293,7 +335,7 @@ public class YTHacker {
                 eAssert(content.type.toLowerCase().startsWith("text/html"));
                 mYtr = parseYtVideoHtml(new BufferedReader(new InputStreamReader(content.stream)));
                 if (mYtr.vids.length <= 0) {
-                    err = Err.YTPARSEHTML;
+                    err = Err.PARSE_HTML;
                     break;
                 }
 
@@ -304,8 +346,10 @@ public class YTHacker {
                 eAssert(HttpUtils.SC_NO_CONTENT == content.stcode);
                 // Now all are ready to download!
             } while (false);
-        } catch (YTMPException e) {
-            err = e.getError();
+        } catch (NetLoader.LocalException e){
+            err = map(e.error());
+        } catch (LocalException e) {
+            err = e.error();
         }
         if (Err.NO_ERR != err && null != mLoader)
             mLoader.close();

@@ -659,7 +659,7 @@ public class YTPlayerUI {
         mMp = ytplayer;
     }
 
-    Err
+    void
     setController(Activity  activity,
                   ViewGroup playerv,
                   ViewGroup playerLDrawer,
@@ -672,7 +672,7 @@ public class YTPlayerUI {
         if (activity == mVActivity && mPlayerv == playerv)
             // controller is already set for this context.
             // So, nothing to do. just return!
-            return Err.NO_ERR;
+            return;
 
         mVActivity = activity;
         mPlayerv = (LinearLayout)playerv;
@@ -682,13 +682,11 @@ public class YTPlayerUI {
 
         if (null == mPlayerv) {
             eAssert(null == mPlayerLDrawer);
-            return Err.NO_ERR;
+            return;
         }
 
         eAssert(null != mPlayerv.findViewById(R.id.mplayer_layout_magic_id));
         pvInit(playerv, playerLDrawer, surfacev);
-
-        return Err.NO_ERR;
     }
 
     void

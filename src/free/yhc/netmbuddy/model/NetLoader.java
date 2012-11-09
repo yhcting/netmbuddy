@@ -49,6 +49,40 @@ public class NetLoader {
     private boolean         mUserClose  = false;
     private HttpClient      mHttpClient = null;
 
+    public static enum Err {
+        NO_ERR,
+        IO_NET,
+        HTTPGET,
+        INTERRUPTED,
+        UNKNOWN,   // err inside module
+    }
+
+    public static class LocalException extends java.lang.Exception {
+        static final long serialVersionUID = 0; // to make compiler be happy
+
+        private final Err       _mErr;
+        private final Object    _mExtra;
+
+        public LocalException(Err err, Object extra) {
+            _mErr = err;
+            _mExtra = extra;
+        }
+
+        public LocalException(Err err) {
+            this(err, null);
+        }
+
+        public Err
+        error() {
+            return _mErr;
+        }
+
+        public Object
+        extra() {
+            return _mExtra;
+        }
+    }
+
     public static class HttpRespContent {
         public int         stcode; // status code
         public InputStream stream;
@@ -113,7 +147,7 @@ public class NetLoader {
 
     public void
     readHttpData(OutputStream outs, Uri uri)
-            throws YTMPException {
+            throws LocalException {
         eAssert(null != mHttpClient);
         // Proxy is not supported yet.
         HttpRespContent content = getHttpContent(uri, false);
@@ -125,16 +159,16 @@ public class NetLoader {
                 outs.write(rbuf, 0, bytes);
             content.stream.close();
         } catch (IOException e) {
-            throw new YTMPException(Err.IO_NET);
+            throw new LocalException(Err.IO_NET);
         }
     }
 
     public HttpRespContent
     getHttpContent(Uri uri, boolean source)
-            throws YTMPException  {
+            throws LocalException  {
         if (null == mHttpClient) {
             logI("NetLoader Fail to get HttpClient");
-            throw new YTMPException(Err.YTHTTPGET);
+            throw new LocalException(Err.UNKNOWN);
         }
 
         String uriString = uri.toString();
@@ -167,7 +201,7 @@ public class NetLoader {
                 default:
                     // Unexpected response
                     logW("NetLoader Unexpected Response  status code : " + httpResp.getStatusLine().getStatusCode());
-                    throw new YTMPException(Err.YTHTTPGET, statusCode);
+                    throw new LocalException(Err.HTTPGET, statusCode);
                 }
 
                 InputStream contentStream = null;
@@ -179,7 +213,7 @@ public class NetLoader {
 
                     if (null == httpEntity) {
                         logW("NetLoader Unexpected NULL entity");
-                        throw new YTMPException(Err.YTHTTPGET);
+                        throw new LocalException(Err.HTTPGET, statusCode);
                     }
                     contentStream = httpEntity.getContent();
                     contentType = httpResp.getFirstHeader("Content-Type").getValue().toLowerCase();
@@ -188,35 +222,32 @@ public class NetLoader {
                 return new HttpRespContent(statusCode, contentStream, contentType);
             } catch (ClientProtocolException e) {
                 logI("NetLoader ClientProtocolException : " + e.getMessage());
-                throw new YTMPException(Err.YTHTTPGET);
+                throw new LocalException(Err.UNKNOWN);
             } catch (IllegalArgumentException e) {
                 logI("Illegal Argument Exception : " + e.getMessage() + "\n"
                      + "URI : " + uriString);
-                throw new YTMPException(Err.INVALID_URL);
+                throw new LocalException(Err.IO_NET);
             } catch (UnknownHostException e) {
                 logI("NetLoader UnknownHostException : Maybe timeout?" + e.getMessage());
                 if (mUserClose)
-                    throw new YTMPException(Err.CANCELLED);
+                    throw new LocalException(Err.INTERRUPTED);
 
                 if (0 >= retry)
-                    throw new YTMPException(Err.IO_NET);
+                    throw new LocalException(Err.IO_NET);
 
                 ; // continue next retry after some time.
                 try {
                     Thread.sleep(300);
                 } catch (InterruptedException ie) {
-                    if (mUserClose)
-                        throw new YTMPException(Err.CANCELLED);
-                    else
-                        throw new YTMPException(Err.INTERRUPTED);
+                    throw new LocalException(Err.INTERRUPTED);
                 }
-                throw new YTMPException(Err.YTHTTPGET);
+                throw new LocalException(Err.IO_NET);
             } catch (IOException e) {
                 logI("NetLoader IOException : " + e.getMessage());
-                throw new YTMPException(Err.YTHTTPGET);
+                throw new LocalException(Err.IO_NET);
             } catch (IllegalStateException e) {
                 logI("NetLoader IllegalStateException : " + e.getMessage());
-                throw new YTMPException(Err.YTHTTPGET);
+                throw new LocalException(Err.UNKNOWN);
             }
         }
         eAssert(false);

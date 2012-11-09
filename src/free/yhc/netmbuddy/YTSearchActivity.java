@@ -35,7 +35,6 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
-import free.yhc.netmbuddy.model.Err;
 import free.yhc.netmbuddy.model.Policy;
 import free.yhc.netmbuddy.model.SearchSuggestionProvider;
 import free.yhc.netmbuddy.model.UiUtils;
@@ -181,11 +180,11 @@ YTSearchHelper.SearchDoneReceiver {
                                            title,
                                            getStarti(pageNumber),
                                            NR_ENTRY_PER_PAGE);
-        Err err = mSearchHelper.searchAsync(arg);
-        if (Err.NO_ERR == err)
+        YTSearchHelper.Err err = mSearchHelper.searchAsync(arg);
+        if (YTSearchHelper.Err.NO_ERR == err)
             showLoadingLookAndFeel();
         else
-            UiUtils.showTextToast(this, err.getMessage());
+            UiUtils.showTextToast(this, Err.map(err).getMessage());
     }
 
     private void
@@ -310,14 +309,14 @@ YTSearchHelper.SearchDoneReceiver {
      */
     protected boolean
     handleSearchResult(YTSearchHelper helper, YTSearchHelper.SearchArg arg,
-                       YTFeed.Result result, Err err) {
+                       YTFeed.Result result, YTSearchHelper.Err err) {
         if (null == mSearchHelper || mSearchHelper != helper)
             return false;
 
         Err r = Err.NO_ERR;
         do {
-            if (Err.NO_ERR != err) {
-                r = err;
+            if (YTSearchHelper.Err.NO_ERR != err) {
+                r = Err.map(err);
                 break;
             }
 

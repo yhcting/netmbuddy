@@ -127,6 +127,7 @@
     <string name="err_unknown">알 수 없는 오류가 발생했습니다.</string>
     <string name="err_interrupted">동작이 중지되었습니다.</string>
     <string name="err_cancelled">동작이 취소되었습니다.</string>
+    <string name="err_bad_request">잘못된 요청입니다.</string>
     <string name="err_io_net">네트워크 접근에 문제가 발생했습니다.</string>
     <string name="err_io_file">파일 접근에 문제가 발생했습니다.</string>
     <string name="err_io_unknown">네트워크 혹은 파일 등, 입출력 자원 사용시 알수 없는 오류가 발생했습니다.</string>
@@ -144,6 +145,7 @@
     <string name="err_ytinvalid_param">유효하지 않는 요청입니다.</string>
     <string name="err_network_unavailable">네트워크를 사용할 수 없습니다.</string>
     <string name="err_end_of_data">마지막 데이타입니다.</string>
+
 
     <string name="appinfo_text">
 E-mail : yhcting77@gmail.com\n

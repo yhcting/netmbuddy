@@ -20,7 +20,6 @@
 
 package free.yhc.netmbuddy.model;
 
-import static free.yhc.netmbuddy.model.Utils.eAssert;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
@@ -37,6 +36,10 @@ public class DBHelper {
     public interface CheckDupDoneReceiver {
         void checkDupDone(DBHelper helper, CheckDupArg arg,
                           boolean[] results, Err err);
+    }
+
+    public static enum Err {
+        NO_ERR
     }
 
     public static class CheckDupArg {
@@ -72,7 +75,7 @@ public class DBHelper {
         }
 
         private boolean[]
-        checkDup(YTVideoFeed.Entry[] entries) throws YTMPException {
+        checkDup(YTVideoFeed.Entry[] entries) {
             // TODO
             // Should I check "entries[i].available" flag???
             boolean[] r = new boolean[entries.length];
@@ -97,15 +100,7 @@ public class DBHelper {
 
         private void
         handleCheckDup(CheckDupArg arg) {
-            boolean[] r;
-            try {
-                r = checkDup(arg.ents);
-            } catch (YTMPException e) {
-                eAssert(Err.NO_ERR != e.getError());
-                sendCheckDupDone(arg, null, e.getError());
-                return;
-            }
-            sendCheckDupDone(arg, r, Err.NO_ERR);
+            sendCheckDupDone(arg, checkDup(arg.ents), Err.NO_ERR);
         }
 
         void

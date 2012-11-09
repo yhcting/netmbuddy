@@ -48,7 +48,6 @@ import android.widget.ListView;
 import free.yhc.netmbuddy.PlaylistAdapter.ItemButton;
 import free.yhc.netmbuddy.model.DB;
 import free.yhc.netmbuddy.model.DB.ColVideo;
-import free.yhc.netmbuddy.model.Err;
 import free.yhc.netmbuddy.model.Policy;
 import free.yhc.netmbuddy.model.SearchSuggestionProvider;
 import free.yhc.netmbuddy.model.UiUtils;
@@ -165,7 +164,7 @@ public class PlaylistActivity extends Activity {
         stopDbAccess();
 
         // Let's do real-import.
-        return mDb.importDatabase(exDbf);
+        return Err.map(mDb.importDatabase(exDbf));
     }
 
     private Err
@@ -174,7 +173,7 @@ public class PlaylistActivity extends Activity {
         // But, just in case...
         stopDbAccess();
 
-        return mDb.mergeDatabase(exDbf);
+        return Err.map(mDb.mergeDatabase(exDbf));
     }
 
     private Err
@@ -183,7 +182,7 @@ public class PlaylistActivity extends Activity {
 
         // Make directories.
         new File(exDbf.getAbsoluteFile().getParent()).mkdirs();
-        return mDb.exportDatabase(exDbf);
+        return Err.map(mDb.exportDatabase(exDbf));
     }
 
     // ------------------------------------------------------------------------

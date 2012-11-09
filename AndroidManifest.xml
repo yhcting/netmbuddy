@@ -109,6 +109,27 @@
                   android:configChanges="orientation|keyboardHidden"
                   android:theme="@android:style/Theme.NoTitleBar"
                   />
+        <activity android:name=".ImportShareFileActivity"
+                  android:configChanges="orientation|keyboardHidden"
+                  android:theme="@android:style/Theme.NoTitleBar"
+                  >
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="file" />
+                <data android:mimeType="*/*" />
+                <!--
+                To avoid limitation of Android's PatternMatcher
+                See "http://stackoverflow.com/questions/3400072/pathpattern-to-match-file-extension-does-not-work-if-a-period-exists-elsewhere-i/8599921#8599921"
+                 -->
+                <data android:pathPattern=".*\\.netmbuddy" />
+                <data android:pathPattern=".*\\..*\\.netmbuddy"/>
+                <data android:pathPattern=".*\\..*\\..*\\.netmbuddy"/>
+                <data android:pathPattern=".*\\..*\\..*\\..*\\.netmbuddy"/>
+                <data android:host="*" />
+            </intent-filter>
+        </activity>
         <receiver android:name=".model.YTPlayer$TelephonyMonitor">
             <intent-filter>
                 <action android:name="android.intent.action.PHONE_STATE" />
