@@ -20,9 +20,9 @@
 
 package free.yhc.netmbuddy.model;
 
-import static free.yhc.netmbuddy.model.Utils.eAssert;
-import static free.yhc.netmbuddy.model.Utils.logI;
-import static free.yhc.netmbuddy.model.Utils.logW;
+import static free.yhc.netmbuddy.utils.Utils.eAssert;
+import static free.yhc.netmbuddy.utils.Utils.logI;
+import static free.yhc.netmbuddy.utils.Utils.logW;
 
 import java.io.IOException;
 import java.io.InputStream;

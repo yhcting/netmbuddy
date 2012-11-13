@@ -20,7 +20,7 @@
 
 package free.yhc.netmbuddy;
 
-import static free.yhc.netmbuddy.model.Utils.eAssert;
+import static free.yhc.netmbuddy.utils.Utils.eAssert;
 import android.app.Activity;
 import android.app.SearchManager;
 import android.content.Intent;
@@ -37,11 +37,11 @@ import android.widget.ListView;
 import android.widget.TextView;
 import free.yhc.netmbuddy.model.Policy;
 import free.yhc.netmbuddy.model.SearchSuggestionProvider;
-import free.yhc.netmbuddy.model.UiUtils;
-import free.yhc.netmbuddy.model.Utils;
 import free.yhc.netmbuddy.model.YTFeed;
 import free.yhc.netmbuddy.model.YTPlayer;
 import free.yhc.netmbuddy.model.YTSearchHelper;
+import free.yhc.netmbuddy.utils.UiUtils;
+import free.yhc.netmbuddy.utils.Utils;
 
 public abstract class YTSearchActivity extends Activity implements
 YTSearchHelper.SearchDoneReceiver {

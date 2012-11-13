@@ -20,7 +20,7 @@
 
 package free.yhc.netmbuddy;
 
-import static free.yhc.netmbuddy.model.Utils.eAssert;
+import static free.yhc.netmbuddy.utils.Utils.eAssert;
 
 import java.io.File;
 
@@ -50,9 +50,9 @@ import free.yhc.netmbuddy.model.DB;
 import free.yhc.netmbuddy.model.DB.ColVideo;
 import free.yhc.netmbuddy.model.Policy;
 import free.yhc.netmbuddy.model.SearchSuggestionProvider;
-import free.yhc.netmbuddy.model.UiUtils;
-import free.yhc.netmbuddy.model.Utils;
 import free.yhc.netmbuddy.model.YTPlayer;
+import free.yhc.netmbuddy.utils.UiUtils;
+import free.yhc.netmbuddy.utils.Utils;
 
 public class PlaylistActivity extends Activity {
     private final DB            mDb = DB.get();
@@ -231,14 +231,14 @@ public class PlaylistActivity extends Activity {
 
                     @Override
                     public Err
-                    doBackgroundWork(DiagAsyncTask task, Object... objs) {
+                    doBackgroundWork(DiagAsyncTask task) {
                         return importDbInBackground(exDbf);
                     }
                 };
                 new DiagAsyncTask(PlaylistActivity.this, worker,
                                   DiagAsyncTask.Style.SPIN,
                                   R.string.importing_db, false)
-                .execute(exDbf);
+                    .run();
             }
         }).show();
     }
@@ -270,14 +270,14 @@ public class PlaylistActivity extends Activity {
 
                     @Override
                     public Err
-                    doBackgroundWork(DiagAsyncTask task, Object... objs) {
+                    doBackgroundWork(DiagAsyncTask task) {
                         return mergeDbInBackground(exDbf);
                     }
                 };
                 new DiagAsyncTask(PlaylistActivity.this, worker,
                                   DiagAsyncTask.Style.SPIN,
                                   R.string.merging_db, false)
-                .execute(exDbf);
+                    .run();
             }
         }).show();
     }
@@ -308,13 +308,14 @@ public class PlaylistActivity extends Activity {
 
                     @Override
                     public Err
-                    doBackgroundWork(DiagAsyncTask task, Object... objs) {
+                    doBackgroundWork(DiagAsyncTask task) {
                         return exportDbInBackground(exDbf);
                     }
                 };
                 new DiagAsyncTask(PlaylistActivity.this, worker,
                                   DiagAsyncTask.Style.SPIN,
-                                  R.string.exporting_db, false).execute(exDbf);
+                                  R.string.exporting_db, false)
+                    .run();
             }
         }).show();
     }
@@ -571,7 +572,7 @@ public class PlaylistActivity extends Activity {
     }
 
     private void
-    onContextMenuDeleteDo(long plid) {
+    onContextMenuDeleteDo(final long plid) {
 
         DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
             @Override
@@ -582,15 +583,15 @@ public class PlaylistActivity extends Activity {
 
             @Override
             public Err
-            doBackgroundWork(DiagAsyncTask task, Object... objs) {
-                mDb.deletePlaylist((Long)objs[0]);
+            doBackgroundWork(DiagAsyncTask task) {
+                mDb.deletePlaylist(plid);
                 return Err.NO_ERR;
             }
         };
         new DiagAsyncTask(this, worker,
                           DiagAsyncTask.Style.SPIN,
                           R.string.deleting, false)
-            .execute(plid);
+            .run();
     }
 
     private void

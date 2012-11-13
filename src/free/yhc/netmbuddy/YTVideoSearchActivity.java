@@ -20,7 +20,7 @@
 
 package free.yhc.netmbuddy;
 
-import static free.yhc.netmbuddy.model.Utils.eAssert;
+import static free.yhc.netmbuddy.utils.Utils.eAssert;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
@@ -36,12 +36,13 @@ import android.widget.TextView;
 import free.yhc.netmbuddy.model.DB;
 import free.yhc.netmbuddy.model.DBHelper;
 import free.yhc.netmbuddy.model.Policy;
-import free.yhc.netmbuddy.model.UiUtils;
-import free.yhc.netmbuddy.model.Utils;
 import free.yhc.netmbuddy.model.YTFeed;
 import free.yhc.netmbuddy.model.YTPlayer;
 import free.yhc.netmbuddy.model.YTSearchHelper;
 import free.yhc.netmbuddy.model.YTVideoFeed;
+import free.yhc.netmbuddy.utils.ImageUtils;
+import free.yhc.netmbuddy.utils.UiUtils;
+import free.yhc.netmbuddy.utils.Utils;
 
 public abstract class YTVideoSearchActivity extends YTSearchActivity implements
 YTSearchHelper.SearchDoneReceiver,
@@ -111,7 +112,7 @@ DBHelper.CheckDupDoneReceiver {
         DB.Err err = mDb.insertVideoToPlaylist(plid,
                                                entry.media.title, entry.media.description,
                                                entry.media.videoId, playtm,
-                                               Utils.compressBitmap(bm), volume);
+                                               ImageUtils.compressBitmap(bm), volume);
         if (DB.Err.NO_ERR != err) {
             if (DB.Err.DUPLICATED == err)
                 return R.string.msg_existing_muisc;
@@ -188,7 +189,7 @@ DBHelper.CheckDupDoneReceiver {
 
             @Override
             public Err
-            doBackgroundWork(DiagAsyncTask task, Object... objs) {
+            doBackgroundWork(DiagAsyncTask task) {
                 mDb.beginTransaction();
                 try {
                     for (int i = 0; i < checkedItems.length; i++) {
@@ -210,7 +211,7 @@ DBHelper.CheckDupDoneReceiver {
                           DiagAsyncTask.Style.SPIN,
                           R.string.adding,
                           false)
-            .execute();
+            .run();
 
     }
 

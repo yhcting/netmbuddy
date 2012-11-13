@@ -1,5 +1,6 @@
 package free.yhc.netmbuddy.model;
 
+import free.yhc.netmbuddy.utils.Utils;
 import android.content.SearchRecentSuggestionsProvider;
 import android.provider.SearchRecentSuggestions;
 

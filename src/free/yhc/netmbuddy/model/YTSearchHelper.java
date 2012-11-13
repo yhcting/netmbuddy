@@ -20,8 +20,8 @@
 
 package free.yhc.netmbuddy.model;
 
-import static free.yhc.netmbuddy.model.Utils.eAssert;
-import static free.yhc.netmbuddy.model.Utils.logW;
+import static free.yhc.netmbuddy.utils.Utils.eAssert;
+import static free.yhc.netmbuddy.utils.Utils.logW;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -40,6 +40,8 @@ import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
 import android.os.Process;
+import free.yhc.netmbuddy.utils.ImageUtils;
+import free.yhc.netmbuddy.utils.Utils;
 
 public class YTSearchHelper {
     public static final int MAX_NR_RESULT_PER_PAGE      = 50; // See Youtube API Document
@@ -286,7 +288,7 @@ public class YTSearchHelper {
     doLoadThumbnail(LoadThumbnailArg arg) {
         Bitmap bm;
         try {
-            bm = Utils.decodeImage(loadUrl(arg.url), arg.width, arg.height);
+            bm = ImageUtils.decodeImage(loadUrl(arg.url), arg.width, arg.height);
         } catch (NetLoader.LocalException e) {
             eAssert(NetLoader.Err.NO_ERR != e.error());
             return new LoadThumbnailReturn(null, map(e.error(), e.extra()));

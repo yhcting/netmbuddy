@@ -11,9 +11,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import free.yhc.netmbuddy.model.NotiManager;
-import free.yhc.netmbuddy.model.Utils;
 import free.yhc.netmbuddy.model.YTPlayer;
 import free.yhc.netmbuddy.model.YTPlayer.StopState;
+import free.yhc.netmbuddy.utils.Utils;
 
 public class LockScreenActivity extends Activity implements
 YTPlayer.VideosStateListener {

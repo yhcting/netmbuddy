@@ -20,6 +20,7 @@
 
 package free.yhc.netmbuddy.model;
 
+import free.yhc.netmbuddy.utils.Utils;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;

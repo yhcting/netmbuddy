@@ -20,7 +20,7 @@
 
 package free.yhc.netmbuddy;
 
-import static free.yhc.netmbuddy.model.Utils.eAssert;
+import static free.yhc.netmbuddy.utils.Utils.eAssert;
 import android.content.Context;
 import android.view.View;
 import android.widget.TextView;

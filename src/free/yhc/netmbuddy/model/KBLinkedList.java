@@ -23,6 +23,8 @@ package free.yhc.netmbuddy.model;
 import java.util.Iterator;
 import java.util.LinkedList;
 
+import free.yhc.netmbuddy.utils.Utils;
+
 public class KBLinkedList<T> {
     private LinkedList<Elem> mL = new LinkedList<Elem>();
 

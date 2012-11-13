@@ -19,7 +19,7 @@
  *****************************************************************************/
 
 package free.yhc.netmbuddy;
-import static free.yhc.netmbuddy.model.Utils.eAssert;
+import static free.yhc.netmbuddy.utils.Utils.eAssert;
 
 import java.text.DateFormat;
 import java.util.Date;
@@ -31,11 +31,11 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import free.yhc.netmbuddy.model.DB;
 import free.yhc.netmbuddy.model.Policy;
-import free.yhc.netmbuddy.model.Utils;
 import free.yhc.netmbuddy.model.YTFeed;
 import free.yhc.netmbuddy.model.YTPlayer;
 import free.yhc.netmbuddy.model.YTSearchHelper;
 import free.yhc.netmbuddy.model.YTVideoFeed;
+import free.yhc.netmbuddy.utils.Utils;
 
 
 public class YTVideoSearchAdapter extends YTSearchAdapter {

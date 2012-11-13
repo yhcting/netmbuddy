@@ -20,7 +20,7 @@
 
 package free.yhc.netmbuddy;
 
-import static free.yhc.netmbuddy.model.Utils.eAssert;
+import static free.yhc.netmbuddy.utils.Utils.eAssert;
 import free.yhc.netmbuddy.model.DB;
 import free.yhc.netmbuddy.model.YTHacker;
 import free.yhc.netmbuddy.model.YTSearchHelper;

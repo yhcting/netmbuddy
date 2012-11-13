@@ -20,13 +20,15 @@
 
 package free.yhc.netmbuddy.model;
 
-import static free.yhc.netmbuddy.model.Utils.eAssert;
-import static free.yhc.netmbuddy.model.Utils.logI;
+import static free.yhc.netmbuddy.utils.Utils.eAssert;
+import static free.yhc.netmbuddy.utils.Utils.logI;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+
+import free.yhc.netmbuddy.utils.Utils;
 
 import android.net.Uri;
 import android.os.Handler;

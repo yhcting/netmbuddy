@@ -20,8 +20,8 @@
 
 package free.yhc.netmbuddy.model;
 
-import static free.yhc.netmbuddy.model.Utils.eAssert;
-import static free.yhc.netmbuddy.model.Utils.logW;
+import static free.yhc.netmbuddy.utils.Utils.eAssert;
+import static free.yhc.netmbuddy.utils.Utils.logW;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -31,6 +31,8 @@ import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import free.yhc.netmbuddy.utils.Utils;
 
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -371,6 +373,21 @@ public class YTHacker {
             if (null != mListener)
                 mListener.onPostHack(this, result, mLoader, mYtvid, mUser);
         }
+    }
+
+    /**
+     * NOTE
+     * This is based on experimental result.
+     * There is no official API regarding getting thumbnail via Youtube video id.
+     * So, it is NOT 100% guaranteed that correct url is returned.
+     * But, I'm strongly sure that return value is valid and correct based on my experience.
+     * That's the reason why this function is member of 'YTHacker'(Not YTSearchHeler).
+     * @param videoId
+     * @return
+     */
+    public static String
+    getYtVideoThumbnailUrl(String videoId) {
+        return "http://i.ytimg.com/vi/" + videoId + "/default.jpg";
     }
 
     public static String

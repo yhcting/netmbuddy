@@ -20,7 +20,7 @@
 
 package free.yhc.netmbuddy;
 
-import static free.yhc.netmbuddy.model.Utils.eAssert;
+import static free.yhc.netmbuddy.utils.Utils.eAssert;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -32,8 +32,8 @@ import android.widget.ImageView;
 import android.widget.ResourceCursorAdapter;
 import android.widget.TextView;
 import free.yhc.netmbuddy.model.DB;
-import free.yhc.netmbuddy.model.UiUtils;
-import free.yhc.netmbuddy.model.Utils;
+import free.yhc.netmbuddy.utils.UiUtils;
+import free.yhc.netmbuddy.utils.Utils;
 
 public class MusicsAdapter extends ResourceCursorAdapter {
     private static final int LAYOUT = R.layout.musics_row;
@@ -205,7 +205,7 @@ public class MusicsAdapter extends ResourceCursorAdapter {
             }
 
             @Override
-            public Err doBackgroundWork(DiagAsyncTask task, Object... objs) {
+            public Err doBackgroundWork(DiagAsyncTask task) {
                 newCursor = createCursor();
                 // NOTE
                 // First-call of'getCount()', can make 'Cursor' cache lots of internal information.
@@ -221,7 +221,7 @@ public class MusicsAdapter extends ResourceCursorAdapter {
         new DiagAsyncTask(mContext, worker,
                           DiagAsyncTask.Style.SPIN,
                           R.string.loading, false)
-        .execute();
+            .run();
     }
 
     @Override

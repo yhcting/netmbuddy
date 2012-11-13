@@ -20,7 +20,7 @@
 
 package free.yhc.netmbuddy.model;
 
-import static free.yhc.netmbuddy.model.Utils.logI;
+import static free.yhc.netmbuddy.utils.Utils.logI;
 
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;

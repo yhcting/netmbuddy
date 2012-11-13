@@ -23,14 +23,13 @@ package free.yhc.netmbuddy;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.os.AsyncTask;
+import free.yhc.netmbuddy.model.BGTask;
+import free.yhc.netmbuddy.utils.Utils;
 
-public class DiagAsyncTask extends AsyncTask<Object, Integer, Err> implements
+public class DiagAsyncTask extends BGTask<Err> implements
 DialogInterface.OnDismissListener,
-DialogInterface.OnCancelListener,
 DialogInterface.OnClickListener
 {
-    private String          mName           = ""; // for debugging
     private Context         mContext        = null;
     private ProgressDialog  mDialog         = null;
     private int             mMsgid          = -1;
@@ -42,7 +41,7 @@ DialogInterface.OnClickListener
 
     public static abstract class Worker {
         public abstract Err
-        doBackgroundWork(DiagAsyncTask task, Object... objs);
+        doBackgroundWork(DiagAsyncTask task);
 
         public void
         onPostExecute(DiagAsyncTask task, Err result) { }
@@ -100,33 +99,34 @@ DialogInterface.OnClickListener
         this(context, listener, style, msgid, true, true);
     }
 
-    /**
-     * Set name of this AsyncTask.
-     * This is usually for debugging purpose.
-     * @param newName
-     */
     public void
-    setName(String newName) {
-        mName = newName;
+    updateMessage(final String message) {
+        Utils.getUiHandler().post(new Runnable() {
+            @Override
+            public void
+            run() {
+                mDialog.setMessage(message);
+            }
+        });
     }
 
+    @Override
+    protected Err
+    doAsyncTask() {
+        //logI("* Start background Job : SpinSyncTask\n");
+        Err ret = Err.NO_ERR;
+        if (null != mWorker)
+            ret = mWorker.doBackgroundWork(this);
+        return ret;
+    }
+
+    @Override
     public void
-    publishProgress(int percent) {
+    onProgress(int percent) {
         if (null == mDialog)
             return;
 
         mDialog.setProgress(percent);
-    }
-
-    // return :
-    @Override
-    protected Err
-    doInBackground(Object... objs) {
-        //logI("* Start background Job : SpinSyncTask\n");
-        Err ret = Err.NO_ERR;
-        if (null != mWorker)
-            ret = mWorker.doBackgroundWork(this, objs);
-        return ret;
     }
 
     @Override
@@ -139,28 +139,19 @@ DialogInterface.OnClickListener
 
     @Override
     public void
-    onCancel(DialogInterface dialogI) {
-        if (!mCancelable)
-            return;
-
-        mUserCancelled = true;
-        if (null != mWorker)
-            mWorker.onCancel(this);
-        cancel(mInterruptOnCancel);
-    }
-
-    @Override
-    public void
     onClick(DialogInterface dialogI, int which) {
         if (!mCancelable)
             return;
+        mUserCancelled = true;
         mDialog.setMessage(mContext.getResources().getText(R.string.msg_wait_cancel));
-        mDialog.cancel();
+        if (null != mWorker)
+            mWorker.onCancel(this);
+        super.cancel(mInterruptOnCancel);
     }
 
     @Override
     protected void
-    onPostExecute(Err result) {
+    onPostRun(Err result) {
         //logI("* postExecuted : SpinSyncTask\n");
         mDialog.dismiss();
 
@@ -180,17 +171,16 @@ DialogInterface.OnClickListener
 
     @Override
     protected void
-    onPreExecute() {
+    onPreRun() {
         mDialog = new ProgressDialog(mContext);
         mDialog.setMessage(mContext.getResources().getText(mMsgid));
         mDialog.setProgressStyle(mStyle.getStyle());
         mDialog.setMax(100); // percent
         mDialog.setCanceledOnTouchOutside(false);
 
-        if (mCancelable) {
+        if (mCancelable)
             mDialog.setButton(mContext.getResources().getText(R.string.cancel), this);
-            mDialog.setOnCancelListener(this);
-        } else
+        else
             mDialog.setCancelable(false);
 
         mDialog.setOnDismissListener(this);

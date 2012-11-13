@@ -20,15 +20,15 @@
 
 package free.yhc.netmbuddy.model;
 
-import static free.yhc.netmbuddy.model.Utils.eAssert;
+import static free.yhc.netmbuddy.utils.Utils.eAssert;
 
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import android.os.AsyncTask;
 import android.os.Handler;
+import free.yhc.netmbuddy.utils.Utils;
 
 // [ Naming Convention ]
 // Runnable => Job
@@ -157,12 +157,16 @@ public class MultiThreadRunner {
         onProgress(int prog) { }
     }
 
-    private static class Task<R> extends AsyncTask<Void, Integer, R> {
+    private static class Task<R> extends BGTask<R> {
         private final MultiThreadRunner _mMtrunner;
         private final Job<R>    _mJob;
         private final boolean   _mUiOwned; // pre-calculated value.
 
-        private String          _mName  = "MultiThreadRunner.Task"; // For debugging
+        // NOTE
+        // To workaround Android GB Framework bug regarding AsyncTask.
+        // On GB Framework, it is NOT guaranteed that onCancelled() is called after returning from doInBackground().
+        // This is based on experimental result on Moto Bionic.
+        private final boolean   _mJobDone = false;
 
         private boolean
         isOwnerThread() {
@@ -174,16 +178,6 @@ public class MultiThreadRunner {
             _mMtrunner = mtrunner;
             _mJob = job;
             _mUiOwned = Utils.isUiThread(_mMtrunner.getOwner().getLooper().getThread());
-        }
-
-        void
-        setName(String name) {
-            _mName = name;
-        }
-
-        String
-        getName() {
-            return _mName;
         }
 
         Job<R>
@@ -200,7 +194,7 @@ public class MultiThreadRunner {
 
         @Override
         protected void
-        onPreExecute() {
+        onPreRun() {
             if (_mUiOwned)
                 _mJob.onCancelled();
             else
@@ -232,7 +226,7 @@ public class MultiThreadRunner {
 
         @Override
         protected void
-        onPostExecute(final R r) {
+        onPostRun(final R r) {
             if (_mUiOwned) {
                 _mJob.onPostRun(r);
                 _mMtrunner.onTaskDone(this, false);
@@ -249,8 +243,9 @@ public class MultiThreadRunner {
 
         @Override
         protected R
-        doInBackground(Void... p) {
-            return _mJob.doJob();
+        doAsyncTask() {
+            R r = _mJob.doJob();
+            return r;
         }
     }
 
@@ -300,9 +295,8 @@ public class MultiThreadRunner {
         // Is there any to instantiate generic 'task' whose generic type is
         //   same with generic type of 'job' instead of raw-type?
         Task<?> t = new Task(this, job);
-        t.setName("MultiThreadRunner-Task-" + mSeqN++);
         mRunQ.addLast(t);
-        t.execute();
+        t.run();
     }
 
     private void

@@ -16,9 +16,9 @@
 // THIS IS JUST FOR FUTURE USE.
 
 package free.yhc.netmbuddy.model;
-import static free.yhc.netmbuddy.model.Utils.logD;
-import static free.yhc.netmbuddy.model.Utils.logE;
-import static free.yhc.netmbuddy.model.Utils.logI;
+import static free.yhc.netmbuddy.utils.Utils.logD;
+import static free.yhc.netmbuddy.utils.Utils.logE;
+import static free.yhc.netmbuddy.utils.Utils.logI;
 
 import java.io.BufferedReader;
 import java.io.IOException;

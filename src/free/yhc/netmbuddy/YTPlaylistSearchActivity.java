@@ -20,7 +20,7 @@
 
 package free.yhc.netmbuddy;
 
-import static free.yhc.netmbuddy.model.Utils.eAssert;
+import static free.yhc.netmbuddy.utils.Utils.eAssert;
 
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -41,18 +41,19 @@ import free.yhc.netmbuddy.model.DB;
 import free.yhc.netmbuddy.model.MultiThreadRunner;
 import free.yhc.netmbuddy.model.MultiThreadRunner.Job;
 import free.yhc.netmbuddy.model.Policy;
-import free.yhc.netmbuddy.model.UiUtils;
-import free.yhc.netmbuddy.model.Utils;
 import free.yhc.netmbuddy.model.YTFeed;
 import free.yhc.netmbuddy.model.YTPlaylistFeed;
 import free.yhc.netmbuddy.model.YTSearchHelper;
 import free.yhc.netmbuddy.model.YTVideoFeed;
+import free.yhc.netmbuddy.utils.ImageUtils;
+import free.yhc.netmbuddy.utils.UiUtils;
+import free.yhc.netmbuddy.utils.Utils;
 
 public class YTPlaylistSearchActivity extends YTSearchActivity {
 
     private static class MergeToPlaylistResult {
-        volatile int    nrIgnored   = 0;
-        volatile int    nrDone      = 0;
+        AtomicInteger nrIgnored = new AtomicInteger(0);
+        AtomicInteger nrDone    = new AtomicInteger(0);
     }
 
     private interface ProgressListener {
@@ -107,7 +108,7 @@ public class YTPlaylistSearchActivity extends YTSearchActivity {
                                                     e.media.description,
                                                     e.media.videoId,
                                                     playtm,
-                                                    Utils.compressBitmap(tr.bm),
+                                                    ImageUtils.compressBitmap(tr.bm),
                                                     Policy.DEFAULT_VIDEO_VOLUME);
         if (null != tr.bm)
             tr.bm.recycle();
@@ -119,7 +120,7 @@ public class YTPlaylistSearchActivity extends YTSearchActivity {
     }
 
     private Err
-    doBackgroundMergeToPlaylist(MergeToPlaylistResult mtpr,
+    doBackgroundMergeToPlaylist(final MergeToPlaylistResult mtpr,
                                 MultiThreadRunner mtrunner,
                                 final long plid,
                                 final String ytplid,
@@ -194,31 +195,23 @@ public class YTPlaylistSearchActivity extends YTSearchActivity {
         mtrunner.setOnProgressListener(progListener);
 
         Err err = Err.NO_ERR;
-        final AtomicInteger nrDone = new AtomicInteger(0);
-        final AtomicInteger nrIgnored = new AtomicInteger(0);
-
-        try {
-            while (itr.hasNext()) {
-                final YTVideoFeed.Entry e = itr.next();
-                mtrunner.appendJob(new Job<Integer>((float)pvPortion/ (float)100 / plvl.size()) {
-                    @Override
-                    public Integer
-                    doJob() {
-                        if (insertVideoToPlaylist(plid, e))
-                            nrDone.incrementAndGet();
-                        else
-                            nrIgnored.incrementAndGet();
-                        return 0;
-                    }
-                });
-            }
-
-            mtrunner.waitAllDone();
-            progl.onProgress(100);
-        } finally {
-            mtpr.nrDone = nrDone.get();
-            mtpr.nrIgnored = nrIgnored.get();
+        while (itr.hasNext()) {
+            final YTVideoFeed.Entry e = itr.next();
+            mtrunner.appendJob(new Job<Integer>((float)pvPortion/ (float)100 / plvl.size()) {
+                @Override
+                public Integer
+                doJob() {
+                    if (insertVideoToPlaylist(plid, e))
+                        mtpr.nrDone.incrementAndGet();
+                    else
+                        mtpr.nrIgnored.incrementAndGet();
+                    return 0;
+                }
+            });
         }
+
+        mtrunner.waitAllDone();
+        progl.onProgress(100);
         return err;
     }
 
@@ -233,8 +226,8 @@ public class YTPlaylistSearchActivity extends YTSearchActivity {
             private CharSequence
             getReportText() {
                 Resources res = Utils.getAppContext().getResources();
-                return res.getText(R.string.done) + " : " + mtpr.nrDone + ", "
-                           + res.getText(R.string.error) + " : " + mtpr.nrIgnored;
+                return res.getText(R.string.done) + " : " + mtpr.nrDone.get() + ", "
+                           + res.getText(R.string.error) + " : " + mtpr.nrIgnored.get();
             }
 
             @Override
@@ -260,7 +253,7 @@ public class YTPlaylistSearchActivity extends YTSearchActivity {
 
             @Override
             public Err
-            doBackgroundWork(final DiagAsyncTask task, Object... objs) {
+            doBackgroundWork(final DiagAsyncTask task) {
                 ProgressListener prog = new ProgressListener() {
                     private int _mLastPercent = -1;
                     @Override
@@ -292,7 +285,7 @@ public class YTPlaylistSearchActivity extends YTSearchActivity {
                           R.string.merging_playlist,
                           true,
                           false)
-            .execute();
+            .run();
     }
 
     private void

@@ -18,11 +18,8 @@
  *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *****************************************************************************/
 
-package free.yhc.netmbuddy.model;
+package free.yhc.netmbuddy.utils;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -33,14 +30,10 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.text.DateFormat;
 import java.util.Date;
-import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 import org.apache.http.impl.cookie.DateParseException;
 import org.apache.http.impl.cookie.DateUtils;
@@ -50,8 +43,6 @@ import android.app.ActivityManager;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Rect;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -60,6 +51,8 @@ import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.Window;
 import free.yhc.netmbuddy.R;
+import free.yhc.netmbuddy.model.Policy;
+import free.yhc.netmbuddy.model.RTState;
 
 public class Utils {
     private static final boolean DBG    = false;
@@ -137,12 +130,12 @@ public class Utils {
 
         // Clear/Create cache directory!
         File cacheF = new File(Policy.APPDATA_CACHEDIR);
-        removeFileRecursive(cacheF, cacheF);
+        FileUtils.removeFileRecursive(cacheF, cacheF);
         cacheF.mkdirs();
 
         // Clear/Make temp directory!
         File tempF = new File(Policy.APPDATA_TMPDIR);
-        removeFileRecursive(tempF, tempF);
+        FileUtils.removeFileRecursive(tempF, tempF);
         tempF.mkdirs();
 
         if (LOGF) {
@@ -331,290 +324,6 @@ public class Utils {
             i[j] = I[j];
         return i;
     }
-    // ------------------------------------------------------------------------
-    //
-    // Image Handling
-    //
-    // ------------------------------------------------------------------------
-
-    /**
-     * Decode image from file path(String) or raw data (byte[]).
-     * @param image
-     *   Two types are supported.
-     *   String for file path / byte[] for raw image data.
-     * @param opt
-     * @return
-     */
-    private static Bitmap
-    decodeImageRaw(Object image, BitmapFactory.Options opt) {
-        if (image instanceof String) {
-            return BitmapFactory.decodeFile((String) image, opt);
-        } else if (image instanceof byte[]) {
-            byte[] data = (byte[]) image;
-            return BitmapFactory.decodeByteArray(data, 0, data.length, opt);
-        }
-        eAssert(false);
-        return null;
-    }
-
-
-    /**
-     * Get size(width, height) of given image.
-     * @param image
-     *   'image file path' or 'byte[]' image data
-     * @param out
-     *   out[0] : width of image / out[1] : height of image
-     * @return
-     *   false if image cannot be decode. true if success
-     */
-    public static boolean
-    imageSize(Object image, int[] out) {
-        eAssert(null != image);
-        BitmapFactory.Options opt = new BitmapFactory.Options();
-        opt.inJustDecodeBounds = true;
-        decodeImageRaw(image, opt);
-        if (opt.outWidth <= 0 || opt.outHeight <= 0 || null == opt.outMimeType) {
-            return false;
-        }
-        out[0] = opt.outWidth;
-        out[1] = opt.outHeight;
-        return true;
-    }
-
-    /**
-     * Calculate rectangle(out[]). This is got by shrinking rectangle(width,height) to
-     *   bound rectangle(boundW, boundH) with fixed ratio.
-     * If input rectangle is included in bound, then input rectangle itself will be
-     *   returned. (we don't need to adjust)
-     * @param boundW
-     *   width of bound rect
-     * @param boundH
-     *   height of bound rect
-     * @param width
-     *   width of rect to be shrunk
-     * @param height
-     *   height of rect to be shrunk
-     * @param out
-     *   calculated value [ out[0](width) out[1](height) ]
-     * @return
-     *   false(not shrunk) / true(shrunk)
-     */
-    public static boolean
-    shrinkFixedRatio(int boundW, int boundH, int width, int height, int[] out) {
-        boolean ret;
-        // Check size of picture..
-        float rw = (float) boundW / (float) width; // width ratio
-        float rh = (float) boundH / (float) height; // height ratio
-
-        // check whether shrinking is needed or not.
-        if (rw >= 1.0f && rh >= 1.0f) {
-            // we don't need to shrink
-            out[0] = width;
-            out[1] = height;
-            ret = false;
-        } else {
-            // shrinking is essential.
-            float ratio = (rw > rh) ? rh : rw; // choose minimum
-            // integer-type-casting(rounding down) guarantees that value cannot
-            // be greater than bound!!
-            out[0] = (int) (ratio * width);
-            out[1] = (int) (ratio * height);
-            ret = true;
-        }
-        return ret;
-    }
-
-    /**
-     * Calculate rectangle(out[]). This is got by fitting  rectangle(width,height) to
-     *   bound rectangle(boundW, boundH) with fixed ratio - preserving width-height-ratio.
-     * If input rectangle is included in bound, then input rectangle itself will be
-     *   returned. (we don't need to adjust)
-     * @param boundW
-     *   width of bound rect
-     * @param boundH
-     *   height of bound rect
-     * @param width
-     *   width of rect to be shrunk
-     * @param height
-     *   height of rect to be shrunk
-     * @param out
-     *   calculated value [ out[0](width) out[1](height) ]
-     * @return
-     *   false(not shrunk) / true(shrunk)
-     */
-    public static void
-    fitFixedRatio(int boundW, int boundH, int width, int height, int[] out) {
-        // Check size of picture..
-        float rw = (float) boundW / (float) width; // width ratio
-        float rh = (float) boundH / (float) height; // height ratio
-
-        float ratio = (rw > rh) ? rh : rw; // choose minimum
-        // integer-type-casting(rounding down) guarantees that value cannot
-        // be greater than bound!!
-        out[0] = (int) (ratio * width);
-        out[1] = (int) (ratio * height);
-    }
-
-    /**
-     * Make fixed-ration-bounded-bitmap with file.
-     * If (0 >= boundW || 0 >= boundH), original-size-bitmap is trying to be created.
-     * @param image
-     *   image file path (absolute path) or raw data (byte[])
-     * @param boundW
-     *   bound width
-     * @param boundH
-     *   bound height
-     * @return
-     *   null if fails
-     */
-    public static Bitmap
-    decodeImage(Object image, int boundW, int boundH) {
-        eAssert(null != image);
-
-        BitmapFactory.Options opt = null;
-        if (0 < boundW && 0 < boundH) {
-            int[] imgsz = new int[2]; // image size : [0]=width / [1] = height
-            if (false == imageSize(image, imgsz)) {
-                // This is not proper image data
-                return null;
-            }
-
-            int[] bsz = new int[2]; // adjusted bitmap size
-            boolean bShrink = shrinkFixedRatio(boundW, boundH, imgsz[0], imgsz[1], bsz);
-
-            opt = new BitmapFactory.Options();
-            opt.inDither = false;
-            if (bShrink) {
-                // To save memory we need to control sampling rate. (based on
-                // width!)
-                // for performance reason, we use power of 2.
-                if (0 >= bsz[0])
-                    return null;
-
-                int sampleSize = 1;
-                while (1 < imgsz[0] / (bsz[0] * sampleSize))
-                    sampleSize *= 2;
-
-                // shrinking based on width ratio!!
-                // NOTE : width-based-shrinking may make 1-pixel error in height
-                // side!
-                // (This is not Math!! And we are using integer!!! we cannot
-                // make it exactly!!!)
-                opt.inScaled = true;
-                opt.inSampleSize = sampleSize;
-                opt.inDensity = imgsz[0] / sampleSize;
-                opt.inTargetDensity = bsz[0];
-            }
-        }
-        return decodeImageRaw(image, opt);
-    }
-
-    /**
-     * Compress give bitmap to JPEG formatted image data.
-     * @param bm
-     * @return
-     */
-    public static byte[]
-    compressBitmap(Bitmap bm) {
-        long time = System.currentTimeMillis();
-        ByteArrayOutputStream baos = new ByteArrayOutputStream(1024);
-        bm.compress(Bitmap.CompressFormat.JPEG, 100, baos);
-        logI("TIME: Compress Image : " + (System.currentTimeMillis() - time));
-        return baos.toByteArray();
-    }
-
-
-
-    // ------------------------------------------------------------------------
-    //
-    // Files
-    //
-    // ------------------------------------------------------------------------
-
-    public static boolean unzip(String file, String outDir) {
-        final int BUFSZ = 1024;
-        try {
-            File fSrc = new File(file);
-            ZipFile zipFile = new ZipFile(fSrc);
-            Enumeration<?> e = zipFile.entries();
-
-            while (e.hasMoreElements()) {
-                ZipEntry entry = (ZipEntry)e.nextElement();
-                File destinationFilePath = new File(outDir, entry.getName());
-                //create directories if required.
-                destinationFilePath.getParentFile().mkdirs();
-
-                //if the entry is directory, leave it. Otherwise extract it.
-                if (entry.isDirectory())
-                    continue;
-                else {
-                    BufferedInputStream bis = new BufferedInputStream(zipFile.getInputStream(entry));
-                    int b;
-                    byte buffer[] = new byte[BUFSZ];
-                    FileOutputStream fos = new FileOutputStream(destinationFilePath);
-                    BufferedOutputStream bos = new BufferedOutputStream(fos, BUFSZ);
-                    while ((b = bis.read(buffer, 0, 1024)) != -1)
-                        bos.write(buffer, 0, b);
-
-                    bos.flush();
-                    bos.close();
-                    bis.close();
-                }
-            }
-        } catch(IOException e) {
-            return false;
-        }
-        return true;
-    }
-
-    public static boolean
-    copyAssetFile(String dest, String assetFile) {
-        try {
-            InputStream is = Utils.getAppContext().getAssets().open(assetFile);
-            FileOutputStream os = new FileOutputStream(new File(dest));
-            copy(os, is);
-            is.close();
-            os.close();
-            return true;
-        } catch (InterruptedException e) {
-            return false;
-        } catch (IOException e) {
-            return false;
-        }
-    }
-
-    public static boolean
-    removeFileRecursive(File f, HashSet<String> skips) {
-        boolean ret = true;
-        if (f.isDirectory()) {
-            for (File c : f.listFiles())
-                if (!removeFileRecursive(c, skips))
-                    ret = false;
-        }
-
-        if (ret && !skips.contains(f.getAbsolutePath()))
-            return f.delete();
-        return ret;
-    }
-
-    public static boolean
-    removeFileRecursive(File f, File[] skips) {
-        HashSet<String> skipSets = new HashSet<String>();
-        for (File skf : skips)
-            skipSets.add(skf.getAbsolutePath());
-
-        return removeFileRecursive(f, skipSets);
-    }
-
-    public static boolean
-    removeFileRecursive(File f, File skip) {
-        return removeFileRecursive(f, new File[] { skip });
-    }
-
-    public static boolean
-    removeFileRecursive(File f) {
-        return removeFileRecursive(f, new File[0]);
-    }
 
     // ------------------------------------------------------------------------
     //
@@ -656,12 +365,6 @@ public class Utils {
     newArray(Class<T> k, int size) {
         return (T[])java.lang.reflect.Array.newInstance(k, size);
     }
-    // ------------------------------------------------------------------------
-    //
-    // Strings
-    //
-    // ------------------------------------------------------------------------
-
 
     // ------------------------------------------------------------------------
     //
@@ -814,6 +517,22 @@ public class Utils {
     // Other android specifics.
     //
     // ------------------------------------------------------------------------
+    public static boolean
+    copyAssetFile(String dest, String assetFile) {
+        try {
+            InputStream is = Utils.getAppContext().getAssets().open(assetFile);
+            FileOutputStream os = new FileOutputStream(new File(dest));
+            copy(os, is);
+            is.close();
+            os.close();
+            return true;
+        } catch (InterruptedException e) {
+            return false;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
     /**
      * Only available when status bar is showing.
      * @param activity

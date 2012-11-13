@@ -25,8 +25,8 @@ import android.content.res.Configuration;
 import free.yhc.netmbuddy.model.DB;
 import free.yhc.netmbuddy.model.NotiManager;
 import free.yhc.netmbuddy.model.RTState;
-import free.yhc.netmbuddy.model.Utils;
 import free.yhc.netmbuddy.model.YTPlayer;
+import free.yhc.netmbuddy.utils.Utils;
 
 public class YTMPApp extends Application {
     @Override

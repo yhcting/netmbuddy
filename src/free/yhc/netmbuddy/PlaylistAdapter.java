@@ -20,7 +20,7 @@
 
 package free.yhc.netmbuddy;
 
-import static free.yhc.netmbuddy.model.Utils.eAssert;
+import static free.yhc.netmbuddy.utils.Utils.eAssert;
 import android.content.Context;
 import android.database.Cursor;
 import android.view.View;
@@ -28,7 +28,7 @@ import android.widget.ImageView;
 import android.widget.ResourceCursorAdapter;
 import android.widget.TextView;
 import free.yhc.netmbuddy.model.DB;
-import free.yhc.netmbuddy.model.UiUtils;
+import free.yhc.netmbuddy.utils.UiUtils;
 
 public class PlaylistAdapter extends ResourceCursorAdapter {
     private static final int LAYOUT = R.layout.playlist_row;
@@ -88,14 +88,15 @@ public class PlaylistAdapter extends ResourceCursorAdapter {
 
             @Override
             public Err
-            doBackgroundWork(DiagAsyncTask task, Object... objs) {
+            doBackgroundWork(DiagAsyncTask task) {
                 newCursor = createCursor();
                 return Err.NO_ERR;
             }
         };
         new DiagAsyncTask(mContext, worker,
                           DiagAsyncTask.Style.SPIN,
-                          R.string.loading, false).execute();
+                          R.string.loading, false)
+            .run();
     }
 
     public String

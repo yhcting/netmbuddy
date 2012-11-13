@@ -18,9 +18,9 @@
  *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *****************************************************************************/
 
-package free.yhc.netmbuddy.model;
+package free.yhc.netmbuddy.utils;
 
-import static free.yhc.netmbuddy.model.Utils.eAssert;
+import static free.yhc.netmbuddy.utils.Utils.eAssert;
 
 import java.util.LinkedList;
 
@@ -46,6 +46,9 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
 import free.yhc.netmbuddy.R;
+import free.yhc.netmbuddy.model.DB;
+import free.yhc.netmbuddy.model.YTHacker;
+import free.yhc.netmbuddy.model.DB.ColPlaylist;
 
 public class UiUtils {
     public interface EditTextAction {

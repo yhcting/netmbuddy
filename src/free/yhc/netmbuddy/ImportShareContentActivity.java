@@ -1,6 +1,5 @@
 package free.yhc.netmbuddy;
 
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 
 import android.content.res.Configuration;
@@ -8,7 +7,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import free.yhc.netmbuddy.utils.UiUtils;
 
-public class ImportShareFileActivity extends ImportShareActivity {
+public class ImportShareContentActivity extends ImportShareActivity {
     @Override
     public void
     onCreate(Bundle savedInstanceState) {
@@ -17,7 +16,7 @@ public class ImportShareFileActivity extends ImportShareActivity {
         try {
             // ImportShareActivity has responsibility regarding closing input stream.
             onCreateInternal(savedInstanceState,
-                             new FileInputStream(uri.getPath()));
+                             getContentResolver().openInputStream(uri));
         } catch (FileNotFoundException e) {
             UiUtils.showTextToast(this, R.string.msg_fail_to_access_data);
             finish();

@@ -20,7 +20,7 @@
 
 package free.yhc.netmbuddy;
 
-import static free.yhc.netmbuddy.model.Utils.eAssert;
+import static free.yhc.netmbuddy.utils.Utils.eAssert;
 
 import java.text.DateFormat;
 import java.util.Date;
@@ -43,9 +43,9 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import free.yhc.netmbuddy.model.DB;
-import free.yhc.netmbuddy.model.UiUtils;
-import free.yhc.netmbuddy.model.Utils;
 import free.yhc.netmbuddy.model.YTPlayer;
+import free.yhc.netmbuddy.utils.UiUtils;
+import free.yhc.netmbuddy.utils.Utils;
 
 public class MusicsActivity extends Activity {
     public static final String MAP_KEY_PLAYLIST_ID  = "playlistid";
@@ -124,7 +124,7 @@ public class MusicsActivity extends Activity {
 
             @Override
             public Err
-            doBackgroundWork(DiagAsyncTask task, Object... objs) {
+            doBackgroundWork(DiagAsyncTask task) {
                 mDb.beginTransaction();
                 try {
                     for (long mid : mids) {
@@ -159,7 +159,7 @@ public class MusicsActivity extends Activity {
                           DiagAsyncTask.Style.SPIN,
                           move? R.string.moving: R.string.adding,
                           false)
-            .execute();
+            .run();
     }
 
     private void
@@ -204,7 +204,7 @@ public class MusicsActivity extends Activity {
 
             @Override
             public Err
-            doBackgroundWork(DiagAsyncTask task, Object... objs) {
+            doBackgroundWork(DiagAsyncTask task) {
                 mDb.beginTransaction();
                 try {
                     for (long mid : mids) {
@@ -225,7 +225,7 @@ public class MusicsActivity extends Activity {
                           DiagAsyncTask.Style.SPIN,
                           R.string.deleting,
                           false)
-            .execute();
+            .run();
     }
 
     private void
@@ -465,7 +465,7 @@ public class MusicsActivity extends Activity {
 
             @Override
             public Err
-            doBackgroundWork(DiagAsyncTask task, Object... objs) {
+            doBackgroundWork(DiagAsyncTask task) {
                 DateFormat df = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM);
                 vdi.timeAdded = df.format(new Date((Long)mDb.getVideoInfo(ytvid, DB.ColVideo.TIME_ADD)));
                 vdi.timeLastPlayed = df.format(new Date((Long)mDb.getVideoInfo(ytvid, DB.ColVideo.TIME_PLAYED)));
@@ -482,7 +482,7 @@ public class MusicsActivity extends Activity {
                           DiagAsyncTask.Style.SPIN,
                           R.string.loading,
                           false)
-            .execute();
+            .run();
     }
 
     // ========================================================================

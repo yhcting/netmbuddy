@@ -17,10 +17,11 @@ import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
 import android.widget.TextView;
-import free.yhc.netmbuddy.model.UiUtils;
-import free.yhc.netmbuddy.model.Utils;
 import free.yhc.netmbuddy.model.YTPlayer;
 import free.yhc.netmbuddy.model.YTPlayer.StopState;
+import free.yhc.netmbuddy.utils.ImageUtils;
+import free.yhc.netmbuddy.utils.UiUtils;
+import free.yhc.netmbuddy.utils.Utils;
 
 public class VideoPlayerActivity extends Activity implements
 YTPlayer.PlayerStateListener,
@@ -82,7 +83,7 @@ YTPlayer.VideosStateListener {
 
         // Now, sw is always length of longer axis.
         int[] sz = new int[2];
-        Utils.fitFixedRatio(sw, sh, vw, vh, sz);
+        ImageUtils.fitFixedRatio(sw, sh, vw, vh, sz);
         holder.setFixedSize(sz[0], sz[1]);
 
         ViewGroup.LayoutParams lp = mSurfv.getLayoutParams();

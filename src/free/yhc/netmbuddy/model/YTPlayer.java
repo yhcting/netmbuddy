@@ -20,10 +20,10 @@
 
 package free.yhc.netmbuddy.model;
 
-import static free.yhc.netmbuddy.model.Utils.eAssert;
-import static free.yhc.netmbuddy.model.Utils.logD;
-import static free.yhc.netmbuddy.model.Utils.logI;
-import static free.yhc.netmbuddy.model.Utils.logW;
+import static free.yhc.netmbuddy.utils.Utils.eAssert;
+import static free.yhc.netmbuddy.utils.Utils.logD;
+import static free.yhc.netmbuddy.utils.Utils.logI;
+import static free.yhc.netmbuddy.utils.Utils.logW;
 
 import java.io.File;
 import java.io.IOException;
@@ -56,6 +56,8 @@ import free.yhc.netmbuddy.R;
 import free.yhc.netmbuddy.VideoPlayerActivity;
 import free.yhc.netmbuddy.model.YTDownloader.DnArg;
 import free.yhc.netmbuddy.model.YTDownloader.DownloadDoneReceiver;
+import free.yhc.netmbuddy.utils.FileUtils;
+import free.yhc.netmbuddy.utils.Utils;
 
 public class YTPlayer implements
 MediaPlayer.OnBufferingUpdateListener,
@@ -1172,7 +1174,7 @@ SurfaceHolder.Callback {
                     skipSet.add(new File(getCachedVideoFilePath(nextVid.videoId, pq)).getAbsolutePath());
             }
         }
-        Utils.removeFileRecursive(sCacheDir, skipSet);
+        FileUtils.removeFileRecursive(sCacheDir, skipSet);
     }
 
     private void

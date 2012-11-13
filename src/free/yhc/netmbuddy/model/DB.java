@@ -20,7 +20,7 @@
 
 package free.yhc.netmbuddy.model;
 
-import static free.yhc.netmbuddy.model.Utils.eAssert;
+import static free.yhc.netmbuddy.utils.Utils.eAssert;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -31,6 +31,8 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+
+import free.yhc.netmbuddy.utils.Utils;
 
 import android.content.ContentValues;
 import android.database.Cursor;

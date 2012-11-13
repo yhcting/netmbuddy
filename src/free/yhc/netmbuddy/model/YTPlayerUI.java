@@ -1,6 +1,6 @@
 package free.yhc.netmbuddy.model;
 
-import static free.yhc.netmbuddy.model.Utils.eAssert;
+import static free.yhc.netmbuddy.utils.Utils.eAssert;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
@@ -16,6 +16,8 @@ import android.widget.SeekBar;
 import android.widget.SlidingDrawer;
 import android.widget.TextView;
 import free.yhc.netmbuddy.R;
+import free.yhc.netmbuddy.utils.UiUtils;
+import free.yhc.netmbuddy.utils.Utils;
 
 public class YTPlayerUI {
     private static final int    SEEKBAR_MAX         = 1000;
