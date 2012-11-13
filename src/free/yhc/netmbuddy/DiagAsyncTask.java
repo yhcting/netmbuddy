@@ -20,16 +20,17 @@
 
 package free.yhc.netmbuddy;
 
+import static free.yhc.netmbuddy.utils.Utils.eAssert;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.view.KeyEvent;
 import free.yhc.netmbuddy.model.BGTask;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class DiagAsyncTask extends BGTask<Err> implements
 DialogInterface.OnDismissListener,
-DialogInterface.OnClickListener
-{
+DialogInterface.OnClickListener {
     private Context         mContext        = null;
     private ProgressDialog  mDialog         = null;
     private int             mMsgid          = -1;
@@ -38,6 +39,7 @@ DialogInterface.OnClickListener
     private boolean         mUserCancelled  = false;
     private boolean         mCancelable     = true;
     private boolean         mInterruptOnCancel = true;
+    private DialogInterface.OnDismissListener mOnDismissListener = null;
 
     public static abstract class Worker {
         public abstract Err
@@ -69,12 +71,12 @@ DialogInterface.OnClickListener
         }
     }
 
-    DiagAsyncTask(Context context,
-            Worker listener,
-            Style style,
-            int msgid,
-            boolean cancelable,
-            boolean interruptOnCancel) {
+    public DiagAsyncTask(Context context,
+                         Worker listener,
+                         Style style,
+                         int msgid,
+                         boolean cancelable,
+                         boolean interruptOnCancel) {
         super();
         mContext= context;
         mWorker = listener;
@@ -84,23 +86,29 @@ DialogInterface.OnClickListener
         mInterruptOnCancel = interruptOnCancel;
     }
 
-    DiagAsyncTask(Context context,
-            Worker listener,
-            Style style,
-            int msgid,
-            boolean cancelable) {
+    public DiagAsyncTask(Context context,
+                         Worker listener,
+                         Style style,
+                         int msgid,
+                         boolean cancelable) {
         this(context, listener, style, msgid, cancelable, true);
     }
 
-    DiagAsyncTask(Context context,
-                  Worker listener,
-                  Style style,
-                  int msgid) {
-        this(context, listener, style, msgid, true, true);
+    public DiagAsyncTask(Context context,
+                         Worker listener,
+                         Style style,
+                         int msgid) {
+        this(context, listener, style, msgid, false, true);
     }
 
     public void
-    updateMessage(final String message) {
+    setOnDismissListener(DialogInterface.OnDismissListener listener) {
+        eAssert(Utils.isUiThread());
+        mOnDismissListener = listener;
+    }
+
+    public void
+    publishMessage(final String message) {
         Utils.getUiHandler().post(new Runnable() {
             @Override
             public void
@@ -132,41 +140,21 @@ DialogInterface.OnClickListener
     @Override
     public void
     onCancelled() {
-        mDialog.dismiss();
         if (null != mWorker)
             mWorker.onCancelled(this);
-    }
 
-    @Override
-    public void
-    onClick(DialogInterface dialogI, int which) {
-        if (!mCancelable)
-            return;
-        mUserCancelled = true;
-        mDialog.setMessage(mContext.getResources().getText(R.string.msg_wait_cancel));
-        if (null != mWorker)
-            mWorker.onCancel(this);
-        super.cancel(mInterruptOnCancel);
+        mDialog.dismiss();
     }
 
     @Override
     protected void
     onPostRun(Err result) {
-        //logI("* postExecuted : SpinSyncTask\n");
-        mDialog.dismiss();
-
         // In normal case, onPostExecute is not called in case of 'user-cancel'.
         // below code is for safety.
-        if (mUserCancelled)
-            return; // onPostExecute SHOULD NOT be called in case of user-cancel
-
-        if (null != mWorker)
+        if (!mUserCancelled && null != mWorker)
             mWorker.onPostExecute(this, result);
-    }
 
-    @Override
-    public void
-    onDismiss(DialogInterface dialog) {
+        mDialog.dismiss();
     }
 
     @Override
@@ -176,15 +164,45 @@ DialogInterface.OnClickListener
         mDialog.setMessage(mContext.getResources().getText(mMsgid));
         mDialog.setProgressStyle(mStyle.getStyle());
         mDialog.setMax(100); // percent
-        mDialog.setCanceledOnTouchOutside(false);
+        // To prevent dialog is dismissed unexpectedly by back-key
+        mDialog.setCancelable(false);
+
+        // To prevent dialog is dismissed unexpectedly by search-key (in Gingerbread)
+        mDialog.setOnKeyListener(new DialogInterface.OnKeyListener() {
+            @Override
+            public boolean
+            onKey(DialogInterface dialog, int keyCode, KeyEvent event) {
+                if (KeyEvent.KEYCODE_SEARCH == keyCode
+                    && 0 == event.getRepeatCount()) {
+                    return true;
+                }
+                return false;
+            }
+        });
 
         if (mCancelable)
             mDialog.setButton(mContext.getResources().getText(R.string.cancel), this);
-        else
-            mDialog.setCancelable(false);
 
         mDialog.setOnDismissListener(this);
         mDialog.show();
+    }
+
+    @Override
+    public void
+    onClick(DialogInterface dialogI, int which) {
+        eAssert(mCancelable);
+        mUserCancelled = true;
+        mDialog.setMessage(mContext.getResources().getText(R.string.msg_wait_cancel));
+        if (null != mWorker)
+            mWorker.onCancel(this);
+        super.cancel(mInterruptOnCancel);
+    }
+
+    @Override
+    public void
+    onDismiss(DialogInterface dialogI) {
+        if (null != mOnDismissListener)
+            mOnDismissListener.onDismiss(dialogI);
     }
 
     @Override
