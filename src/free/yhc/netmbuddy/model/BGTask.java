@@ -89,23 +89,31 @@ public abstract class BGTask<R> {
             return;
 
         mState.set(State.RUNNING);
-        final R r = doAsyncTask();
-        mState.set(State.DONE);
+        R r = null;
+        try {
+            r = doAsyncTask();
+        } finally {
+            mState.set(State.DONE);
 
-        if (mCancelled.get())
-            mOwner.post(new Runnable() {
-                @Override
-                public void run() {
-                    onCancelled();
-                }
-            });
-        else
-            mOwner.post(new Runnable() {
-                @Override
-                public void run() {
-                    onPostRun(r);
-                }
-            });
+            if (mCancelled.get())
+                mOwner.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        onCancelled();
+                        mState.set(State.TERMINATED);
+                    }
+                });
+            else {
+                final R result = r;
+                mOwner.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        onPostRun(result);
+                        mState.set(State.TERMINATED);
+                    }
+                });
+            }
+        }
     }
 
     // ========================================================================
@@ -164,6 +172,10 @@ public abstract class BGTask<R> {
         this(DEFAULT_THREAD_NAME, Utils.getUiHandler(), priority);
     }
 
+    public BGTask(Handler owner) {
+        this(DEFAULT_THREAD_NAME, owner, PRIORITY_MIDLOW);
+    }
+
     public BGTask() {
         this(DEFAULT_THREAD_NAME, Utils.getUiHandler(), PRIORITY_MIDLOW);
     }
@@ -175,8 +187,12 @@ public abstract class BGTask<R> {
 
     public final boolean
     isCancelled() {
-        eAssert(isCurrentOwnerThread());
         return mCancelled.get();
+    }
+
+    public final boolean
+    isInterrupted() {
+        return mThread.isInterrupted();
     }
 
     public void
@@ -189,9 +205,14 @@ public abstract class BGTask<R> {
         });
     }
 
-    public final void
+    public final boolean
     cancel(final boolean interrupt) {
         mCancelled.set(true);
+        if (mCancelled.get()
+            || State.READY == mState.get()
+            || State.TERMINATED == mState.get())
+            return false;
+
         mOwner.post(new Runnable() {
             @Override
             public void run() {
@@ -200,10 +221,12 @@ public abstract class BGTask<R> {
                     mThread.interrupt();
             }
         });
+        return true;
     }
 
     public void
     run() {
+        eAssert(State.READY == mState.get());
         mOwner.post(new Runnable() {
             @Override
             public void run() {
