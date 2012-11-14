@@ -159,7 +159,7 @@ public class ImportShareActivity extends Activity {
             }
         };
         UiUtils.buildConfirmDialog(this,
-                                   R.string.import_share,
+                                   R.string.app_name,
                                    R.string.msg_confirm_import_share,
                                    action)
             .show();
