@@ -155,6 +155,65 @@ public class Share {
         public AtomicInteger    fail    = new AtomicInteger(0);
     }
 
+
+    private static class ImportVideoJob extends MultiThreadRunner.Job<Err> {
+        private final long          _mPlid; // playlist id to import to
+        private final JSONObject    _mJov;  // Video JSON Object.
+        private final AtomicInteger _mSuccess;
+        private final AtomicInteger _mFail;
+
+        ImportVideoJob(float progWeight,
+                       JSONObject jov,
+                       long plid,
+                       AtomicInteger success,
+                       AtomicInteger fail) {
+            super(true, progWeight);
+            _mPlid = plid;
+            _mJov = jov;
+            _mSuccess = success;
+            _mFail = fail;
+        }
+
+        @Override
+        public Err
+        doJob() {
+            Err err = Err.UNKNOWN;
+            try {
+                String title = _mJov.getString(FTITLE);
+                String ytvid = _mJov.getString(FYTID);
+                if (!YTUtils.verifyYoutubeVideoId(ytvid))
+                    return Err.INVALID_SHARE;
+
+                int playtm = _mJov.getInt(FPLAYTIME);
+                int volume = Policy.DEFAULT_VIDEO_VOLUME;
+                if (_mJov.has(FVOLUME))
+                    volume = _mJov.getInt(FVOLUME);
+
+                // NOTE
+                // Getting thumbnail URL from youtube video id requires downloanding and parsing.
+                // It takes too much time.
+                // So, a kind of HACK is used to get thumbnail URL from youtube video id.
+                // see comments of 'YTHacker.getYtVideoThumbnailUrl()' for details.
+                if (YTUtils.insertVideoToPlaylist(_mPlid,
+                                                  ytvid,
+                                                  title,
+                                                  "",
+                                                  YTHacker.getYtVideoThumbnailUrl(ytvid),
+                                                  playtm,
+                                                  volume))
+                    err = Err.NO_ERR;
+            } catch (JSONException e) {
+                return Err.INVALID_SHARE;
+            } finally {
+                if (Err.NO_ERR == err)
+                    _mSuccess.incrementAndGet();
+                else
+                    _mFail.incrementAndGet();
+            }
+            return err;
+        }
+    }
+
     private static class Importer implements ImporterI {
         private final ZipInputStream    _mZis;
         private final MultiThreadRunner _mMtrunner;
@@ -343,84 +402,6 @@ public class Share {
         result() {
             return _mErr.get();
         }
-    }
-
-    private static class ImportVideoJob extends MultiThreadRunner.Job<Err> {
-        private final long          _mPlid; // playlist id to import to
-        private final JSONObject    _mJov;  // Video JSON Object.
-        private final AtomicInteger _mSuccess;
-        private final AtomicInteger _mFail;
-
-        ImportVideoJob(float progWeight,
-                       JSONObject jov,
-                       long plid,
-                       AtomicInteger success,
-                       AtomicInteger fail) {
-            super(true, progWeight);
-            _mPlid = plid;
-            _mJov = jov;
-            _mSuccess = success;
-            _mFail = fail;
-        }
-
-        @Override
-        public void
-        onPreRun() { }
-
-        @Override
-        public Err
-        doJob() {
-            try {
-                String title = _mJov.getString(FTITLE);
-                String ytvid = _mJov.getString(FYTID);
-                if (!YTUtils.verifyYoutubeVideoId(ytvid))
-                    return Err.INVALID_SHARE;
-                int playtm = _mJov.getInt(FPLAYTIME);
-                int volume = Policy.DEFAULT_VIDEO_VOLUME;
-                if (_mJov.has(FVOLUME))
-                    volume = _mJov.getInt(FVOLUME);
-
-                // NOTE
-                // Getting thumbnail URL from youtube video id requires downloanding and parsing.
-                // It takes too much time.
-                // So, a kind of HACK is used to get thumbnail URL from youtube video id.
-                // see comments of 'YTHacker.getYtVideoThumbnailUrl()' for details.
-                if (!YTUtils.insertVideoToPlaylist(_mPlid,
-                                                   ytvid,
-                                                   title,
-                                                   "",
-                                                   YTHacker.getYtVideoThumbnailUrl(ytvid),
-                                                   playtm,
-                                                   volume))
-                    return Err.UNKNOWN;
-            } catch (JSONException e) {
-                return Err.INVALID_SHARE;
-            }
-            return Err.NO_ERR;
-        }
-
-        @Override
-        public void
-        cancel() { }
-
-        @Override
-        public void
-        onCancelled() {
-            _mFail.incrementAndGet();
-        }
-
-        @Override
-        public void
-        onPostRun(Err result) {
-            if (Err.NO_ERR == result)
-                _mSuccess.incrementAndGet();
-            else
-                _mFail.incrementAndGet();
-        }
-
-        @Override
-        public void
-        onProgress(int prog) { }
     }
 
     // ========================================================================

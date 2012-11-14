@@ -121,7 +121,12 @@ public class ImportShareActivity extends Activity {
                                   new Importer(this, mZis),
                                   DiagAsyncTask.Style.PROGRESS,
                                   R.string.importing_share,
-                                  true);
+                                  true,
+                                  // Importing SHOULD NOT be cancelled by INTERRUPT.
+                                  // Canceling by interrupt causes early return before
+                                  //   importing is 'really' finished.
+                                  // In that case, ImportResult value is NOT CORRECT!
+                                  false);
         mDiag.setTitle(R.string.app_name);
         mDiag.setOnDismissListener(new DialogInterface.OnDismissListener() {
             @Override
