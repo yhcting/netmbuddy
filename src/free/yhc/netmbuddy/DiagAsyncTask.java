@@ -33,7 +33,8 @@ DialogInterface.OnDismissListener,
 DialogInterface.OnClickListener {
     private Context         mContext        = null;
     private ProgressDialog  mDialog         = null;
-    private int             mMsgid          = -1;
+    private CharSequence    mTitle          = null;
+    private CharSequence    mMessage        = null;
     private Style           mStyle          = Style.SPIN;
     private Worker          mWorker         = null;
     private boolean         mUserCancelled  = false;
@@ -74,37 +75,71 @@ DialogInterface.OnClickListener {
     public DiagAsyncTask(Context context,
                          Worker listener,
                          Style style,
-                         int msgid,
+                         CharSequence msg,
                          boolean cancelable,
                          boolean interruptOnCancel) {
         super();
         mContext= context;
         mWorker = listener;
-        mMsgid  = msgid;
+        mMessage = msg;
         mStyle  = style;
         mCancelable = cancelable;
         mInterruptOnCancel = interruptOnCancel;
     }
 
     public DiagAsyncTask(Context context,
-                         Worker listener,
-                         Style style,
-                         int msgid,
-                         boolean cancelable) {
-        this(context, listener, style, msgid, cancelable, true);
+            Worker listener,
+            Style style,
+            int msg,
+            boolean cancelable,
+            boolean interruptOnCancel) {
+        this(context, listener, style, context.getResources().getText(msg), cancelable, interruptOnCancel);
     }
 
     public DiagAsyncTask(Context context,
                          Worker listener,
                          Style style,
-                         int msgid) {
-        this(context, listener, style, msgid, false, true);
+                         CharSequence msg,
+                         boolean cancelable) {
+        this(context, listener, style, msg, cancelable, true);
+    }
+
+    public DiagAsyncTask(Context context,
+            Worker listener,
+            Style style,
+            int msg,
+            boolean cancelable) {
+        this(context, listener, style, context.getResources().getText(msg), cancelable, true);
+    }
+
+    public DiagAsyncTask(Context context,
+                         Worker listener,
+                         Style style,
+                         CharSequence msg) {
+        this(context, listener, style, msg, false, true);
+    }
+
+    public DiagAsyncTask(Context context,
+            Worker listener,
+            Style style,
+            int msg) {
+        this(context, listener, style, context.getResources().getText(msg), false, true);
     }
 
     public void
     setOnDismissListener(DialogInterface.OnDismissListener listener) {
         eAssert(Utils.isUiThread());
         mOnDismissListener = listener;
+    }
+
+    public void
+    setTitle(CharSequence title) {
+        mTitle = title;
+    }
+
+    public void
+    setTitle(int title) {
+        setTitle(mContext.getResources().getText(title));
     }
 
     public void
@@ -161,7 +196,10 @@ DialogInterface.OnClickListener {
     protected void
     onPreRun() {
         mDialog = new ProgressDialog(mContext);
-        mDialog.setMessage(mContext.getResources().getText(mMsgid));
+        if (null != mTitle)
+            mDialog.setTitle(mTitle);
+        if (null != mMessage)
+            mDialog.setMessage(mMessage);
         mDialog.setProgressStyle(mStyle.getStyle());
         mDialog.setMax(100); // percent
         // To prevent dialog is dismissed unexpectedly by back-key
