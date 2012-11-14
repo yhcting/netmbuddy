@@ -32,8 +32,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 
-import free.yhc.netmbuddy.utils.Utils;
-
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.DatabaseUtils;
@@ -41,6 +39,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.provider.BaseColumns;
+import free.yhc.netmbuddy.utils.Utils;
 
 public class DB extends SQLiteOpenHelper {
     public static final long    INVALID_PLAYLIST_ID = -1;
@@ -152,7 +151,7 @@ public class DB extends SQLiteOpenHelper {
         TITLE           ("title",           "text",     "not null"),
         DESCRIPTION     ("description",     "text",     "not null"), // Not used yet.
         VIDEOID         ("videoid",         "text",     "not null"), // Youtube Video Id (11-characters)
-        PLAYTIME        ("playtime",        "integer",  "not null"), // Seconds
+        PLAYTIME        ("playtime",        "integer",  "not null"), // Seconds (int)
         THUMBNAIL       ("thumbnail",       "blob",     "not null"),
 
         // --------------------------------------------------------------------

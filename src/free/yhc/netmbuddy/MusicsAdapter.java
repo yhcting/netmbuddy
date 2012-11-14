@@ -220,7 +220,7 @@ public class MusicsAdapter extends ResourceCursorAdapter {
         };
         new DiagAsyncTask(mContext, worker,
                           DiagAsyncTask.Style.SPIN,
-                          R.string.loading, false)
+                          R.string.loading)
             .run();
     }
 

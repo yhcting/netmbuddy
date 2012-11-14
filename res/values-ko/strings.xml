@@ -30,6 +30,7 @@
     <string name="done">완료</string>
     <string name="autostop">자동정지</string>
     <string name="close">닫기</string>
+    <string name="share">공유</string>
 
     <string name="enter_keyword">검색어 입력</string>
     <string name="new_search">새로 검색하기</string>
@@ -71,7 +72,12 @@
     <string name="time_added">추가된 시간</string>
     <string name="time_last_played">마지막으로 재생된 시간</string>
     <string name="clear_search_history">검색 히스토리 삭제</string>
-    <string name="analyzing_share">공유데이타 분석 중</string>
+    <string name="importing_share">공유 데이타를 가져오는 중</string>
+    <string name="share_via_email">Email로 공유하기</string>
+
+    <string name="share_pl_attachment">재생목록공유</string>
+    <string name="share_pl_email_subject">NetMBuddy 재생목록 공유</string>
+    <string name="share_pl_email_text">첨부파일을 NetMBuddy로 열어서, 공유된 재생목록을 가져올 수 있습니다.</string>
 
     <string name="pref_cat_operation">재생 방식 설정</string>
     <string name="pref_shuffle">임의 순서로 재생</string>
@@ -147,7 +153,8 @@
     <string name="err_ytinvalid_param">유효하지 않는 요청입니다.</string>
     <string name="err_network_unavailable">네트워크를 사용할 수 없습니다.</string>
     <string name="err_end_of_data">마지막 데이타입니다.</string>
-
+    <string name="err_invalid_data">유효하지 않은 데이타 입니다.</string>
+    <string name="err_unsupported_version">지원되지 않는 버젼입니다.</string>
 
     <string name="appinfo_text">
 E-mail : yhcting77@gmail.com\n

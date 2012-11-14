@@ -35,6 +35,11 @@ public class Policy {
     public static final String  EXTERNAL_DBFILE         = APPDATA_DIR + APPBASENAME + ".db";
 
     // --------------------------------------------------------------------
+    // Share
+    // --------------------------------------------------------------------
+    public static final String  SHARE_FILE_EXTENTION    = APPBASENAME;
+
+    // --------------------------------------------------------------------
     // Youtube
     // --------------------------------------------------------------------
     public static final int     DEFAULT_VIDEO_VOLUME    = 50;

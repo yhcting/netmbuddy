@@ -209,8 +209,7 @@ DBHelper.CheckDupDoneReceiver {
         new DiagAsyncTask(this,
                           worker,
                           DiagAsyncTask.Style.SPIN,
-                          R.string.adding,
-                          false)
+                          R.string.adding)
             .run();
 
     }

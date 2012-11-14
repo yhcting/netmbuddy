@@ -22,6 +22,7 @@ package free.yhc.netmbuddy;
 
 import static free.yhc.netmbuddy.utils.Utils.eAssert;
 import free.yhc.netmbuddy.model.DB;
+import free.yhc.netmbuddy.model.Share;
 import free.yhc.netmbuddy.model.YTHacker;
 import free.yhc.netmbuddy.model.YTSearchHelper;
 
@@ -33,6 +34,8 @@ public enum Err {
     BAD_REQUEST                 (R.string.err_bad_request),
     MULTITHREADING              (R.string.err_unknown),
     NETWORK_UNAVAILABLE         (R.string.err_network_unavailable),
+    INVALID_DATA                (R.string.err_invalid_data),
+    UNSUPPORTED_VERSION         (R.string.err_unsupported_version),
     IO_NET                      (R.string.err_io_net),
     IO_FILE                     (R.string.err_io_file),
     IO_UNKNOWN                  (R.string.err_io_unknown),
@@ -126,6 +129,29 @@ public enum Err {
             eAssert(false);
         default:
             return UNKNOWN;
+        }
+    }
+
+    public static Err
+    map(Share.Err err) {
+        switch (err) {
+        case IO_FILE:
+            return Err.IO_FILE;
+
+        case INTERRUPTED:
+            return Err.INTERRUPTED;
+
+        case INVALID_SHARE:
+            return Err.INVALID_DATA;
+
+        case UNSUPPORTED_VERSION:
+            return Err.UNSUPPORTED_VERSION;
+
+        case DB_UNKNOWN:
+            return Err.DB_UNKNOWN;
+
+        default:
+            return Err.UNKNOWN;
         }
     }
 

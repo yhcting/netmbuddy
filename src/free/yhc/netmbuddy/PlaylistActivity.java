@@ -23,12 +23,12 @@ package free.yhc.netmbuddy;
 import static free.yhc.netmbuddy.utils.Utils.eAssert;
 
 import java.io.File;
+import java.io.IOException;
 
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.SearchManager;
-import android.content.ActivityNotFoundException;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Configuration;
@@ -50,6 +50,7 @@ import free.yhc.netmbuddy.model.DB;
 import free.yhc.netmbuddy.model.DB.ColVideo;
 import free.yhc.netmbuddy.model.Policy;
 import free.yhc.netmbuddy.model.SearchSuggestionProvider;
+import free.yhc.netmbuddy.model.Share;
 import free.yhc.netmbuddy.model.YTPlayer;
 import free.yhc.netmbuddy.utils.UiUtils;
 import free.yhc.netmbuddy.utils.Utils;
@@ -63,23 +64,6 @@ public class PlaylistActivity extends Activity {
     private PlaylistAdapter
     getAdapter() {
         return (PlaylistAdapter)mListv.getAdapter();
-    }
-
-    private void
-    sendMail(CharSequence diagTitle, CharSequence subject, CharSequence text) {
-        if (!Utils.isNetworkAvailable())
-            return;
-
-        Intent intent = new Intent(Intent.ACTION_SEND);
-        intent.putExtra(Intent.EXTRA_EMAIL, new String[] { Policy.REPORT_RECEIVER });
-        intent.putExtra(Intent.EXTRA_TEXT, text);
-        intent.putExtra(Intent.EXTRA_SUBJECT, subject);
-        intent.setType("message/rfc822");
-        try {
-            startActivity(intent);
-        } catch (ActivityNotFoundException e) {
-            UiUtils.showTextToast(this, R.string.msg_fail_find_app);
-        }
     }
 
     /**
@@ -235,9 +219,10 @@ public class PlaylistActivity extends Activity {
                         return importDbInBackground(exDbf);
                     }
                 };
-                new DiagAsyncTask(PlaylistActivity.this, worker,
+                new DiagAsyncTask(PlaylistActivity.this,
+                                  worker,
                                   DiagAsyncTask.Style.SPIN,
-                                  R.string.importing_db, false)
+                                  R.string.importing_db)
                     .run();
             }
         }).show();
@@ -274,9 +259,10 @@ public class PlaylistActivity extends Activity {
                         return mergeDbInBackground(exDbf);
                     }
                 };
-                new DiagAsyncTask(PlaylistActivity.this, worker,
+                new DiagAsyncTask(PlaylistActivity.this,
+                                  worker,
                                   DiagAsyncTask.Style.SPIN,
-                                  R.string.merging_db, false)
+                                  R.string.merging_db)
                     .run();
             }
         }).show();
@@ -312,9 +298,10 @@ public class PlaylistActivity extends Activity {
                         return exportDbInBackground(exDbf);
                     }
                 };
-                new DiagAsyncTask(PlaylistActivity.this, worker,
+                new DiagAsyncTask(PlaylistActivity.this,
+                                  worker,
                                   DiagAsyncTask.Style.SPIN,
-                                  R.string.exporting_db, false)
+                                  R.string.exporting_db)
                     .run();
             }
         }).show();
@@ -407,9 +394,13 @@ public class PlaylistActivity extends Activity {
             UiUtils.showTextToast(this, R.string.err_network_unavailable);
             return;
         }
-        sendMail(getResources().getText(R.string.choose_app),
+        UiUtils.sendMail(
+                this,
+                Policy.REPORT_RECEIVER,
+                getResources().getText(R.string.choose_app),
                  "[ " + getResources().getText(R.string.app_name) + " ] " + getResources().getText(R.string.feedback),
-                 "");
+                 "",
+                 null);
     }
 
     private void
@@ -573,7 +564,6 @@ public class PlaylistActivity extends Activity {
 
     private void
     onContextMenuDeleteDo(final long plid) {
-
         DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
             @Override
             public void
@@ -588,9 +578,10 @@ public class PlaylistActivity extends Activity {
                 return Err.NO_ERR;
             }
         };
-        new DiagAsyncTask(this, worker,
+        new DiagAsyncTask(this,
+                          worker,
                           DiagAsyncTask.Style.SPIN,
-                          R.string.deleting, false)
+                          R.string.deleting)
             .run();
     }
 
@@ -608,6 +599,55 @@ public class PlaylistActivity extends Activity {
                                    R.string.msg_delete_playlist,
                                    action)
                .show();
+    }
+
+    private void
+    onContextMenuShare(final AdapterContextMenuInfo info) {
+        final String plTitle = (String)DB.get().getPlaylistInfo(info.id, DB.ColPlaylist.TITLE);
+        final File fTmp;
+        try {
+            fTmp = File.createTempFile(Utils.getResText(R.string.share_pl_attachment),
+                                       "." + Policy.SHARE_FILE_EXTENTION,
+                                       new File(Policy.APPDATA_TMPDIR));
+        } catch (IOException e) {
+            UiUtils.showTextToast(this, R.string.err_io_file);
+            return;
+        }
+
+        DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
+            @Override
+            public void
+            onPostExecute(DiagAsyncTask task, Err result) {
+                if (Err.NO_ERR != result) {
+                    UiUtils.showTextToast(PlaylistActivity.this, result.getMessage());
+                    return;
+                }
+
+                UiUtils.sendMail(PlaylistActivity.this,
+                                 null,
+                                 Utils.getResText(R.string.share_via_email),
+                                 Utils.getResText(R.string.share_pl_email_subject) + ":" + plTitle,
+                                 Utils.getResText(R.string.share_pl_email_text),
+                                 fTmp);
+            }
+
+            @Override
+            public Err
+            doBackgroundWork(DiagAsyncTask task) {
+                Share.Err err = Share.exportSharePlaylist(fTmp, info.id);
+                if (Share.Err.NO_ERR != err) {
+                    fTmp.delete();
+                    return Err.map(err);
+                }
+                return Err.NO_ERR;
+            }
+        };
+
+        new DiagAsyncTask(this,
+                          worker,
+                          DiagAsyncTask.Style.SPIN,
+                          R.string.preparing)
+            .run();
     }
 
     private void
@@ -631,6 +671,10 @@ public class PlaylistActivity extends Activity {
 
         case R.id.delete:
             onContextMenuDelete(info);
+            return true;
+
+        case R.id.share:
+            onContextMenuShare(info);
             return true;
         }
         eAssert(false);

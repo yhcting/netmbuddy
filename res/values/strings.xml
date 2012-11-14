@@ -30,6 +30,7 @@
     <string name="done">Done</string>
     <string name="autostop">Auto-stop</string>
     <string name="close">Close</string>
+    <string name="share">Share</string>
 
     <string name="enter_keyword">Enter search keyword</string>
     <string name="new_search">New search</string>
@@ -71,7 +72,12 @@
     <string name="time_added">Time added</string>
     <string name="time_last_played">Time last played</string>
     <string name="clear_search_history">Clear search history</string>
-    <string name="analyzing_share">Analyzing shared data</string>
+    <string name="importing_share">Importing shared data</string>
+    <string name="share_via_email">Share via Email</string>
+
+    <string name="share_pl_attachment">PlaylistShareData</string>
+    <string name="share_pl_email_subject">NetMBuddy Playlist Share</string>
+    <string name="share_pl_email_text">Please open attachement with NetMBuddy to import shared playlist.</string>
 
     <string name="pref_cat_operation">Playing music</string>
     <string name="pref_shuffle">Shuffle</string>
@@ -147,6 +153,8 @@
     <string name="err_ytinvalid_param">Invalid Youtube parameter.</string>
     <string name="err_network_unavailable">Network is unavailable.</string>
     <string name="err_end_of_data">End of data.</string>
+    <string name="err_invalid_data">Invalid data. Data may be broken or unknown source.</string>
+    <string name="err_unsupported_version">Unsupported version.</string>
 
     <string name="appinfo_text">
 E-mail : yhcting77@gmail.com\n

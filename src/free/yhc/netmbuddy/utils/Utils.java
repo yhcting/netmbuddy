@@ -41,6 +41,7 @@ import org.apache.http.impl.cookie.DateUtils;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.graphics.Rect;
@@ -51,6 +52,7 @@ import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.Window;
 import free.yhc.netmbuddy.R;
+import free.yhc.netmbuddy.YTMPActivity;
 import free.yhc.netmbuddy.model.Policy;
 import free.yhc.netmbuddy.model.RTState;
 
@@ -304,6 +306,14 @@ public class Utils {
         return getCurrentTopActivity().startsWith(getAppContext().getPackageName()+".");
     }
 
+    public static void
+    resumeApp() {
+        Intent intent = new Intent(Utils.getAppContext(), YTMPActivity.class);
+        intent.setAction(Intent.ACTION_MAIN);
+        intent.addCategory(Intent.CATEGORY_LAUNCHER);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        Utils.getAppContext().startActivity(intent);
+    }
     // ------------------------------------------------------------------------
     //
     //

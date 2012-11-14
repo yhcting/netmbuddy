@@ -157,8 +157,7 @@ public class MusicsActivity extends Activity {
         new DiagAsyncTask(this,
                           worker,
                           DiagAsyncTask.Style.SPIN,
-                          move? R.string.moving: R.string.adding,
-                          false)
+                          move? R.string.moving: R.string.adding)
             .run();
     }
 
@@ -223,8 +222,7 @@ public class MusicsActivity extends Activity {
         new DiagAsyncTask(this,
                           worker,
                           DiagAsyncTask.Style.SPIN,
-                          R.string.deleting,
-                          false)
+                          R.string.deleting)
             .run();
     }
 
@@ -480,8 +478,7 @@ public class MusicsActivity extends Activity {
         new DiagAsyncTask(this,
                           worker,
                           DiagAsyncTask.Style.SPIN,
-                          R.string.loading,
-                          false)
+                          R.string.loading)
             .run();
     }
 

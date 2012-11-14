@@ -22,6 +22,7 @@ package free.yhc.netmbuddy.utils;
 
 import static free.yhc.netmbuddy.utils.Utils.eAssert;
 
+import java.io.File;
 import java.util.LinkedList;
 
 import android.app.AlertDialog;
@@ -48,7 +49,6 @@ import android.widget.Toast;
 import free.yhc.netmbuddy.R;
 import free.yhc.netmbuddy.model.DB;
 import free.yhc.netmbuddy.model.YTHacker;
-import free.yhc.netmbuddy.model.DB.ColPlaylist;
 
 public class UiUtils {
     public interface EditTextAction {
@@ -388,4 +388,30 @@ public class UiUtils {
             UiUtils.showTextToast(context, R.string.msg_fail_find_app);
         }
     }
+
+    public static void
+    sendMail(Context      context,
+             String       receiver,
+             CharSequence diagTitle,
+             CharSequence subject,
+             CharSequence text,
+             File attachment) {
+        if (!Utils.isNetworkAvailable())
+            return;
+
+        Intent intent = new Intent(Intent.ACTION_SEND);
+        if (null != receiver)
+            intent.putExtra(Intent.EXTRA_EMAIL, new String[] { receiver });
+        intent.putExtra(Intent.EXTRA_TEXT, text);
+        intent.putExtra(Intent.EXTRA_SUBJECT, subject);
+        if (null != attachment)
+            intent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(attachment));
+        intent.setType("message/rfc822");
+        try {
+            context.startActivity(intent);
+        } catch (ActivityNotFoundException e) {
+            UiUtils.showTextToast(context, R.string.msg_fail_find_app);
+        }
+    }
+
 }

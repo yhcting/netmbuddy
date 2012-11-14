@@ -28,9 +28,8 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
-import free.yhc.netmbuddy.utils.Utils;
-
 import android.net.Uri;
+import free.yhc.netmbuddy.utils.Utils;
 
 public class YTVideoFeed extends YTFeed {
     static final String sQueryProjection = "fields=openSearch:totalResults,openSearch:startIndex,openSearch:itemsPerPage,"
@@ -106,6 +105,7 @@ public class YTVideoFeed extends YTFeed {
                 + "&client=ytapi-youtube-search&"
                 + sQueryProjection;
     }
+
     /**
      * Is this valid entry that can be handled by YoutubeMusicPlayer?
      * @param en

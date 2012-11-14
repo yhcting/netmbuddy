@@ -93,9 +93,10 @@ public class PlaylistAdapter extends ResourceCursorAdapter {
                 return Err.NO_ERR;
             }
         };
-        new DiagAsyncTask(mContext, worker,
+        new DiagAsyncTask(mContext,
+                          worker,
                           DiagAsyncTask.Style.SPIN,
-                          R.string.loading, false)
+                          R.string.loading)
             .run();
     }
 

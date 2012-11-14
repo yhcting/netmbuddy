@@ -27,7 +27,6 @@ import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import android.content.Intent;
-import android.content.res.Resources;
 import android.os.Bundle;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
@@ -45,9 +44,9 @@ import free.yhc.netmbuddy.model.YTFeed;
 import free.yhc.netmbuddy.model.YTPlaylistFeed;
 import free.yhc.netmbuddy.model.YTSearchHelper;
 import free.yhc.netmbuddy.model.YTVideoFeed;
-import free.yhc.netmbuddy.utils.ImageUtils;
 import free.yhc.netmbuddy.utils.UiUtils;
 import free.yhc.netmbuddy.utils.Utils;
+import free.yhc.netmbuddy.utils.YTUtils;
 
 public class YTPlaylistSearchActivity extends YTSearchActivity {
 
@@ -90,33 +89,13 @@ public class YTPlaylistSearchActivity extends YTSearchActivity {
             return false;
         }
 
-        YTSearchHelper.LoadThumbnailArg targ = new YTSearchHelper.LoadThumbnailArg(
-                null,
-                "", // Not filled yet.
-                Utils.getAppContext().getResources().getDimensionPixelSize(R.dimen.thumbnail_width),
-                Utils.getAppContext().getResources().getDimensionPixelSize(R.dimen.thumbnail_height));
-        YTSearchHelper.LoadThumbnailReturn tr;
-        targ.url = e.media.thumbnailUrl;
-        tr = YTSearchHelper.loadThumbnail(targ);
-        if (YTSearchHelper.Err.NO_ERR != tr.err)
-            return false;
-
-        // Loading thumbnail is done.
-
-        DB.Err err = DB.get().insertVideoToPlaylist(plid,
-                                                    e.media.title,
-                                                    e.media.description,
-                                                    e.media.videoId,
-                                                    playtm,
-                                                    ImageUtils.compressBitmap(tr.bm),
-                                                    Policy.DEFAULT_VIDEO_VOLUME);
-        if (null != tr.bm)
-            tr.bm.recycle();
-
-        if (DB.Err.NO_ERR != err)
-            return false;
-
-        return true;
+        return YTUtils.insertVideoToPlaylist(plid,
+                                             e.media.videoId,
+                                             e.media.title,
+                                             e.media.description,
+                                             e.media.thumbnailUrl,
+                                             playtm,
+                                             Policy.DEFAULT_VIDEO_VOLUME);
     }
 
     private Err
@@ -224,19 +203,25 @@ public class YTPlaylistSearchActivity extends YTSearchActivity {
 
         DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
             private CharSequence
-            getReportText() {
-                Resources res = Utils.getAppContext().getResources();
-                return res.getText(R.string.done) + " : " + mtpr.nrDone.get() + ", "
-                           + res.getText(R.string.error) + " : " + mtpr.nrIgnored.get();
+            getReportText(Err result) {
+                CharSequence title = "";
+                if (Err.NO_ERR != result)
+                    title = Utils.getResText(result.getMessage());
+
+                return title + "\n"
+                       + "  " + Utils.getResText(R.string.done) + " : " + mtpr.nrDone.get() + "\n"
+                       + "  " + Utils.getResText(R.string.error) + " : " + mtpr.nrIgnored.get();
+            }
+
+            private void
+            onEnd(Err result) {
+                UiUtils.showTextToast(YTPlaylistSearchActivity.this, getReportText(result));
             }
 
             @Override
             public void
             onPostExecute(DiagAsyncTask task, Err result) {
-                if (Err.NO_ERR != result)
-                    UiUtils.showTextToast(YTPlaylistSearchActivity.this, result.getMessage());
-                else
-                    UiUtils.showTextToast(YTPlaylistSearchActivity.this, getReportText());
+                onEnd(result);
             }
 
             @Override
@@ -248,7 +233,7 @@ public class YTPlaylistSearchActivity extends YTSearchActivity {
             @Override
             public void
             onCancelled(DiagAsyncTask task) {
-                UiUtils.showTextToast(YTPlaylistSearchActivity.this, getReportText());
+                onEnd(Err.CANCELLED);
             }
 
             @Override

@@ -28,7 +28,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import android.os.Handler;
-import free.yhc.netmbuddy.utils.Utils;
 
 // [ Naming Convention ]
 // Runnable => Job
@@ -160,7 +159,6 @@ public class MultiThreadRunner {
     private static class Task<R> extends BGTask<R> {
         private final MultiThreadRunner _mMtrunner;
         private final Job<R>    _mJob;
-        private final boolean   _mUiOwned; // pre-calculated value.
 
         // NOTE
         // To workaround Android GB Framework bug regarding AsyncTask.
@@ -173,11 +171,12 @@ public class MultiThreadRunner {
             return _mMtrunner.getOwner().getLooper().getThread() == Thread.currentThread();
         }
 
-        Task(MultiThreadRunner mtrunner, Job<R> job) {
-            super();
+        Task(MultiThreadRunner mtrunner,
+             Job<R> job,
+             Handler owner) {
+            super(owner);
             _mMtrunner = mtrunner;
             _mJob = job;
-            _mUiOwned = Utils.isUiThread(_mMtrunner.getOwner().getLooper().getThread());
         }
 
         Job<R>
@@ -195,50 +194,23 @@ public class MultiThreadRunner {
         @Override
         protected void
         onPreRun() {
-            if (_mUiOwned)
-                _mJob.onCancelled();
-            else
-                _mMtrunner.getOwner().post(new Runnable() {
-                    @Override
-                    public void
-                    run() {
-                        _mJob.onCancelled();
-                    }
-                });
+            _mJob.onPreRun();
         }
 
         @Override
         protected void
         onCancelled() {
-            if (_mUiOwned) {
-                _mJob.onCancelled();
-                _mMtrunner.onTaskDone(this, true);
-            } else
-                _mMtrunner.getOwner().post(new Runnable() {
-                    @Override
-                    public void
-                    run() {
-                        _mJob.onCancelled();
-                        _mMtrunner.onTaskDone(Task.this, true);
-                    }
-                });
+            eAssert(_mMtrunner.getOwner().getLooper().getThread() == Thread.currentThread());
+            _mJob.onCancelled();
+            _mMtrunner.onTaskDone(Task.this, true);
         }
 
         @Override
         protected void
         onPostRun(final R r) {
-            if (_mUiOwned) {
-                _mJob.onPostRun(r);
-                _mMtrunner.onTaskDone(this, false);
-            } else
-                _mMtrunner.getOwner().post(new Runnable() {
-                    @Override
-                    public void
-                    run() {
-                        _mJob.onPostRun(r);
-                        _mMtrunner.onTaskDone(Task.this, false);
-                    }
-                });
+            eAssert(_mMtrunner.getOwner().getLooper().getThread() == Thread.currentThread());
+            _mJob.onPostRun(r);
+            _mMtrunner.onTaskDone(this, false);
         }
 
         @Override
@@ -294,7 +266,7 @@ public class MultiThreadRunner {
         // TODO
         // Is there any to instantiate generic 'task' whose generic type is
         //   same with generic type of 'job' instead of raw-type?
-        Task<?> t = new Task(this, job);
+        Task<?> t = new Task(this, job, mOwner);
         mRunQ.addLast(t);
         t.run();
     }

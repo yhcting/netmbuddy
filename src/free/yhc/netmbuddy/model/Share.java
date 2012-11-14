@@ -29,6 +29,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
@@ -40,6 +41,7 @@ import android.database.Cursor;
 import free.yhc.netmbuddy.R;
 import free.yhc.netmbuddy.utils.FileUtils;
 import free.yhc.netmbuddy.utils.Utils;
+import free.yhc.netmbuddy.utils.YTUtils;
 
 //============================================================================
 //[ Data File Format (JSON) ]
@@ -60,6 +62,7 @@ import free.yhc.netmbuddy.utils.Utils;
 //          {
 //              ytid: 11-character youtube video id
 //              title : title of the video (Exporter may change the video title.)
+//              playtime:
 //              volume: volume
 //          }
 //          ...
@@ -77,13 +80,23 @@ public class Share {
     private static final String FTIME       = "time";
     private static final String FYTID       = "ytid";
     private static final String FVOLUME     = "volume";
+    private static final String FPLAYTIME   = "playtime";
     private static final String FTITLE      = "title";
     private static final String FVIDEOS     = "videos";
+
+    public interface OnProgressListener {
+        /**
+         * 1.0F means 100%
+         * @param prog
+         */
+        void onProgress(float prog);
+    }
 
     public static enum Err {
         NO_ERR,
         IO_FILE,
         PARAMETER,
+        INTERRUPTED,
         INVALID_SHARE,
         UNSUPPORTED_VERSION,
         DB_UNKNOWN,
@@ -121,23 +134,30 @@ public class Share {
     }
 
     public static class ImportResult {
-        Err     err;        // result of import
-        Type    type;       // type of importing data
-        int     success;    // # of successfully imported
-        int     fail;       // # of fails to import.
+        public Err              err     = Err.UNKNOWN;        // result of import
+        public Type             type    = Type.PLAYLIST;       // type of importing data
+        // # of successfully imported
+        public AtomicInteger    success = new AtomicInteger(0);
+        // # of fails to import.
+        public AtomicInteger    fail    = new AtomicInteger(0);
     }
 
     private static class ImportVideoJob extends MultiThreadRunner.Job<Err> {
         private final long          _mPlid; // playlist id to import to
         private final JSONObject    _mJov;  // Video JSON Object.
+        private final AtomicInteger _mSuccess;
+        private final AtomicInteger _mFail;
 
-        ImportVideoJob(boolean interruptOnCancel,
-                       float progWeight,
+        ImportVideoJob(float progWeight,
                        JSONObject jov,
-                       long plid) {
-            super(interruptOnCancel, progWeight);
+                       long plid,
+                       AtomicInteger success,
+                       AtomicInteger fail) {
+            super(true, progWeight);
             _mPlid = plid;
             _mJov = jov;
+            _mSuccess = success;
+            _mFail = fail;
         }
 
         @Override
@@ -147,6 +167,32 @@ public class Share {
         @Override
         public Err
         doJob() {
+            try {
+                String title = _mJov.getString(FTITLE);
+                String ytvid = _mJov.getString(FYTID);
+                if (!YTUtils.verifyYoutubeVideoId(ytvid))
+                    return Err.INVALID_SHARE;
+                int playtm = _mJov.getInt(FPLAYTIME);
+                int volume = Policy.DEFAULT_VIDEO_VOLUME;
+                if (_mJov.has(FVOLUME))
+                    volume = _mJov.getInt(FVOLUME);
+
+                // NOTE
+                // Getting thumbnail URL from youtube video id requires downloanding and parsing.
+                // It takes too much time.
+                // So, a kind of HACK is used to get thumbnail URL from youtube video id.
+                // see comments of 'YTHacker.getYtVideoThumbnailUrl()' for details.
+                if (!YTUtils.insertVideoToPlaylist(_mPlid,
+                                                   ytvid,
+                                                   title,
+                                                   "",
+                                                   YTHacker.getYtVideoThumbnailUrl(ytvid),
+                                                   playtm,
+                                                   volume))
+                    return Err.UNKNOWN;
+            } catch (JSONException e) {
+                return Err.INVALID_SHARE;
+            }
             return Err.NO_ERR;
         }
 
@@ -156,11 +202,18 @@ public class Share {
 
         @Override
         public void
-        onCancelled() { }
+        onCancelled() {
+            _mFail.incrementAndGet();
+        }
 
         @Override
         public void
-        onPostRun(Err result) { }
+        onPostRun(Err result) {
+            if (Err.NO_ERR == result)
+                _mSuccess.incrementAndGet();
+            else
+                _mFail.incrementAndGet();
+        }
 
         @Override
         public void
@@ -180,7 +233,7 @@ public class Share {
     private static boolean
     verify(JSONObject jo) {
         try {
-            return jo.getString(FMAGIC).equals(FMAGIC);
+            return MAGIC.equals(jo.getString(FMAGIC));
         } catch (JSONException e) {
             return false;
         }
@@ -205,11 +258,13 @@ public class Share {
         final int COLI_VIDEOID  = 0;
         final int COLI_TITLE    = 1;
         final int COLI_VOLUME   = 2;
+        final int COLI_PLAYTIME = 3;
         Cursor c = DB.get().queryVideo(vid,
                                        new DB.ColVideo[] {
                 DB.ColVideo.VIDEOID,
                 DB.ColVideo.TITLE,
-                DB.ColVideo.VOLUME
+                DB.ColVideo.VOLUME,
+                DB.ColVideo.PLAYTIME
         });
 
         if (!c.moveToFirst()) {
@@ -221,6 +276,7 @@ public class Share {
         try {
             jo.put(FYTID,     c.getString(COLI_VIDEOID));
             jo.put(FTITLE,    c.getString(COLI_TITLE));
+            jo.put(FPLAYTIME, c.getInt(COLI_PLAYTIME));
             int vol = c.getInt(COLI_VOLUME);
             if (Policy.DEFAULT_VIDEO_VOLUME != vol)
                 jo.put(FVOLUME,   vol);
@@ -306,8 +362,9 @@ public class Share {
      * @throws LocalException
      */
     private static void
-    importSharePlaylist(ImportResult ir, JSONObject jo)
-            throws JSONException, LocalException {
+    importSharePlaylist(ImportResult ir, JSONObject jo,
+                        final OnProgressListener progListener)
+            throws JSONException, LocalException, InterruptedException {
         DB db = DB.get();
         JSONArray jarr = jo.getJSONArray(FVIDEOS);
 
@@ -316,9 +373,27 @@ public class Share {
         if (plid < 0)
             throw new LocalException(Err.DB_UNKNOWN);
 
+        final MultiThreadRunner mtrunner = new MultiThreadRunner(
+                Utils.getUiHandler(),
+                Policy.YTSEARCH_MAX_LOAD_THUMBNAIL_THREAD);
 
+        mtrunner.setOnProgressListener(new MultiThreadRunner.OnProgressListener() {
+            @Override
+            public void
+            onProgress(float prog) {
+                progListener.onProgress(prog);
+            }
+        });
 
+        for (int i = 0; i < jarr.length(); i++) {
+            mtrunner.appendJob(new ImportVideoJob(1.0f / jarr.length(),
+                                                  jarr.getJSONObject(i),
+                                                  plid,
+                                                  ir.success,
+                                                  ir.fail));
+        }
 
+        mtrunner.waitAllDone();
     }
 
     // ========================================================================
@@ -327,7 +402,8 @@ public class Share {
     //
     // ========================================================================
     public static ImportResult
-    importShare(ZipInputStream zis) {
+    importShare(ZipInputStream zis,
+                OnProgressListener progListener) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ImportResult ir = new ImportResult();
         try {
@@ -340,20 +416,21 @@ public class Share {
             if (!verify(jo))
                 throw new LocalException(Err.INVALID_SHARE);
 
-            Type ty = Type.valueOf(jo.getString(FTYPE));
-            switch (ty) {
+            ir.type = Type.valueOf(jo.getString(FTYPE));
+            switch (ir.type) {
             case PLAYLIST:
-                importSharePlaylist(ir, rootJo.getJSONObject(FPLAYLIST));
+                importSharePlaylist(ir, rootJo.getJSONObject(FPLAYLIST), progListener);
             }
 
-            jo = rootJo.getJSONObject(FPLAYLIST);
-
+            ir.err = Err.NO_ERR;
         } catch (IllegalArgumentException e) {
             ir.err = Err.INVALID_SHARE;
         } catch (JSONException e) {
             ir.err = Err.INVALID_SHARE;
         } catch (IOException e) {
             ir.err = Err.INVALID_SHARE;
+        } catch (InterruptedException e) {
+            ir.err = Err.INTERRUPTED;
         } catch (LocalException e) {
             ir.err = e.error();
         }
@@ -361,7 +438,7 @@ public class Share {
     }
 
     public static Err
-    exportSharePlaylist(String file, long plid) {
+    exportSharePlaylist(File file, long plid) {
         JSONObject jsonPl = playlistToJson(plid);
         JSONObject jsonMeta = createMetaJson(Type.PLAYLIST);
         JSONObject jo = new JSONObject();
@@ -381,8 +458,9 @@ public class Share {
         try {
             shareName = FileUtils.pathNameEscapeString(Utils.getResText(R.string.playlist)
                                                        + "_"
-                                                       + jo.getString(FTITLE)
-                                                       + ".netmbuddy");
+                                                       + jsonPl.getString(FTITLE)
+                                                       + "."
+                                                       + Policy.SHARE_FILE_EXTENTION);
         } catch (JSONException e) {
             return Err.UNKNOWN;
         }
@@ -391,19 +469,16 @@ public class Share {
         try {
             zos = new ZipOutputStream(new FileOutputStream(file));
         } catch (FileNotFoundException e) {
-            return Err.PARAMETER;
+            return Err.IO_FILE;
         }
 
         Err err = exportShareJson(zos, jo, shareName);
         try {
             zos.close();
-        } catch (IOException ignored) {
+        } catch (IOException e) {
             err = Err.IO_FILE;
         }
 
-        if (Err.NO_ERR != err)
-            new File(file).delete();
-
-        return Err.NO_ERR;
+        return err;
     }
 }

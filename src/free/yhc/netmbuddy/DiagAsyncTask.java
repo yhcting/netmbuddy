@@ -47,6 +47,9 @@ DialogInterface.OnClickListener {
         doBackgroundWork(DiagAsyncTask task);
 
         public void
+        onPreExecute(DiagAsyncTask task) { }
+
+        public void
         onPostExecute(DiagAsyncTask task, Err result) { }
 
         public void
@@ -223,6 +226,8 @@ DialogInterface.OnClickListener {
 
         mDialog.setOnDismissListener(this);
         mDialog.show();
+        if (null != mWorker)
+            mWorker.onPreExecute(this);
     }
 
     @Override
