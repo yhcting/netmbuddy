@@ -27,6 +27,7 @@ import java.io.InputStream;
 import java.util.zip.ZipInputStream;
 
 import android.app.Activity;
+import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.res.Configuration;
 import android.os.Bundle;
@@ -108,21 +109,14 @@ public class ImportShareActivity extends Activity {
         }
     };
 
-    /**
-     * ImportShareActivity has responsibility regarding closing input stream.
-     * @param savedInstanceState
-     * @param is
-     */
-    protected void
-    onCreateInternal(Bundle savedInstanceState, InputStream is) {
+    private void
+    startImport(InputStream is) {
         if (null == is) {
             UiUtils.showTextToast(this, R.string.msg_fail_to_access_data);
             finish();
             return;
         }
 
-
-        mZis = new ZipInputStream(is);
         mDiag = new DiagAsyncTask(this,
                                   new Importer(this, mZis),
                                   DiagAsyncTask.Style.PROGRESS,
@@ -138,6 +132,37 @@ public class ImportShareActivity extends Activity {
         });
 
         mDiag.run();
+
+    }
+
+    /**
+     * ImportShareActivity has responsibility regarding closing input stream.
+     * @param savedInstanceState
+     * @param is
+     */
+    protected void
+    onCreateInternal(Bundle savedInstanceState, final InputStream is) {
+        // assign it as soon as possible to close this stream at onDestroy.
+        mZis = new ZipInputStream(is);
+
+        UiUtils.ConfirmAction action = new UiUtils.ConfirmAction() {
+            @Override
+            public void
+            onOk(Dialog dialog) {
+                startImport(mZis);
+            }
+
+            @Override
+            public void
+            onCancel(Dialog dialog) {
+                finish();
+            }
+        };
+        UiUtils.buildConfirmDialog(this,
+                                   R.string.import_share,
+                                   R.string.msg_confirm_import_share,
+                                   action)
+            .show();
     }
 
     @Override

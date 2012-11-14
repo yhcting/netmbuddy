@@ -72,6 +72,7 @@
     <string name="time_added">Time added</string>
     <string name="time_last_played">Time last played</string>
     <string name="clear_search_history">Clear search history</string>
+    <string name="import_share">Import shared data</string>
     <string name="importing_share">Importing shared data</string>
     <string name="share_via_email">Share via Email</string>
 
@@ -130,6 +131,7 @@
     <string name="msg_search_history_cleared">Clearing search history is done.</string>
     <string name="msg_delete_playlist">Delete the playlist.</string>
     <string name="msg_fail_to_access_data">Fail to access data.</string>
+    <string name="msg_confirm_import_share">Do you want to import this shared data?</string>
 
     <string name="err_no_err">Success.</string>
     <string name="err_unknown">Unknown error.</string>

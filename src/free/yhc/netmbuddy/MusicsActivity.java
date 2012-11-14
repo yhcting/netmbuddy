@@ -234,6 +234,10 @@ public class MusicsActivity extends Activity {
             onOk(Dialog dialog) {
                 doDeleteMusics(mPlid, mids);
             }
+
+            @Override
+            public void
+            onCancel(Dialog dialog) { }
         };
         UiUtils.buildConfirmDialog(this,
                                    R.string.delete,

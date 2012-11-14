@@ -58,6 +58,7 @@ public class UiUtils {
 
     public interface ConfirmAction {
         void onOk(Dialog dialog);
+        void onCancel(Dialog dialog);
     }
 
     public interface OnPlaylistSelectedListener {
@@ -140,8 +141,8 @@ public class UiUtils {
                          new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface diag, int which) {
-                dialog.dismiss();
                 action.onOk(dialog);
+                dialog.dismiss();
             }
         });
 
@@ -149,8 +150,9 @@ public class UiUtils {
                          context.getResources().getText(R.string.no),
                          new DialogInterface.OnClickListener() {
             @Override
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.dismiss();
+            public void onClick(DialogInterface diag, int which) {
+                action.onCancel(dialog);
+                diag.dismiss();
             }
         });
         return dialog;

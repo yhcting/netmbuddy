@@ -196,7 +196,8 @@ public class PlaylistActivity extends Activity {
         CharSequence msg = getResources().getText(R.string.database) + " <= " + exDbf.getAbsolutePath();
         UiUtils.buildConfirmDialog(this, title, msg, new UiUtils.ConfirmAction() {
             @Override
-            public void onOk(Dialog dialog) {
+            public void
+            onOk(Dialog dialog) {
                 // Check external DB file.
                 if (!exDbf.canRead()) {
                     UiUtils.showTextToast(PlaylistActivity.this, R.string.msg_fail_access_exdb);
@@ -225,6 +226,10 @@ public class PlaylistActivity extends Activity {
                                   R.string.importing_db)
                     .run();
             }
+
+            @Override
+            public void
+            onCancel(Dialog dialog) { }
         }).show();
     }
 
@@ -236,7 +241,8 @@ public class PlaylistActivity extends Activity {
         CharSequence msg = getResources().getText(R.string.database) + " <= " + exDbf.getAbsolutePath();
         UiUtils.buildConfirmDialog(this, title, msg, new UiUtils.ConfirmAction() {
             @Override
-            public void onOk(Dialog dialog) {
+            public void
+            onOk(Dialog dialog) {
                 // Check external DB file.
                 if (!exDbf.canRead()) {
                     UiUtils.showTextToast(PlaylistActivity.this, R.string.msg_fail_access_exdb);
@@ -265,6 +271,10 @@ public class PlaylistActivity extends Activity {
                                   R.string.merging_db)
                     .run();
             }
+
+            @Override
+            public void
+            onCancel(Dialog dialog) { }
         }).show();
     }
 
@@ -276,7 +286,8 @@ public class PlaylistActivity extends Activity {
         CharSequence msg = getResources().getText(R.string.database) + " => " + exDbf.getAbsolutePath();
         UiUtils.buildConfirmDialog(this, title, msg, new UiUtils.ConfirmAction() {
             @Override
-            public void onOk(Dialog dialog) {
+            public void
+            onOk(Dialog dialog) {
                 // Check external DB file.
                 if (exDbf.exists() && !exDbf.canWrite()) {
                     UiUtils.showTextToast(PlaylistActivity.this, R.string.msg_fail_access_exdb);
@@ -304,6 +315,10 @@ public class PlaylistActivity extends Activity {
                                   R.string.exporting_db)
                     .run();
             }
+
+            @Override
+            public void
+            onCancel(Dialog dialog) { }
         }).show();
     }
 
@@ -593,6 +608,10 @@ public class PlaylistActivity extends Activity {
             onOk(Dialog dialog) {
                 onContextMenuDeleteDo(info.id);
             }
+
+            @Override
+            public void
+            onCancel(Dialog dialog) { }
         };
         UiUtils.buildConfirmDialog(this,
                                    R.string.delete,

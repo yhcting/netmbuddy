@@ -72,6 +72,7 @@
     <string name="time_added">추가된 시간</string>
     <string name="time_last_played">마지막으로 재생된 시간</string>
     <string name="clear_search_history">검색 히스토리 삭제</string>
+    <string name="import_share">공유데이타 가져오기</string>
     <string name="importing_share">공유 데이타를 가져오는 중</string>
     <string name="share_via_email">Email로 공유하기</string>
 
@@ -130,6 +131,7 @@
     <string name="msg_search_history_cleared">검색 히스토리가 삭제되었습니다.</string>
     <string name="msg_delete_playlist">재생목록을 삭제합니다.</string>
     <string name="msg_fail_to_access_data">자료에 접근하는데 실패했습니다.</string>
+    <string name="msg_confirm_import_share">이 공유데이타를 가져오시겠습니까?</string>
 
     <string name="err_no_err">성공</string>
     <string name="err_unknown">알 수 없는 오류가 발생했습니다.</string>
