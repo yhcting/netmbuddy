@@ -21,16 +21,18 @@
 package free.yhc.netmbuddy;
 
 import static free.yhc.netmbuddy.utils.Utils.eAssert;
+import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.view.KeyEvent;
+import android.view.View;
 import free.yhc.netmbuddy.model.BGTask;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class DiagAsyncTask extends BGTask<Err> implements
 DialogInterface.OnDismissListener,
-DialogInterface.OnClickListener {
+View.OnClickListener {
     private Context         mContext        = null;
     private ProgressDialog  mDialog         = null;
     private CharSequence    mTitle          = null;
@@ -197,6 +199,13 @@ DialogInterface.OnClickListener {
 
     @Override
     protected void
+    onCancel() {
+        if (null != mWorker)
+            mWorker.onCancel(this);
+    }
+
+    @Override
+    protected void
     onPreRun() {
         mDialog = new ProgressDialog(mContext);
         if (null != mTitle)
@@ -221,23 +230,45 @@ DialogInterface.OnClickListener {
             }
         });
 
-        if (mCancelable)
-            mDialog.setButton(mContext.getResources().getText(R.string.cancel), this);
-
         mDialog.setOnDismissListener(this);
+
+        // NOTE
+        // See below codes.
+        // In case of cancelable dialog, set dummy onClick is registered.
+        // And then, REAL onClick is re-registered for the button directly.
+        // This is to workaround Android Framework's ProgressDialog policy.
+        // According to Android Framework, ProgressDialog dismissed as soon as button is clicked.
+        // But, this is not what I expected.
+        // Below code is a way of workaround this policy.
+        // For details, See "https://groups.google.com/forum/?fromgroups=#!topic/android-developers/-1bIchuFASQ".
+        if (mCancelable) {
+            // Set dummy onClick listener.
+            mDialog.setButton(Dialog.BUTTON_POSITIVE,
+                              mContext.getResources().getText(R.string.cancel),
+                              new DialogInterface.OnClickListener() {
+                                @Override
+                                public void
+                                onClick(DialogInterface dialog, int which) {
+                                }
+                            });
+        }
         mDialog.show();
+        if (mCancelable)
+            mDialog.getButton(Dialog.BUTTON_POSITIVE).setOnClickListener(this);
+
         if (null != mWorker)
             mWorker.onPreExecute(this);
     }
 
+    /**
+     * handle event - cancel button is clicked.
+     */
     @Override
     public void
-    onClick(DialogInterface dialogI, int which) {
+    onClick(View view) {
         eAssert(mCancelable);
         mUserCancelled = true;
         mDialog.setMessage(mContext.getResources().getText(R.string.msg_wait_cancel));
-        if (null != mWorker)
-            mWorker.onCancel(this);
         super.cancel(mInterruptOnCancel);
     }
 
