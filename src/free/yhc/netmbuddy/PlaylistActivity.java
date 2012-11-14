@@ -603,7 +603,6 @@ public class PlaylistActivity extends Activity {
 
     private void
     onContextMenuShare(final AdapterContextMenuInfo info) {
-        final String plTitle = (String)DB.get().getPlaylistInfo(info.id, DB.ColPlaylist.TITLE);
         final File fTmp;
         try {
             fTmp = File.createTempFile(Utils.getResText(R.string.share_pl_attachment),
@@ -614,6 +613,8 @@ public class PlaylistActivity extends Activity {
             return;
         }
 
+        final Share.ExporterI exporter = Share.buildPlayerlistExporter(fTmp, info.id);
+
         DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
             @Override
             public void
@@ -623,6 +624,7 @@ public class PlaylistActivity extends Activity {
                     return;
                 }
 
+                String plTitle = (String)DB.get().getPlaylistInfo(info.id, DB.ColPlaylist.TITLE);
                 UiUtils.sendMail(PlaylistActivity.this,
                                  null,
                                  Utils.getResText(R.string.share_via_email),
@@ -634,7 +636,8 @@ public class PlaylistActivity extends Activity {
             @Override
             public Err
             doBackgroundWork(DiagAsyncTask task) {
-                Share.Err err = Share.exportSharePlaylist(fTmp, info.id);
+                exporter.run();
+                Share.Err err = exporter.result();
                 if (Share.Err.NO_ERR != err) {
                     fTmp.delete();
                     return Err.map(err);

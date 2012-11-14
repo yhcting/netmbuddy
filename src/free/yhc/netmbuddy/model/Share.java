@@ -30,6 +30,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
@@ -84,12 +85,24 @@ public class Share {
     private static final String FTITLE      = "title";
     private static final String FVIDEOS     = "videos";
 
-    public interface OnProgressListener {
-        /**
-         * 1.0F means 100%
-         * @param prog
-         */
+
+    public static interface OnProgressListener {
         void onProgress(float prog);
+    }
+
+    public static interface ImporterI {
+        /**
+         * Synchronous call.
+         * @param mtrunner
+         */
+        void            run(OnProgressListener listener);
+        void            cancel();
+        ImportResult    result();
+    }
+
+    public static interface ExporterI {
+        void            run();
+        Err             result();
     }
 
     public static enum Err {
@@ -140,6 +153,196 @@ public class Share {
         public AtomicInteger    success = new AtomicInteger(0);
         // # of fails to import.
         public AtomicInteger    fail    = new AtomicInteger(0);
+    }
+
+    private static class Importer implements ImporterI {
+        private final ZipInputStream    _mZis;
+        private final MultiThreadRunner _mMtrunner;
+        private final AtomicReference<ImportResult> _mIr
+            = new AtomicReference<ImportResult>(new ImportResult());
+
+        Importer(ZipInputStream zis) {
+            _mZis = zis;
+            _mMtrunner =  new MultiThreadRunner(Utils.getUiHandler(),
+                                                Policy.YTSEARCH_MAX_LOAD_THUMBNAIL_THREAD);
+        }
+
+        /**
+         *
+         * @param ir
+         * @param jo
+         *   Playlist JSON object.
+         * @throws JSONException
+         * @throws LocalException
+         */
+        private static void
+        importSharePlaylist(ImportResult ir,
+                            JSONObject jo,
+                            MultiThreadRunner mtrunner)
+                throws JSONException, LocalException, InterruptedException {
+            DB db = DB.get();
+            JSONArray jarr = jo.getJSONArray(FVIDEOS);
+
+            String title = getUniqueSharePlaylistTitle(jo.getString(FTITLE));
+            long plid = db.insertPlaylist(title, "");
+            if (plid < 0)
+                throw new LocalException(Err.DB_UNKNOWN);
+
+            for (int i = 0; i < jarr.length(); i++) {
+                mtrunner.appendJob(new ImportVideoJob(1.0f / jarr.length(),
+                                                      jarr.getJSONObject(i),
+                                                      plid,
+                                                      ir.success,
+                                                      ir.fail));
+            }
+
+            mtrunner.waitAllDone();
+        }
+
+        @Override
+        public void
+        run(final OnProgressListener listener) {
+            _mMtrunner.setOnProgressListener(new MultiThreadRunner.OnProgressListener() {
+                @Override
+                public void onProgress(float prog) {
+                    listener.onProgress(prog);
+                }
+            });
+
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ImportResult ir = new ImportResult();
+            try {
+                FileUtils.unzip(baos, _mZis);
+                JSONObject rootJo = new JSONObject(baos.toString("UTF-8"));
+                // ---------------------------------------------
+                // Handling Meta data
+                // ---------------------------------------------
+                JSONObject jo = rootJo.getJSONObject(FMETA);
+                if (!verify(jo))
+                    throw new LocalException(Err.INVALID_SHARE);
+
+                ir.type = Type.valueOf(jo.getString(FTYPE));
+                switch (ir.type) {
+                case PLAYLIST:
+                    importSharePlaylist(ir, rootJo.getJSONObject(FPLAYLIST), _mMtrunner);
+                }
+
+                ir.err = Err.NO_ERR;
+            } catch (IllegalArgumentException e) {
+                ir.err = Err.INVALID_SHARE;
+            } catch (JSONException e) {
+                ir.err = Err.INVALID_SHARE;
+            } catch (IOException e) {
+                ir.err = Err.INVALID_SHARE;
+            } catch (InterruptedException e) {
+                ir.err = Err.INTERRUPTED;
+            } catch (LocalException e) {
+                ir.err = e.error();
+            }
+            _mIr.set(ir);
+        }
+
+        @Override
+        public void
+        cancel() {
+            _mMtrunner.cancel();
+        }
+
+        @Override
+        public ImportResult
+        result() {
+            return _mIr.get();
+        }
+    }
+
+    private static class ExporterPlaylist implements ExporterI {
+        private final File  _mFout;
+        private final long  _mPlid;
+        private final AtomicReference<Err> _mErr = new AtomicReference<Err>(Err.UNKNOWN);
+
+        ExporterPlaylist(File fout, long plid) {
+            _mFout = fout;
+            _mPlid = plid;
+        }
+
+        private static Err
+        exportShareJson(ZipOutputStream zos, JSONObject jo, String shareName) {
+            ByteArrayInputStream bais;
+            try {
+                bais = new ByteArrayInputStream(jo.toString().getBytes("UTF-8"));
+            } catch (UnsupportedEncodingException e) {
+                return Err.UNKNOWN;
+            }
+
+            try {
+                FileUtils.zip(zos, bais, shareName);
+            } catch (IOException e) {
+                return Err.IO_FILE;
+            } finally {
+                try {
+                    bais.close();
+                } catch (IOException ignored) { }
+            }
+            return Err.NO_ERR;
+        }
+
+        @Override
+        public void
+        run() {
+            JSONObject jsonPl = playlistToJson(_mPlid);
+            JSONObject jsonMeta = createMetaJson(Type.PLAYLIST);
+            JSONObject jo = new JSONObject();
+
+            if (null == jsonPl) {
+                _mErr.set(Err.PARAMETER);
+                return;
+            }
+
+            eAssert(null != jsonMeta);
+            try {
+                jo.put(FMETA, jsonMeta);
+                jo.put(FPLAYLIST, jsonPl);
+            } catch (JSONException e) {
+                _mErr.set(Err.UNKNOWN);
+                return;
+            }
+
+            String shareName = "";
+            try {
+                shareName = FileUtils.pathNameEscapeString(Utils.getResText(R.string.playlist)
+                                                           + "_"
+                                                           + jsonPl.getString(FTITLE)
+                                                           + "."
+                                                           + Policy.SHARE_FILE_EXTENTION);
+            } catch (JSONException e) {
+                _mErr.set(Err.UNKNOWN);
+                return;
+            }
+
+            ZipOutputStream zos;
+            try {
+                zos = new ZipOutputStream(new FileOutputStream(_mFout));
+            } catch (FileNotFoundException e) {
+                _mErr.set(Err.IO_FILE);
+                return;
+            }
+
+            Err err = exportShareJson(zos, jo, shareName);
+            try {
+                zos.close();
+            } catch (IOException e) {
+                _mErr.set(Err.IO_FILE);
+                return;
+            }
+
+            _mErr.set(err);
+        }
+
+        @Override
+        public Err
+        result() {
+            return _mErr.get();
+        }
     }
 
     private static class ImportVideoJob extends MultiThreadRunner.Job<Err> {
@@ -332,153 +535,20 @@ public class Share {
     //
     //
     // ========================================================================
-    private static Err
-    exportShareJson(ZipOutputStream zos, JSONObject jo, String shareName) {
-        ByteArrayInputStream bais;
-        try {
-            bais = new ByteArrayInputStream(jo.toString().getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            return Err.UNKNOWN;
-        }
 
-        try {
-            FileUtils.zip(zos, bais, shareName);
-        } catch (IOException e) {
-            return Err.IO_FILE;
-        } finally {
-            try {
-                bais.close();
-            } catch (IOException ignored) { }
-        }
-        return Err.NO_ERR;
-    }
-
-    /**
-     *
-     * @param ir
-     * @param jo
-     *   Playlist JSON object.
-     * @throws JSONException
-     * @throws LocalException
-     */
-    private static void
-    importSharePlaylist(ImportResult ir, JSONObject jo,
-                        final OnProgressListener progListener)
-            throws JSONException, LocalException, InterruptedException {
-        DB db = DB.get();
-        JSONArray jarr = jo.getJSONArray(FVIDEOS);
-
-        String title = getUniqueSharePlaylistTitle(jo.getString(FTITLE));
-        long plid = db.insertPlaylist(title, "");
-        if (plid < 0)
-            throw new LocalException(Err.DB_UNKNOWN);
-
-        final MultiThreadRunner mtrunner = new MultiThreadRunner(
-                Utils.getUiHandler(),
-                Policy.YTSEARCH_MAX_LOAD_THUMBNAIL_THREAD);
-
-        mtrunner.setOnProgressListener(new MultiThreadRunner.OnProgressListener() {
-            @Override
-            public void
-            onProgress(float prog) {
-                progListener.onProgress(prog);
-            }
-        });
-
-        for (int i = 0; i < jarr.length(); i++) {
-            mtrunner.appendJob(new ImportVideoJob(1.0f / jarr.length(),
-                                                  jarr.getJSONObject(i),
-                                                  plid,
-                                                  ir.success,
-                                                  ir.fail));
-        }
-
-        mtrunner.waitAllDone();
-    }
 
     // ========================================================================
     //
     // Interfaces
     //
     // ========================================================================
-    public static ImportResult
-    importShare(ZipInputStream zis,
-                OnProgressListener progListener) {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ImportResult ir = new ImportResult();
-        try {
-            FileUtils.unzip(baos, zis);
-            JSONObject rootJo = new JSONObject(baos.toString("UTF-8"));
-            // ---------------------------------------------
-            // Handling Meta data
-            // ---------------------------------------------
-            JSONObject jo = rootJo.getJSONObject(FMETA);
-            if (!verify(jo))
-                throw new LocalException(Err.INVALID_SHARE);
-
-            ir.type = Type.valueOf(jo.getString(FTYPE));
-            switch (ir.type) {
-            case PLAYLIST:
-                importSharePlaylist(ir, rootJo.getJSONObject(FPLAYLIST), progListener);
-            }
-
-            ir.err = Err.NO_ERR;
-        } catch (IllegalArgumentException e) {
-            ir.err = Err.INVALID_SHARE;
-        } catch (JSONException e) {
-            ir.err = Err.INVALID_SHARE;
-        } catch (IOException e) {
-            ir.err = Err.INVALID_SHARE;
-        } catch (InterruptedException e) {
-            ir.err = Err.INTERRUPTED;
-        } catch (LocalException e) {
-            ir.err = e.error();
-        }
-        return ir;
+    public static ImporterI
+    buildImporter(ZipInputStream zis) {
+        return new Importer(zis);
     }
 
-    public static Err
-    exportSharePlaylist(File file, long plid) {
-        JSONObject jsonPl = playlistToJson(plid);
-        JSONObject jsonMeta = createMetaJson(Type.PLAYLIST);
-        JSONObject jo = new JSONObject();
-
-        if (null == jsonPl)
-            return Err.PARAMETER;
-
-        eAssert(null != jsonMeta);
-        try {
-            jo.put(FMETA, jsonMeta);
-            jo.put(FPLAYLIST, jsonPl);
-        } catch (JSONException e) {
-            return Err.UNKNOWN;
-        }
-
-        String shareName = "";
-        try {
-            shareName = FileUtils.pathNameEscapeString(Utils.getResText(R.string.playlist)
-                                                       + "_"
-                                                       + jsonPl.getString(FTITLE)
-                                                       + "."
-                                                       + Policy.SHARE_FILE_EXTENTION);
-        } catch (JSONException e) {
-            return Err.UNKNOWN;
-        }
-
-        ZipOutputStream zos;
-        try {
-            zos = new ZipOutputStream(new FileOutputStream(file));
-        } catch (FileNotFoundException e) {
-            return Err.IO_FILE;
-        }
-
-        Err err = exportShareJson(zos, jo, shareName);
-        try {
-            zos.close();
-        } catch (IOException e) {
-            err = Err.IO_FILE;
-        }
-
-        return err;
+    public static ExporterI
+    buildPlayerlistExporter(File file, long plid) {
+        return new ExporterPlaylist(file, plid);
     }
 }

@@ -24,7 +24,6 @@ import static free.yhc.netmbuddy.utils.Utils.logE;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.zip.ZipInputStream;
 
 import android.app.Activity;
@@ -41,21 +40,19 @@ public class ImportShareActivity extends Activity {
 
     private static class Importer extends DiagAsyncTask.Worker {
         private final Activity          _mActivity;
-        private final ZipInputStream    _mIs;
-        private final AtomicReference<Share.ImportResult>   _mResult
-            = new AtomicReference<Share.ImportResult>(null);
+        private final Share.ImporterI   _mImporter;
 
         private
-        Importer(Activity activity, ZipInputStream is) {
+        Importer(Activity activity, ZipInputStream zis) {
             _mActivity = activity;
-            _mIs = is;
+            _mImporter = Share.buildImporter(zis);
         }
 
         private CharSequence
         getReportText() {
             int success = 0;
             int fail = 0;
-            Share.ImportResult r = _mResult.get();
+            Share.ImportResult r = _mImporter.result();
             if (null != r) {
                 success = r.success.get();
                 fail = r.fail.get();
@@ -88,8 +85,14 @@ public class ImportShareActivity extends Activity {
                     task.publishProgress((int)(prog * 100));
                 }
             };
-            _mResult.set(Share.importShare(_mIs, listener));
+            _mImporter.run(listener);
             return Err.NO_ERR;
+        }
+
+        @Override
+        public void
+        onCancel(DiagAsyncTask task) {
+            _mImporter.cancel();
         }
 
         @Override
