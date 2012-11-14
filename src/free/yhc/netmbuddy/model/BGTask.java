@@ -207,8 +207,7 @@ public abstract class BGTask<R> {
 
     public final boolean
     cancel(final boolean interrupt) {
-        mCancelled.set(true);
-        if (mCancelled.get()
+        if (mCancelled.getAndSet(true)
             || State.READY == mState.get()
             || State.TERMINATED == mState.get())
             return false;
