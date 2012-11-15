@@ -84,9 +84,33 @@ public abstract class BGTask<R> {
     }
 
     private void
+    postOnCancelled() {
+        mOwner.post(new Runnable() {
+            @Override
+            public void run() {
+                onCancelled();
+                mState.set(State.TERMINATED);
+            }
+        });
+    }
+
+    private void
+    postOnPostRun(final R r) {
+        mOwner.post(new Runnable() {
+            @Override
+            public void run() {
+                onPostRun(r);
+                mState.set(State.TERMINATED);
+            }
+        });
+    }
+
+    private void
     bgRun() {
-        if (mCancelled.get())
+        if (mCancelled.get()) {
+            postOnCancelled();
             return;
+        }
 
         mState.set(State.RUNNING);
         R r = null;
@@ -96,23 +120,9 @@ public abstract class BGTask<R> {
             mState.set(State.DONE);
 
             if (mCancelled.get())
-                mOwner.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        onCancelled();
-                        mState.set(State.TERMINATED);
-                    }
-                });
-            else {
-                final R result = r;
-                mOwner.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        onPostRun(result);
-                        mState.set(State.TERMINATED);
-                    }
-                });
-            }
+                postOnCancelled();
+            else
+                postOnPostRun(r);
         }
     }
 
