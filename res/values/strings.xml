@@ -14,6 +14,7 @@
     <string name="deleting">Deleting</string>
     <string name="adding">Adding</string>
     <string name="moving">Moving</string>
+    <string name="copying">Copying</string>
     <string name="error">Error</string>
     <string name="buffering">Buffering</string>
     <string name="preparing">Preparing</string>
@@ -32,6 +33,7 @@
     <string name="autostop">Auto-stop</string>
     <string name="close">Close</string>
     <string name="share">Share</string>
+    <string name="duplication">Duplication</string>
 
     <string name="enter_keyword">Enter search keyword</string>
     <string name="new_search">New search</string>
@@ -40,6 +42,7 @@
     <string name="enter_user_name">Enter user name</string>
     <string name="new_playlist">New playlist</string>
     <string name="add_to">Add to</string>
+    <string name="copy_to">Copy to</string>
     <string name="move_to">Move to</string>
     <string name="enter_playlist_title">Enter playlist title</string>
     <string name="recently_played">Recently played</string>

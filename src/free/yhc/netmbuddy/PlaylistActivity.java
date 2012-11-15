@@ -95,12 +95,66 @@ public class PlaylistActivity extends Activity {
 
     private void
     playAllMusics(View anchor) {
-        playMusics(mDb.queryVideos(new ColVideo[] { ColVideo.VIDEOID,
-                                                    ColVideo.TITLE,
-                                                    ColVideo.VOLUME,
-                                                    ColVideo.PLAYTIME},
+        playMusics(mDb.queryVideos(new DB.ColVideo[] { DB.ColVideo.VIDEOID,
+                                                       DB.ColVideo.TITLE,
+                                                       DB.ColVideo.VOLUME,
+                                                       DB.ColVideo.PLAYTIME},
                                    null, false));
         UiUtils.showTextToast(this, R.string.msg_play_all_musics);
+    }
+
+    private void
+    copyPlaylist(final long dstPlid, final long srcPlid) {
+        // Below three variables are reserved for future use - user feedback.
+
+        DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
+            private int _mSCnt      = 0;    // inserted count
+            private int _mDupCnt    = 0;    // duplicated cont
+            private int _mFCnt      = 0;    // failure count
+
+            @Override
+            public Err
+            doBackgroundWork(DiagAsyncTask task) {
+                Cursor c = mDb.queryVideos(srcPlid,
+                                           new DB.ColVideo[] { DB.ColVideo.ID },
+                                           null,
+                                           false);
+                try {
+                    if (!c.moveToFirst())
+                        return Err.NO_ERR;
+
+                    mDb.beginTransaction();
+                    do {
+                        switch (mDb.insertVideoToPlaylist(dstPlid, c.getLong(0))) {
+                        case NO_ERR:        _mSCnt++;   break;
+                        case DUPLICATED:    _mDupCnt++; break;
+                        default:            _mFCnt++;
+                        }
+                    } while (c.moveToNext());
+                    mDb.setTransactionSuccessful();
+                } finally {
+                    mDb.endTransaction();
+                    c.close();
+                }
+                return Err.NO_ERR;
+            }
+
+            @Override
+            public void
+            onPostExecute(DiagAsyncTask task, Err result) {
+                String msg  = Utils.getResText(R.string.done) + " : " + _mSCnt + "\n"
+                              + Utils.getResText(R.string.duplication) + " : " + _mDupCnt + "\n"
+                              + Utils.getResText(R.string.error) + " : " + _mFCnt;
+                UiUtils.showTextToast(PlaylistActivity.this, msg);
+                getAdapter().reloadCursorAsync();
+            }
+        };
+
+        new DiagAsyncTask(this,
+                worker,
+                DiagAsyncTask.Style.SPIN,
+                R.string.copying)
+            .run();
     }
 
     // ------------------------------------------------------------------------
@@ -620,6 +674,32 @@ public class PlaylistActivity extends Activity {
                .show();
     }
 
+
+
+    private void
+    onContextMenuCopyTo(final AdapterContextMenuInfo info) {
+        UiUtils.OnPlaylistSelectedListener action = new UiUtils.OnPlaylistSelectedListener() {
+            @Override
+            public void
+            onPlaylist(final long plid, final Object user) {
+                copyPlaylist(plid, info.id);
+            }
+
+            @Override
+            public void
+            onUserMenu(int pos, Object user) { }
+        };
+
+        UiUtils.buildSelectPlaylistDialog(DB.get(),
+                                          this,
+                                          R.string.copy_to,
+                                          null,
+                                          action,
+                                          info.id,
+                                          null)
+               .show();
+    }
+
     private void
     onContextMenuShare(final AdapterContextMenuInfo info) {
         final File fTmp;
@@ -692,6 +772,10 @@ public class PlaylistActivity extends Activity {
 
         case R.id.delete:
             onContextMenuDelete(info);
+            return true;
+
+        case R.id.copy_to:
+            onContextMenuCopyTo(info);
             return true;
 
         case R.id.share:
