@@ -7,6 +7,7 @@
     <string name="off">Off</string>
     <string name="ok">OK</string>
     <string name="cancel">Cancel</string>
+    <string name="cancelled">Cancelled</string>
     <string name="delete">Delete</string>
     <string name="rename">Rename</string>
     <string name="loading">Loading</string>
@@ -132,6 +133,7 @@
     <string name="msg_delete_playlist">Delete the playlist.</string>
     <string name="msg_fail_to_access_data">Fail to access data.</string>
     <string name="msg_confirm_import_share">Do you want to import this shared data?</string>
+    <string name="msg_warn_background_not_allowed">It is NOT allowed running background. Note that moving background stops current task.</string>
 
     <string name="err_no_err">Success.</string>
     <string name="err_unknown">Unknown error.</string>

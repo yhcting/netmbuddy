@@ -158,6 +158,26 @@ View.OnClickListener {
         });
     }
 
+    public boolean
+    userCancel() {
+        if (!mCancelable || mUserCancelled)
+            return false;
+
+        mUserCancelled = true;
+        mDialog.setMessage(mContext.getResources().getText(R.string.msg_wait_cancel));
+        return super.cancel(mInterruptOnCancel);
+    }
+
+    /**
+     * This is used usually to avoid "leaked window..." error.
+     * But be careful to use it.
+     */
+    public void
+    forceDismissDialog() {
+        if (null != mDialog)
+            mDialog.dismiss();
+    }
+
     @Override
     protected Err
     doAsyncTask() {
@@ -266,10 +286,7 @@ View.OnClickListener {
     @Override
     public void
     onClick(View view) {
-        eAssert(mCancelable);
-        mUserCancelled = true;
-        mDialog.setMessage(mContext.getResources().getText(R.string.msg_wait_cancel));
-        super.cancel(mInterruptOnCancel);
+        userCancel();
     }
 
     @Override

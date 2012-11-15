@@ -20,11 +20,10 @@
 
 package free.yhc.netmbuddy;
 
-import static free.yhc.netmbuddy.utils.Utils.eAssert;
 import free.yhc.netmbuddy.model.DB;
-import free.yhc.netmbuddy.model.Share;
 import free.yhc.netmbuddy.model.YTHacker;
 import free.yhc.netmbuddy.model.YTSearchHelper;
+import free.yhc.netmbuddy.share.Share;
 
 public enum Err {
     NO_ERR                      (R.string.err_no_err),
@@ -60,6 +59,9 @@ public enum Err {
     public static Err
     map(YTHacker.Err err) {
         switch (err) {
+        case NO_ERR:
+            return NO_ERR;
+
         case IO_NET:
             return IO_NET;
 
@@ -72,8 +74,6 @@ public enum Err {
         case INTERRUPTED:
             return INTERRUPTED;
 
-        case NO_ERR:
-            eAssert(false);
         default:
             return UNKNOWN;
         }
@@ -82,6 +82,9 @@ public enum Err {
     public static Err
     map(DB.Err err) {
         switch (err) {
+        case NO_ERR:
+            return NO_ERR;
+
         case VERSION_MISMATCH:
             return DB_VERSION_MISMATCH;
 
@@ -97,8 +100,6 @@ public enum Err {
         case INVALID_DB:
             return DB_INVALID;
 
-        case NO_ERR:
-            eAssert(false);
         default:
             return UNKNOWN;
         }
@@ -107,6 +108,9 @@ public enum Err {
     public static Err
     map(YTSearchHelper.Err err) {
         switch (err) {
+        case NO_ERR:
+            return NO_ERR;
+
         case IO_NET:
             return Err.IO_NET;
 
@@ -125,8 +129,6 @@ public enum Err {
         case FEED_FORMAT:
             return PARSER_UNKNOWN;
 
-        case NO_ERR:
-            eAssert(false);
         default:
             return UNKNOWN;
         }
@@ -135,6 +137,9 @@ public enum Err {
     public static Err
     map(Share.Err err) {
         switch (err) {
+        case NO_ERR:
+            return NO_ERR;
+
         case IO_FILE:
             return Err.IO_FILE;
 

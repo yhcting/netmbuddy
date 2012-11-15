@@ -159,35 +159,37 @@ public class YTPlayerUI {
                   YTPlayer.MPState to,   int toFlag) {
         NotiManager nm = NotiManager.get();
         if (!mMp.hasActiveVideo()) {
-            nm.removeNotification();
+            nm.removePlayerNotification();
             return;
         }
         String title = mMp.getActiveVideo().title;
 
+        NotiManager.NotiType ntype = NotiManager.NotiType.BASE;
         switch (to) {
         case PREPARED:
         case PAUSED:
-            nm.putNotification(NotiManager.NotiType.START, title);
+            ntype = NotiManager.NotiType.START;
             break;
 
         case STARTED:
-            nm.putNotification(NotiManager.NotiType.PAUSE, title);
+            ntype = NotiManager.NotiType.PAUSE;
             break;
 
         case ERROR:
-            nm.putNotification(NotiManager.NotiType.ALERT, title);
+            ntype = NotiManager.NotiType.ALERT;
             break;
 
         case IDLE:
         case INITIALIZED:
         case PREPARED_AUDIO:
         case PREPARING:
-            nm.putNotification(NotiManager.NotiType.STOP, title);
+            ntype = NotiManager.NotiType.STOP;
             break;
 
         default:
-            nm.putNotification(NotiManager.NotiType.BASE, title);
+            ntype = NotiManager.NotiType.BASE;
         }
+        nm.putPlayerNotification(ntype, title);
     }
     // ========================================================================
     //
@@ -591,7 +593,7 @@ public class YTPlayerUI {
                     }
 
                     if (needToNotification)
-                        NotiManager.get().putNotification(NotiManager.NotiType.ALERT, (String)msg);
+                        NotiManager.get().putPlayerNotification(NotiManager.NotiType.ALERT, (String)msg);
                 }
 
                 @Override

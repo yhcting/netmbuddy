@@ -110,9 +110,14 @@
                   android:configChanges="orientation|keyboardHidden"
                   android:theme="@android:style/Theme.NoTitleBar"
                   />
+        <activity android:name=".ImportShareActivity"
+                  android:configChanges="orientation|keyboardHidden"
+                  android:theme="@android:style/Theme.Dialog"
+                  android:launchMode="singleTop"
+                  />
         <activity android:name=".ImportShareContentActivity"
                   android:configChanges="orientation|keyboardHidden"
-                  android:theme="@android:style/Theme.NoTitleBar"
+                  android:theme="@android:style/Theme.Dialog"
                   >
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -124,7 +129,7 @@
         </activity>
         <activity android:name=".ImportShareFileActivity"
                   android:configChanges="orientation|keyboardHidden"
-                  android:theme="@android:style/Theme.NoTitleBar"
+                  android:theme="@android:style/Theme.Dialog"
                   >
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />

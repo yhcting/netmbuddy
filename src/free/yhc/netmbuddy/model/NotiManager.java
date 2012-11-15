@@ -31,12 +31,10 @@ import free.yhc.netmbuddy.R;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class NotiManager {
-    private static final String NOTI_INTENT_DELETE  = "ytmplayer.intent.action.NOTIFICATION_DELETE";
-    private static final String NOTI_INTENT_ACTION  = "ytmplayer.intent.action.NOTIFICATION_ACTION";
-
-    // Unique Identification Number for the Notification.
-    // 'noti_base' doens't have any meaning except for random unique number.
-    private static final int NOTI_ID     = R.drawable.noti_base;
+    private static final String NOTI_INTENT_DELETE
+        = "ytmplayer.intent.action.NOTIFICATION_DELETE";
+    private static final String NOTI_INTENT_ACTION
+        = "ytmplayer.intent.action.NOTIFICATION_ACTION";
 
     private static NotiManager sInstance = null;
 
@@ -44,21 +42,47 @@ public class NotiManager {
     private final NotificationManager   nm = (NotificationManager)Utils.getAppContext()
                                                                        .getSystemService(Context.NOTIFICATION_SERVICE);
 
+    // NOTE
     public static enum NotiType {
-        // NOTE
-        // All uses same notification id because these notification SHOULD NOT be multiple-displayed.
-        BASE    (R.drawable.noti_base),
-        START   (R.drawable.noti_start),
-        PAUSE   (R.drawable.noti_pause),
-        STOP    (R.drawable.noti_stop),
-        ALERT   (R.drawable.noti_alert);
+        // All player type notification uses same notification id because
+        //   these notification SHOULD NOT be multiple-displayed.
+        BASE    (R.drawable.noti_base,  R.drawable.noti_base),
+        START   (R.drawable.noti_start, R.drawable.noti_base),
+        PAUSE   (R.drawable.noti_pause, R.drawable.noti_base),
+        STOP    (R.drawable.noti_stop,  R.drawable.noti_base),
+        ALERT   (R.drawable.noti_alert, R.drawable.noti_base),
 
-        // true : for keep notification alive even if app. is killed.
-        // false: notification should be removed when app. is killed.
-        private final int           _mIcon;
+        // General notification - not used yet.
+        // Why?
+        // In case of GMail, ImportShareActivity seems to be started with NEW_TASK.
+        // See below steps.
+        //   - 1. After starting importing, ImportShareActivity is running foreground.
+        //   - 2. Backing to launcher by touching 'Home' button.
+        //   - 3a. Touch GMail icon again to go to GMail.
+        //       => ImportShareActivity is not shown anymore!
+        //   - 3b. Touch NetMBuddy to see ImportShareActivity
+        //       => ImportShareActivity is not shown any more.
+        // As described above, there is no way to back to ImportShareActivity
+        //   after backing to launcher by touching 'Home' key.
+        //
+        // To workaround this, notification may be considered.
+        // But, it doesn't help too.
+        // Resuming app. or starting ImportShareActivity with singleTop
+        //   always tries to start new Activity instance.
+        // I didn't find any solution for this issue.
+        // So, by any reasonable solution is found, this notification is left as 'UNUSED'.
+        IMPORT  (R.drawable.noti_import,R.drawable.noti_import);
 
-        NotiType(int icon) {
+        private final int   _mIcon;
+        private final int   _mId;
+
+        NotiType(int icon, int id) {
             _mIcon   = icon;
+            _mId = id;
+        }
+
+        int getId() {
+            return _mId;
         }
 
         int getIcon() {
@@ -66,14 +90,13 @@ public class NotiManager {
         }
     }
 
-
     public static class NotiIntentReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
             NotiManager nm = NotiManager.get();
             if (NOTI_INTENT_DELETE.equals(action))
-                nm.removeNotification();
+                nm.removePlayerNotification();
             else if (NOTI_INTENT_ACTION.equals(action)) {
                 YTPlayer ytp = YTPlayer.get();
                 String typeName = intent.getStringExtra("type");
@@ -99,7 +122,11 @@ public class NotiManager {
 
                 case ALERT:
                     // Just remove notification
-                    nm.removeNotification();
+                    nm.removePlayerNotification();
+                    break;
+
+                case IMPORT:
+                    Utils.resumeApp();
                     break;
 
                 default:
@@ -152,19 +179,6 @@ public class NotiManager {
         */
     }
 
-    void
-    putNotification(NotiType type, String videoTitle) {
-        // To avoid unexpected race-condition.
-        eAssert(Utils.isUiThread());
-        // Set event time.
-        Notification n = buildNotification(
-                type,
-                Utils.getAppContext().getResources().getText(R.string.app_name),
-                videoTitle);
-        n.when = System.currentTimeMillis();
-        nm.notify(NOTI_ID, n);
-    }
-
     public static NotiManager
     get() {
         if (null == sInstance)
@@ -173,9 +187,32 @@ public class NotiManager {
     }
 
     public void
-    removeNotification() {
+    removeNotification(NotiType type) {
         // To avoid unexpected race-condition.
         eAssert(Utils.isUiThread());
-        nm.cancel(NOTI_ID);
+        // Player notification shares same notification id.
+        nm.cancel(type.getId());
+    }
+
+    public void
+    removePlayerNotification() {
+        removeNotification(NotiType.BASE);
+    }
+
+    public void
+    putNotification(NotiType type, String title, String description) {
+        // To avoid unexpected race-condition.
+        eAssert(Utils.isUiThread());
+        // Set event time.
+        Notification n = buildNotification(type,
+                                           title,
+                                           description);
+        n.when = System.currentTimeMillis();
+        nm.notify(type.getId(), n);
+    }
+
+    public void
+    putPlayerNotification(NotiType type, String videoTitle) {
+        putNotification(type, Utils.getResText(R.string.app_name), videoTitle);
     }
 }

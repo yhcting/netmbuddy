@@ -50,8 +50,8 @@ import free.yhc.netmbuddy.model.DB;
 import free.yhc.netmbuddy.model.DB.ColVideo;
 import free.yhc.netmbuddy.model.Policy;
 import free.yhc.netmbuddy.model.SearchSuggestionProvider;
-import free.yhc.netmbuddy.model.Share;
 import free.yhc.netmbuddy.model.YTPlayer;
+import free.yhc.netmbuddy.share.Share;
 import free.yhc.netmbuddy.utils.UiUtils;
 import free.yhc.netmbuddy.utils.Utils;
 
@@ -655,8 +655,7 @@ public class PlaylistActivity extends Activity {
             @Override
             public Err
             doBackgroundWork(DiagAsyncTask task) {
-                exporter.run();
-                Share.Err err = exporter.result();
+                Share.Err err = exporter.execute();
                 if (Share.Err.NO_ERR != err) {
                     fTmp.delete();
                     return Err.map(err);

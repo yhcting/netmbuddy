@@ -20,27 +20,22 @@
 
 package free.yhc.netmbuddy;
 
-import java.io.FileNotFoundException;
-
+import android.R.style;
+import android.app.Activity;
+import android.content.Intent;
 import android.content.res.Configuration;
-import android.net.Uri;
+import android.content.res.Resources;
 import android.os.Bundle;
-import free.yhc.netmbuddy.utils.UiUtils;
 
-public class ImportShareContentActivity extends ImportShareActivity {
+public class ImportShareContentActivity extends Activity {
     @Override
     public void
     onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Uri uri = getIntent().getData();
-        try {
-            // ImportShareActivity has responsibility regarding closing input stream.
-            onCreateInternal(savedInstanceState,
-                             getContentResolver().openInputStream(uri));
-        } catch (FileNotFoundException e) {
-            UiUtils.showTextToast(this, R.string.msg_fail_to_access_data);
-            finish();
-        }
+        Intent i = new Intent(this, ImportShareActivity.class);
+        i.setData(getIntent().getData());
+        startActivity(i);
+        finish();
     }
 
     @Override
@@ -65,6 +60,14 @@ public class ImportShareContentActivity extends ImportShareActivity {
     protected void
     onDestroy() {
         super.onDestroy();
+    }
+
+    @Override
+    protected void
+    onApplyThemeResource(Resources.Theme theme, int resid, boolean first) {
+        super.onApplyThemeResource(theme, resid, first);
+        // no background panel is shown
+        theme.applyStyle(style.Theme_Panel, true);
     }
 
     @Override

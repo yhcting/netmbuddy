@@ -45,7 +45,7 @@ YTPlayer.VideosStateListener {
                     if (Utils.isPrefLockScreen())
                         context.startActivity(i);
                 } else
-                    NotiManager.get().removeNotification();
+                    NotiManager.get().removePlayerNotification();
             }
         }
     }
