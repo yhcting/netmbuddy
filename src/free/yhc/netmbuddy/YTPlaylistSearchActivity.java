@@ -50,7 +50,7 @@ import free.yhc.netmbuddy.utils.YTUtils;
 
 public class YTPlaylistSearchActivity extends YTSearchActivity {
 
-    private static class MergeToPlaylistResult {
+    private static class ImportYtPlaylistResult {
         AtomicInteger nrIgnored = new AtomicInteger(0);
         AtomicInteger nrDone    = new AtomicInteger(0);
     }
@@ -99,11 +99,11 @@ public class YTPlaylistSearchActivity extends YTSearchActivity {
     }
 
     private Err
-    doBackgroundMergeToPlaylist(final MergeToPlaylistResult mtpr,
-                                MultiThreadRunner mtrunner,
-                                final long plid,
-                                final String ytplid,
-                                final ProgressListener progl)
+    doBackgroundImportYtPlaylist(final ImportYtPlaylistResult mtpr,
+                                 MultiThreadRunner mtrunner,
+                                 final long plid,
+                                 final String ytplid,
+                                 final ProgressListener progl)
         throws InterruptedException {
         DB db = DB.get();
         YTSearchHelper.SearchArg sarg = new YTSearchHelper.SearchArg(
@@ -195,8 +195,8 @@ public class YTPlaylistSearchActivity extends YTSearchActivity {
     }
 
     private void
-    onContextMenuMergeToPlaylist(final long plid, final Object user) {
-        final MergeToPlaylistResult mtpr = new MergeToPlaylistResult();
+    onContextMenuImportYtPlaylist(final long plid, final Object user) {
+        final ImportYtPlaylistResult mtpr = new ImportYtPlaylistResult();
         final MultiThreadRunner mtrunner = new MultiThreadRunner(
                 Utils.getUiHandler(),
                 Policy.YTSEARCH_MAX_LOAD_THUMBNAIL_THREAD);
@@ -253,11 +253,11 @@ public class YTPlaylistSearchActivity extends YTSearchActivity {
 
                 Err err = Err.NO_ERR;
                 try {
-                    err = doBackgroundMergeToPlaylist(mtpr,
-                                                      mtrunner,
-                                                      plid,
-                                                      getAdapter().getItemPlaylistId((Integer)user),
-                                                      prog);
+                    err = doBackgroundImportYtPlaylist(mtpr,
+                                                       mtrunner,
+                                                       plid,
+                                                       getAdapter().getItemPlaylistId((Integer)user),
+                                                       prog);
                 } catch (InterruptedException e) {
                     err = Err.INTERRUPTED;
                 }
@@ -274,12 +274,12 @@ public class YTPlaylistSearchActivity extends YTSearchActivity {
     }
 
     private void
-    onContextMenuMergeTo(int pos) {
+    onContextMenuImport(int pos) {
         UiUtils.OnPlaylistSelectedListener action = new UiUtils.OnPlaylistSelectedListener() {
             @Override
             public void
             onPlaylist(final long plid, final Object user) {
-                onContextMenuMergeToPlaylist(plid, user);
+                onContextMenuImportYtPlaylist(plid, user);
             }
 
             @Override
@@ -334,7 +334,7 @@ public class YTPlaylistSearchActivity extends YTSearchActivity {
         AdapterContextMenuInfo info = (AdapterContextMenuInfo)mItem.getMenuInfo();
         switch (mItem.getItemId()) {
         case R.id.import_:
-            onContextMenuMergeTo(info.position);
+            onContextMenuImport(info.position);
             return true;
 
         }
