@@ -41,7 +41,6 @@
     <string name="new_playlist">새 재생목록</string>
     <string name="add_to">추가</string>
     <string name="move_to">이동</string>
-    <string name="merge_to">가져오기</string>
     <string name="enter_playlist_title">재생목록 이름 입력</string>
     <string name="recently_played">최근 재생목록</string>
     <string name="set_to_plthumbnail">재생목록 아이콘으로 사용</string>

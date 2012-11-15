@@ -41,7 +41,6 @@
     <string name="new_playlist">New playlist</string>
     <string name="add_to">Add to</string>
     <string name="move_to">Move to</string>
-    <string name="merge_to">Merge to</string>
     <string name="enter_playlist_title">Enter playlist title</string>
     <string name="recently_played">Recently played</string>
     <string name="set_to_plthumbnail">Set as playlist icon</string>

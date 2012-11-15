@@ -289,7 +289,7 @@ public class YTPlaylistSearchActivity extends YTSearchActivity {
 
         UiUtils.buildSelectPlaylistDialog(DB.get(),
                                           this,
-                                          R.string.merge_to,
+                                          R.string.import_,
                                           null,
                                           action,
                                           DB.INVALID_PLAYLIST_ID,
@@ -333,7 +333,7 @@ public class YTPlaylistSearchActivity extends YTSearchActivity {
     onContextItemSelected(MenuItem mItem) {
         AdapterContextMenuInfo info = (AdapterContextMenuInfo)mItem.getMenuInfo();
         switch (mItem.getItemId()) {
-        case R.id.merge_to:
+        case R.id.import_:
             onContextMenuMergeTo(info.position);
             return true;
 
