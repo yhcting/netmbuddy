@@ -21,10 +21,6 @@
 package free.yhc.netmbuddy;
 
 import static free.yhc.netmbuddy.utils.Utils.eAssert;
-
-import java.text.DateFormat;
-import java.util.Date;
-
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.Intent;
@@ -53,10 +49,6 @@ public class MusicsActivity extends Activity {
     public static final String MAP_KEY_KEYWORD      = "keyword";
     public static final String MAP_KEY_THUMBNAIL    = "thumbnail";
 
-    public static final long PLID_INVALID       = DB.INVALID_PLAYLIST_ID;
-    public static final long PLID_RECENT_PLAYED = PLID_INVALID - 1;
-    public static final long PLID_SEARCHED      = PLID_INVALID - 2;
-
     private final DB            mDb = DB.get();
     private final YTPlayer      mMp = YTPlayer.get();
 
@@ -68,8 +60,10 @@ public class MusicsActivity extends Activity {
                 // do nothing.
             }
         };
+    private final OnPlayerUpdateDBListener mOnPlayerUpdateDbListener
+        = new OnPlayerUpdateDBListener();
 
-    private long        mPlid   = PLID_INVALID;
+    private long        mPlid   = UiUtils.PLID_INVALID;
     private ListView    mListv  = null;
 
     private static class VideoDetailInfo {
@@ -82,9 +76,17 @@ public class MusicsActivity extends Activity {
         String[]    pls             = new String[0];
     }
 
-    private static boolean
-    isUserPlaylist(long plid) {
-        return plid >= 0;
+    private class OnPlayerUpdateDBListener implements YTPlayer.OnDBUpdatedListener {
+        @Override
+        public void
+        onDbUpdated(YTPlayer.DBUpdateType ty) {
+            switch (ty) {
+            case PLAYLIST:
+                if (null != getAdapter())
+                    getAdapter().reloadCursorAsync();
+            }
+            // others are ignored.
+        }
     }
 
     private MusicsAdapter
@@ -146,7 +148,7 @@ public class MusicsActivity extends Activity {
                         // "Insertion is OK"
                         // OR "DB_DUPLICATED but [ 'move == true' or "mids.length > 1" ]
                         if (move) {
-                            if (isUserPlaylist(mPlid))
+                            if (UiUtils.isUserPlaylist(mPlid))
                                 mDb.deleteVideoFrom(mPlid, mid);
                             else
                                 mDb.deleteVideoExcept(plid, mid);
@@ -168,93 +170,47 @@ public class MusicsActivity extends Activity {
 
     private void
     addTo(final int[] poss, final boolean move) {
-        long plid = isUserPlaylist(mPlid)? mPlid: DB.INVALID_PLAYLIST_ID;
+        long plid = UiUtils.isUserPlaylist(mPlid)? mPlid: DB.INVALID_PLAYLIST_ID;
         MusicsAdapter adpr = getAdapter();
         final long[] mids = new long[poss.length];
         for (int i = 0; i < mids.length; i++)
             mids[i] = adpr.getItemId(poss[i]);
 
-        UiUtils.OnPlaylistSelectedListener action = new UiUtils.OnPlaylistSelectedListener() {
+        UiUtils.OnPostExecuteListener listener = new UiUtils.OnPostExecuteListener() {
             @Override
             public void
-            onPlaylist(long plid, Object user) {
-                doAddTo(plid, mids, move);
-            }
+            onPostExecute(Err result, Object user) {
+                if (Err.NO_ERR != result)
+                    UiUtils.showTextToast(MusicsActivity.this, result.getMessage());
 
-            @Override
-            public void
-            onUserMenu(int pos, Object user) {}
-        };
-
-        // exclude current playlist
-        UiUtils.buildSelectPlaylistDialog(mDb,
-                                          this,
-                                          move? R.string.move_to: R.string.add_to,
-                                          null,
-                                          action,
-                                          plid,
-                                          null)
-               .show();
-    }
-
-    private void
-    doDeleteMusics(final long plid, final long[] mids) {
-        DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
-            @Override
-            public void
-            onPostExecute(DiagAsyncTask task, Err result) {
-                getAdapter().reloadCursorAsync();
-            }
-
-            @Override
-            public Err
-            doBackgroundWork(DiagAsyncTask task) {
-                mDb.beginTransaction();
-                try {
-                    for (long mid : mids) {
-                        if (isUserPlaylist(plid))
-                            mDb.deleteVideoFrom(plid, mid);
-                        else
-                            mDb.deleteVideoFromAll(mid);
-                    }
-                    mDb.setTransactionSuccessful();
-                } finally {
-                    mDb.endTransaction();
+                if (move)
+                    getAdapter().reloadCursorAsync();
+                else {
+                    getAdapter().clearCheckState();
+                    getAdapter().notifyDataSetChanged();
                 }
-                return Err.NO_ERR;
             }
         };
-        new DiagAsyncTask(this,
-                          worker,
-                          DiagAsyncTask.Style.SPIN,
-                          R.string.deleting)
-            .run();
+
+        UiUtils.addVideosTo(this, null, listener, plid, mids, move);
     }
 
     private void
     deleteMusics(final long[] mids) {
-        UiUtils.ConfirmAction action = new UiUtils.ConfirmAction() {
+        UiUtils.OnPostExecuteListener listener = new UiUtils.OnPostExecuteListener() {
             @Override
             public void
-            onOk(Dialog dialog) {
-                doDeleteMusics(mPlid, mids);
+            onPostExecute(Err result, Object user) {
+                if (Err.NO_ERR == result)
+                    getAdapter().reloadCursorAsync();
             }
-
-            @Override
-            public void
-            onCancel(Dialog dialog) { }
         };
-        UiUtils.buildConfirmDialog(this,
-                                   R.string.delete,
-                                   isUserPlaylist(mPlid)? R.string.msg_delete_musics
-                                                        : R.string.msg_delete_musics_completely,
-                                   action)
-               .show();
+        UiUtils.deleteVideos(this, null, listener, mPlid, mids);
     }
 
     private void
     setToPlaylistThumbnail(long mid, int pos) {
-        eAssert(isUserPlaylist(mPlid));
+        eAssert(UiUtils.isUserPlaylist(mPlid));
         byte[] data = getAdapter().getMusicThumbnail(pos);
         mDb.updatePlaylist(mPlid, DB.ColPlaylist.THUMBNAIL, data);
         // update current screen's thumbnail too.
@@ -443,52 +399,7 @@ public class MusicsActivity extends Activity {
 
     private void
     onContextMenuDetailInfo(final long id, final int pos) {
-        final MusicsAdapter adpr = getAdapter();
-        final VideoDetailInfo vdi = new VideoDetailInfo();
-        final String ytvid = adpr.getMusicYtid(pos);
-        vdi.title = adpr.getMusicTitle(pos);
-        vdi.volume = adpr.getMusicVolume(pos) + "";
-        vdi.playTime = Utils.secsToMinSecText(adpr.getMusicPlaytime(pos));
-        DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
-            @Override
-            public void
-            onPostExecute(DiagAsyncTask task, Err result) {
-                String msg = "";
-                msg += vdi.title + "\n\n" +
-                       Utils.getResText(R.string.playback_time) + " : " + vdi.playTime + "\n" +
-                       Utils.getResText(R.string.volume) + " : " + vdi.volume + "\n" +
-                       Utils.getResText(R.string.time_added) + " : " + vdi.timeAdded + "\n" +
-                       Utils.getResText(R.string.time_last_played) + " : " + vdi.timeLastPlayed + "\n\n" +
-                       "[ " + Utils.getResText(R.string.playlist) + " ]\n";
-                for (String title : vdi.pls)
-                    msg += "* " + title + "\n";
-
-                UiUtils.createAlertDialog(MusicsActivity.this,
-                                          0,
-                                          Utils.getResText(R.string.detail_info),
-                                          msg)
-                       .show();
-            }
-
-            @Override
-            public Err
-            doBackgroundWork(DiagAsyncTask task) {
-                DateFormat df = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM);
-                vdi.timeAdded = df.format(new Date((Long)mDb.getVideoInfo(ytvid, DB.ColVideo.TIME_ADD)));
-                vdi.timeLastPlayed = df.format(new Date((Long)mDb.getVideoInfo(ytvid, DB.ColVideo.TIME_PLAYED)));
-                long[] plids = mDb.getPlaylistsContainVideo(id);
-                vdi.pls = new String[plids.length];
-                for (int i = 0; i < plids.length; i++)
-                    vdi.pls[i] = (String)mDb.getPlaylistInfo(plids[i], DB.ColPlaylist.TITLE);
-
-                return Err.NO_ERR;
-            }
-        };
-        new DiagAsyncTask(this,
-                          worker,
-                          DiagAsyncTask.Style.SPIN,
-                          R.string.loading)
-            .run();
+        UiUtils.showVideoDetailInfo(this, id);
     }
 
     // ========================================================================
@@ -549,7 +460,7 @@ public class MusicsActivity extends Activity {
         inflater.inflate(R.menu.musics_context, menu);
         //AdapterContextMenuInfo mInfo = (AdapterContextMenuInfo)menuInfo;
 
-        boolean visible = isUserPlaylist(mPlid)? true: false;
+        boolean visible = UiUtils.isUserPlaylist(mPlid)? true: false;
         menu.findItem(R.id.plthumbnail).setVisible(visible);
     }
 
@@ -560,19 +471,19 @@ public class MusicsActivity extends Activity {
         setContentView(R.layout.musics);
 
         String searchWord = null;
-        mPlid = getIntent().getLongExtra(MAP_KEY_PLAYLIST_ID, PLID_INVALID);
-        eAssert(PLID_INVALID != mPlid);
+        mPlid = getIntent().getLongExtra(MAP_KEY_PLAYLIST_ID, UiUtils.PLID_INVALID);
+        eAssert(UiUtils.PLID_INVALID != mPlid);
 
-        if (isUserPlaylist(mPlid)) {
+        if (UiUtils.isUserPlaylist(mPlid)) {
             String title = getIntent().getStringExtra(MAP_KEY_TITLE);
             ((TextView)findViewById(R.id.title)).setText(title);
 
             byte[] imgdata = getIntent().getByteArrayExtra(MAP_KEY_THUMBNAIL);
             UiUtils.setThumbnailImageView(((ImageView)findViewById(R.id.thumbnail)), imgdata);
-        } else if (PLID_RECENT_PLAYED == mPlid) {
+        } else if (UiUtils.PLID_RECENT_PLAYED == mPlid) {
             ((TextView)findViewById(R.id.title)).setText(R.string.recently_played);
             ((ImageView)findViewById(R.id.thumbnail)).setImageResource(R.drawable.ic_recently_played_up);
-        } else if (PLID_SEARCHED == mPlid) {
+        } else if (UiUtils.PLID_SEARCHED == mPlid) {
             String word = getIntent().getStringExtra(MAP_KEY_KEYWORD);
             searchWord = (null == word)? "": word;
             String title = Utils.getAppContext().getResources().getText(R.string.keyword) + " : " + word;
@@ -605,6 +516,7 @@ public class MusicsActivity extends Activity {
         super.onResume();
         ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
         mMp.setController(this,
+                          mOnPlayerUpdateDbListener,
                           playerv,
                           (ViewGroup)findViewById(R.id.list_drawer),
                           null,

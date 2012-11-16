@@ -3,6 +3,7 @@ package free.yhc.netmbuddy.model;
 import static free.yhc.netmbuddy.utils.Utils.eAssert;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.res.Resources;
 import android.view.SurfaceView;
@@ -15,9 +16,14 @@ import android.widget.ListView;
 import android.widget.SeekBar;
 import android.widget.SlidingDrawer;
 import android.widget.TextView;
+import free.yhc.netmbuddy.DiagAsyncTask;
+import free.yhc.netmbuddy.Err;
 import free.yhc.netmbuddy.R;
+import free.yhc.netmbuddy.model.YTPlayer.DBUpdateType;
+import free.yhc.netmbuddy.model.YTPlayer.Video;
 import free.yhc.netmbuddy.utils.UiUtils;
 import free.yhc.netmbuddy.utils.Utils;
+import free.yhc.netmbuddy.utils.YTUtils;
 
 public class YTPlayerUI {
     private static final int    SEEKBAR_MAX         = 1000;
@@ -35,6 +41,7 @@ public class YTPlayerUI {
     // UI Control.
     // ------------------------------------------------------------------------
     private Activity            mVActivity      = null;
+    private YTPlayer.OnDBUpdatedListener    mDbUpdatedListener = null;
     private LinearLayout        mPlayerv        = null;
     private LinearLayout        mPlayerLDrawer  = null;
 
@@ -257,7 +264,7 @@ public class YTPlayerUI {
         pvDisableButton((ImageView)playerv.findViewById(R.id.mplayer_btnplay));
         pvDisableButton((ImageView)playerv.findViewById(R.id.mplayer_btnnext));
         pvDisableButton((ImageView)playerv.findViewById(R.id.mplayer_btnprev));
-        pvDisableButton((ImageView)playerv.findViewById(R.id.mplayer_btnvol));
+        pvDisableButton((ImageView)playerv.findViewById(R.id.mplayer_btnextra));
     }
 
     private void
@@ -272,18 +279,19 @@ public class YTPlayerUI {
             return;
         }
 
+
         controlv.setVisibility(View.VISIBLE);
         ImageView nextv = (ImageView)controlv.findViewById(R.id.mplayer_btnnext);
         ImageView prevv = (ImageView)controlv.findViewById(R.id.mplayer_btnprev);
         ImageView playv = (ImageView)controlv.findViewById(R.id.mplayer_btnplay);
-        ImageView volv  = (ImageView)controlv.findViewById(R.id.mplayer_btnvol);
+        ImageView morev = (ImageView)controlv.findViewById(R.id.mplayer_btnmore);
 
         switch (to) {
         case PREPARED_AUDIO:
         case PREPARED:
         case PAUSED:
         case STARTED:
-            pvEnableButton(volv, 0);
+            pvEnableButton(morev, 0);
             // break is missed intentionally.
         case IDLE:
         case INITIALIZED:
@@ -300,7 +308,7 @@ public class YTPlayerUI {
             break;
 
         default:
-            pvDisableButton(volv);
+            pvDisableButton(morev);
             pvDisableButton(prevv);
             pvDisableButton(nextv);
         }
@@ -442,6 +450,191 @@ public class YTPlayerUI {
     }
 
     private void
+    pvMoreControlDetailInfo(long vid) {
+        UiUtils.showVideoDetailInfo(mVActivity, vid);
+    }
+
+    private void
+    pvMoreControlAddToWithYtid(final UiUtils.OnPostExecuteListener listener,
+                               final Object user,
+                               final long plid,
+                               final YTPlayer.Video video) {
+        final int volume;
+        if (mMp.getActiveVideo() == video)
+            volume = mMp.playerGetVolume();
+        else
+            volume = Policy.DEFAULT_VIDEO_VOLUME;
+
+        DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
+            @Override
+            public void
+            onPostExecute(DiagAsyncTask task, Err result) {
+                listener.onPostExecute(result, user);
+            }
+
+            @Override
+            public Err
+            doBackgroundWork(DiagAsyncTask task) {
+                if (YTUtils.insertVideoToPlaylist(plid,
+                                                  video.videoId,
+                                                  video.title,
+                                                  "",
+                                                  YTHacker.getYtVideoThumbnailUrl(video.videoId),
+                                                  video.playtime,
+                                                  volume)) {
+                    return Err.NO_ERR;
+                } else
+                    return Err.IO_NET;
+            }
+        };
+
+        new DiagAsyncTask(mVActivity,
+                          worker,
+                          DiagAsyncTask.Style.SPIN,
+                          Utils.getResText(R.string.adding),
+                          true)
+            .run();
+    }
+
+    private void
+    pvMoreControlAddTo(Long vid, final Video video) {
+        final UiUtils.OnPostExecuteListener listener = new UiUtils.OnPostExecuteListener() {
+            @Override
+            public void
+            onPostExecute(Err result, Object user) {
+                if (Err.NO_ERR != result)
+                    return;
+
+                if (null != mDbUpdatedListener)
+                    mDbUpdatedListener.onDbUpdated(DBUpdateType.PLAYLIST);
+            }
+        };
+
+        if (null != vid) {
+            UiUtils.addVideosTo(mVActivity,
+                                null,
+                                listener,
+                                UiUtils.PLID_INVALID,
+                                new long[] { vid },
+                                false);
+        } else {
+            UiUtils.OnPlaylistSelectedListener action = new UiUtils.OnPlaylistSelectedListener() {
+                @Override
+                public void
+                onPlaylist(long plid, Object user) {
+                    pvMoreControlAddToWithYtid(listener, user, plid, video);
+                }
+
+                @Override
+                public void
+                onUserMenu(int pos, Object user) {}
+            };
+
+            // exclude current playlist
+            UiUtils.buildSelectPlaylistDialog(DB.get(),
+                                              mVActivity,
+                                              R.string.add_to,
+                                              null,
+                                              action,
+                                              UiUtils.PLID_INVALID,
+                                              null)
+                   .show();
+        }
+    }
+
+    private void
+    pvMoreControlDelete(final Long vid, final String ytvid) {
+        final UiUtils.OnPostExecuteListener listener = new UiUtils.OnPostExecuteListener() {
+            @Override
+            public void
+            onPostExecute(Err result, Object user) {
+                if (Err.NO_ERR != result)
+                    return;
+
+                mMp.removeVideo(ytvid);
+                if (null != mDbUpdatedListener
+                    && null != vid)
+                    mDbUpdatedListener.onDbUpdated(DBUpdateType.PLAYLIST);
+            }
+        };
+
+        if (null == vid) {
+            UiUtils.ConfirmAction action = new UiUtils.ConfirmAction() {
+                @Override
+                public void onOk(Dialog dialog) {
+                    listener.onPostExecute(Err.NO_ERR, null);
+                }
+
+                @Override
+                public
+                void onCancel(Dialog dialog) { }
+            };
+            UiUtils.buildConfirmDialog(mVActivity,
+                    R.string.delete,
+                    R.string.msg_delete_musics_completely,
+                    action)
+                .show();
+
+        } else {
+            UiUtils.deleteVideos(mVActivity,
+                                 null,
+                                 listener,
+                                 UiUtils.PLID_UNKNOWN,
+                                 new long[] { vid });
+        }
+    }
+
+    private void
+    pvOnMoreButtonClicked(View v) {
+        final YTPlayer.Video video  = mMp.getActiveVideo();
+        final int[] opts;
+        final Long vid = (Long)mDb.getVideoInfo(video.videoId, DB.ColVideo.ID);
+        if (null != vid)
+            opts = new int[] { R.string.detail_info,
+                               R.string.add_to,
+                               R.string.volume,
+                               R.string.delete };
+        else
+            opts = new int[] { R.string.add_to,
+                               R.string.delete,
+                               R.string.volume };
+
+        final CharSequence[] items = new CharSequence[opts.length];
+        for (int i = 0; i < opts.length; i++)
+            items[i] = Utils.getResText(opts[i]);
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(mVActivity);
+        builder.setTitle(R.string.player_extra_control_title);
+        builder.setItems(items, new DialogInterface.OnClickListener() {
+            @Override
+            public void
+            onClick(DialogInterface dialog, int item) {
+                switch (opts[item]) {
+                case R.string.detail_info:
+                    pvMoreControlDetailInfo(vid);
+                    break;
+
+                case R.string.add_to:
+                    pvMoreControlAddTo(vid, video);
+                    break;
+
+                case R.string.volume:
+                    changeVideoVolume(video.title, video.videoId);
+                    break;
+
+                case R.string.delete:
+                    pvMoreControlDelete(vid, video.videoId);
+                    break;
+
+                default:
+                    eAssert(false);
+                }
+            }
+        });
+        builder.create().show();
+    }
+
+    private void
     pvSetupControlButton(final ViewGroup playerv) {
         ImageView btn = (ImageView)playerv.findViewById(R.id.mplayer_btnplay);
         btn.setOnClickListener(new View.OnClickListener() {
@@ -492,14 +685,11 @@ public class YTPlayerUI {
             }
         });
 
-        btn = (ImageView)playerv.findViewById(R.id.mplayer_btnvol);
+        btn = (ImageView)playerv.findViewById(R.id.mplayer_btnmore);
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (!mMp.hasActiveVideo())
-                    return;
-                changeVideoVolume(mMp.getActiveVideo().title,
-                                  mMp.getActiveVideo().videoId);
+                pvOnMoreButtonClicked(v);
             }
         });
 
@@ -665,6 +855,7 @@ public class YTPlayerUI {
 
     void
     setController(Activity  activity,
+                  YTPlayer.OnDBUpdatedListener dbUpdatedListener,
                   ViewGroup playerv,
                   ViewGroup playerLDrawer,
                   SurfaceView surfacev,
@@ -679,6 +870,7 @@ public class YTPlayerUI {
             return;
 
         mVActivity = activity;
+        mDbUpdatedListener = dbUpdatedListener;
         mPlayerv = (LinearLayout)playerv;
         mPlayerLDrawer = (LinearLayout)playerLDrawer;
         mSurfacev = surfacev;
@@ -698,6 +890,7 @@ public class YTPlayerUI {
         if (activity == mVActivity) {
             mPlayerv = null;
             mVActivity = null;
+            mDbUpdatedListener = null;
             mPlayerLDrawer = null;
             mSurfacev = null;
         }
@@ -717,6 +910,20 @@ public class YTPlayerUI {
     notifyToUser(String msg) {
         if (null != mVActivity)
             UiUtils.showTextToast(mVActivity, msg);
+    }
+
+    void
+    updateLDrawerList() {
+        if (null == mPlayerLDrawer)
+            return;
+
+        ListView lv = (ListView)mPlayerLDrawer.findViewById(R.id.mplayer_list);
+        YTPlayer.Video[] vs =  mMp.getVideoList();
+        if (null == vs)
+            vs = new YTPlayer.Video[0];
+        YTPlayerVidArrayAdapter adapter = new YTPlayerVidArrayAdapter(mVActivity, vs);
+        adapter.setActiveItem(mMp.getActiveVideoIndex());
+        lv.setAdapter(adapter);
     }
 
     void

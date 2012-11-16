@@ -23,8 +23,11 @@ package free.yhc.netmbuddy.utils;
 import static free.yhc.netmbuddy.utils.Utils.eAssert;
 
 import java.io.File;
+import java.text.DateFormat;
+import java.util.Date;
 import java.util.LinkedList;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.ActivityNotFoundException;
@@ -46,11 +49,19 @@ import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
+import free.yhc.netmbuddy.DiagAsyncTask;
+import free.yhc.netmbuddy.Err;
 import free.yhc.netmbuddy.R;
 import free.yhc.netmbuddy.model.DB;
 import free.yhc.netmbuddy.model.YTHacker;
 
 public class UiUtils {
+    public static final long PLID_INVALID       = DB.INVALID_PLAYLIST_ID;
+    // Special playlist id that represents that this is unknown non-user playlist.
+    public static final long PLID_UNKNOWN       = PLID_INVALID - 1;
+    public static final long PLID_RECENT_PLAYED = PLID_INVALID - 2;
+    public static final long PLID_SEARCHED      = PLID_INVALID - 3;
+
     public interface EditTextAction {
         void prepare(Dialog dialog, EditText edit);
         void onOk(Dialog dialog, EditText edit);
@@ -64,6 +75,10 @@ public class UiUtils {
     public interface OnPlaylistSelectedListener {
         void onUserMenu(int pos, Object user);
         void onPlaylist(long plid, Object user);
+    }
+
+    public interface OnPostExecuteListener {
+        void    onPostExecute(Err result, Object user);
     }
 
     // ========================================================================
@@ -271,7 +286,7 @@ public class UiUtils {
                               final int                         diagTitle,
                               final String[]                    userMenuStrings,
                               final OnPlaylistSelectedListener  action,
-                              long                              excludedPlid,
+                              long                              plidExcluded,
                               final Object                      user) {
         final String[] userMenus = (null == userMenuStrings)? new String[0]: userMenuStrings;
 
@@ -296,7 +311,7 @@ public class UiUtils {
 
         if (c.moveToFirst()) {
             do {
-                if (excludedPlid != c.getLong(iId)) {
+                if (plidExcluded != c.getLong(iId)) {
                     menul.add(c.getString(iTitle));
                     idl.add(c.getLong(iId));
                 }
@@ -421,6 +436,240 @@ public class UiUtils {
         } catch (ActivityNotFoundException e) {
             UiUtils.showTextToast(context, R.string.msg_fail_find_app);
         }
+    }
+
+
+
+    public static boolean
+    isUserPlaylist(long plid) {
+        return plid >= 0;
+    }
+
+    public static void
+    doDeleteVideos(final Activity activity,
+                   final Object user,
+                   final OnPostExecuteListener listener,
+                   final long plid,
+                   final long[] mids) {
+        DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
+            @Override
+            public void
+            onPostExecute(DiagAsyncTask task, Err result) {
+                if (null != listener)
+                    listener.onPostExecute(result, user);
+            }
+
+            @Override
+            public Err
+            doBackgroundWork(DiagAsyncTask task) {
+                DB db = DB.get();
+                db.beginTransaction();
+                try {
+                    for (long mid : mids) {
+                        if (isUserPlaylist(plid))
+                            db.deleteVideoFrom(plid, mid);
+                        else
+                            db.deleteVideoFromAll(mid);
+                    }
+                    db.setTransactionSuccessful();
+                } finally {
+                    db.endTransaction();
+                }
+                return Err.NO_ERR;
+            }
+        };
+        new DiagAsyncTask(activity,
+                          worker,
+                          DiagAsyncTask.Style.SPIN,
+                          R.string.deleting)
+            .run();
+    }
+
+    public static void
+    deleteVideos(final Activity activity,
+                 final Object user, // passed to callback
+                 final OnPostExecuteListener listener,
+                 final long plid,
+                 final long[] vids) {
+        UiUtils.ConfirmAction action = new UiUtils.ConfirmAction() {
+            @Override
+            public void
+            onOk(Dialog dialog) {
+                doDeleteVideos(activity, user, listener, plid, vids);
+            }
+
+            @Override
+            public void
+            onCancel(Dialog dialog) { }
+        };
+        UiUtils.buildConfirmDialog(activity,
+                                   R.string.delete,
+                                   isUserPlaylist(plid)? R.string.msg_delete_musics
+                                                       : R.string.msg_delete_musics_completely,
+                                   action)
+               .show();
+    }
+
+    public static void
+    doAddVideosTo(final Activity                activity,
+                  final Object                  user,
+                  final OnPostExecuteListener   listener,
+                  final long                    plid,
+                  final long[]                  vids,
+                  final boolean                 move) {
+        DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
+            @Override
+            public void
+            onPostExecute(DiagAsyncTask task, Err result) {
+                listener.onPostExecute(result, user);
+            }
+
+            @Override
+            public Err
+            doBackgroundWork(DiagAsyncTask task) {
+                DB db = DB.get();
+                db.beginTransaction();
+                try {
+                    for (long mid : vids) {
+                        DB.Err err = db.insertVideoToPlaylist(plid, mid);
+                        if (DB.Err.NO_ERR != err) {
+                            // Error Case
+                            if (DB.Err.DUPLICATED != err)
+                                return Err.DB_DUPLICATED;
+                            // From here : DB_DUPLICATED Case.
+                            else if (1 == vids.length && !move)
+                                return Err.map(err);
+                        }
+
+                        // "Insertion is OK"
+                        // OR "DB_DUPLICATED but [ 'move == true' or "mids.length > 1" ]
+                        if (move) {
+                            if (UiUtils.isUserPlaylist(plid))
+                                db.deleteVideoFrom(plid, mid);
+                            else
+                                db.deleteVideoExcept(plid, mid);
+                        }
+                    }
+                    db.setTransactionSuccessful();
+                } finally {
+                    db.endTransaction();
+                }
+                return Err.NO_ERR;
+            }
+        };
+        new DiagAsyncTask(activity,
+                          worker,
+                          DiagAsyncTask.Style.SPIN,
+                          move? R.string.moving: R.string.adding)
+            .run();
+    }
+
+    public static void
+    addVideosTo(final Activity                activity,
+                final Object                  user,
+                final OnPostExecuteListener   listener,
+                final long                    plidExcluded,
+                final long[]                  vids,
+                final boolean                 move) {
+        UiUtils.OnPlaylistSelectedListener action = new UiUtils.OnPlaylistSelectedListener() {
+            @Override
+            public void
+            onPlaylist(long plid, Object user) {
+                doAddVideosTo(activity, user, listener, plid, vids, move);
+            }
+
+            @Override
+            public void
+            onUserMenu(int pos, Object user) {}
+        };
+
+        // exclude current playlist
+        UiUtils.buildSelectPlaylistDialog(DB.get(),
+                                          activity,
+                                          move? R.string.move_to: R.string.add_to,
+                                          null,
+                                          action,
+                                          plidExcluded,
+                                          null)
+               .show();
+    }
+
+    public static void
+    showVideoDetailInfo(final Activity activity, final long vid) {
+        DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
+            final class VideoDetailInfo {
+                String      title           = "";
+                String      timeAdded       = "";
+                String      timeLastPlayed  = "";
+                String      volume          = "";
+                String      playTime        = "";
+                // titles of playlists contain the video
+                String[]    pls             = new String[0];
+            }
+
+            private VideoDetailInfo _mVdi = new VideoDetailInfo();
+            @Override
+            public void
+            onPostExecute(DiagAsyncTask task, Err result) {
+                String msg = "";
+                msg += _mVdi.title + "\n\n" +
+                       Utils.getResText(R.string.playback_time) + " : " + _mVdi.playTime + "\n" +
+                       Utils.getResText(R.string.volume) + " : " + _mVdi.volume + "\n" +
+                       Utils.getResText(R.string.time_added) + " : " + _mVdi.timeAdded + "\n" +
+                       Utils.getResText(R.string.time_last_played) + " : " + _mVdi.timeLastPlayed + "\n\n" +
+                       "[ " + Utils.getResText(R.string.playlist) + " ]\n";
+                for (String title : _mVdi.pls)
+                    msg += "* " + title + "\n";
+
+                UiUtils.createAlertDialog(activity,
+                                          0,
+                                          Utils.getResText(R.string.detail_info),
+                                          msg)
+                       .show();
+            }
+
+            @Override
+            public Err
+            doBackgroundWork(DiagAsyncTask task) {
+                final int COLI_TITLE        = 0;
+                final int COLI_VOLUME       = 1;
+                final int COLI_PLAYTIME     = 2;
+                final int COLI_TIME_ADD     = 3;
+                final int COLI_TIME_PLAYED  = 4;
+                DateFormat df = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM);
+                DB db = DB.get();
+                Cursor c = db.queryVideo(vid, new DB.ColVideo[] {
+                        DB.ColVideo.TITLE,
+                        DB.ColVideo.VOLUME,
+                        DB.ColVideo.PLAYTIME,
+                        DB.ColVideo.TIME_ADD,
+                        DB.ColVideo.TIME_PLAYED
+                });
+
+                if (!c.moveToFirst()) {
+                    c.close();
+                    return Err.BAD_REQUEST;
+                }
+
+                _mVdi.title = c.getString(COLI_TITLE);
+                _mVdi.volume = "" + c.getInt(COLI_VOLUME);
+                _mVdi.playTime = "" +c.getInt(COLI_PLAYTIME);
+                _mVdi.timeAdded = df.format(new Date(c.getLong(COLI_TIME_ADD)));
+                _mVdi.timeLastPlayed = df.format(new Date(c.getLong(COLI_TIME_PLAYED)));
+                long[] plids = db.getPlaylistsContainVideo(vid);
+                _mVdi.pls = new String[plids.length];
+                for (int i = 0; i < plids.length; i++)
+                    _mVdi.pls[i] = (String)db.getPlaylistInfo(plids[i], DB.ColPlaylist.TITLE);
+
+                return Err.NO_ERR;
+            }
+        };
+
+        new DiagAsyncTask(activity,
+                          worker,
+                          DiagAsyncTask.Style.SPIN,
+                          R.string.loading)
+            .run();
     }
 
 }

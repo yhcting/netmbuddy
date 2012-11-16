@@ -76,7 +76,6 @@ YTSearchHelper.SearchDoneReceiver {
         int     totalResults    = -1;
     }
 
-
     // ========================================================================
     //
     //
@@ -218,6 +217,11 @@ YTSearchHelper.SearchDoneReceiver {
     //
     // ========================================================================
     protected abstract YTSearchHelper.SearchType getSearchType();
+
+    protected YTPlayer.OnDBUpdatedListener
+    getOnPlayerUpdateDbListener() {
+        return null;
+    }
 
     protected void
     saveSearchArg(String text, String title) {
@@ -398,6 +402,7 @@ YTSearchHelper.SearchDoneReceiver {
         super.onResume();
         ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
         mMp.setController(this,
+                          getOnPlayerUpdateDbListener(),
                           playerv,
                           (ViewGroup)findViewById(R.id.list_drawer),
                           null,

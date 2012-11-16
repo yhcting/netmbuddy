@@ -78,6 +78,7 @@
     <string name="import_share">Import shared data</string>
     <string name="importing_share">Importing shared data</string>
     <string name="share_via_email">Share via Email</string>
+    <string name="player_extra_control_title">For current playing music</string>
 
     <string name="share_pl_attachment">PlaylistShareData</string>
     <string name="share_pl_email_subject">NetMBuddy Playlist Share</string>

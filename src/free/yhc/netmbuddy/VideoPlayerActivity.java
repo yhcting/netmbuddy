@@ -109,6 +109,7 @@ YTPlayer.VideosStateListener {
         YTPlayer.ToolButton toolBtn = new YTPlayer.ToolButton(R.drawable.ic_preferences, onClick);
 
         mMp.setController(VideoPlayerActivity.this,
+                          null,
                           (ViewGroup)findViewById(R.id.player),
                           (ViewGroup)findViewById(R.id.list_drawer),
                           surfv,

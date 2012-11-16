@@ -40,13 +40,13 @@
             android:visibility="gone"
             >
             <ImageView
-                android:id="@+id/mplayer_btnvol"
+                android:id="@+id/mplayer_btnmore"
                 android:layout_width="@dimen/toolbtn_width"
                 android:layout_height="@dimen/toolbtn_height"
                 android:layout_weight="1"
                 android:gravity="center"
                 android:scaleType="fitCenter"
-                android:src="@drawable/ic_media_volume"
+                android:src="@drawable/ic_media_more"
                 android:clickable="true"
                 />
             <ImageView

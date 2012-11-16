@@ -78,6 +78,7 @@
     <string name="import_share">공유데이타 가져오기</string>
     <string name="importing_share">공유 데이타를 가져오는 중</string>
     <string name="share_via_email">Email로 공유하기</string>
+    <string name="player_extra_control_title">현재 재생 중인 곡에 대해</string>
 
     <string name="share_pl_attachment">재생목록공유</string>
     <string name="share_pl_email_subject">NetMBuddy 재생목록 공유</string>

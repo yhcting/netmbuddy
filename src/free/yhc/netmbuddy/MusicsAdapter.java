@@ -113,11 +113,11 @@ public class MusicsAdapter extends ResourceCursorAdapter {
 
     private Cursor
     createCursor() {
-        if (MusicsActivity.PLID_RECENT_PLAYED == mCurArg.plid)
+        if (UiUtils.PLID_RECENT_PLAYED == mCurArg.plid)
             return DB.get().queryVideos(sQueryCols, DB.ColVideo.TIME_PLAYED, false);
-        else if (MusicsActivity.PLID_SEARCHED == mCurArg.plid) {
+        else if (UiUtils.PLID_SEARCHED == mCurArg.plid)
             return DB.get().queryVideosSearchTitle(sQueryCols, mCurArg.extra.split("\\s"));
-        } else
+        else
             return DB.get().queryVideos(mCurArg.plid, sQueryCols, DB.ColVideo.TITLE, true);
     }
 

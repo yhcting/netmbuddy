@@ -59,7 +59,23 @@ public class PlaylistActivity extends Activity {
     private final DB            mDb = DB.get();
     private final YTPlayer      mMp = YTPlayer.get();
 
+    private final OnPlayerUpdateDBListener mOnPlayerUpdateDbListener
+        = new OnPlayerUpdateDBListener();
+
     private ListView mListv;
+
+    private class OnPlayerUpdateDBListener implements YTPlayer.OnDBUpdatedListener {
+        @Override
+        public void
+        onDbUpdated(YTPlayer.DBUpdateType ty) {
+            switch (ty) {
+            case PLAYLIST:
+                if (null != getAdapter())
+                    getAdapter().reloadCursorAsync();
+            }
+            // others are ignored.
+        }
+    }
 
     private PlaylistAdapter
     getAdapter() {
@@ -81,6 +97,7 @@ public class PlaylistActivity extends Activity {
         ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
         playerv.setVisibility(View.VISIBLE);
         mMp.setController(this,
+                          mOnPlayerUpdateDbListener,
                           playerv,
                           (ViewGroup)findViewById(R.id.list_drawer),
                           null,
@@ -577,7 +594,7 @@ public class PlaylistActivity extends Activity {
             @Override
             public void onClick(View v) {
                 Intent i = new Intent(PlaylistActivity.this, MusicsActivity.class);
-                i.putExtra(MusicsActivity.MAP_KEY_PLAYLIST_ID, MusicsActivity.PLID_RECENT_PLAYED);
+                i.putExtra(MusicsActivity.MAP_KEY_PLAYLIST_ID, UiUtils.PLID_RECENT_PLAYED);
                 startActivity(i);
             }
         });
@@ -840,7 +857,7 @@ public class PlaylistActivity extends Activity {
         String query = intent.getStringExtra(SearchManager.QUERY);
         SearchSuggestionProvider.saveRecentQuery(query);
         Intent i = new Intent(PlaylistActivity.this, MusicsActivity.class);
-        i.putExtra(MusicsActivity.MAP_KEY_PLAYLIST_ID, MusicsActivity.PLID_SEARCHED);
+        i.putExtra(MusicsActivity.MAP_KEY_PLAYLIST_ID, UiUtils.PLID_SEARCHED);
         i.putExtra(MusicsActivity.MAP_KEY_KEYWORD, query);
         startActivity(i);
     }
@@ -851,6 +868,7 @@ public class PlaylistActivity extends Activity {
         super.onResume();
         ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
         mMp.setController(this,
+                          mOnPlayerUpdateDbListener,
                           playerv,
                           (ViewGroup)findViewById(R.id.list_drawer),
                           null,

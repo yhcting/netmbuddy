@@ -27,6 +27,7 @@ import static free.yhc.netmbuddy.utils.Utils.logW;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -165,6 +166,14 @@ SurfaceHolder.Callback {
         void onBufferingChanged(int percent);
     }
 
+    public interface OnDBUpdatedListener {
+        /**
+         * When DB is changed by YTPlayer.
+         * So, other UI module may need to update look and feel accordingly.
+         * @param type
+         */
+        void onDbUpdated(DBUpdateType type);
+    }
 
     // see "http://developer.android.com/reference/android/media/MediaPlayer.html"
     public static enum MPState {
@@ -187,6 +196,11 @@ SurfaceHolder.Callback {
         FORCE_STOPPED,
         NETWORK_UNAVAILABLE,
         UNKNOWN_ERROR
+    }
+
+    public static enum DBUpdateType {
+        VOLUME,
+        PLAYLIST,
     }
 
     private static enum YTPState {
@@ -367,9 +381,12 @@ SurfaceHolder.Callback {
 
 
     private static class VideoListManager {
-        private Video[]     _mVs = null; // video array
-        private int         _mVi = -1; // video index
-        private OnListChangedListener _mListener = null;
+        // NOTE!
+        // _mVs is accessed on by UIThread.
+        // So, synchronization is not required.
+        private Video[]        _mVs = null; // video array
+        private int            _mVi = -1; // video index
+        private OnListChangedListener   _mListener = null;
 
         interface OnListChangedListener {
             void onChanged(VideoListManager vm);
@@ -447,14 +464,55 @@ SurfaceHolder.Callback {
             Video[] newvs = new Video[_mVs.length + vids.length];
             System.arraycopy(_mVs, 0, newvs, 0, _mVs.length);
             System.arraycopy(vids, 0, newvs, _mVs.length, vids.length);
-            // assigning reference is atomic operation in JAVA!
             _mVs = newvs;
+            notifyToListChangedListener();
+        }
+
+        /**
+         *
+         * @param index
+         * @return
+         *   false if -1 == _mVi after removing. Otherwise true.
+         */
+        void
+        removeVideo(String ytvid) {
+            eAssert(Utils.isUiThread());
+            if (null == _mVs)
+                return;
+
+            ArrayList<Video> al = new ArrayList<Video>(_mVs.length);
+            int adjust = 0;
+            for (int i = 0; i < _mVs.length; i++) {
+                if (!_mVs[i].videoId.equals(ytvid))
+                    al.add(_mVs[i]);
+                else if (i <= _mVi)
+                    adjust++;
+            }
+            _mVs = al.toArray(new Video[0]);
+            _mVi = _mVi - adjust;
+            eAssert(_mVi >= 0 || _mVi <= _mVs.length);
             notifyToListChangedListener();
         }
 
         int
         getActiveVideoIndex() {
             return _mVi;
+        }
+
+        /**
+         * find video index that is NOT 'ytvid'
+         * @param ytvid
+         * @return
+         *   -1 if fail to find.
+         */
+        int
+        findVideoExcept(int from, String ytvid) {
+            eAssert(from >= 0 && from <= _mVs.length);
+            for (int i = from; i < _mVs.length; i++) {
+                if (!ytvid.equals(_mVs[i].videoId))
+                    return i;
+            }
+            return -1;
         }
 
         Video
@@ -1795,6 +1853,18 @@ SurfaceHolder.Callback {
         startAt(videoListIndex);
     }
 
+    void
+    removeVideo(String ytvid) {
+        int nextIdx = mVlm.findVideoExcept(mVlm.getActiveVideoIndex(), ytvid);
+        if (nextIdx < 0)
+            // There is no video to play after remove.
+            // Just stop playing.
+            stopPlay(StopState.DONE);
+        else
+            startAt(nextIdx);
+        mVlm.removeVideo(ytvid);
+    }
+
     Video
     getActiveVideo() {
         return mVlm.getActiveVideo();
@@ -1894,6 +1964,7 @@ SurfaceHolder.Callback {
             @Override
             public void onChanged(VideoListManager vm) {
                 eAssert(Utils.isUiThread());
+                mUi.updateLDrawerList();
                 Iterator<VideosStateListener> iter = mVStateLsnrl.iterator();
                 while (iter.hasNext())
                     iter.next().onChanged();
@@ -1981,11 +2052,12 @@ SurfaceHolder.Callback {
 
     public void
     setController(Activity  activity,
+                  OnDBUpdatedListener dbUpdatedListener,
                   ViewGroup playerv,
                   ViewGroup playerLDrawer,
                   SurfaceView surfacev,
                   ToolButton toolBtn) {
-        mUi.setController(activity, playerv, playerLDrawer, surfacev, toolBtn);
+        mUi.setController(activity, dbUpdatedListener, playerv, playerLDrawer, surfacev, toolBtn);
 
         if (!mVlm.hasActiveVideo())
             return;

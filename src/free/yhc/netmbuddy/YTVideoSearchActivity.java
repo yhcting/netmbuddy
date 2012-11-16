@@ -70,6 +70,21 @@ DBHelper.CheckDupDoneReceiver {
             }
         }
     };
+    private final OnPlayerUpdateDBListener mOnPlayerUpdateDbListener
+        = new OnPlayerUpdateDBListener();
+
+    private class OnPlayerUpdateDBListener implements YTPlayer.OnDBUpdatedListener {
+        @Override
+        public void
+        onDbUpdated(YTPlayer.DBUpdateType ty) {
+            switch (ty) {
+            case PLAYLIST:
+                showLoadingLookAndFeel();
+                checkDupAsync(null, (YTVideoFeed.Entry[])getAdapter().getEntries());
+            }
+            // others are ignored.
+        }
+    }
 
     private YTVideoSearchAdapter
     getAdapter() {
@@ -439,6 +454,12 @@ DBHelper.CheckDupDoneReceiver {
     //
     //
     // ========================================================================
+    @Override
+    protected YTPlayer.OnDBUpdatedListener
+    getOnPlayerUpdateDbListener() {
+        return mOnPlayerUpdateDbListener;
+    }
+
     @Override
     public void
     searchDone(YTSearchHelper helper, YTSearchHelper.SearchArg arg,

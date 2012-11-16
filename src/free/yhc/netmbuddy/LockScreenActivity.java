@@ -123,6 +123,7 @@ YTPlayer.VideosStateListener {
         super.onResume();
         ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
         mMp.setController(this,
+                          null,
                           playerv,
                           (ViewGroup)findViewById(R.id.list_drawer),
                           null,
