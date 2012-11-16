@@ -277,6 +277,11 @@ public class ImportShareActivity extends Activity {
         } catch (FileNotFoundException e) {
             UiUtils.showTextToast(this, R.string.msg_fail_to_access_data);
             finish();
+            return;
+        } catch (SecurityException e) {
+            UiUtils.showTextToast(this, R.string.msg_fail_to_access_data);
+            finish();
+            return;
         }
 
         mZis = new ZipInputStream(is);

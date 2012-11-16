@@ -115,6 +115,27 @@
                   android:theme="@android:style/Theme.Dialog"
                   android:launchMode="singleTop"
                   />
+        <!--
+        Why complex and stupid path pattern is used for 'ImportShareContentActivity'
+          and 'ImportShareFileActivity' ?
+        It's due to Android's pattern matcher's algorithm that is different from other matcher.
+        (Actually, I think it is definitely BUG!).
+        In general, matcher uses greedy matching algorithm.
+        But, Android Matcher doesn't use greedy algorithm - even NOT CORRECT.
+        If there is 'next character' of '.*' pattern in the middle of string,
+          Android PatternMatcher stops loop at that point.
+
+        Ex.
+            string  : "this is a my attachment"
+            pattern : ".*att.*".
+            Android PatternMatcher enter loop to match '.*' pattern until meet the next character of pattern
+            (at this example, 'a')
+            So, '.*' matching loop stops at index 8 - 'a' between 'is' and 'my'.
+            Therefore result of this match returns 'false'.
+
+        To avoid this - actually reduce possibility - below duplicating complex pattern is used.
+        See 'PatternMatcher.java' at Android Framework.
+        -->
         <activity android:name=".ImportShareContentActivity"
                   android:configChanges="orientation|keyboardHidden"
                   android:theme="@android:style/Theme.Dialog"
@@ -122,10 +143,32 @@
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
-                <data android:mimeType="*/*" />
+                <data android:mimeType="multipart/*" />
+                <data android:mimeType="message/*" />
+                <data android:mimeType="application/zip" />
+                <data android:mimeType="application/octet-stream" />
                 <data android:host="*" />
                 <data android:scheme="content" />
-            </intent-filter>
+                <data android:pathPattern=".*attachment.*" />
+                <data android:pathPattern=".*a.*attachment.*" />
+                <data android:pathPattern=".*a.*a.*attachment.*" />
+                <data android:pathPattern=".*a.*a.*attachment.*" />
+                <data android:pathPattern=".*a.*a.*a.*attachment.*" />
+                <data android:pathPattern=".*a.*a.*a.*a.*attachment.*" />
+                <data android:pathPattern=".*a.*a.*a.*a.*a.*attachment.*" />
+                <data android:pathPattern=".*a.*a.*a.*a.*a.*a.*attachment.*" />
+                <data android:pathPattern=".*a.*a.*a.*a.*a.*a.*a.*attachment.*" />
+                <data android:pathPattern=".*a.*a.*a.*a.*a.*a.*a.*a.*attachment.*" />
+                <data android:pathPattern=".*a.*a.*a.*a.*a.*a.*a.*a.*a.*attachment.*" />
+                <data android:pathPattern=".*a.*a.*a.*a.*a.*a.*a.*a.*a.*a.*attachment.*" />
+                <data android:pathPattern=".*a.*a.*a.*a.*a.*a.*a.*a.*a.*a.*a.*attachment.*" />
+                <data android:pathPattern=".*a.*a.*a.*a.*a.*a.*a.*a.*a.*a.*a.*a.*attachment.*" />
+                <data android:pathPattern=".*a.*a.*a.*a.*a.*a.*a.*a.*a.*a.*a.*a.*a.*attachment.*" />
+                <data android:pathPattern=".*a.*a.*a.*a.*a.*a.*a.*a.*a.*a.*a.*a.*a.*a.*attachment.*" />
+                <data android:pathPattern=".*a.*a.*a.*a.*a.*a.*a.*a.*a.*a.*a.*a.*a.*a.*a.*attachment.*" />
+                <data android:pathPattern=".*a.*a.*a.*a.*a.*a.*a.*a.*a.*a.*a.*a.*a.*a.*a.*a.*attachment.*" />
+                <data android:pathPattern=".*a.*a.*a.*a.*a.*a.*a.*a.*a.*a.*a.*a.*a.*a.*a.*a.*attachment.*" />
+                </intent-filter>
         </activity>
         <activity android:name=".ImportShareFileActivity"
                   android:configChanges="orientation|keyboardHidden"
