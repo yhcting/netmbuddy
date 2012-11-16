@@ -514,7 +514,8 @@ public class UiUtils {
     doAddVideosTo(final Activity                activity,
                   final Object                  user,
                   final OnPostExecuteListener   listener,
-                  final long                    plid,
+                  final long                    dstPlid,
+                  final long                    srcPlid,
                   final long[]                  vids,
                   final boolean                 move) {
         DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
@@ -531,7 +532,7 @@ public class UiUtils {
                 db.beginTransaction();
                 try {
                     for (long mid : vids) {
-                        DB.Err err = db.insertVideoToPlaylist(plid, mid);
+                        DB.Err err = db.insertVideoToPlaylist(dstPlid, mid);
                         if (DB.Err.NO_ERR != err) {
                             // Error Case
                             if (DB.Err.DUPLICATED != err)
@@ -544,10 +545,10 @@ public class UiUtils {
                         // "Insertion is OK"
                         // OR "DB_DUPLICATED but [ 'move == true' or "mids.length > 1" ]
                         if (move) {
-                            if (UiUtils.isUserPlaylist(plid))
-                                db.deleteVideoFrom(plid, mid);
+                            if (UiUtils.isUserPlaylist(srcPlid))
+                                db.deleteVideoFrom(srcPlid, mid);
                             else
-                                db.deleteVideoExcept(plid, mid);
+                                db.deleteVideoExcept(dstPlid, mid);
                         }
                     }
                     db.setTransactionSuccessful();
@@ -568,14 +569,15 @@ public class UiUtils {
     addVideosTo(final Activity                activity,
                 final Object                  user,
                 final OnPostExecuteListener   listener,
-                final long                    plidExcluded,
+                final long                    plid,
                 final long[]                  vids,
                 final boolean                 move) {
+        final long srcPlid = UiUtils.isUserPlaylist(plid)? plid: DB.INVALID_PLAYLIST_ID;
         UiUtils.OnPlaylistSelectedListener action = new UiUtils.OnPlaylistSelectedListener() {
             @Override
             public void
             onPlaylist(long plid, Object user) {
-                doAddVideosTo(activity, user, listener, plid, vids, move);
+                doAddVideosTo(activity, user, listener, plid, srcPlid, vids, move);
             }
 
             @Override
@@ -589,7 +591,7 @@ public class UiUtils {
                                           move? R.string.move_to: R.string.add_to,
                                           null,
                                           action,
-                                          plidExcluded,
+                                          srcPlid,
                                           null)
                .show();
     }

@@ -113,64 +113,7 @@ public class MusicsActivity extends Activity {
     }
 
     private void
-    doAddTo(final long plid, final long[] mids, final boolean move) {
-        DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
-            @Override
-            public void
-            onPostExecute(DiagAsyncTask task, Err result) {
-                if (Err.NO_ERR != result)
-                    UiUtils.showTextToast(MusicsActivity.this, result.getMessage());
-
-                if (move)
-                    getAdapter().reloadCursorAsync();
-                else {
-                    getAdapter().clearCheckState();
-                    getAdapter().notifyDataSetChanged();
-                }
-            }
-
-            @Override
-            public Err
-            doBackgroundWork(DiagAsyncTask task) {
-                mDb.beginTransaction();
-                try {
-                    for (long mid : mids) {
-                        DB.Err err = mDb.insertVideoToPlaylist(plid, mid);
-                        if (DB.Err.NO_ERR != err) {
-                            // Error Case
-                            if (DB.Err.DUPLICATED != err)
-                                return Err.DB_DUPLICATED;
-                            // From here : DB_DUPLICATED Case.
-                            else if (1 == mids.length && !move)
-                                return Err.map(err);
-                        }
-
-                        // "Insertion is OK"
-                        // OR "DB_DUPLICATED but [ 'move == true' or "mids.length > 1" ]
-                        if (move) {
-                            if (UiUtils.isUserPlaylist(mPlid))
-                                mDb.deleteVideoFrom(mPlid, mid);
-                            else
-                                mDb.deleteVideoExcept(plid, mid);
-                        }
-                    }
-                    mDb.setTransactionSuccessful();
-                } finally {
-                    mDb.endTransaction();
-                }
-                return Err.NO_ERR;
-            }
-        };
-        new DiagAsyncTask(this,
-                          worker,
-                          DiagAsyncTask.Style.SPIN,
-                          move? R.string.moving: R.string.adding)
-            .run();
-    }
-
-    private void
     addTo(final int[] poss, final boolean move) {
-        long plid = UiUtils.isUserPlaylist(mPlid)? mPlid: DB.INVALID_PLAYLIST_ID;
         MusicsAdapter adpr = getAdapter();
         final long[] mids = new long[poss.length];
         for (int i = 0; i < mids.length; i++)
@@ -192,7 +135,7 @@ public class MusicsActivity extends Activity {
             }
         };
 
-        UiUtils.addVideosTo(this, null, listener, plid, mids, move);
+        UiUtils.addVideosTo(this, null, listener, mPlid, mids, move);
     }
 
     private void
