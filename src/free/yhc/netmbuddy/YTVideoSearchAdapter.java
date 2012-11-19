@@ -21,9 +21,7 @@
 package free.yhc.netmbuddy;
 import static free.yhc.netmbuddy.utils.Utils.eAssert;
 
-import java.text.DateFormat;
 import java.util.Date;
-import java.util.Locale;
 
 import android.content.Context;
 import android.view.View;
@@ -129,14 +127,11 @@ public class YTVideoSearchAdapter extends YTSearchAdapter {
         dateText = e.media.uploadedTime;
         Date date = Utils.parseDateString(dateText);
 
-
         if (null != date)
-            dateText = DateFormat.getDateTimeInstance(DateFormat.MEDIUM,
-                                                      DateFormat.SHORT,
-                                                      Locale.getDefault())
-                                 .format(date);
+            dateText = android.text.format.DateFormat.getDateFormat(mCxt).format(date);
 
         ((TextView)v.findViewById(R.id.uploadedtime)).setText("< " + dateText + " >");
+        ((TextView)v.findViewById(R.id.author)).setText(e.author.name);
 
         if (Utils.bitCompare(e.uflag, FENT_EXIST_DUP, MENT_EXIST))
             setToExist(v);

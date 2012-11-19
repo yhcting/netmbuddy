@@ -59,6 +59,19 @@
             android:textColor="@color/desc_text_color"
             android:singleLine="true"
             />
+        <TextView
+            android:id="@+id/author"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/title"
+            android:layout_alignParentRight="true"
+            android:layout_toRightOf="@id/uploadedtime"
+            android:layout_marginLeft="3dip"
+            android:gravity="right|center_vertical"
+            android:textSize="@dimen/desc_text_size"
+            android:textColor="@color/desc_text_color"
+            android:singleLine="true"
+            />
     </RelativeLayout>
     <ImageView
         android:id="@+id/checkbtn"
