@@ -721,6 +721,11 @@ public class PlaylistActivity extends Activity {
 
     private void
     onContextMenuShare(final AdapterContextMenuInfo info) {
+        if (0 >= (Long)mDb.getPlaylistInfo(info.id, DB.ColPlaylist.SIZE)) {
+            UiUtils.showTextToast(this, R.string.msg_empty_playlist);
+            return;
+        }
+
         final File fTmp;
         try {
             fTmp = File.createTempFile(Utils.getResText(R.string.share_pl_attachment),
