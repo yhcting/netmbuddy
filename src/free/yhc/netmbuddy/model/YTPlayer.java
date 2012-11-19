@@ -414,6 +414,12 @@ SurfaceHolder.Callback {
                 _mListener.onChanged(this);
         }
 
+        int
+        size() {
+            eAssert(Utils.isUiThread());
+            return _mVs.length;
+        }
+
         boolean
         hasActiveVideo() {
             eAssert(Utils.isUiThread());
@@ -431,6 +437,11 @@ SurfaceHolder.Callback {
         hasPrevVideo() {
             eAssert(Utils.isUiThread());
             return hasActiveVideo() && 0 < _mVi;
+        }
+
+        boolean
+        isValidVideoIndex(int i) {
+            return 0 <= i && i < _mVs.length;
         }
 
         void
@@ -1855,14 +1866,18 @@ SurfaceHolder.Callback {
 
     void
     removeVideo(String ytvid) {
-        int nextIdx = mVlm.findVideoExcept(mVlm.getActiveVideoIndex(), ytvid);
-        if (nextIdx < 0)
+        int avi = mVlm.getActiveVideoIndex();
+        avi = mVlm.findVideoExcept(avi, ytvid);
+        if (mVlm.isValidVideoIndex(avi)) {
+            startAt(avi);
+            mVlm.removeVideo(ytvid);
+        } else {
+            // remove first, and then stop to avoid 'repeat' in case that 'repeat' preference is set.
+            mVlm.removeVideo(ytvid);
             // There is no video to play after remove.
             // Just stop playing.
             stopPlay(StopState.DONE);
-        else
-            startAt(nextIdx);
-        mVlm.removeVideo(ytvid);
+        }
     }
 
     Video
