@@ -80,7 +80,7 @@
                 android:clickable="true"
                 />
             <ImageView
-                android:id="@+id/mplayer_btnextra"
+                android:id="@+id/mplayer_btntool"
                 android:layout_width="@dimen/toolbtn_width"
                 android:layout_height="@dimen/toolbtn_height"
                 android:layout_weight="1"

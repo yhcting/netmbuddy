@@ -264,7 +264,8 @@ public class YTPlayerUI {
         pvDisableButton((ImageView)playerv.findViewById(R.id.mplayer_btnplay));
         pvDisableButton((ImageView)playerv.findViewById(R.id.mplayer_btnnext));
         pvDisableButton((ImageView)playerv.findViewById(R.id.mplayer_btnprev));
-        pvDisableButton((ImageView)playerv.findViewById(R.id.mplayer_btnextra));
+        pvDisableButton((ImageView)playerv.findViewById(R.id.mplayer_btnmore));
+        pvDisableButton((ImageView)playerv.findViewById(R.id.mplayer_btntool));
     }
 
     private void
@@ -285,7 +286,11 @@ public class YTPlayerUI {
         ImageView prevv = (ImageView)controlv.findViewById(R.id.mplayer_btnprev);
         ImageView playv = (ImageView)controlv.findViewById(R.id.mplayer_btnplay);
         ImageView morev = (ImageView)controlv.findViewById(R.id.mplayer_btnmore);
+        ImageView toolv = (ImageView)controlv.findViewById(R.id.mplayer_btntool);
 
+        // --------------------------------------------------------------------
+        // configure prev/next/more
+        // --------------------------------------------------------------------
         switch (to) {
         case PREPARED_AUDIO:
         case PREPARED:
@@ -313,6 +318,9 @@ public class YTPlayerUI {
             pvDisableButton(nextv);
         }
 
+        // --------------------------------------------------------------------
+        // configure play/pause
+        // --------------------------------------------------------------------
         switch (to) {
         case PREPARED:
         case PAUSED:
@@ -339,6 +347,21 @@ public class YTPlayerUI {
         default:
             playv.setTag(null);
             controlv.setVisibility(View.GONE);
+        }
+
+        // --------------------------------------------------------------------
+        // configure tool
+        // --------------------------------------------------------------------
+        switch (to) {
+        case INVALID:
+        case IDLE:
+        case END:
+            pvDisableButton(toolv);
+        break;
+
+        default:
+            if (null != mToolBtn)
+                pvEnableButton(toolv, 0);
         }
     }
 
@@ -693,7 +716,7 @@ public class YTPlayerUI {
             }
         });
 
-        btn = (ImageView)playerv.findViewById(R.id.mplayer_btnextra);
+        btn = (ImageView)playerv.findViewById(R.id.mplayer_btntool);
         if (null == mToolBtn)
             btn.setVisibility(View.INVISIBLE);
         else {
