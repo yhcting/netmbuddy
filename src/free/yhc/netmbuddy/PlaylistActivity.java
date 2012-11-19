@@ -136,11 +136,13 @@ public class PlaylistActivity extends Activity {
                                            new DB.ColVideo[] { DB.ColVideo.ID },
                                            null,
                                            false);
-                try {
-                    if (!c.moveToFirst())
-                        return Err.NO_ERR;
+                if (!c.moveToFirst()) {
+                    c.close();
+                    return Err.NO_ERR;
+                }
 
-                    mDb.beginTransaction();
+                mDb.beginTransaction();
+                try {
                     do {
                         switch (mDb.insertVideoToPlaylist(dstPlid, c.getLong(0))) {
                         case NO_ERR:        _mSCnt++;   break;
