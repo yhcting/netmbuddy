@@ -2207,7 +2207,8 @@ SurfaceHolder.Callback {
 
     public void
     stopVideos() {
-        stopPlay(StopState.FORCE_STOPPED);
+        if (mVlm.hasActiveVideo())
+            stopPlay(StopState.FORCE_STOPPED);
     }
 
     public String

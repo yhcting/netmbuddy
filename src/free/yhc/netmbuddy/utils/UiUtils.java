@@ -54,6 +54,7 @@ import free.yhc.netmbuddy.Err;
 import free.yhc.netmbuddy.R;
 import free.yhc.netmbuddy.model.DB;
 import free.yhc.netmbuddy.model.YTHacker;
+import free.yhc.netmbuddy.model.YTPlayer;
 
 public class UiUtils {
     public static final long PLID_INVALID       = DB.INVALID_PLAYLIST_ID;
@@ -404,6 +405,7 @@ public class UiUtils {
 
     public static void
     playAsVideo(Context context, String ytvid) {
+        YTPlayer.get().stopVideos();
         Intent i = new Intent(Intent.ACTION_VIEW,
                 Uri.parse(YTHacker.getYtVideoPageUrl(ytvid)));
         try {
