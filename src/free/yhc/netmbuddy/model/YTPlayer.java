@@ -337,10 +337,51 @@ SurfaceHolder.Callback {
     }
 
     private class AutoStop implements Runnable {
+        // ABSOLUTE time set when autoStop is triggered.
+        // ex. 2012.Nov.11 10h 30m ...
+        private long _mTm = 0;
+
+        AutoStop() {
+        }
+
+        long
+        getTime() {
+            return _mTm;
+        }
+
+        /**
+         *
+         * @param millis
+         *   <= 0 for unset autostop.
+         */
+        void
+        set(long millis) {
+            unset();
+            if (mVlm.hasActiveVideo()
+                && millis > 0) {
+                _mTm = System.currentTimeMillis() + millis;
+                mUi.updateStatusAutoStopSet(true, _mTm);
+                Utils.getUiHandler().postDelayed(this, millis);
+            }
+        }
+
+        void
+        unset() {
+            mUi.updateStatusAutoStopSet(false, 0);
+            _mTm = 0;
+            Utils.getUiHandler().removeCallbacks(this);
+        }
+
+        boolean
+        isSet() {
+            return _mTm > 0;
+        }
+
         @Override
         public void
         run() {
             stopVideos();
+            _mTm = 0;
         }
     }
 
@@ -1538,7 +1579,7 @@ SurfaceHolder.Callback {
 
         // Play is already stopped.
         // So, auto stop should be inactive here.
-        disableAutostop();
+        mAutoStop.unset();
 
         mpStop();
         mpRelease();
@@ -1555,11 +1596,6 @@ SurfaceHolder.Callback {
         Iterator<VideosStateListener> iter = mVStateLsnrl.iterator();
         while (iter.hasNext())
             iter.next().onStopped(st);
-    }
-
-    private void
-    disableAutostop() {
-        Utils.getUiHandler().removeCallbacks(mAutoStop);
     }
 
     private void
@@ -1969,6 +2005,21 @@ SurfaceHolder.Callback {
         mpSetVolume(vol);
     }
 
+    boolean
+    isAutoStopSet() {
+        return mAutoStop.isSet();
+    }
+
+    /**
+     *
+     * @return
+     *   absolute time (NOT time gap since now.)
+     */
+    long
+    getAutoStopTime() {
+        return mAutoStop.getTime();
+    }
+
     // ============================================================================
     //
     // Public interfaces
@@ -2160,7 +2211,7 @@ SurfaceHolder.Callback {
         acquireLocks();
         clearStoredPlayerState();
         // removes auto stop that is set before.
-        disableAutostop();
+        mAutoStop.unset();
         mVlm.setVideoList(vs);
 
         if (mVlm.moveToFist()) {
@@ -2209,15 +2260,16 @@ SurfaceHolder.Callback {
     /**
      * player will be stopped after 'millis'
      * @param millis
-     *   0 for disable autostop
+     *   0 for unset autostop
      */
     public void
     setAutoStop(long millis) {
-        Utils.getUiHandler().removeCallbacks(mAutoStop);
-        if (mVlm.hasActiveVideo()) {
-            if (millis > 0)
-                Utils.getUiHandler().postDelayed(mAutoStop, millis);
-        }
+        mAutoStop.set(millis);
+    }
+
+    public void
+    unsetAutoStop() {
+        mAutoStop.unset();
     }
 
     public void

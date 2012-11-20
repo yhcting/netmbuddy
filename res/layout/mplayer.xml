@@ -12,6 +12,61 @@
         android:scaleType="fitXY"
         android:src="@drawable/divider_horizontal_bright"
         />
+    <LinearLayout
+        android:id="@+id/mplayer_statusbar"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/player_status_icon_height"
+        android:layout_marginTop="3dip"
+        android:layout_marginLeft="3dip"
+        android:layout_marginRight="3dip"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        >
+        <ImageView
+            android:id="@+id/mplayer_status_shuffle"
+            android:layout_width="@dimen/player_status_icon_width"
+            android:layout_height="match_parent"
+            android:layout_marginLeft="5dip"
+            android:gravity="center"
+            android:scaleType="fitCenter"
+            android:src="@drawable/status_shuffle_off"
+            />
+        <ImageView
+            android:id="@+id/mplayer_status_repeat"
+            android:layout_width="@dimen/player_status_icon_width"
+            android:layout_height="match_parent"
+            android:layout_marginLeft="5dip"
+            android:gravity="center"
+            android:scaleType="fitCenter"
+            android:src="@drawable/status_repeat_off"
+            />
+        <TextView
+            android:id="@+id/mplayer_status_quality"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_marginLeft="5dip"
+            android:gravity="center"
+            android:textSize="@dimen/status_text_size"
+            android:textColor="@color/title_text_color_new"
+            />
+        <ImageView
+            android:id="@+id/mplayer_status_autostop"
+            android:layout_width="@dimen/player_status_icon_width"
+            android:layout_height="match_parent"
+            android:layout_marginLeft="5dip"
+            android:gravity="center"
+            android:scaleType="fitCenter"
+            android:src="@drawable/status_autostop_off"
+            />
+        <TextView
+            android:id="@+id/mplayer_status_autostop_time"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:textSize="@dimen/status_text_size"
+            android:textColor="@color/desc_text_color"
+            />
+    </LinearLayout>
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

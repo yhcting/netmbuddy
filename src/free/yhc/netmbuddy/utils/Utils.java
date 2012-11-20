@@ -389,6 +389,11 @@ public class Utils {
         return value;
     }
 
+    public static SharedPreferences
+    getSharedPreference() {
+        return sPrefs;
+    }
+
     public static boolean
     isPrefSuffle() {
         String v = getPreference(getResText(R.string.csshuffle),
@@ -504,6 +509,15 @@ public class Utils {
         int m = secs / 60;
         secs -= m * 60;
         return String.format("%02d:%02d", m, secs);
+    }
+
+    public static String
+    millisToHourMinText(long millies) {
+        int s = (int)(millies / 1000);
+        int m = s / 60;
+        int h = m / 60;
+        m -= h * 60;
+        return String.format("%02d:%02d", h, m);
     }
 
     public static void

@@ -511,6 +511,7 @@ public class PlaylistActivity extends Activity {
     private void
     onMenuMoreAutoStop(View anchor) {
         final int[] optStringIds = {
+                R.string.off,
                 R.string.time10m,
                 R.string.time20m,
                 R.string.time30m,
@@ -530,6 +531,7 @@ public class PlaylistActivity extends Activity {
             onClick(DialogInterface dialog, int item) {
                 long timems = 0;
                 switch (optStringIds[item]) {
+                case R.string.off:      timems = 0;                     break;
                 case R.string.time10m:  timems = 10 * 60 * 1000;        break;
                 case R.string.time20m:  timems = 20 * 60 * 1000;        break;
                 case R.string.time30m:  timems = 30 * 60 * 1000;        break;
@@ -538,7 +540,11 @@ public class PlaylistActivity extends Activity {
                 default:
                     eAssert(false);
                 }
-                mMp.setAutoStop(timems);
+
+                if (0 <= timems)
+                    mMp.setAutoStop(timems);
+                else
+                    mMp.unsetAutoStop();
             }
         });
         builder.create().show();

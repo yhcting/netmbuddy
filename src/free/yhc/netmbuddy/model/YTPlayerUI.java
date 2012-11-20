@@ -4,7 +4,13 @@ import static free.yhc.netmbuddy.utils.Utils.eAssert;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.res.Resources;
 import android.view.SurfaceView;
 import android.view.View;
@@ -25,7 +31,8 @@ import free.yhc.netmbuddy.utils.UiUtils;
 import free.yhc.netmbuddy.utils.Utils;
 import free.yhc.netmbuddy.utils.YTUtils;
 
-public class YTPlayerUI {
+public class YTPlayerUI implements
+OnSharedPreferenceChangeListener {
     private static final int    SEEKBAR_MAX         = 1000;
 
     // ------------------------------------------------------------------------
@@ -35,6 +42,7 @@ public class YTPlayerUI {
     private final DB                mDb         = DB.get();
     private final UpdateProgress    mUpdateProg = new UpdateProgress();
     private final YTPlayer          mMp;
+    private final TimeTickReceiver  mTTRcvr     = new TimeTickReceiver();
 
 
     // ------------------------------------------------------------------------
@@ -49,6 +57,23 @@ public class YTPlayerUI {
     private SurfaceView         mSurfacev       = null;
     // For extra Button
     private YTPlayer.ToolButton mToolBtn        = null;
+
+    public static class TimeTickReceiver extends BroadcastReceiver {
+        private YTPlayerUI  _mYtpui = null;
+
+        void
+        setYTPlayerUI(YTPlayerUI ytpui) {
+            _mYtpui = ytpui;
+        }
+
+        @Override
+        public void
+        onReceive(Context context, Intent intent) {
+            YTPlayer mp = YTPlayer.get();
+            if (null != _mYtpui)
+                _mYtpui.updateStatusAutoStopSet(mp.isAutoStopSet(), mp.getAutoStopTime());
+        }
+    }
 
     private class UpdateProgress implements Runnable {
         private static final int UPDATE_INTERVAL_MS = 1000;
@@ -154,6 +179,29 @@ public class YTPlayerUI {
             update(mMp.playerGetDuration(), mMp.playerGetPosition());
             Utils.getUiHandler().postDelayed(this, UPDATE_INTERVAL_MS);
         }
+    }
+
+    // ========================================================================
+    //
+    //
+    //
+    // ========================================================================
+    private void
+    registerTimeTickReceiver() {
+        if (null == mVActivity)
+            return;
+
+        mTTRcvr.setYTPlayerUI(this);
+        IntentFilter filter = new IntentFilter(Intent.ACTION_TIME_TICK);
+        mVActivity.registerReceiver(mTTRcvr, filter);
+    }
+
+    private void
+    unregisterTimeTickReceiver() {
+        if (null == mVActivity)
+            return;
+
+        mVActivity.unregisterReceiver(mTTRcvr);
     }
 
     // ========================================================================
@@ -726,6 +774,14 @@ public class YTPlayerUI {
     }
 
     private void
+    pvSetupStatusBar(ViewGroup playerv) {
+        updateStatusAutoStopSet(mMp.isAutoStopSet(), mMp.getAutoStopTime());
+        onSharedPreferenceChanged(Utils.getSharedPreference(), Utils.getResText(R.string.csquality));
+        onSharedPreferenceChanged(Utils.getSharedPreference(), Utils.getResText(R.string.csrepeat));
+        onSharedPreferenceChanged(Utils.getSharedPreference(), Utils.getResText(R.string.csshuffle));
+    }
+
+    private void
     pvInit(ViewGroup playerv, ViewGroup playerLDrawer, SurfaceView surfacev) {
         mMp.addPlayerStateListener(this, new YTPlayer.PlayerStateListener() {
             @Override
@@ -857,6 +913,7 @@ public class YTPlayerUI {
         // If there is no active video, drawer will be disabled at the configure function.
         pvEnableLDrawer(playerLDrawer);
 
+        pvSetupStatusBar(playerv);
         pvSetupControlButton(playerv);
 
         // Set progress state to right position.
@@ -865,6 +922,91 @@ public class YTPlayerUI {
         pvConfigureAll(playerv, playerLDrawer,
                        YTPlayer.MPState.INVALID, YTPlayer.MPSTATE_FLAG_IDLE,
                        mMp.playerGetState(), mMp.playerGetStateFlag());
+    }
+
+    // ============================================================================
+    //
+    // Overrides
+    //
+    // ============================================================================
+    @Override
+    public void
+    onSharedPreferenceChanged(SharedPreferences prefs, String key) {
+        if (key.equals(Utils.getResText(R.string.csshuffle))) {
+            updateStatusShuffle(Utils.isPrefSuffle());
+        } else if (key.equals(Utils.getResText(R.string.csrepeat))) {
+            updateStatusRepeat(Utils.isPrefRepeat());
+        } else if (key.equals(Utils.getResText(R.string.csquality))) {
+            updateStatusQuality(Utils.getPrefQuality());
+        }
+    }
+
+    // ============================================================================
+    //
+    // Update status icons
+    //
+    // ============================================================================
+    void
+    updateStatusAutoStopSet(boolean set, long timeMillis) {
+        if (null == mPlayerv)
+            return;
+
+        ImageView iv = (ImageView)mPlayerv.findViewById(R.id.mplayer_status_autostop);
+        TextView tv = (TextView)mPlayerv.findViewById(R.id.mplayer_status_autostop_time);
+
+        if (set) {
+            long tmLeft = timeMillis - System.currentTimeMillis();
+            if (tmLeft < 0)
+                tmLeft = 0;
+            String tmText = Utils.millisToHourMinText(tmLeft) + Utils.getResText(R.string.minutes);
+            iv.setImageResource(R.drawable.status_autostop_on);
+            tv.setVisibility(View.VISIBLE);
+            tv.setText(tmText);
+        } else {
+            iv.setImageResource(R.drawable.status_autostop_off);
+            tv.setVisibility(View.GONE);
+        }
+    }
+
+    private void
+    updateStatusQuality(Utils.PrefQuality quality) {
+        if (null == mPlayerv)
+            return;
+
+        TextView tv = (TextView)mPlayerv.findViewById(R.id.mplayer_status_quality);
+        CharSequence text = "?";
+        switch (quality) {
+        case HIGH:
+            text = "H";
+            break;
+
+        case NORMAL:
+            text = "M";
+            break;
+
+        case LOW:
+            text = "L";
+            break;
+        }
+        tv.setText("[" + text + "]");
+    }
+
+    private void
+    updateStatusShuffle(boolean set) {
+        if (null == mPlayerv)
+            return;
+
+        ImageView iv = (ImageView)mPlayerv.findViewById(R.id.mplayer_status_shuffle);
+        iv.setImageResource(set? R.drawable.status_shuffle_on: R.drawable.status_shuffle_off);
+    }
+
+    private void
+    updateStatusRepeat(boolean set) {
+        if (null == mPlayerv)
+            return;
+
+        ImageView iv = (ImageView)mPlayerv.findViewById(R.id.mplayer_status_repeat);
+        iv.setImageResource(set? R.drawable.status_repeat_on: R.drawable.status_repeat_off);
     }
 
     // ============================================================================
@@ -883,6 +1025,13 @@ public class YTPlayerUI {
                   ViewGroup playerLDrawer,
                   SurfaceView surfacev,
                   YTPlayer.ToolButton toolBtn) {
+        if (null != mVActivity
+            && activity != mVActivity)
+            unsetController(mVActivity);
+
+        Utils.getSharedPreference().registerOnSharedPreferenceChangeListener(this);
+
+
         // update notification by force
         notiConfigure(YTPlayer.MPState.INVALID, YTPlayer.MPSTATE_FLAG_IDLE,
                       mMp.playerGetState(), mMp.playerGetStateFlag());
@@ -905,12 +1054,15 @@ public class YTPlayerUI {
         }
 
         eAssert(null != mPlayerv.findViewById(R.id.mplayer_layout_magic_id));
+        registerTimeTickReceiver();
         pvInit(playerv, playerLDrawer, surfacev);
     }
 
     void
     unsetController(Activity activity) {
         if (activity == mVActivity) {
+            Utils.getSharedPreference().unregisterOnSharedPreferenceChangeListener(this);
+            unregisterTimeTickReceiver();
             mPlayerv = null;
             mVActivity = null;
             mDbUpdatedListener = null;

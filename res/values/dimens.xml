@@ -13,10 +13,13 @@
     <dimen name="toolbtn_height">45dip</dimen>
     <dimen name="ytsearch_idxbtn_width">40dip</dimen>
     <dimen name="ytsearch_idxbtn_height">35dip</dimen>
+    <dimen name="player_status_icon_width">11dip</dimen>
+    <dimen name="player_status_icon_height">11dip</dimen>
 
     <dimen name="large_text_size">25dip</dimen>
     <dimen name="title_text_size">14dip</dimen>
     <dimen name="desc_text_size">11dip</dimen>
+    <dimen name="status_text_size">9dip</dimen>
 
     <dimen name="seekbar_width">400px</dimen>
     <dimen name="guide_intercat_margin">10dip</dimen>
