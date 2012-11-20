@@ -96,6 +96,8 @@
     <string name="pref_cat_ux">사용자 경험</string>
     <string name="pref_lockscreen">잠금화면 플레이어</string>
     <string name="pref_lockscreen_desc">잠금화면 위에 플레이어 컨트롤을 위한 화면사용을 활성화 시킵니다.</string>
+    <string name="pref_stop_on_back">back터치시 정지하기</string>
+    <string name="pref_stop_on_back_desc">back key를 터치해서 앱에서 빠져나갈 때, 재생 중인 비디오를 정지시킵니다.</string>
 
     <string name="guide_title_first_playlist">첫번째 재생목록 만들기</string>
     <string name="guide_desc_first_playlist">아이콘을 터치해서 원하는 검색어로 유튜브를 검색합니다.\n검색이 완료되면, 검색된 유튜브 목록 중 하나를 길게 터치해서 새 재생목록을 만들어서 곡을 추가합니다.</string>

@@ -28,6 +28,14 @@
     </PreferenceCategory>
     <PreferenceCategory android:title="@string/pref_cat_ux">
         <ListPreference
+            android:title="@string/pref_stop_on_back"
+            android:summary="@string/pref_stop_on_back_desc"
+            android:key="@string/csstop_on_back"
+            android:defaultValue="@string/cson"
+            android:entries="@array/strarr_on_off_entry"
+            android:entryValues="@array/strarr_on_off_value"
+            />
+        <ListPreference
             android:title="@string/pref_lockscreen"
             android:summary="@string/pref_lockscreen_desc"
             android:key="@string/cslockscreen"

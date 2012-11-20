@@ -422,6 +422,12 @@ public class Utils {
         return v.equals(getResText(R.string.cson));
     }
 
+    public static boolean
+    isPrefStopOnBack() {
+        String v = getPreference(getResText(R.string.csstop_on_back),
+                                            getResText(R.string.cson));
+        return v.equals(getResText(R.string.cson));
+    }
     // ------------------------------------------------------------------------
     //
     // Bit mask handling
