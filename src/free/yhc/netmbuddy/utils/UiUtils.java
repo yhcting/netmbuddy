@@ -615,13 +615,17 @@ public class UiUtils {
             @Override
             public void
             onPostExecute(DiagAsyncTask task, Err result) {
-                String msg = "";
-                msg += _mVdi.title + "\n\n" +
-                       Utils.getResText(R.string.playback_time) + " : " + _mVdi.playTime + "\n" +
-                       Utils.getResText(R.string.volume) + " : " + _mVdi.volume + "\n" +
-                       Utils.getResText(R.string.time_added) + " : " + _mVdi.timeAdded + "\n" +
-                       Utils.getResText(R.string.time_last_played) + " : " + _mVdi.timeLastPlayed + "\n\n" +
-                       "[ " + Utils.getResText(R.string.playlist) + " ]\n";
+                String playbackTm = Utils.getResText(R.string.playback_time) + " : " + _mVdi.playTime
+                                        + Utils.getResText(R.string.seconds);
+                String volume = Utils.getResText(R.string.volume) + " : " + _mVdi.volume + " / 100";
+                String timeAdded = Utils.getResText(R.string.time_added) + " : " + _mVdi.timeAdded;
+                String timePlayed = Utils.getResText(R.string.time_last_played) + " : " + _mVdi.timeLastPlayed;
+                String msg = _mVdi.title + "\n\n"
+                             + playbackTm + "\n"
+                             + volume + "\n"
+                             + timeAdded + "\n"
+                             + timePlayed + "\n\n"
+                             + "[ " + Utils.getResText(R.string.playlist) + " ]\n";
                 for (String title : _mVdi.pls)
                     msg += "* " + title + "\n";
 
@@ -659,7 +663,11 @@ public class UiUtils {
                 _mVdi.volume = "" + c.getInt(COLI_VOLUME);
                 _mVdi.playTime = "" +c.getInt(COLI_PLAYTIME);
                 _mVdi.timeAdded = df.format(new Date(c.getLong(COLI_TIME_ADD)));
-                _mVdi.timeLastPlayed = df.format(new Date(c.getLong(COLI_TIME_PLAYED)));
+                long tm = c.getLong(COLI_TIME_PLAYED);
+                if (0 == tm)
+                    _mVdi.timeLastPlayed = Utils.getResText(R.string.not_played_yet);
+                else
+                    _mVdi.timeLastPlayed =df.format(new Date(c.getLong(COLI_TIME_PLAYED)));
                 long[] plids = db.getPlaylistsContainVideo(vid);
                 _mVdi.pls = new String[plids.length];
                 for (int i = 0; i < plids.length; i++)

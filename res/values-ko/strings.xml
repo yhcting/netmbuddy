@@ -34,6 +34,7 @@
     <string name="close">닫기</string>
     <string name="share">공유</string>
     <string name="duplication">중복</string>
+    <string name="seconds">초</string>
 
     <string name="enter_keyword">검색어 입력</string>
     <string name="new_search">새로 검색하기</string>
@@ -79,6 +80,7 @@
     <string name="importing_share">공유 데이타를 가져오는 중</string>
     <string name="share_via_email">Email로 공유하기</string>
     <string name="player_extra_control_title">현재 재생 중인 곡에 대해</string>
+    <string name="not_played_yet">재생된 적 없음</string>
 
     <string name="share_pl_attachment">재생목록공유</string>
     <string name="share_pl_email_subject">NetMBuddy 재생목록 공유</string>
