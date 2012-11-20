@@ -5,4 +5,36 @@ Strings that doens't need to be internationalization.
 -->
 <resources>
     <string name="package_name">free.yhc.netmbuddy</string>
+    <string name="license_desc">
+----------------\n
+Application icon\n
+----------------\n
+Application Icon : Mixture of below two icons\n
+http://www.iconarchive.com/show/NX11-icons-by-mazenl77/Internet-Blue-icon.html\n
+ - Author : Artist: MazeNL77\n
+ - License : Freeware\n
+\n
+http://www.iconarchive.com/show/ecommerce-business-icons-by-designcontest/music-icon.html\n
+ - Author : Artist: DesignContest (Available for custom work)\n
+ - License : CC Attribution 3.0 Unported\n
+             (http://creativecommons.org/licenses/by/3.0/)\n
+\n
+\n
+------------------------\n
+Icons in the application\n
+------------------------\n
+Youtube icon : http://www.softicons.com/free-icons/system-icons/windows-8-metro-icons-by-dakirby309/youtube-icon\n
+ - Author : dAKirby309\n
+ - License : Attribution 3.0 Unported (CC BY 3.0)\n
+             (http://creativecommons.org/licenses/by/3.0/)\n
+\n
+Status icon: http://www.iconfinder.com/search/?q=iconset%3Awindows8_icons\n
+ - Author : Visual Pharm - http://www.visualpharm.com\n
+ - License : Creative Commons (Attribution 3.0 Unported)\n
+             (http://creativecommons.org/licenses/by/3.0/)\n
+\n
+Others\n
+ - Author : Android Open Source Project\n
+ - License : the Apache License, Version 2.0\n
+    </string>
 </resources>

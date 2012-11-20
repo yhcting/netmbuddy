@@ -33,6 +33,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.database.Cursor;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
@@ -45,6 +46,7 @@ import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.TextView;
 import free.yhc.netmbuddy.PlaylistAdapter.ItemButton;
 import free.yhc.netmbuddy.model.DB;
 import free.yhc.netmbuddy.model.DB.ColVideo;
@@ -249,8 +251,23 @@ public class PlaylistActivity extends Activity {
     // ------------------------------------------------------------------------
     private void
     onMenuMoreAppInfo(View anchor) {
+        View v = UiUtils.inflateLayout(this, R.layout.info_dialog);
+        ((ImageView)v.findViewById(R.id.image)).setImageResource(R.drawable.appinfo_pic);
         AlertDialog.Builder bldr = new AlertDialog.Builder(this);
-        bldr.setView(UiUtils.inflateLayout(this, R.layout.appinfo));
+        bldr.setView(v);
+        AlertDialog aDiag = bldr.create();
+        aDiag.show();
+    }
+
+    private void
+    onMenuMoreLicense(View anchor) {
+        View v = UiUtils.inflateLayout(this, R.layout.info_dialog);
+        v.findViewById(R.id.image).setVisibility(View.GONE);
+        TextView tv = ((TextView)v.findViewById(R.id.text));
+        tv.setTypeface(Typeface.MONOSPACE);
+        tv.setText(R.string.license_desc);
+        AlertDialog.Builder bldr = new AlertDialog.Builder(this);
+        bldr.setView(v);
         AlertDialog aDiag = bldr.create();
         aDiag.show();
     }
@@ -532,6 +549,7 @@ public class PlaylistActivity extends Activity {
     onMenuMore(final View anchor) {
         final int[] optStringIds = {
                 R.string.app_info,
+                R.string.license,
                 R.string.clear_search_history,
                 R.string.dbmore,
                 R.string.ytsearchmore,
@@ -573,6 +591,10 @@ public class PlaylistActivity extends Activity {
 
                 case R.string.app_info:
                     onMenuMoreAppInfo(anchor);
+                    break;
+
+                case R.string.license:
+                    onMenuMoreLicense(anchor);
                     break;
 
                 default:

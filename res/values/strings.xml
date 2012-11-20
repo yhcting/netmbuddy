@@ -35,6 +35,7 @@
     <string name="share">Share</string>
     <string name="duplication">Duplication</string>
     <string name="seconds">seconds</string>
+    <string name="license">License</string>
 
     <string name="enter_keyword">Enter search keyword</string>
     <string name="new_search">New search</string>
