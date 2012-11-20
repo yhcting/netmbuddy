@@ -547,7 +547,8 @@ DBHelper.CheckDupDoneReceiver {
         super.onResume();
 
         if (mDb.isRegisteredToVideoTableWatcher(this)) {
-            if (mDb.isVideoTableUpdated(this)) {
+            if (mDb.isVideoTableUpdated(this)
+                && null != getAdapter()) {
                 showLoadingLookAndFeel();
                 checkDupAsync(null, (YTVideoFeed.Entry[])getAdapter().getEntries());
             }
