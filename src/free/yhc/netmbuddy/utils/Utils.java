@@ -89,8 +89,10 @@ public class Utils {
 
     public static enum PrefQuality {
         LOW     (R.string.low),
+        MIDLOW  (R.string.midlow),
         NORMAL  (R.string.normal),
-        HIGH    (R.string.high);
+        HIGH    (R.string.high),
+        VERYHIGH(R.string.veryhigh);
 
         private int text;
         private

@@ -27,8 +27,10 @@
     <string name="import_">Import</string>
     <string name="merge">Merge</string>
     <string name="low">Low</string>
+    <string name="midlow">Mid Low</string>
     <string name="normal">Normal</string>
     <string name="high">High</string>
+    <string name="veryhigh">Very High</string>
     <string name="done">Done</string>
     <string name="autostop">Auto-stop</string>
     <string name="close">Close</string>
@@ -93,8 +95,13 @@
     <string name="pref_shuffle_desc">Play musics in random order.</string>
     <string name="pref_repeat">Repeat</string>
     <string name="pref_repeat_desc">Play musics repeatedly.</string>
-    <string name="pref_quality">Audio quality</string>
-    <string name="pref_quality_desc">Low quality for poor network condition, otherwise normal is recommended. high is only for high-quality video.</string>
+    <string name="pref_low">Low(QCIF)</string>
+    <string name="pref_midlow">Mid Low(QVGA)</string>
+    <string name="pref_normal">Normal</string>
+    <string name="pref_high">High(HD)</string>
+    <string name="pref_veryhigh">Very High(Full HD)</string>
+    <string name="pref_quality">Media quality</string>
+    <string name="pref_quality_desc">Normal is recommended for musics. Some videos doesn\'t support some of listed qualities and best-fit will be selected.</string>
     <string name="pref_cat_ux">User experience</string>
     <string name="pref_lockscreen">Player on lockScreen</string>
     <string name="pref_lockscreen_desc">Enable screen for controlling player on lockscreen</string>

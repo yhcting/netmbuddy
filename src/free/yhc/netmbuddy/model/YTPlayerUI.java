@@ -976,17 +976,11 @@ OnSharedPreferenceChangeListener {
         TextView tv = (TextView)mPlayerv.findViewById(R.id.mplayer_status_quality);
         CharSequence text = "?";
         switch (quality) {
-        case HIGH:
-            text = "H";
-            break;
-
-        case NORMAL:
-            text = "M";
-            break;
-
-        case LOW:
-            text = "L";
-            break;
+        case VERYHIGH:  text = "VH";    break;
+        case HIGH:      text = "H";     break;
+        case NORMAL:    text = "M";     break;
+        case MIDLOW:    text = "ML";    break;
+        case LOW:       text = "L";     break;
         }
         tv.setText("[" + text + "]");
     }

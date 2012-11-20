@@ -9,14 +9,18 @@
         <item>@string/csoff</item>
     </string-array>
     <string-array name="strarr_pref_quality_entry">
-        <item>@string/low</item>
-        <item>@string/normal</item>
-        <item>@string/high</item>
+        <item>@string/pref_low</item>
+        <item>@string/pref_midlow</item>
+        <item>@string/pref_normal</item>
+        <item>@string/pref_high</item>
+        <item>@string/pref_veryhigh</item>
     </string-array>
     <!-- Value should match Utils.PrefQuality enum name -->
     <string-array name="strarr_pref_quality_value">
         <item>@string/csLOW</item>
+        <item>@string/csMIDLOW</item>
         <item>@string/csNORMAL</item>
         <item>@string/csHIGH</item>
+        <item>@string/csVERYHIGH</item>
     </string-array>
 </resources>

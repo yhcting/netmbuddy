@@ -1137,11 +1137,17 @@ SurfaceHolder.Callback {
         case LOW:
             return YTHacker.getQScorePreferLow(YTHacker.YTQUALITY_SCORE_LOWEST);
 
+        case MIDLOW:
+            return YTHacker.getQScorePreferLow(YTHacker.YTQUALITY_SCORE_LOW);
+
         case NORMAL:
             return YTHacker.getQScorePreferHigh(YTHacker.YTQUALITY_SCORE_MIDLOW);
 
         case HIGH:
-            return YTHacker.getQScorePreferHigh(YTHacker.YTQUALITY_SCORE_MIDHIGH);
+            return YTHacker.getQScorePreferHigh(YTHacker.YTQUALITY_SCORE_HIGH);
+
+        case VERYHIGH:
+            return YTHacker.getQScorePreferHigh(YTHacker.YTQUALITY_SCORE_HIGHEST);
         }
         eAssert(false);
         return YTHacker.getQScorePreferLow(YTHacker.YTQUALITY_SCORE_LOWEST);
