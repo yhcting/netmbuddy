@@ -13,7 +13,7 @@ import free.yhc.netmbuddy.R;
 import free.yhc.netmbuddy.utils.UiUtils;
 import free.yhc.netmbuddy.utils.Utils;
 
-public class YTPlayerVidArrayAdapter extends BaseAdapter {
+public class YTPlayerVideoListAdapter  extends BaseAdapter{
     private final int mActiveTextColor;
     private final int mInactiveTextColor;
     private final Context mContext;
@@ -34,7 +34,7 @@ public class YTPlayerVidArrayAdapter extends BaseAdapter {
         tv.setTextColor(mInactiveTextColor);
     }
 
-    YTPlayerVidArrayAdapter(Context context, YTPlayer.Video[] vs) {
+    YTPlayerVideoListAdapter(Context context, YTPlayer.Video[] vs) {
         super();
         eAssert(null != vs);
         mContext = context;

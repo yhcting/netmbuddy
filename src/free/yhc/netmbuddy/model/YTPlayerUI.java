@@ -463,7 +463,7 @@ OnSharedPreferenceChangeListener {
         ListView lv = (ListView)playerLDrawer.findViewById(R.id.mplayer_list);
         SlidingDrawer drawer = (SlidingDrawer)playerLDrawer.findViewById(R.id.mplayer_ldrawer);
         playerLDrawer.setVisibility(View.VISIBLE);
-        YTPlayerVidArrayAdapter adapter = new YTPlayerVidArrayAdapter(mVActivity, mMp.getVideoList());
+        YTPlayerVideoListAdapter adapter = new YTPlayerVideoListAdapter(mVActivity, mMp.getVideoList());
         adapter.setActiveItem(mMp.getActiveVideoIndex());
         lv.setAdapter(adapter);
         drawer.close();
@@ -495,7 +495,7 @@ OnSharedPreferenceChangeListener {
         }
 
         ListView lv = (ListView)playerLDrawer.findViewById(R.id.mplayer_list);
-        YTPlayerVidArrayAdapter adapter = (YTPlayerVidArrayAdapter)lv.getAdapter();
+        YTPlayerVideoListAdapter adapter = (YTPlayerVideoListAdapter)lv.getAdapter();
         if (null != adapter
             && mMp.getActiveVideoIndex() != adapter.getActiveItemPos()) {
             adapter.setActiveItem(mMp.getActiveVideoIndex());
@@ -884,7 +884,7 @@ OnSharedPreferenceChangeListener {
 
                     if (mMp.hasActiveVideo()) {
                         ListView lv = (ListView)mPlayerLDrawer.findViewById(R.id.mplayer_list);
-                        YTPlayerVidArrayAdapter adapter = (YTPlayerVidArrayAdapter)lv.getAdapter();
+                        YTPlayerVideoListAdapter adapter = (YTPlayerVideoListAdapter)lv.getAdapter();
                         if (null != adapter)
                             adapter.setVidArray(mMp.getVideoList());
                     } else
@@ -1090,7 +1090,7 @@ OnSharedPreferenceChangeListener {
         YTPlayer.Video[] vs =  mMp.getVideoList();
         if (null == vs)
             vs = new YTPlayer.Video[0];
-        YTPlayerVidArrayAdapter adapter = new YTPlayerVidArrayAdapter(mVActivity, vs);
+        YTPlayerVideoListAdapter adapter = new YTPlayerVideoListAdapter(mVActivity, vs);
         adapter.setActiveItem(mMp.getActiveVideoIndex());
         lv.setAdapter(adapter);
     }

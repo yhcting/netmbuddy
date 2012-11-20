@@ -95,11 +95,6 @@
     <string name="pref_shuffle_desc">음악 재생시 재생되는 곡의 순서가 무작위로 됩니다.</string>
     <string name="pref_repeat">반복 재생</string>
     <string name="pref_repeat_desc">계속해서 반복되어 음악이 재생 됩니다.</string>
-    <string name="pref_low">낮음(QCIF)</string>
-    <string name="pref_midlow">약간 낮음(QVGA)</string>
-    <string name="pref_normal">일반</string>
-    <string name="pref_high">높음(HD)</string>
-    <string name="pref_veryhigh">매우 높음(Full HD)</string>
     <string name="pref_quality">음질/화질</string>
     <string name="pref_quality_desc">음악 재생시 [일반]을 권장 합니다. 비디오에 따라 지원하지 않는 타입도 있습니다. 이 경우, 적절한 다른 타입이 선택됩니다.</string>
     <string name="pref_cat_ux">사용자 경험</string>
@@ -142,7 +137,7 @@
     <string name="msg_no_all_thumbnail">로드가 완료되지 않은 이미지를 가진 아이템이 있습니다.\n모든 이미지가 로드된 후 다시 시도해 주세요.</string>
     <string name="msg_fails_to_add">추가에 실패한 항목이 있습니다.</string>
     <string name="msg_no_items_selected">선택된 항목이 없습니다.</string>
-    <string name="msg_post_changing_video_quality">메인 음질 설정 또한 함께 바뀌었습니다.</string>
+    <string name="msg_post_changing_video_quality">메인 음질/화질 설정 또한 함께 바뀌었습니다.</string>
     <string name="msg_appended_to_playq">재생 큐에 추가되었습니다.</string>
     <string name="msg_play_all_musics">모든 음악이 재생됩니다.</string>
     <string name="msg_search_history_cleared">검색 히스토리가 삭제되었습니다.</string>

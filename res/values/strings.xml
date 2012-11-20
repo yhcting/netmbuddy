@@ -95,11 +95,6 @@
     <string name="pref_shuffle_desc">Play musics in random order.</string>
     <string name="pref_repeat">Repeat</string>
     <string name="pref_repeat_desc">Play musics repeatedly.</string>
-    <string name="pref_low">Low(QCIF)</string>
-    <string name="pref_midlow">Mid Low(QVGA)</string>
-    <string name="pref_normal">Normal</string>
-    <string name="pref_high">High(HD)</string>
-    <string name="pref_veryhigh">Very High(Full HD)</string>
     <string name="pref_quality">Media quality</string>
     <string name="pref_quality_desc">Normal is recommended for musics. Some videos doesn\'t support some of listed qualities and best-fit will be selected.</string>
     <string name="pref_cat_ux">User experience</string>
@@ -142,7 +137,7 @@
     <string name="msg_no_all_thumbnail">Some thumbnails are not loaded yet.\nTry again after loading all thumbnail is done.</string>
     <string name="msg_fails_to_add">Adding fails for some items.</string>
     <string name="msg_no_items_selected">No items selected.</string>
-    <string name="msg_post_changing_video_quality">Main audio quality setting is changed too, accordingly.</string>
+    <string name="msg_post_changing_video_quality">Main media quality setting is changed too, accordingly.</string>
     <string name="msg_appended_to_playq">appended to play queue.</string>
     <string name="msg_play_all_musics">All musics are played.</string>
     <string name="msg_search_history_cleared">Clearing search history is done.</string>
