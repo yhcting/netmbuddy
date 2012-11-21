@@ -28,14 +28,13 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
-import free.yhc.netmbuddy.utils.Utils;
-
 import android.net.Uri;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
 import android.os.Process;
+import free.yhc.netmbuddy.utils.Utils;
 
 
 public class YTDownloader {
@@ -134,7 +133,7 @@ public class YTDownloader {
                     return;
                 }
                 _mLoader = hack.getNetLoader();
-                YTHacker.YtVideo vid = hack.getVideo(arg.qscore);
+                YTHacker.YtVideo vid = hack.getVideo(arg.qscore, false);
                 if (null == vid) {
                     sendResult(arg, Err.UNSUPPORTED_VIDFORMAT);
                     return;

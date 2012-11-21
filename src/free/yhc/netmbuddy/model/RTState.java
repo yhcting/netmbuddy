@@ -24,14 +24,16 @@ import static free.yhc.netmbuddy.utils.Utils.eAssert;
 
 import java.util.HashMap;
 
+import android.support.v4.util.LruCache;
+
 public class RTState {
     private static RTState sInstance = null;
 
-    private YTHacker    mLastSuccessfulHacker = null;
     // TODO
     // Proxy string should be changed if user changes proxy setting.
     private String  mProxy          = "";
-    private HashMap<String, MapValue> mOverridingPref = new HashMap<String, MapValue>();
+    private HashMap<String, MapValue>   mOverridingPref = new HashMap<String, MapValue>();
+    private LruCache<String, YTHacker>  mHackerCache    = new LruCache(Policy.YTHACK_CACHE_SIZE);
 
     private static class MapValue {
         Object  owner;
@@ -60,15 +62,20 @@ public class RTState {
         return mProxy;
     }
 
+    /**
+     *
+     * @param hacker
+     *   should be successfully hacked object.
+     */
     public void
-    setLastSuccessfulHacker(YTHacker hacker) {
+    cachingYtHacker(YTHacker hacker) {
         eAssert(hacker.hasHackedResult());
-        mLastSuccessfulHacker = hacker;
+        mHackerCache.put(hacker.getYtVideoId(), hacker);
     }
 
     public YTHacker
-    getLastSuccessfulHacker() {
-        return mLastSuccessfulHacker;
+    getCachedYtHacker(String ytvid) {
+        return mHackerCache.get(ytvid);
     }
 
     public void

@@ -32,10 +32,9 @@ import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import free.yhc.netmbuddy.utils.Utils;
-
 import android.net.Uri;
 import android.os.AsyncTask;
+import free.yhc.netmbuddy.utils.Utils;
 
 //
 // This is main class for HACKING Youtube protocol.
@@ -445,8 +444,16 @@ public class YTHacker {
         return mYtr.tmstamp;
     }
 
+    /**
+     *
+     * @param quality
+     * @param exact
+     *   true : exact matching is required.
+     *   false : best-fit is found.
+     * @return
+     */
     public YtVideo
-    getVideo(int quality) {
+    getVideo(int quality, boolean exact) {
         eAssert(0 <= quality && quality <= 100);
        if (null == mYtr)
             return null;
@@ -459,19 +466,18 @@ public class YTHacker {
             if (YTQSCORE_INVALID != e.qscore) {
                 qgap = quality - e.qscore;
                 qgap = qgap < 0? -qgap: qgap;
-                if (null == ve) {
-                    ve = e;
-                    curgap = qgap;
-                } else if (qgap < curgap) {
+                if (null == ve || qgap < curgap) {
                     ve = e;
                     curgap = qgap;
                 }
             }
         }
-        if (null != ve)
-            return new YtVideo(ve.url, ve.type);
-        else
+
+        if (null == ve
+            || (exact && 0 != curgap))
             return null;
+        else
+            return new YtVideo(ve.url, ve.type);
     }
 
     public Err

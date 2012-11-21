@@ -59,6 +59,7 @@ public class Policy {
     // (It's totally dependent on server-side-implementation.)
     // So, this is just experimental value!
     public static final int     YTHACK_REUSE_TIMEOUT    = 5 * 60 * 1000; // 5 minutes
+    public static final int     YTHACK_CACHE_SIZE       = 5;
 
     // --------------------------------------------------------------------
     // Youtube Player

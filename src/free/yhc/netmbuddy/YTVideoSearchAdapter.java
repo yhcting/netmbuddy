@@ -165,7 +165,7 @@ public class YTVideoSearchAdapter extends YTSearchAdapter {
     getItemVolume(int pos) {
         int volume = DB.INVALID_VOLUME;
         YTPlayer ytp = YTPlayer.get();
-        String runningYtVid = ytp.getPlayVideoYtId();
+        String runningYtVid = ytp.getActiveVideoYtId();
         if (null != runningYtVid
             && runningYtVid.equals(getItemVideoId(pos)))
             volume = ytp.getVideoVolume();

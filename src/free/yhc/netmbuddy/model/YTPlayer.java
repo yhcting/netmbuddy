@@ -940,28 +940,6 @@ SurfaceHolder.Callback {
     }
 
     private int
-    mapPrefToQScore(Utils.PrefQuality prefq) {
-        switch (prefq) {
-        case LOW:
-            return YTHacker.YTQUALITY_SCORE_LOWEST;
-
-        case MIDLOW:
-            return YTHacker.YTQUALITY_SCORE_LOW;
-
-        case NORMAL:
-            return YTHacker.YTQUALITY_SCORE_MIDLOW;
-
-        case HIGH:
-            return YTHacker.YTQUALITY_SCORE_HIGH;
-
-        case VERYHIGH:
-            return YTHacker.YTQUALITY_SCORE_HIGHEST;
-        }
-        eAssert(false);
-        return YTHacker.YTQUALITY_SCORE_LOWEST;
-    }
-
-    private int
     getVideoQualityScore() {
         int qscore = mapPrefToQScore(Utils.getPrefQuality());
         switch (Utils.getPrefQuality()) {
@@ -1160,7 +1138,7 @@ SurfaceHolder.Callback {
 
     private void
     prepareVideoStreamingFromYtHack(YTHacker ythack) {
-        YTHacker.YtVideo ytv = ythack.getVideo(getVideoQualityScore());
+        YTHacker.YtVideo ytv = ythack.getVideo(getVideoQualityScore(), false);
         if (null == ytv) {
             // Video format is not supported...
             // Just skip it with toast!
@@ -1184,16 +1162,15 @@ SurfaceHolder.Callback {
     prepareVideoStreaming(final String videoId) {
         logI("Prepare Video Streaming : " + videoId);
 
-        YTHacker lastHacker = RTState.get().getLastSuccessfulHacker();
-        if (null != lastHacker
-            && videoId.equals(lastHacker.getYtVideoId())
-            && (System.currentTimeMillis() - lastHacker.getHackTimeStamp()) < Policy.YTHACK_REUSE_TIMEOUT) {
-            eAssert(lastHacker.hasHackedResult());
+        YTHacker hacker = RTState.get().getCachedYtHacker(videoId);
+        if (null != hacker
+            && videoId.equals(hacker.getYtVideoId())
+            && (System.currentTimeMillis() - hacker.getHackTimeStamp()) < Policy.YTHACK_REUSE_TIMEOUT) {
+            eAssert(hacker.hasHackedResult());
             // Let's try to reuse it.
-            prepareVideoStreamingFromYtHack(lastHacker);
+            prepareVideoStreamingFromYtHack(hacker);
             return;
         }
-
 
         YTHacker.YtHackListener listener = new YTHacker.YtHackListener() {
             @Override
@@ -1236,7 +1213,7 @@ SurfaceHolder.Callback {
                 }
 
                 prepareVideoStreamingFromYtHack(ythack);
-                RTState.get().setLastSuccessfulHacker(ythack);
+                RTState.get().cachingYtHacker(ythack);
             }
 
             @Override
@@ -1877,6 +1854,28 @@ SurfaceHolder.Callback {
         return sInstance;
     }
 
+    public static int
+    mapPrefToQScore(Utils.PrefQuality prefq) {
+        switch (prefq) {
+        case LOW:
+            return YTHacker.YTQUALITY_SCORE_LOWEST;
+
+        case MIDLOW:
+            return YTHacker.YTQUALITY_SCORE_LOW;
+
+        case NORMAL:
+            return YTHacker.YTQUALITY_SCORE_MIDLOW;
+
+        case HIGH:
+            return YTHacker.YTQUALITY_SCORE_HIGH;
+
+        case VERYHIGH:
+            return YTHacker.YTQUALITY_SCORE_HIGHEST;
+        }
+        eAssert(false);
+        return YTHacker.YTQUALITY_SCORE_LOWEST;
+    }
+
     public void
     addVideosStateListener(Object key, VideosStateListener listener) {
         eAssert(null != listener);
@@ -2111,7 +2110,7 @@ SurfaceHolder.Callback {
     }
 
     public String
-    getPlayVideoYtId() {
+    getActiveVideoYtId() {
         if (isVideoPlaying())
             return mVlm.getActiveVideo().videoId;
         return null;

@@ -1,5 +1,7 @@
 package free.yhc.netmbuddy;
 
+import java.util.ArrayList;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
@@ -17,6 +19,8 @@ import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
 import android.widget.TextView;
+import free.yhc.netmbuddy.model.RTState;
+import free.yhc.netmbuddy.model.YTHacker;
 import free.yhc.netmbuddy.model.YTPlayer;
 import free.yhc.netmbuddy.model.YTPlayer.StopState;
 import free.yhc.netmbuddy.utils.ImageUtils;
@@ -198,16 +202,23 @@ YTPlayer.VideosStateListener {
 
     private void
     changeVideoQuality(View anchor) {
-        final int[] optStringIds = new int[Utils.PrefQuality.values().length - 1];
+        String ytvid = mMp.getActiveVideoYtId();
+        if (null == ytvid)
+            return;
+
+        YTHacker hack = RTState.get().getCachedYtHacker(ytvid);
+        final ArrayList<Integer> opts = new ArrayList<Integer>();
         int i = 0;
         for (Utils.PrefQuality q : Utils.PrefQuality.values()) {
-            if (mVQuality != q)
-                optStringIds[i++] = q.getText();
+            if (mVQuality != q
+                && null != hack
+                && null != hack.getVideo(YTPlayer.mapPrefToQScore(q), true))
+                opts.add(q.getText());
         }
 
-        final CharSequence[] items = new CharSequence[optStringIds.length];
-        for (i = 0; i < optStringIds.length; i++)
-            items[i] = getResources().getText(optStringIds[i]);
+        final CharSequence[] items = new CharSequence[opts.size()];
+        for (i = 0; i < items.length; i++)
+            items[i] = getResources().getText(opts.get(i));
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle(R.string.set_video_quality);
@@ -215,7 +226,7 @@ YTPlayer.VideosStateListener {
             @Override
             public void
             onClick(DialogInterface dialog, int item) {
-                doChangeVideoQuality(Utils.PrefQuality.getMatchingQuality(optStringIds[item]));
+                doChangeVideoQuality(Utils.PrefQuality.getMatchingQuality(opts.get(item)));
             }
         });
         builder.create().show();
