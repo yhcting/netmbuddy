@@ -43,13 +43,5 @@
             android:entries="@array/strarr_on_off_entry"
             android:entryValues="@array/strarr_on_off_value"
             />
-        <ListPreference
-            android:title="@string/pref_video_play_mode"
-            android:summary="@string/pref_video_play_mode_desc"
-            android:key="@string/csvideo_play_mode"
-            android:defaultValue="@string/csoff"
-            android:entries="@array/strarr_on_off_entry"
-            android:entryValues="@array/strarr_on_off_value"
-            />
     </PreferenceCategory>
 </PreferenceScreen>

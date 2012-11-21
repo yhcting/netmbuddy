@@ -1172,6 +1172,13 @@ SurfaceHolder.Callback {
             return;
         }
 
+        if (null != mYtHack
+            && videoId.equals(mYtHack.getYtVideoId())
+            && !mYtHack.hasHackedResult())
+            // hacking for this video is already on-going.
+            // this request is ignored.
+            return;
+
         YTHacker.YtHackListener listener = new YTHacker.YtHackListener() {
             @Override
             public void
@@ -2047,18 +2054,7 @@ SurfaceHolder.Callback {
         mVlm.setVideoList(vs);
 
         if (mVlm.moveToFist()) {
-            if (Utils.isPrefVideoPlayMode()
-                && null != mUi.getActivity()) {
-                // NOTE
-                // After video player activity is resumed, controller is set.
-                // At setController(), if there is stored state, player resumes it automatically
-                //   and, starts playing video.
-                // To reuse above mechanism, backupPlayerState() is called before starting VideoPlayerActivity.
-                backupPlayerState();
-                mUi.getActivity().startActivity(new Intent(mUi.getActivity(), VideoPlayerActivity.class));
-            } else
-                startVideo(mVlm.getActiveVideo(), false);
-
+            startVideo(mVlm.getActiveVideo(), false);
             Iterator<VideosStateListener> iter = mVStateLsnrl.iterator();
             while (iter.hasNext())
                 iter.next().onStarted();

@@ -436,13 +436,6 @@ public class Utils {
         return v.equals(getResText(R.string.cson));
     }
 
-    public static boolean
-    isPrefVideoPlayMode() {
-        String v = getPreference(getResText(R.string.csvideo_play_mode),
-                                            getResText(R.string.csoff));
-        return v.equals(getResText(R.string.cson));
-    }
-
     // ------------------------------------------------------------------------
     //
     // Bit mask handling

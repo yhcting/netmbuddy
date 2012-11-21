@@ -402,7 +402,6 @@ OnSharedPreferenceChangeListener {
         // --------------------------------------------------------------------
         switch (to) {
         case INVALID:
-        case IDLE:
         case END:
             pvDisableButton(toolv);
         break;
@@ -743,7 +742,6 @@ OnSharedPreferenceChangeListener {
             @Override
             public void onClick(View v) {
                 mMp.startPrevVideo();
-                pvDisableControlButton(playerv);
             }
         });
 
@@ -752,7 +750,6 @@ OnSharedPreferenceChangeListener {
             @Override
             public void onClick(View v) {
                 mMp.startNextVideo();
-                pvDisableControlButton(playerv);
             }
         });
 
