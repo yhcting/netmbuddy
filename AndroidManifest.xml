@@ -102,7 +102,6 @@
                   android:theme="@android:style/Theme.NoTitleBar"
                   />
         <activity android:name=".VideoPlayerActivity"
-                  android:screenOrientation="landscape"
                   android:configChanges="orientation|keyboardHidden"
                   android:theme="@android:style/Theme.NoTitleBar"
                   />

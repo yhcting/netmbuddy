@@ -31,13 +31,19 @@ public class VideoPlayerActivity extends Activity implements
 YTPlayer.PlayerStateListener,
 YTPlayer.VideosStateListener {
     private final YTPlayer      mMp = YTPlayer.get();
-    private int                 mStatusBarHeight = 0;
     private SurfaceView         mSurfv;
     private Utils.PrefQuality   mVQuality = Utils.getPrefQuality();
+    private boolean             mAdjustSurfaceOnWinFocused  = true;
+    private boolean             mUserIfShown                = false;
 
+    private static enum Orientation {
+        PORTRAIT,
+        LANDSCAPE,
+        SYSTEM,     // current system status
+    }
 
     private void
-    fitVideoSurfaceToScreen(boolean statusBarShown) {
+    fitVideoSurfaceToScreen(Orientation ori) {
         SurfaceHolder holder = mSurfv.getHolder();
 
         //Scale video with fixed-ratio.
@@ -56,30 +62,29 @@ YTPlayer.VideosStateListener {
         // Status bar hiding/showing has animation effect.
         // So, getting status bar height sometimes returns unexpected value.
         // (Not perfectly matching window's FLAG_FULLSCREEN flag)
-        // So, saving height of status bar at the beginning and that value is used.
+        //
+        // Showing animation means "status bar is shown".
+        // So, even if FLAG_FULLSCREEN flag is cleared, rect.top of visible frame is NOT 0
+        //   because (I think) status bar is still in animation and it is not hidden perfectly yet.
+        // But, in case of showing status bar, even if status bar is not fully shown,
+        //   status bar already hold space for it. So, rect.top of visible frame is unexpected value.
+        //
+        // NOTE
+        // Based on my experience, this issue can be shown at GB. But NOT at ICS.
+        //
+        // To handle above, below hack is used.
         Rect rect = Utils.getVisibleFrame(this);
         int sw = rect.width();
-        // visible frame's height depends on statusbar's visibility.
-        // And due to same reason of status bar above, rect.height() should not be used.
-        // We have pre-stored exact height of status bar. So, that value should be used
-        //   with visible frame's bottom value.
-        int sh = rect.bottom - (statusBarShown? mStatusBarHeight: 0);
+        // default is full screen.
+        int sh = rect.bottom;
+        // HACK! : if user interface is NOT shown, even if 0 != rect.top, it is ignored.
+        if (isUserInterfaceShown())
+            // When user interface is shown, status bar is also shown.
+            sh -= rect.top;
 
-        // NOTE
-        // Workaround for Android Framework's bug.
-        //
-        // Only landscape mode is supported for video and that is described at manifest.xml.
-        // But, in case of playing local video, reaching here so quickly since activity is resumed.
-        // And at that moment, sometimes, activity's mode is still portrait which is default mode
-        //   before completely changing to target mode(in this case, landscape mode).
-        // So, even if activity uses landscape as fixed screen mode, width and height values may
-        //   be read as portrait mode here, in case as follows
-        //   - playing local video.
-        //   - video player activity enters pause state and then resumed.
-        //     (ex. turn off backlight and then turn on again.)
-        // To workaround, value of longer axis is used as width regardless of direction - width or height of window.
-        if (sw < sh) {
-            // swap
+        if ((Orientation.LANDSCAPE == ori && sw < sh)
+            || (Orientation.PORTRAIT == ori && sw > sh)) {
+             // swap
             int tmp = sw;
             sw = sh;
             sh = tmp;
@@ -97,6 +102,16 @@ YTPlayer.VideosStateListener {
         mSurfv.requestLayout();
     }
 
+    private void
+    postFitVideoSurfaceToScreen(final Orientation ori) {
+        Utils.getUiHandler().post(new Runnable() {
+            @Override
+            public void
+            run() {
+                fitVideoSurfaceToScreen(ori);
+            }
+        });
+    }
 
 
     private void
@@ -142,27 +157,25 @@ YTPlayer.VideosStateListener {
 
     private boolean
     isUserInterfaceShown() {
-        return View.VISIBLE == findViewById(R.id.player).getVisibility();
+        return mUserIfShown;
     }
 
     private void
-    showUserInterface() {
-        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+    updateUserInterfaceVisibility(boolean show) {
         ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
         ViewGroup drawer = (ViewGroup)findViewById(R.id.list_drawer);
-        playerv.setVisibility(View.VISIBLE);
-        drawer.setVisibility(View.VISIBLE);
-        fitVideoSurfaceToScreen(true);
-    }
-
-    private void
-    hideUserInterface() {
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
-        ViewGroup drawer = (ViewGroup)findViewById(R.id.list_drawer);
-        playerv.setVisibility(View.GONE);
-        drawer.setVisibility(View.GONE);
-        fitVideoSurfaceToScreen(false);
+        if (show) {
+            mUserIfShown = true;
+            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+            playerv.setVisibility(View.VISIBLE);
+            drawer.setVisibility(View.VISIBLE);
+        } else {
+            mUserIfShown = false;
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+            playerv.setVisibility(View.GONE);
+            drawer.setVisibility(View.GONE);
+        }
+        fitVideoSurfaceToScreen(Orientation.SYSTEM);
     }
 
     private void
@@ -273,7 +286,7 @@ YTPlayer.VideosStateListener {
             break;
 
         case PREPARED:
-            fitVideoSurfaceToScreen(isUserInterfaceShown());
+            fitVideoSurfaceToScreen(Orientation.SYSTEM);
             // missing break is intentional.
         case STARTED:
         case PAUSED:
@@ -313,11 +326,9 @@ YTPlayer.VideosStateListener {
         mMp.setSurfaceHolder(mSurfv.getHolder());
         findViewById(R.id.touch_ground).setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) {
-                if (isUserInterfaceShown())
-                    hideUserInterface();
-                else
-                    showUserInterface();
+            public void
+            onClick(View v) {
+                updateUserInterfaceVisibility(!isUserInterfaceShown());
             }
         });
 
@@ -353,18 +364,24 @@ YTPlayer.VideosStateListener {
         // - turn on backlight again and this activity is resumed.
         // ==> Handler View of SlidingDrawer is shown.
         //
-        // To workaround, player is always shown at onResume().
-        showUserInterface();
+        // To workaround above issue.
+        mAdjustSurfaceOnWinFocused = true;
     }
 
     @Override
     public void
     onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
-        // Below code is a kind of hack to get height of status bar.
-        // Need to find any better way....
-        if (0 == mStatusBarHeight)
-            mStatusBarHeight = Utils.getStatusBarHeight(this);
+        if (mAdjustSurfaceOnWinFocused && hasFocus) {
+            Utils.getUiHandler().post(new Runnable() {
+                @Override
+                public void
+                run() {
+                    updateUserInterfaceVisibility(isUserInterfaceShown());
+                    mAdjustSurfaceOnWinFocused = false;
+                }
+            });
+        }
     }
 
     @Override
@@ -394,7 +411,15 @@ YTPlayer.VideosStateListener {
     public void
     onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-        // Do nothing!
+        switch (newConfig.orientation) {
+        case Configuration.ORIENTATION_LANDSCAPE:
+            fitVideoSurfaceToScreen(Orientation.LANDSCAPE);
+            break;
+
+        case Configuration.ORIENTATION_PORTRAIT:
+            fitVideoSurfaceToScreen(Orientation.PORTRAIT);
+            break;
+        }
     }
 
     @Override
