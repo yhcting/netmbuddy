@@ -1408,8 +1408,9 @@ SurfaceHolder.Callback {
 
     private void
     storePlayerState() {
-        if (null == mMp)
-            return;
+        if (null == mpGet()
+            && !mVlm.hasActiveVideo())
+            return; // nothing to store
 
         // NOTE
         // Even if last stored player state is not restored and used yet,
@@ -1937,10 +1938,10 @@ SurfaceHolder.Callback {
             public void onClick(View v) {
                 if (!hasActiveVideo()
                     || null == mUi.getActivity())
-                        return;
-                    backupPlayerState();
-                    playerStop();
-                    mUi.getActivity().startActivity(new Intent(mUi.getActivity(), VideoPlayerActivity.class));
+                    return;
+                backupPlayerState();
+                playerStop();
+                mUi.getActivity().startActivity(new Intent(mUi.getActivity(), VideoPlayerActivity.class));
             }
         };
 
@@ -2046,7 +2047,18 @@ SurfaceHolder.Callback {
         mVlm.setVideoList(vs);
 
         if (mVlm.moveToFist()) {
-            startVideo(mVlm.getActiveVideo(), false);
+            if (Utils.isPrefVideoPlayMode()
+                && null != mUi.getActivity()) {
+                // NOTE
+                // After video player activity is resumed, controller is set.
+                // At setController(), if there is stored state, player resumes it automatically
+                //   and, starts playing video.
+                // To reuse above mechanism, backupPlayerState() is called before starting VideoPlayerActivity.
+                backupPlayerState();
+                mUi.getActivity().startActivity(new Intent(mUi.getActivity(), VideoPlayerActivity.class));
+            } else
+                startVideo(mVlm.getActiveVideo(), false);
+
             Iterator<VideosStateListener> iter = mVStateLsnrl.iterator();
             while (iter.hasNext())
                 iter.next().onStarted();

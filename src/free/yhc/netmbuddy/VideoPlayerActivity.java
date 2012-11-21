@@ -247,6 +247,8 @@ YTPlayer.VideosStateListener {
     public void
     onStopped(StopState state) {
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        hideLoadingSpinProgress();
+        finish();
     }
 
     @Override

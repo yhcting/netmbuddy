@@ -101,7 +101,9 @@
     <string name="pref_lockscreen">Player on lockScreen</string>
     <string name="pref_lockscreen_desc">Enable screen for controlling player on lockscreen</string>
     <string name="pref_stop_on_back">Stop-on-back</string>
-    <string name="pref_stop_on_back_desc">Stop playing on exiting App. via back-key.</string>
+    <string name="pref_stop_on_back_desc">Stop playing on exiting App. via back-button.</string>
+    <string name="pref_video_play_mode">Video play mode</string>
+    <string name="pref_video_play_mode_desc">When new play is requested, video player is activated by default.</string>
 
     <string name="guide_title_first_playlist">Making my first playlist.</string>
     <string name="guide_desc_first_playlist">Touching this icon to search Youbute with keywords\nThen, do long-touch one of list-item to make new playlist and add the item to the playlist.</string>
