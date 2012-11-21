@@ -661,13 +661,16 @@ public class UiUtils {
 
                 _mVdi.title = c.getString(COLI_TITLE);
                 _mVdi.volume = "" + c.getInt(COLI_VOLUME);
-                _mVdi.playTime = "" +c.getInt(COLI_PLAYTIME);
+                _mVdi.playTime = Utils.secsToMinSecText(c.getInt(COLI_PLAYTIME));
                 _mVdi.timeAdded = df.format(new Date(c.getLong(COLI_TIME_ADD)));
                 long tm = c.getLong(COLI_TIME_PLAYED);
                 if (0 == tm)
                     _mVdi.timeLastPlayed = Utils.getResText(R.string.not_played_yet);
                 else
                     _mVdi.timeLastPlayed =df.format(new Date(c.getLong(COLI_TIME_PLAYED)));
+
+                c.close();
+
                 long[] plids = db.getPlaylistsContainVideo(vid);
                 _mVdi.pls = new String[plids.length];
                 for (int i = 0; i < plids.length; i++)
