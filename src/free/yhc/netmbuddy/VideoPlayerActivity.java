@@ -33,7 +33,10 @@ YTPlayer.VideosStateListener {
     private final YTPlayer      mMp = YTPlayer.get();
     private SurfaceView         mSurfv;
     private Utils.PrefQuality   mVQuality = Utils.getPrefQuality();
-    private boolean             mAdjustSurfaceOnWinFocused  = true;
+    private int                 mStatusBarHeight            = 0;
+
+    // If : Interface
+    private boolean             mDelayedSetIfVisibility     = true;
     private boolean             mUserIfShown                = false;
 
     private static enum Orientation {
@@ -69,10 +72,12 @@ YTPlayer.VideosStateListener {
         // But, in case of showing status bar, even if status bar is not fully shown,
         //   status bar already hold space for it. So, rect.top of visible frame is unexpected value.
         //
-        // NOTE
-        // Based on my experience, this issue can be shown at GB. But NOT at ICS.
+        // To handle above issue, below hack is used.
         //
-        // To handle above, below hack is used.
+        // Because of the reason described above, at this moment, we can't get height of status bar with sure.
+        // So, we should get in advance when we are sure to get valid height of status bar.
+        // mStatusBarHeight is used for that reason.
+        // And onWindowFocusChanged is the right place to get status height.
         Rect rect = Utils.getVisibleFrame(this);
         int sw = rect.width();
         // default is full screen.
@@ -80,7 +85,7 @@ YTPlayer.VideosStateListener {
         // HACK! : if user interface is NOT shown, even if 0 != rect.top, it is ignored.
         if (isUserInterfaceShown())
             // When user interface is shown, status bar is also shown.
-            sh -= rect.top;
+            sh -= mStatusBarHeight;
 
         if ((Orientation.LANDSCAPE == ori && sw < sh)
             || (Orientation.PORTRAIT == ori && sw > sh)) {
@@ -101,18 +106,6 @@ YTPlayer.VideosStateListener {
         mSurfv.setLayoutParams(lp);
         mSurfv.requestLayout();
     }
-
-    private void
-    postFitVideoSurfaceToScreen(final Orientation ori) {
-        Utils.getUiHandler().post(new Runnable() {
-            @Override
-            public void
-            run() {
-                fitVideoSurfaceToScreen(ori);
-            }
-        });
-    }
-
 
     private void
     setController(boolean withSurface) {
@@ -314,11 +307,6 @@ YTPlayer.VideosStateListener {
     @Override
     public void
     onCreate(Bundle savedInstanceState) {
-        // NOTE
-        // Android bug!
-        // Even if Visibility of SlidingDrawer is set to "GONE" here or "layout xml"
-        //   'handler' of SlidingDrawer is still shown!!
-        // So, to workaround this issue, "VISIBILE" is used as default visibility of controller.
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.videoplayer);
@@ -354,7 +342,9 @@ YTPlayer.VideosStateListener {
 
         setController(true);
         // This is for workaround SlidingDrawer bug of Android Widget.
-        // See comments of onCreate() for details.
+        //
+        // Even if Visibility of SlidingDrawer is set to "GONE" here or "layout xml"
+        //   'handler' of SlidingDrawer is still shown!!
         // Without below code, handler View of SlidingDrawer is always shown
         //   even if after 'hideController()' is called.
         // Step for issues.
@@ -364,23 +354,25 @@ YTPlayer.VideosStateListener {
         // - turn on backlight again and this activity is resumed.
         // ==> Handler View of SlidingDrawer is shown.
         //
-        // To workaround above issue.
-        mAdjustSurfaceOnWinFocused = true;
+        // To workaround above issue, visibility of user-interface is set at onWindowFocusChanged.
+        mDelayedSetIfVisibility = true;
     }
 
     @Override
     public void
     onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
-        if (mAdjustSurfaceOnWinFocused && hasFocus) {
-            Utils.getUiHandler().post(new Runnable() {
-                @Override
-                public void
-                run() {
-                    updateUserInterfaceVisibility(isUserInterfaceShown());
-                    mAdjustSurfaceOnWinFocused = false;
-                }
-            });
+        if (hasFocus) {
+            // At this moment, status bar exists.
+            // So, height of status bar can be get.
+            // See comments in fitVideoSurfaceToScreen() for details.
+            if (0 == mStatusBarHeight) // if valid height is not gotten yet..
+                mStatusBarHeight = Utils.getStatusBarHeight(this);
+
+            if (mDelayedSetIfVisibility) {
+                mDelayedSetIfVisibility = false;
+                updateUserInterfaceVisibility(isUserInterfaceShown());
+            }
         }
     }
 
