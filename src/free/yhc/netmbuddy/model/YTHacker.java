@@ -336,6 +336,11 @@ public class YTHacker {
                 eAssert(content.type.toLowerCase().startsWith("text/html"));
                 mYtr = parseYtVideoHtml(new BufferedReader(new InputStreamReader(content.stream)));
                 if (mYtr.vids.length <= 0) {
+                    // this is invalid result value.
+                    // Ignore this result.
+                    // If not, this may cause mis-understanding that hacking is successful.
+                    // Note that "hasHackedResult()" uses "null != mYtr".
+                    mYtr = null;
                     err = Err.PARSE_HTML;
                     break;
                 }
@@ -369,6 +374,9 @@ public class YTHacker {
             if (null != mListener)
                 mListener.onHackCancelled(this, mYtvid, mUser);
         } else {
+            if (Err.NO_ERR == result && hasHackedResult())
+                RTState.get().cachingYtHacker(this);
+
             if (null != mListener)
                 mListener.onPostHack(this, result, mLoader, mYtvid, mUser);
         }

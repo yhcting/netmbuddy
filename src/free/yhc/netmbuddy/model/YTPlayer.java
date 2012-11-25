@@ -1220,7 +1220,6 @@ SurfaceHolder.Callback {
                 }
 
                 prepareVideoStreamingFromYtHack(ythack);
-                RTState.get().cachingYtHacker(ythack);
             }
 
             @Override
