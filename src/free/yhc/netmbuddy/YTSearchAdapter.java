@@ -36,7 +36,6 @@ import free.yhc.netmbuddy.utils.Utils;
 public abstract class YTSearchAdapter extends BaseAdapter implements
 YTSearchHelper.LoadThumbnailDoneReceiver {
     // So, assign one of them as view tag's key value.
-    protected static final int VTAGKEY_POS        = R.id.title;
     protected static final int VTAGKEY_VALID      = R.id.content;
 
     protected final Context         mCxt;
@@ -63,7 +62,7 @@ YTSearchHelper.LoadThumbnailDoneReceiver {
         long delay = 0;
         for (int i = 0; i < mItemViews.length; i++) {
             mItemViews[i] = UiUtils.inflateLayout(Utils.getAppContext(), rowLayout);
-            markViewInvalid(mItemViews[i]);
+            setViewInvalid(mItemViews[i]);
             final YTSearchHelper.LoadThumbnailArg arg
                 = new YTSearchHelper.LoadThumbnailArg(i,
                                                       mEntries[i].media.thumbnailUrl,
@@ -89,17 +88,17 @@ YTSearchHelper.LoadThumbnailDoneReceiver {
     }
 
     protected void
-    markViewInvalid(View v) {
+    setViewInvalid(View v) {
         v.setTag(VTAGKEY_VALID, false);
     }
 
     protected void
-    markViewInvalid(int pos) {
-        markViewInvalid(mItemViews[pos]);
+    setViewInvalid(int pos) {
+        setViewInvalid(mItemViews[pos]);
     }
 
     protected void
-    markViewValid(View v) {
+    setViewValid(View v) {
         v.setTag(VTAGKEY_VALID, true);
     }
 
@@ -109,7 +108,7 @@ YTSearchHelper.LoadThumbnailDoneReceiver {
     }
 
     protected abstract void
-    setItemView(View v, YTFeed.Entry e);
+    setItemView(int position, View v, YTFeed.Entry e);
 
     /**
      * This should be called when adapter is no more used.
@@ -186,7 +185,7 @@ YTSearchHelper.LoadThumbnailDoneReceiver {
             return v;
 
         YTFeed.Entry e = mEntries[position];
-        setItemView(v, e);
+        setItemView(position, v, e);
         return v;
     }
 }

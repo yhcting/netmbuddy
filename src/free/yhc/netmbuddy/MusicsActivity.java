@@ -66,16 +66,6 @@ public class MusicsActivity extends Activity {
     private long        mPlid   = UiUtils.PLID_INVALID;
     private ListView    mListv  = null;
 
-    private static class VideoDetailInfo {
-        String      title           = "";
-        String      timeAdded       = "";
-        String      timeLastPlayed  = "";
-        String      volume          = "";
-        String      playTime        = "";
-        // titles of playlists contain the video
-        String[]    pls             = new String[0];
-    }
-
     private class OnPlayerUpdateDBListener implements YTPlayer.OnDBUpdatedListener {
         @Override
         public void

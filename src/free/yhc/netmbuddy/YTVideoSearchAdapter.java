@@ -22,6 +22,7 @@ package free.yhc.netmbuddy;
 import static free.yhc.netmbuddy.utils.Utils.eAssert;
 
 import java.util.Date;
+import java.util.HashSet;
 
 import android.content.Context;
 import android.view.View;
@@ -37,29 +38,22 @@ import free.yhc.netmbuddy.utils.Utils;
 
 
 public class YTVideoSearchAdapter extends YTSearchAdapter {
-    // Flags
-    public static final long FENT_EXIST_NEW = 0x0;
-    public static final long FENT_EXIST_DUP = 0x1;
-    public static final long MENT_EXIST     = 0x1;
-
     // Check Button Tag Key
-    private static final int TAGKEY_POS         = R.drawable.btncheck_on;
-    private static final int TAGKEY_CHECK_STATE = R.drawable.btncheck_off;
+    private static final int VTAGKEY_POS        = R.drawable.btncheck_on;
 
+    private final HashSet<Integer> mDupSet   = new HashSet<Integer>();
+    private final HashSet<Integer> mCheckedSet   = new HashSet<Integer>();
     private final CheckStateListener  mCheckListener;
-    private int mNrChecked = 0;
 
     private final View.OnClickListener mMarkOnClick = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
             ImageView iv = (ImageView)v;
-            int pos = (Integer)iv.getTag(TAGKEY_POS);
-            if ((Boolean)iv.getTag(TAGKEY_CHECK_STATE))
-                unmarkItemCheck(pos);
+            int pos = (Integer)iv.getTag(VTAGKEY_POS);
+            if (mCheckedSet.contains(pos))
+                setToUnchecked(pos);
             else
-                markItemCheck(pos);
-
-            eAssert(mNrChecked >= 0 && mNrChecked <= mEntries.length);
+                setToChecked(pos);
         }
     };
 
@@ -83,9 +77,37 @@ public class YTVideoSearchAdapter extends YTSearchAdapter {
     }
 
     private void
-    setToExist(View v) {
+    setToDup(View v) {
         TextView titlev = (TextView)v.findViewById(R.id.title);
         titlev.setTextColor(Utils.getAppContext().getResources().getColor(R.color.title_text_color_existing));
+    }
+
+    private void
+    setToChecked(View v) {
+        ImageView iv = (ImageView)v.findViewById(R.id.checkbtn);
+        iv.setImageResource(R.drawable.btncheck_on);
+    }
+
+    private void
+    setToUnchecked(View v) {
+        ImageView iv = (ImageView)v.findViewById(R.id.checkbtn);
+        iv.setImageResource(R.drawable.btncheck_off);
+    }
+
+    private void
+    setToChecked(int pos) {
+        eAssert(Utils.isUiThread());
+        setToChecked(mItemViews[pos]);
+        mCheckedSet.add(pos);
+        mCheckListener.onStateChanged(mCheckedSet.size(), pos, true);
+    }
+
+    private void
+    setToUnchecked(int pos) {
+        eAssert(Utils.isUiThread());
+        setToUnchecked(mItemViews[pos]);
+        mCheckedSet.remove(pos);
+        mCheckListener.onStateChanged(mCheckedSet.size(), pos, false);
     }
 
     YTVideoSearchAdapter(Context context,
@@ -97,8 +119,7 @@ public class YTVideoSearchAdapter extends YTSearchAdapter {
         for (int i = 0; i < mItemViews.length; i++) {
             View v = mItemViews[i].findViewById(R.id.checkbtn);
             v.setOnClickListener(mMarkOnClick);
-            v.setTag(TAGKEY_CHECK_STATE, false);
-            v.setTag(TAGKEY_POS, i);
+            v.setTag(VTAGKEY_POS, i);
         }
         // initial notification to callback.
         mCheckListener.onStateChanged(0, -1, false);
@@ -106,7 +127,7 @@ public class YTVideoSearchAdapter extends YTSearchAdapter {
 
     @Override
     protected void
-    setItemView(View v, YTFeed.Entry arge) {
+    setItemView(int position, View v, YTFeed.Entry arge) {
         eAssert(null != v);
 
         if (!arge.available)
@@ -133,12 +154,12 @@ public class YTVideoSearchAdapter extends YTSearchAdapter {
         ((TextView)v.findViewById(R.id.uploadedtime)).setText("< " + dateText + " >");
         ((TextView)v.findViewById(R.id.author)).setText(e.author.name);
 
-        if (Utils.bitCompare(e.uflag, FENT_EXIST_DUP, MENT_EXIST))
-            setToExist(v);
+        if (mDupSet.contains(position))
+            setToDup(v);
         else
             setToNew(v);
 
-        markViewValid(v);
+        setViewValid(v);
     }
 
     public String
@@ -178,12 +199,12 @@ public class YTVideoSearchAdapter extends YTSearchAdapter {
 
     public boolean
     isItemChecked(int pos) {
-        return (Boolean)mItemViews[pos].findViewById(R.id.checkbtn).getTag(TAGKEY_CHECK_STATE);
+        return mCheckedSet.contains(pos);
     }
 
     public int
     getNrCheckedItems() {
-        return mNrChecked;
+        return mCheckedSet.size();
     }
 
     public int[]
@@ -198,44 +219,26 @@ public class YTVideoSearchAdapter extends YTSearchAdapter {
     }
 
     public void
-    markEntryExist(int pos, boolean exist) {
-        YTFeed.Entry e = mEntries[pos];
-        long olduflag = e.uflag;
-        e.uflag = Utils.bitSet(e.uflag,
-                               exist? FENT_EXIST_DUP: FENT_EXIST_NEW,
-                               MENT_EXIST);
-        if (olduflag != e.uflag)
-            setToExist(mItemViews[pos]);
-    }
-
-    public void
-    markItemCheck(int pos) {
-        eAssert(Utils.isUiThread());
-        ImageView iv = (ImageView)mItemViews[pos].findViewById(R.id.checkbtn);
-        iv.setImageResource(R.drawable.btncheck_on);
-        iv.setTag(TAGKEY_CHECK_STATE, true);
-        mNrChecked++;
-        mCheckListener.onStateChanged(mNrChecked, pos, (Boolean)iv.getTag(TAGKEY_CHECK_STATE));
-    }
-
-    public void
-    unmarkItemCheck(int pos) {
-        eAssert(Utils.isUiThread());
-        ImageView iv = (ImageView)mItemViews[pos].findViewById(R.id.checkbtn);
-        iv.setImageResource(R.drawable.btncheck_off);
-        iv.setTag(TAGKEY_CHECK_STATE, false);
-        mNrChecked--;
-        mCheckListener.onStateChanged(mNrChecked, pos, (Boolean)iv.getTag(TAGKEY_CHECK_STATE));
-    }
-
-    public void
-    cleanItemCheck() {
-        for (View v : mItemViews) {
-            ImageView iv = (ImageView)v.findViewById(R.id.checkbtn);
-            iv.setImageResource(R.drawable.btncheck_off);
-            iv.setTag(TAGKEY_CHECK_STATE, false);
+    setToDup(int pos) {
+        if (!mDupSet.contains(pos)) {
+            setToDup(mItemViews[pos]);
+            mDupSet.add(pos);
         }
-        mNrChecked = 0;
-        mCheckListener.onStateChanged(mNrChecked, -1, false);
+    }
+
+    public void
+    setToNew(int pos) {
+        if (mDupSet.contains(pos)) {
+            setToNew(mItemViews[pos]);
+            mDupSet.remove(pos);
+        }
+    }
+
+    public void
+    cleanChecked() {
+        mCheckedSet.clear();
+        for (View v : mItemViews)
+            setToUnchecked(v);
+        mCheckListener.onStateChanged(0, -1, false);
     }
 }

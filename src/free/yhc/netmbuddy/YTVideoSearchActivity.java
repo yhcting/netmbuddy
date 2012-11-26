@@ -139,7 +139,7 @@ DBHelper.CheckDupDoneReceiver {
             @Override
             public void
             run() {
-                getAdapter().markEntryExist(pos, true);
+                getAdapter().setToDup(pos);
             }
         });
 
@@ -167,7 +167,7 @@ DBHelper.CheckDupDoneReceiver {
                                            Integer.parseInt(adpr.getItemPlaytime(i)));
         }
         appendToPlayQ(vids);
-        adpr.cleanItemCheck();
+        adpr.cleanChecked();
         adpr.notifyDataSetChanged();
     }
 
@@ -194,7 +194,7 @@ DBHelper.CheckDupDoneReceiver {
             @Override
             public void
             onPostExecute(DiagAsyncTask task, Err result) {
-                adpr.cleanItemCheck();
+                adpr.cleanChecked();
                 if (failedCnt > 0) {
                     CharSequence msg = getResources().getText(R.string.msg_fails_to_add);
                     UiUtils.showTextToast(YTVideoSearchActivity.this,
@@ -367,19 +367,15 @@ DBHelper.CheckDupDoneReceiver {
         String titleText = getTitlePrefix() + " : " + sarg.title;
         ((TextView)findViewById(R.id.title)).setText(titleText);
 
-        // First request is done!
-        // Now we know total Results.
-        // Let's build adapter and enable list.
-        for (int i = 0; i < results.length; i++)
-            arg.ents[i].uflag = results[i]?
-                                YTVideoSearchAdapter.FENT_EXIST_DUP:
-                                YTVideoSearchAdapter.FENT_EXIST_NEW;
-
         // helper's event receiver is changed to adapter in adapter's constructor.
         YTVideoSearchAdapter adapter = new YTVideoSearchAdapter(this,
                                                                mSearchHelper,
                                                                mAdapterCheckListener,
                                                                arg.ents);
+        // First request is done!
+        // Now we know total Results.
+        // Let's build adapter and enable list.
+        applyDupCheckResults(adapter, results);
         YTVideoSearchAdapter oldAdapter = getAdapter();
         mListv.setAdapter(adapter);
         // Cleanup before as soon as possible to secure memories.
@@ -388,12 +384,13 @@ DBHelper.CheckDupDoneReceiver {
     }
 
     private void
-    checkDupDoneExistingEntries(boolean[] results) {
-        // First request is done!
-        // Now we know total Results.
-        // Let's build adapter and enable list.
-        for (int i = 0; i < results.length; i++)
-            getAdapter().markEntryExist(i, results[i]);
+    applyDupCheckResults(YTVideoSearchAdapter adapter, boolean[] results) {
+        for (int i = 0; i < results.length; i++) {
+            if (results[i])
+                adapter.setToDup(i);
+            else
+                adapter.setToNew(i);
+        }
     }
 
     // ========================================================================
@@ -490,7 +487,7 @@ DBHelper.CheckDupDoneReceiver {
             && arg.ents == getAdapter().getEntries())
             // Entry is same with current adapter.
             // That means 'dup. checking is done for exsiting entries"
-            checkDupDoneExistingEntries(results);
+            applyDupCheckResults(getAdapter(), results);
         else
             checkDupDoneNewEntries(arg, results);
 

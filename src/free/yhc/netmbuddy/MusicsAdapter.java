@@ -46,7 +46,7 @@ public class MusicsAdapter extends ResourceCursorAdapter {
     private static final int COLI_PLAYTIME  = 4;
 
     // Check Button Tag Key
-    private static final int TAGKEY_POS         = R.drawable.btncheck_on;
+    private static final int VTAGKEY_POS        = R.drawable.btncheck_on;
 
     private static final DB.ColVideo[] sQueryCols
         = new DB.ColVideo[] { DB.ColVideo.ID,
@@ -58,7 +58,7 @@ public class MusicsAdapter extends ResourceCursorAdapter {
 
     private final Context       mContext;
     private final CursorArg     mCurArg;
-    private final HashSet<Integer> mCheckedItemSet   = new HashSet<Integer>();
+    private final HashSet<Integer> mCheckedSet   = new HashSet<Integer>();
     private final CheckStateListener  mCheckListener;
 
     private final View.OnClickListener  mItemCheckOnClick = new View.OnClickListener() {
@@ -66,14 +66,14 @@ public class MusicsAdapter extends ResourceCursorAdapter {
         public void
         onClick(View v) {
             ImageView iv = (ImageView)v;
-            int pos = (Integer)iv.getTag(TAGKEY_POS);
-            boolean state = mCheckedItemSet.contains(pos);
+            int pos = (Integer)iv.getTag(VTAGKEY_POS);
+            boolean state = mCheckedSet.contains(pos);
             if (state)
                 setToUnchecked(pos, iv);
             else
                 setToChecked(pos, iv);
 
-            mCheckListener.onStateChanged(mCheckedItemSet.size(), pos, !state);
+            mCheckListener.onStateChanged(mCheckedSet.size(), pos, !state);
         }
     };
 
@@ -101,13 +101,13 @@ public class MusicsAdapter extends ResourceCursorAdapter {
 
     private void
     setToChecked(int pos, ImageView v) {
-        mCheckedItemSet.add(pos);
+        mCheckedSet.add(pos);
         v.setImageResource(R.drawable.btncheck_on);
     }
 
     private void
     setToUnchecked(int pos, ImageView v) {
-        mCheckedItemSet.remove(pos);
+        mCheckedSet.remove(pos);
         v.setImageResource(R.drawable.btncheck_off);
     }
 
@@ -178,14 +178,14 @@ public class MusicsAdapter extends ResourceCursorAdapter {
      */
     public int[]
     getCheckedMusics() {
-        int[] poss = Utils.convertArrayIntegerToint(mCheckedItemSet.toArray(new Integer[0]));
+        int[] poss = Utils.convertArrayIntegerToint(mCheckedSet.toArray(new Integer[0]));
         Arrays.sort(poss);
         return poss;
     }
 
     public void
     clearCheckState() {
-        mCheckedItemSet.clear();
+        mCheckedSet.clear();
         mCheckListener.onStateChanged(0, -1, false);
     }
 
@@ -232,10 +232,10 @@ public class MusicsAdapter extends ResourceCursorAdapter {
         TextView  playtmv    = (TextView)v.findViewById(R.id.playtime);
 
         int pos = cur.getPosition();
-        checkv.setTag(TAGKEY_POS, pos);
+        checkv.setTag(VTAGKEY_POS, pos);
         checkv.setOnClickListener(mItemCheckOnClick);
 
-        if (mCheckedItemSet.contains(pos))
+        if (mCheckedSet.contains(pos))
             checkv.setImageResource(R.drawable.btncheck_on);
         else
             checkv.setImageResource(R.drawable.btncheck_off);

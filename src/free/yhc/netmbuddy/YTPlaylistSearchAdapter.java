@@ -37,7 +37,7 @@ public class YTPlaylistSearchAdapter extends YTSearchAdapter {
 
     @Override
     protected void
-    setItemView(View v, YTFeed.Entry arge) {
+    setItemView(int position, View v, YTFeed.Entry arge) {
         eAssert(null != v);
 
         if (!arge.available)
@@ -50,7 +50,7 @@ public class YTPlaylistSearchAdapter extends YTSearchAdapter {
         titlev.setText(e.title);
         summaryv.setText(e.summary);
 
-        markViewValid(v);
+        setViewValid(v);
     }
 
     public String
