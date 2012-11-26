@@ -22,8 +22,7 @@ package free.yhc.netmbuddy;
 
 import static free.yhc.netmbuddy.utils.Utils.eAssert;
 
-import java.util.Arrays;
-import java.util.HashSet;
+import java.util.HashMap;
 
 import android.content.Context;
 import android.database.Cursor;
@@ -58,7 +57,7 @@ public class MusicsAdapter extends ResourceCursorAdapter {
 
     private final Context       mContext;
     private final CursorArg     mCurArg;
-    private final HashSet<Integer> mCheckedSet   = new HashSet<Integer>();
+    private final HashMap<Integer, Long> mCheckedMap    = new HashMap<Integer, Long>();
     private final CheckStateListener  mCheckListener;
 
     private final View.OnClickListener  mItemCheckOnClick = new View.OnClickListener() {
@@ -67,13 +66,10 @@ public class MusicsAdapter extends ResourceCursorAdapter {
         onClick(View v) {
             ImageView iv = (ImageView)v;
             int pos = (Integer)iv.getTag(VTAGKEY_POS);
-            boolean state = mCheckedSet.contains(pos);
-            if (state)
+            if (mCheckedMap.containsKey(pos))
                 setToUnchecked(pos, iv);
             else
                 setToChecked(pos, iv);
-
-            mCheckListener.onStateChanged(mCheckedSet.size(), pos, !state);
         }
     };
 
@@ -101,14 +97,16 @@ public class MusicsAdapter extends ResourceCursorAdapter {
 
     private void
     setToChecked(int pos, ImageView v) {
-        mCheckedSet.add(pos);
+        mCheckedMap.put(pos, System.currentTimeMillis());
         v.setImageResource(R.drawable.btncheck_on);
+        mCheckListener.onStateChanged(mCheckedMap.size(), pos, true);
     }
 
     private void
     setToUnchecked(int pos, ImageView v) {
-        mCheckedSet.remove(pos);
+        mCheckedMap.remove(pos);
         v.setImageResource(R.drawable.btncheck_off);
+        mCheckListener.onStateChanged(mCheckedMap.size(), pos, false);
     }
 
     private Cursor
@@ -178,15 +176,23 @@ public class MusicsAdapter extends ResourceCursorAdapter {
      */
     public int[]
     getCheckedMusics() {
-        int[] poss = Utils.convertArrayIntegerToint(mCheckedSet.toArray(new Integer[0]));
-        Arrays.sort(poss);
+        return Utils.convertArrayIntegerToint(mCheckedMap.keySet().toArray(new Integer[0]));
+    }
+
+    public int[]
+    getCheckedMusicsSortedByTime() {
+        Object[] objs = Utils.getSortedKeyOfTimeMap(mCheckedMap);
+        int[] poss = new int[objs.length];
+        for (int i = 0; i < poss.length; i++)
+            poss[i] = (Integer)objs[i];
         return poss;
     }
 
     public void
-    clearCheckState() {
-        mCheckedSet.clear();
+    cleanChecked() {
+        mCheckedMap.clear();
         mCheckListener.onStateChanged(0, -1, false);
+        notifyDataSetChanged();
     }
 
     public void
@@ -196,7 +202,7 @@ public class MusicsAdapter extends ResourceCursorAdapter {
 
     public void
     reloadCursorAsync() {
-        clearCheckState();
+        cleanChecked();
         DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
             private Cursor newCursor;
             @Override
@@ -235,7 +241,7 @@ public class MusicsAdapter extends ResourceCursorAdapter {
         checkv.setTag(VTAGKEY_POS, pos);
         checkv.setOnClickListener(mItemCheckOnClick);
 
-        if (mCheckedSet.contains(pos))
+        if (mCheckedMap.containsKey(pos))
             checkv.setImageResource(R.drawable.btncheck_on);
         else
             checkv.setImageResource(R.drawable.btncheck_off);

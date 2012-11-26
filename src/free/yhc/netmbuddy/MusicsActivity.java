@@ -118,10 +118,8 @@ public class MusicsActivity extends Activity {
 
                 if (move)
                     getAdapter().reloadCursorAsync();
-                else {
-                    getAdapter().clearCheckState();
-                    getAdapter().notifyDataSetChanged();
-                }
+                else
+                    getAdapter().cleanChecked();
             }
         };
 
@@ -162,7 +160,7 @@ public class MusicsActivity extends Activity {
     private void
     onToolPlay(View anchor) {
         MusicsAdapter adpr = getAdapter();
-        int[] poss = adpr.getCheckedMusics();
+        int[] poss = adpr.getCheckedMusicsSortedByTime();
         if (0 == poss.length) {
             UiUtils.showTextToast(this, R.string.msg_no_items_selected);
             return;
@@ -175,14 +173,13 @@ public class MusicsActivity extends Activity {
                                        adpr.getMusicVolume(poss[i]),
                                        adpr.getMusicPlaytime(poss[i]));
         startVideos(vs);
-        adpr.clearCheckState();
-        adpr.notifyDataSetChanged();
+        adpr.cleanChecked();
     }
 
     private void
     onToolAppendPlayQ(View anchor) {
         MusicsAdapter adpr = getAdapter();
-        int[] poss = adpr.getCheckedMusics();
+        int[] poss = adpr.getCheckedMusicsSortedByTime();
         if (0 == poss.length) {
             UiUtils.showTextToast(this, R.string.msg_no_items_selected);
             return;
@@ -197,8 +194,7 @@ public class MusicsActivity extends Activity {
                                            adpr.getMusicPlaytime(i));
         appendToPlayQ(vids);
 
-        adpr.clearCheckState();
-        adpr.notifyDataSetChanged();
+        adpr.cleanChecked();
 
         UiUtils.showTextToast(this, R.string.msg_appended_to_playq);
     }

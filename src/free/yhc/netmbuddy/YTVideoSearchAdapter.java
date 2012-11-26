@@ -22,6 +22,7 @@ package free.yhc.netmbuddy;
 import static free.yhc.netmbuddy.utils.Utils.eAssert;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 
 import android.content.Context;
@@ -41,16 +42,17 @@ public class YTVideoSearchAdapter extends YTSearchAdapter {
     // Check Button Tag Key
     private static final int VTAGKEY_POS        = R.drawable.btncheck_on;
 
-    private final HashSet<Integer> mDupSet   = new HashSet<Integer>();
-    private final HashSet<Integer> mCheckedSet   = new HashSet<Integer>();
-    private final CheckStateListener  mCheckListener;
+    private final HashSet<Integer>          mDupSet     = new HashSet<Integer>();
+    private final HashMap<Integer, Long>    mCheckedMap = new HashMap<Integer, Long>();
+    private final CheckStateListener        mCheckListener;
 
     private final View.OnClickListener mMarkOnClick = new View.OnClickListener() {
         @Override
-        public void onClick(View v) {
+        public void
+        onClick(View v) {
             ImageView iv = (ImageView)v;
             int pos = (Integer)iv.getTag(VTAGKEY_POS);
-            if (mCheckedSet.contains(pos))
+            if (mCheckedMap.containsKey(pos))
                 setToUnchecked(pos);
             else
                 setToChecked(pos);
@@ -98,16 +100,16 @@ public class YTVideoSearchAdapter extends YTSearchAdapter {
     setToChecked(int pos) {
         eAssert(Utils.isUiThread());
         setToChecked(mItemViews[pos]);
-        mCheckedSet.add(pos);
-        mCheckListener.onStateChanged(mCheckedSet.size(), pos, true);
+        mCheckedMap.put(pos, System.currentTimeMillis());
+        mCheckListener.onStateChanged(mCheckedMap.size(), pos, true);
     }
 
     private void
     setToUnchecked(int pos) {
         eAssert(Utils.isUiThread());
         setToUnchecked(mItemViews[pos]);
-        mCheckedSet.remove(pos);
-        mCheckListener.onStateChanged(mCheckedSet.size(), pos, false);
+        mCheckedMap.remove(pos);
+        mCheckListener.onStateChanged(mCheckedMap.size(), pos, false);
     }
 
     YTVideoSearchAdapter(Context context,
@@ -199,22 +201,25 @@ public class YTVideoSearchAdapter extends YTSearchAdapter {
 
     public boolean
     isItemChecked(int pos) {
-        return mCheckedSet.contains(pos);
+        return mCheckedMap.containsKey(pos);
     }
 
     public int
     getNrCheckedItems() {
-        return mCheckedSet.size();
+        return mCheckedMap.size();
     }
 
     public int[]
-    getCheckedItemPositions() {
-        int[] poss = new int[getNrCheckedItems()];
-        int i = 0;
-        for (int j = 0; j < mItemViews.length; j++) {
-            if (isItemChecked(j))
-                poss[i++] = j;
-        }
+    getCheckedItem() {
+        return Utils.convertArrayIntegerToint(mCheckedMap.keySet().toArray(new Integer[0]));
+    }
+
+    public int[]
+    getCheckItemSortedByTime() {
+        Object[] objs = Utils.getSortedKeyOfTimeMap(mCheckedMap);
+        int[] poss = new int[objs.length];
+        for (int i = 0; i < poss.length; i++)
+            poss[i] = (Integer)objs[i];
         return poss;
     }
 
@@ -236,7 +241,7 @@ public class YTVideoSearchAdapter extends YTSearchAdapter {
 
     public void
     cleanChecked() {
-        mCheckedSet.clear();
+        mCheckedMap.clear();
         for (View v : mItemViews)
             setToUnchecked(v);
         mCheckListener.onStateChanged(0, -1, false);

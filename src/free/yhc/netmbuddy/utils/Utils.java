@@ -29,6 +29,8 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.text.DateFormat;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -77,7 +79,7 @@ public class Utils {
     private static Handler  sUiHandler   = null;
 
     private static SharedPreferences sPrefs = null;
-
+    private static TimeElemComparator   sTimeElemComparator = new TimeElemComparator();
 
     private static final String[] sDateFormats = new String[] {
             // To support W3CDTF
@@ -112,6 +114,30 @@ public class Utils {
                     return q;
             }
             return null;
+        }
+    }
+
+    private static class TimeElem {
+        public Object   v;
+        public long     time;
+
+        public
+        TimeElem(Object aV, long aTime) {
+            v = aV;
+            time = aTime;
+        }
+    }
+
+    private static class TimeElemComparator implements Comparator<TimeElem> {
+        @Override
+        public int
+        compare(TimeElem a0, TimeElem a1) {
+            if (a0.time < a1.time)
+                return -1;
+            else if (a0.time > a1.time)
+                return 1;
+            else
+                return 0;
         }
     }
 
@@ -543,6 +569,20 @@ public class Utils {
                 return key;
         }
         return null;
+    }
+
+    public static Object[]
+    getSortedKeyOfTimeMap (HashMap<? extends Object, Long> timeMap) {
+        TimeElem[] te = new TimeElem[timeMap.size()];
+        Object[] vs = timeMap.keySet().toArray(new Object[0]);
+        for (int i = 0; i < vs.length; i++)
+            te[i] = new TimeElem(vs[i], timeMap.get(vs[i]));
+        Arrays.sort(te, sTimeElemComparator);
+        Object[] sorted = new Object[vs.length];
+        for (int i = 0; i < sorted.length; i++)
+            sorted[i] = te[i].v;
+
+        return sorted;
     }
 
     // ------------------------------------------------------------------------

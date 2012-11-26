@@ -157,7 +157,7 @@ DBHelper.CheckDupDoneReceiver {
         // # of adapter items are at most Policy.YTSEARCH_MAX_RESULTS
         // So, just do it at main UI thread!
         YTVideoSearchAdapter adpr = getAdapter();
-        int[] checkedItems = adpr.getCheckedItemPositions();
+        int[] checkedItems = adpr.getCheckItemSortedByTime();
         YTPlayer.Video[] vids = new YTPlayer.Video[checkedItems.length];
         int j = 0;
         for (int i : checkedItems) {
@@ -168,7 +168,6 @@ DBHelper.CheckDupDoneReceiver {
         }
         appendToPlayQ(vids);
         adpr.cleanChecked();
-        adpr.notifyDataSetChanged();
     }
 
 
@@ -177,7 +176,7 @@ DBHelper.CheckDupDoneReceiver {
         // Scan to check all thumbnails are loaded.
         // And prepare data for background execution.
         final YTVideoSearchAdapter adpr = getAdapter();
-        final int[] checkedItems = adpr.getCheckedItemPositions();
+        final int[] checkedItems = adpr.getCheckedItem();
         final int[] itemVolumes = new int[checkedItems.length];
         for (int i = 0; i < checkedItems.length; i++) {
             int pos = checkedItems[i];
