@@ -29,7 +29,7 @@
             android:id="@+id/infoimg"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="5dip"
+            android:layout_marginTop="5dp"
             android:gravity="center"
             android:src="@drawable/spinner_large"
             android:scaleType="fitCenter"

@@ -8,8 +8,8 @@
         android:id="@+id/title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginRight="3dip"
-        android:layout_marginLeft="3dip"
+        android:layout_marginRight="3dp"
+        android:layout_marginLeft="3dp"
         android:gravity="center_vertical"
         android:textSize="@dimen/title_text_size"
         android:textColor="@color/title_text_color_new"
@@ -19,6 +19,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:minWidth="@dimen/seekbar_width"
-        android:layout_margin="5dip"
+        android:layout_margin="5dp"
         />
 </LinearLayout>

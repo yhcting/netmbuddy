@@ -13,8 +13,8 @@
         >
         <TextView
             android:id="@+id/title"
-            android:layout_marginLeft="3dip"
-            android:layout_marginRight="3dip"
+            android:layout_marginLeft="3dp"
+            android:layout_marginRight="3dp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textSize="@dimen/large_text_size"
@@ -135,7 +135,7 @@
             android:id="@+id/loading_img"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="5dip"
+            android:layout_marginTop="5dp"
             android:gravity="center"
             android:src="@drawable/spinner_large"
             android:scaleType="fitCenter"
