@@ -63,6 +63,11 @@ public class UiUtils {
     public static final long PLID_RECENT_PLAYED = PLID_INVALID - 2;
     public static final long PLID_SEARCHED      = PLID_INVALID - 3;
 
+    // NOTE
+    // To save time for decoding image, pre-decoded bitmap is uses for unknown thumbnail image.
+    private static final Bitmap sBmIcUnknownImage
+        = BitmapFactory.decodeResource(Utils.getAppContext().getResources(), R.drawable.ic_unknown_image);
+
     public interface EditTextAction {
         void prepare(Dialog dialog, EditText edit);
         void onOk(Dialog dialog, EditText edit);
@@ -372,7 +377,7 @@ public class UiUtils {
     }
 
     /**
-     * This function is a kind of HACK to save memory used by thumbnail.
+     * This function is a kind of HACK - actually FULL OF HACK - to save memory used by thumbnail.
      * Very dangerous and difficult at maintenance.
      * But, I failed to find any better way to save memory for thumbnail display.
      *
@@ -386,7 +391,7 @@ public class UiUtils {
     setThumbnailImageView(ImageView v, byte[] imgdata) {
         // NOTE
         // Why Bitmap instance is created even if R.drawable.ic_unknown_image?
-        // ImageView has BitmapDrawable to draw it's canvas, and every input-drawble
+        // ImageView has BitmapDrawable to draw it's canvas, and every input-drawable
         //   - resource, uri etc - is converted to BitmapDrawable eventually.
         // But, ImageView.setImageResource() doesn't update drawable if current image resource
         //   is same with new one - See "ImageView.java for details"
@@ -396,8 +401,7 @@ public class UiUtils {
         if (null != imgdata && imgdata.length > 0)
             thumbnailBm = BitmapFactory.decodeByteArray(imgdata, 0, imgdata.length);
         else
-            thumbnailBm = BitmapFactory.decodeResource(Utils.getAppContext().getResources(),
-                                                       R.drawable.ic_unknown_image);
+            thumbnailBm = sBmIcUnknownImage;
 
         // This assumes that Drawable of ImageView is set only by this function.
         // => Setting drawable directly through ImageView interface may lead to exception
@@ -407,7 +411,8 @@ public class UiUtils {
         if (drawable instanceof BitmapDrawable) { // to make sure.
             BitmapDrawable bmd = (BitmapDrawable)drawable;
             Bitmap bitmap = bmd.getBitmap();
-            bitmap.recycle();
+            if (bitmap != sBmIcUnknownImage)
+                bitmap.recycle();
         }
 
         // change to new one.

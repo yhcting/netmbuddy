@@ -35,7 +35,6 @@ import free.yhc.netmbuddy.model.YTFeed;
 import free.yhc.netmbuddy.model.YTPlayer;
 import free.yhc.netmbuddy.model.YTSearchHelper;
 import free.yhc.netmbuddy.model.YTVideoFeed;
-import free.yhc.netmbuddy.utils.UiUtils;
 import free.yhc.netmbuddy.utils.Utils;
 
 
@@ -140,9 +139,6 @@ public class YTVideoSearchAdapter extends YTSearchAdapter {
 
         TextView titlev = (TextView)v.findViewById(R.id.title);
         titlev.setText(arge.media.title);
-
-        ImageView thumbnailv = (ImageView)v.findViewById(R.id.thumbnail);
-        UiUtils.setThumbnailImageView(thumbnailv, null);
 
         String playtmtext = "?";
         try {
