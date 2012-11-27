@@ -39,6 +39,7 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import free.yhc.netmbuddy.model.DB;
+import free.yhc.netmbuddy.model.DB.ColPlaylist;
 import free.yhc.netmbuddy.model.YTPlayer;
 import free.yhc.netmbuddy.utils.UiUtils;
 import free.yhc.netmbuddy.utils.Utils;
@@ -143,17 +144,17 @@ public class MusicsActivity extends Activity {
     setToPlaylistThumbnail(long mid, int pos) {
         eAssert(UiUtils.isUserPlaylist(mPlid));
         byte[] data = getAdapter().getMusicThumbnail(pos);
-        mDb.updatePlaylist(mPlid, DB.ColPlaylist.THUMBNAIL, data);
-        // update current screen's thumbnail too.
+        mDb.updatePlaylist(mPlid,
+                           new ColPlaylist[] { DB.ColPlaylist.THUMBNAIL,
+                                               DB.ColPlaylist.THUMBNAIL_YTVID },
+                           new Object[] { data,
+                                          getAdapter().getMusicYtid(pos) });
         UiUtils.setThumbnailImageView(((ImageView)findViewById(R.id.thumbnail)), data);
     }
 
     private void
     onListItemClick(View view, int pos, long id) {
-        YTPlayer.Video vid = new YTPlayer.Video(getAdapter().getMusicYtid(pos),
-                                                getAdapter().getMusicTitle(pos),
-                                                getAdapter().getMusicVolume(pos),
-                                                getAdapter().getMusicPlaytime(pos));
+        YTPlayer.Video vid = getAdapter().getYTPlayerVideo(pos);
         startVideos(new YTPlayer.Video[] { vid });
     }
 
@@ -168,10 +169,7 @@ public class MusicsActivity extends Activity {
 
         YTPlayer.Video[] vs = new YTPlayer.Video[poss.length];
         for (int i = 0; i < poss.length; i++)
-            vs[i] = new YTPlayer.Video(adpr.getMusicYtid(poss[i]),
-                                       adpr.getMusicTitle(poss[i]),
-                                       adpr.getMusicVolume(poss[i]),
-                                       adpr.getMusicPlaytime(poss[i]));
+            vs[i] = adpr.getYTPlayerVideo(poss[i]);
         startVideos(vs);
         adpr.cleanChecked();
     }
@@ -188,10 +186,7 @@ public class MusicsActivity extends Activity {
         YTPlayer.Video[] vids = new YTPlayer.Video[poss.length];
         int j = 0;
         for (int i : poss)
-            vids[j++] = new YTPlayer.Video(adpr.getMusicYtid(i),
-                                           adpr.getMusicTitle(i),
-                                           adpr.getMusicVolume(i),
-                                           adpr.getMusicPlaytime(i));
+            vids[j++] = adpr.getYTPlayerVideo(i);
         appendToPlayQ(vids);
 
         adpr.cleanChecked();
@@ -290,10 +285,7 @@ public class MusicsActivity extends Activity {
 
     private void
     onContextMenuAppendToPlayQ(final long id, final int pos) {
-        YTPlayer.Video vid = new YTPlayer.Video(getAdapter().getMusicYtid(pos),
-                                                getAdapter().getMusicTitle(pos),
-                                                getAdapter().getMusicVolume(pos),
-                                                getAdapter().getMusicPlaytime(pos));
+        YTPlayer.Video vid = getAdapter().getYTPlayerVideo(pos);
         appendToPlayQ(new YTPlayer.Video[] { vid });
     }
 
@@ -331,6 +323,19 @@ public class MusicsActivity extends Activity {
         UiUtils.showVideoDetailInfo(this, id);
     }
 
+    private void
+    onContextMenuVideosOfThisAuthor(final long id, final int pos) {
+        Intent i = new Intent(this, YTVideoSearchAuthorActivity.class);
+        i.putExtra(YTSearchActivity.MAP_KEY_SEARCH_TEXT, getAdapter().getMusicAuthor(pos));
+        startActivity(i);
+    }
+
+    private void
+    onContextMenuPlaylistsOfThisAuthor(final long id, final int pos) {
+        Intent i = new Intent(this, YTPlaylistSearchActivity.class);
+        i.putExtra(YTSearchActivity.MAP_KEY_SEARCH_TEXT, getAdapter().getMusicAuthor(pos));
+        startActivity(i);
+    }
     // ========================================================================
     //
     // Overriding Activity Member Functions
@@ -376,6 +381,14 @@ public class MusicsActivity extends Activity {
         case R.id.detail_info:
             onContextMenuDetailInfo(info.id, info.position);
             return true;
+
+        case R.id.videos_of_this_author:
+            onContextMenuVideosOfThisAuthor(info.id, info.position);
+            return true;
+
+        case R.id.playlists_of_this_author:
+            onContextMenuPlaylistsOfThisAuthor(info.id, info.position);
+            return true;
         }
         eAssert(false);
         return false;
@@ -387,10 +400,14 @@ public class MusicsActivity extends Activity {
         super.onCreateContextMenu(menu, v, menuInfo);
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.musics_context, menu);
-        //AdapterContextMenuInfo mInfo = (AdapterContextMenuInfo)menuInfo;
+        AdapterContextMenuInfo mInfo = (AdapterContextMenuInfo)menuInfo;
 
         boolean visible = UiUtils.isUserPlaylist(mPlid)? true: false;
         menu.findItem(R.id.plthumbnail).setVisible(visible);
+
+        visible = Utils.isValidValue(getAdapter().getMusicAuthor(mInfo.position));
+        menu.findItem(R.id.videos_of_this_author).setVisible(visible);
+        menu.findItem(R.id.playlists_of_this_author).setVisible(visible);
     }
 
     @Override

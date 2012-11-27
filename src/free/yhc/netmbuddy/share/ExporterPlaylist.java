@@ -74,7 +74,6 @@ class ExporterPlaylist implements ExporterI {
     @Override
     public Err
     execute() {
-
         JSONObject jsonPl = Json.playlistToJson(_mPlid);
         JSONObject jsonMeta = Json.createMetaJson(Type.PLAYLIST);
         JSONObject jo = new JSONObject();

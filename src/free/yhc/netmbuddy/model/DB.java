@@ -47,7 +47,7 @@ public class DB extends SQLiteOpenHelper {
 
     // ytmp : YouTubeMusicPlayer
     private static final String NAME            = "ytmp.db";
-    private static final int    VERSION         = 1;
+    private static final int    VERSION         = 2;
 
     private static final String TABLE_VIDEO             = "video";
     private static final String TABLE_PLAYLIST          = "playlist";
@@ -84,6 +84,7 @@ public class DB extends SQLiteOpenHelper {
         // DESCRIPTION : Not used yet - reserved for future use.
         DESCRIPTION     ("description",     "text",     "not null"),
         THUMBNAIL       ("thumbnail",       "blob",     "not null"),
+        THUMBNAIL_YTVID ("thumbnail_vid",   "text",     "not null"), // Youtube video id for thumbnail.
         SIZE            ("size",            "integer",  "not null"), // # of videos in this playlist.
         ID              (BaseColumns._ID,   "integer",  "primary key autoincrement");
 
@@ -92,15 +93,13 @@ public class DB extends SQLiteOpenHelper {
         private final String _mConstraint;
 
         static ContentValues
-        createContentValuesForInsert(String title, String desc) {
+        createContentValuesForInsert(String title) {
             eAssert(null != title);
-            if (null == desc)
-                desc = "";
-
             ContentValues cvs = new ContentValues();
             cvs.put(ColPlaylist.TITLE.getName(), title);
-            cvs.put(ColPlaylist.DESCRIPTION.getName(), desc);
+            cvs.put(ColPlaylist.DESCRIPTION.getName(), "");
             cvs.put(ColPlaylist.THUMBNAIL.getName(), new byte[0]);
+            cvs.put(ColPlaylist.THUMBNAIL_YTVID.getName(), "");
             cvs.put(ColPlaylist.SIZE.getName(), 0);
             return cvs;
         }
@@ -154,6 +153,9 @@ public class DB extends SQLiteOpenHelper {
         PLAYTIME        ("playtime",        "integer",  "not null"), // Seconds (int)
         THUMBNAIL       ("thumbnail",       "blob",     "not null"),
 
+        // author is newly added at DB version 2
+        AUTHOR          ("author",          "text",     "not null"), // YTFeed.Author.name
+
         // --------------------------------------------------------------------
         // Custom information
         // --------------------------------------------------------------------
@@ -164,7 +166,7 @@ public class DB extends SQLiteOpenHelper {
         // To tune this variance between videos this field is required.
         VOLUME          ("volume",          "integer",  "not null"),
         RATE            ("rate",            "integer",  "not null"), // my rate of this Video - Not used yet
-        TIME_ADD        ("time_add",        "integer",  "not null"), // Not used yet.
+        TIME_ADD        ("time_add",        "integer",  "not null"), // time video is added to DB.
         TIME_PLAYED     ("time_played",     "integer",  "not_null"), // time last played
 
         // --------------------------------------------------------------------
@@ -186,33 +188,33 @@ public class DB extends SQLiteOpenHelper {
         private final String _mConstraint;
 
         static ContentValues
-        createContentValuesForInsert(String title, String desc,
-                                     String videoId, int playtime,
+        createContentValuesForInsert(String title, String videoId,
+                                     int playtime, String author,
                                      byte[] thumbnail, int volume) {
             eAssert(null != title && null != videoId);
-            if (null == desc)
-                desc = "";
             if (null == thumbnail)
                 thumbnail = new byte[0];
 
             ContentValues cvs = new ContentValues();
             cvs.put(ColVideo.TITLE.getName(), title);
-            cvs.put(ColVideo.DESCRIPTION.getName(), desc);
+            cvs.put(ColVideo.DESCRIPTION.getName(), ""); // not used yet.
             cvs.put(ColVideo.VIDEOID.getName(), videoId);
             cvs.put(ColVideo.PLAYTIME.getName(), playtime);
+            cvs.put(ColVideo.AUTHOR.getName(), author);
             cvs.put(ColVideo.THUMBNAIL.getName(), thumbnail);
 
             if (INVALID_VOLUME == volume)
                 volume = Policy.DEFAULT_VIDEO_VOLUME;
             cvs.put(ColVideo.VOLUME.getName(), volume);
+
             cvs.put(ColVideo.RATE.getName(), 0);
             cvs.put(ColVideo.TIME_ADD.getName(), System.currentTimeMillis());
             // Set to oldest value when first added because it is never played yet.
             cvs.put(ColVideo.TIME_PLAYED.getName(), 0);
 
-            cvs.put(ColVideo.GENRE.getName(), "");
-            cvs.put(ColVideo.ARTIST.getName(), "");
-            cvs.put(ColVideo.ALBUM.getName(), "");
+            cvs.put(ColVideo.GENRE.getName(), "");  // not used yet.
+            cvs.put(ColVideo.ARTIST.getName(), ""); // not used yet.
+            cvs.put(ColVideo.ALBUM.getName(), "");  // not used yet.
 
             cvs.put(ColVideo.REFCOUNT.getName(), 0);
             return cvs;
@@ -253,6 +255,11 @@ public class DB extends SQLiteOpenHelper {
                 eAssert(false);
         }
         return cvs;
+    }
+
+    private static String
+    buildColumnDef(Col col) {
+        return col.getName() + " " + col.getType() + " " + col.getConstraint();
     }
 
     /**
@@ -380,10 +387,36 @@ public class DB extends SQLiteOpenHelper {
             String tssql = ts[iTblSql].substring(0, ts[iTblSql].length() - 1);
             String sql = map.get(ts[iTblName]);
             if (null == sql || !sql.equalsIgnoreCase(tssql))
-                return Err.UNKNOWN;
+                return Err.INVALID_DB;
         }
         return Err.NO_ERR;
     }
+
+    // ======================================================================
+    //
+    // Upgrade
+    //
+    // ======================================================================
+    private static String
+    buildAddColumnSQL(SQLiteDatabase db, String table,
+                      Col col, String defaultValue) {
+        String defaultStr = "";
+        if (null != defaultValue)
+            defaultStr = " DEFAULT " + defaultValue;
+
+        return "ALTER TABLE " + table + " ADD COLUMN "
+               + buildColumnDef(col)
+               + defaultStr + ";";
+    }
+
+    private void
+    upgradeTo2(SQLiteDatabase db) {
+        // 'author' field is newly added to video table.
+        db.execSQL(buildAddColumnSQL(db, TABLE_VIDEO, ColVideo.AUTHOR, "\"\""));
+        // 'thumbnail ytvid' field is newly add to playlist table.
+        db.execSQL(buildAddColumnSQL(db, TABLE_PLAYLIST, ColPlaylist.THUMBNAIL_YTVID, "\"\""));
+    }
+
     // ======================================================================
     //
     // Creation / Upgrade
@@ -416,6 +449,21 @@ public class DB extends SQLiteOpenHelper {
     @Override
     public void
     onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        int dbv = oldVersion;
+        db.beginTransaction();
+        try {
+            while (dbv < newVersion) {
+                switch (dbv) {
+                case 1:
+                    upgradeTo2(db);
+                    break;
+                }
+                dbv++;
+            }
+            db.setTransactionSuccessful();
+        } finally {
+            db.endTransaction();
+        }
     }
 
     @Override
@@ -512,11 +560,11 @@ public class DB extends SQLiteOpenHelper {
     }
 
     private long
-    insertVideo(String title, String desc,
-                String url, int playtime,
+    insertVideo(String title, String url,
+                int playtime, String author,
                 byte[] thumbnail, int volume) {
-        ContentValues cvs = ColVideo.createContentValuesForInsert(title, desc,
-                                                                  url, playtime,
+        ContentValues cvs = ColVideo.createContentValuesForInsert(title, url,
+                                                                  playtime, author,
                                                                   thumbnail, volume);
         return insertVideo(cvs);
     }
@@ -1000,17 +1048,19 @@ public class DB extends SQLiteOpenHelper {
      * @return
      */
     public long
-    insertPlaylist(String title, String desc) {
-        return insertPlaylist(ColPlaylist.createContentValuesForInsert(title, desc));
+    insertPlaylist(String title) {
+        return insertPlaylist(ColPlaylist.createContentValuesForInsert(title));
     }
 
     public int
-    updatePlaylist(long plid,
-                   ColPlaylist field, Object v) {
+    updatePlaylist(long plid, ColPlaylist[] fields, Object[] vs) {
+        eAssert(fields.length == vs.length);
         ContentValues cvs = new ContentValues();
         try {
-            Method m = cvs.getClass().getMethod("put", String.class, v.getClass());
-            m.invoke(cvs, field.getName(), v);
+            for (int i = 0; i < fields.length; i++) {
+                Method m = cvs.getClass().getMethod("put", String.class, vs[i].getClass());
+                m.invoke(cvs, fields[i].getName(), vs[i]);
+            }
         } catch (Exception e) {
             eAssert(false);
         }
@@ -1022,6 +1072,12 @@ public class DB extends SQLiteOpenHelper {
             markBooleanWatcherChanged(mPlTblWM);
 
         return r;
+    }
+
+    public int
+    updatePlaylist(long plid,
+                   ColPlaylist field, Object v) {
+        return updatePlaylist(plid, new ColPlaylist[] { field }, new Object[] { v });
     }
 
     public int
@@ -1146,8 +1202,8 @@ public class DB extends SQLiteOpenHelper {
      */
     public Err
     insertVideoToPlaylist(long plid,
-                          String title, String desc,
-                          String videoId, int playtime,
+                          String videoId, String title,
+                          String author, int playtime,
                           byte[] thumbnail, int volume) {
         Cursor c = queryVideos(new ColVideo[] { ColVideo.ID }, ColVideo.VIDEOID, videoId);
         eAssert(0 == c.getCount() || 1 == c.getCount());
@@ -1157,7 +1213,9 @@ public class DB extends SQLiteOpenHelper {
             c.close();
             mDb.beginTransaction();
             try {
-                vid = insertVideo(title, desc, videoId, playtime, thumbnail, volume);
+                vid = insertVideo(title, videoId,
+                                  playtime, author,
+                                  thumbnail, volume);
                 if (vid < 0)
                     return Err.UNKNOWN;
 

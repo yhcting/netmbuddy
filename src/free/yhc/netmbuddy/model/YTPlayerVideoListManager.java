@@ -120,7 +120,7 @@ class YTPlayerVideoListManager {
         ArrayList<YTPlayer.Video> al = new ArrayList<YTPlayer.Video>(_mVs.length);
         int adjust = 0;
         for (int i = 0; i < _mVs.length; i++) {
-            if (!_mVs[i].videoId.equals(ytvid))
+            if (!_mVs[i].ytvid.equals(ytvid))
                 al.add(_mVs[i]);
             else if (i <= _mVi)
                 adjust++;
@@ -146,7 +146,7 @@ class YTPlayerVideoListManager {
     findVideoExcept(int from, String ytvid) {
         eAssert(from >= 0 && from <= _mVs.length);
         for (int i = from; i < _mVs.length; i++) {
-            if (!ytvid.equals(_mVs[i].videoId))
+            if (!ytvid.equals(_mVs[i].ytvid))
                 return i;
         }
         return -1;

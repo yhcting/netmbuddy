@@ -208,15 +208,17 @@ SurfaceHolder.Callback {
     }
 
     public static class Video {
-        public final String   title;
-        public final String   videoId;
-        public final int      volume;
-        public final int      playtime; // This is to workaround not-correct value returns from getDuration() function
+        public final String ytvid;
+        public final String title;
+        public final String author;
+        public final int    volume;
+        public final int    playtime; // This is to workaround not-correct value returns from getDuration() function
                                         //   of youtube player (Seconds).
-        public Video(String aVideoId, String aTitle,
+        public Video(String aYtvid, String aTitle, String aAuthor,
                      int aVolume, int aPlaytime) {
-            videoId = aVideoId;
+            ytvid = aYtvid;
             title = aTitle;
+            author = aAuthor;
             playtime = aPlaytime;
             volume = aVolume;
         }
@@ -979,7 +981,7 @@ SurfaceHolder.Callback {
 
     private Video[]
     getVideos(Cursor c,
-              int coliTitle,  int coliUrl,
+              int coliYtvid, int coliTitle, int coliAuthor,
               int coliVolume, int coliPlaytime,
               boolean shuffle) {
         if (!c.moveToFirst())
@@ -990,8 +992,9 @@ SurfaceHolder.Callback {
         int i = 0;
         if (!shuffle) {
             do {
-                vs[i++] = new Video(c.getString(coliUrl),
+                vs[i++] = new Video(c.getString(coliYtvid),
                                     c.getString(coliTitle),
+                                    c.getString(coliAuthor),
                                     c.getInt(coliVolume),
                                     c.getInt(coliPlaytime));
             } while (c.moveToNext());
@@ -1002,8 +1005,9 @@ SurfaceHolder.Callback {
             NrElem[] nes = new NrElem[c.getCount()];
             do {
                 nes[i++] = new NrElem(r.nextInt(),
-                                      new Video(c.getString(coliUrl),
+                                      new Video(c.getString(coliYtvid),
                                                 c.getString(coliTitle),
+                                                c.getString(coliAuthor),
                                                 c.getInt(coliVolume),
                                                 c.getInt(coliPlaytime)));
             } while (c.moveToNext());
@@ -1087,10 +1091,10 @@ SurfaceHolder.Callback {
             // delete all cached videos except for
             //   current and next video.
             for (Utils.PrefQuality pq : Utils.PrefQuality.values()) {
-                skipSet.add(new File(getCachedVideoFilePath(mVlm.getActiveVideo().videoId, pq)).getAbsolutePath());
+                skipSet.add(new File(getCachedVideoFilePath(mVlm.getActiveVideo().ytvid, pq)).getAbsolutePath());
                 Video nextVid = mVlm.getNextVideo();
                 if (null != nextVid)
-                    skipSet.add(new File(getCachedVideoFilePath(nextVid.videoId, pq)).getAbsolutePath());
+                    skipSet.add(new File(getCachedVideoFilePath(nextVid.ytvid, pq)).getAbsolutePath());
             }
         }
         FileUtils.removeFileRecursive(sCacheDir, skipSet);
@@ -1103,7 +1107,7 @@ SurfaceHolder.Callback {
             return;
         }
 
-        cachingVideo(mVlm.getNextVideo().videoId);
+        cachingVideo(mVlm.getNextVideo().ytvid);
     }
 
     private void
@@ -1259,7 +1263,7 @@ SurfaceHolder.Callback {
     private void
     startVideo(Video v, boolean recovery) {
         if (null != v)
-            startVideo(v.videoId, v.volume, recovery);
+            startVideo(v.ytvid, v.volume, recovery);
     }
 
     private void
@@ -1283,7 +1287,7 @@ SurfaceHolder.Callback {
                         if (mVlm.hasActiveVideo()) {
                             Video v = mVlm.getActiveVideo();
                             logW("YTPlayer Recovery video play Fails");
-                            logW("    ytvid : " + v.videoId);
+                            logW("    ytvid : " + v.ytvid);
                             logW("    title : " + v.title);
                         }
                         startNext(); // move to next video.
@@ -1338,7 +1342,7 @@ SurfaceHolder.Callback {
             prepareCachedVideo(cachedVid);
         else {
             if (!Utils.isNetworkAvailable())
-                mStartVideoRecovery.executeRecoveryStart(new Video(videoId, "", volume, 0), 1000);
+                mStartVideoRecovery.executeRecoveryStart(new Video(videoId, "", "", volume, 0), 1000);
             else
                 prepareVideoStreaming(videoId);
         }
@@ -1425,7 +1429,7 @@ SurfaceHolder.Callback {
         int storedPos = 0;
         int storedVol = Policy.DEFAULT_VIDEO_VOLUME;
         if (mVlm.hasActiveVideo()) {
-            Long vol = (Long)mDb.getVideoInfo(mVlm.getActiveVideo().videoId, DB.ColVideo.VOLUME);
+            Long vol = (Long)mDb.getVideoInfo(mVlm.getActiveVideo().ytvid, DB.ColVideo.VOLUME);
             if (null != vol)
                 storedVol = vol.intValue();
         }
@@ -2062,15 +2066,21 @@ SurfaceHolder.Callback {
 
     public void
     startVideos(final Cursor c,
-                final int coliUrl,      final int coliTitle,
-                final int coliVolume,   final int coliPlaytime,
+                final int coliYtvid,
+                final int coliTitle,
+                final int coliAuthor,
+                final int coliVolume,
+                final int coliPlaytime,
                 final boolean shuffle) {
         eAssert(Utils.isUiThread());
 
         new Thread(new Runnable() {
             @Override
             public void run() {
-                final Video[] vs = getVideos(c, coliTitle, coliUrl, coliVolume, coliPlaytime, shuffle);
+                final Video[] vs = getVideos(c,
+                                             coliYtvid, coliTitle, coliAuthor,
+                                             coliVolume, coliPlaytime,
+                                             shuffle);
                 Utils.getUiHandler().post(new Runnable() {
                     @Override
                     public void run() {
@@ -2119,7 +2129,7 @@ SurfaceHolder.Callback {
     public String
     getActiveVideoYtId() {
         if (isVideoPlaying())
-            return mVlm.getActiveVideo().videoId;
+            return mVlm.getActiveVideo().ytvid;
         return null;
     }
 

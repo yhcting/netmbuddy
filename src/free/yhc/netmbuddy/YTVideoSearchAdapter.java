@@ -35,6 +35,7 @@ import free.yhc.netmbuddy.model.YTFeed;
 import free.yhc.netmbuddy.model.YTPlayer;
 import free.yhc.netmbuddy.model.YTSearchHelper;
 import free.yhc.netmbuddy.model.YTVideoFeed;
+import free.yhc.netmbuddy.utils.UiUtils;
 import free.yhc.netmbuddy.utils.Utils;
 
 
@@ -140,6 +141,9 @@ public class YTVideoSearchAdapter extends YTSearchAdapter {
         TextView titlev = (TextView)v.findViewById(R.id.title);
         titlev.setText(arge.media.title);
 
+        ImageView thumbnailv = (ImageView)v.findViewById(R.id.thumbnail);
+        UiUtils.setThumbnailImageView(thumbnailv, null);
+
         String playtmtext = "?";
         try {
             playtmtext = Utils.secsToMinSecText(Integer.parseInt(e.media.playTime));
@@ -180,6 +184,11 @@ public class YTVideoSearchAdapter extends YTSearchAdapter {
     }
 
     public String
+    getItemThumbnailUrl(int pos) {
+        return mEntries[pos].media.thumbnailUrl;
+    }
+
+    public String
     getItemAuthor(int pos) {
         return ((YTVideoFeed.Entry[])mEntries)[pos].author.name;
     }
@@ -197,6 +206,20 @@ public class YTVideoSearchAdapter extends YTSearchAdapter {
             volume = Policy.DEFAULT_VIDEO_VOLUME;
 
         return volume;
+    }
+
+    public YTPlayer.Video
+    getYTPlayerVideo(int pos) {
+        int playtime = 0;
+        try {
+            playtime = Integer.parseInt(getItemPlaytime(pos));
+        } catch (NumberFormatException ignored) { }
+
+        return new YTPlayer.Video(getItemVideoId(pos),
+                                  getItemTitle(pos),
+                                  getItemAuthor(pos),
+                                  getItemVolume(pos),
+                                  playtime);
     }
 
     public boolean

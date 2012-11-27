@@ -126,8 +126,6 @@ public class ImportShareActivity extends Activity {
         @Override
         public void
         onPreExecute(DiagAsyncTask task) {
-            String title = Utils.getResText(R.string.app_name) + " : " + Utils.getResText(R.string.import_);
-            String desc = _mIpr.message;
         }
 
         @Override

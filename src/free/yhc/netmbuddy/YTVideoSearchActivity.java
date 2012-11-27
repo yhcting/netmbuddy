@@ -35,7 +35,6 @@ import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.TextView;
 import free.yhc.netmbuddy.model.DB;
 import free.yhc.netmbuddy.model.DBHelper;
-import free.yhc.netmbuddy.model.Policy;
 import free.yhc.netmbuddy.model.YTFeed;
 import free.yhc.netmbuddy.model.YTPlayer;
 import free.yhc.netmbuddy.model.YTSearchHelper;
@@ -125,9 +124,12 @@ DBHelper.CheckDupDoneReceiver {
         }
 
         DB.Err err = mDb.insertVideoToPlaylist(plid,
-                                               entry.media.title, entry.media.description,
-                                               entry.media.videoId, playtm,
-                                               ImageUtils.compressBitmap(bm), volume);
+                                               entry.media.videoId,
+                                               entry.media.title,
+                                               entry.author.name,
+                                               playtm,
+                                               ImageUtils.compressBitmap(bm),
+                                               volume);
         if (DB.Err.NO_ERR != err) {
             if (DB.Err.DUPLICATED == err)
                 return R.string.msg_existing_muisc;
@@ -161,10 +163,7 @@ DBHelper.CheckDupDoneReceiver {
         YTPlayer.Video[] vids = new YTPlayer.Video[checkedItems.length];
         int j = 0;
         for (int i : checkedItems) {
-            vids[j++] = new YTPlayer.Video(adpr.getItemVideoId(i),
-                                           adpr.getItemTitle(i),
-                                           adpr.getItemVolume(i),
-                                           Integer.parseInt(adpr.getItemPlaytime(i)));
+            vids[j++] = adpr.getYTPlayerVideo(i);
         }
         appendToPlayQ(vids);
         adpr.cleanChecked();
@@ -297,18 +296,7 @@ DBHelper.CheckDupDoneReceiver {
 
     private void
     onContextMenuAppendToPlayQ(final int position) {
-        int playtime;
-        try {
-            playtime = Integer.parseInt(getAdapter().getItemPlaytime(position));
-        } catch (NumberFormatException e) {
-            UiUtils.showTextToast(this, R.string.err_unknown);
-            return;
-        }
-
-        YTPlayer.Video vid = new YTPlayer.Video(getAdapter().getItemVideoId(position),
-                                                getAdapter().getItemTitle(position),
-                                                Policy.DEFAULT_VIDEO_VOLUME,
-                                                playtime);
+        YTPlayer.Video vid = getAdapter().getYTPlayerVideo(position);
         appendToPlayQ(new YTPlayer.Video[] { vid });
 
     }
@@ -334,16 +322,7 @@ DBHelper.CheckDupDoneReceiver {
 
     private void
     onListItemClick(View view, int position, long itemId) {
-        int playtime = 0;
-        try {
-            playtime = Integer.parseInt(getAdapter().getItemPlaytime(position));
-        } catch (NumberFormatException e) { }
-
-        YTPlayer.Video v = new YTPlayer.Video(
-                getAdapter().getItemVideoId(position),
-                getAdapter().getItemTitle(position),
-                Policy.DEFAULT_VIDEO_VOLUME,
-                playtime);
+        YTPlayer.Video v = getAdapter().getYTPlayerVideo(position);
         showPlayer();
         mMp.startVideos(new YTPlayer.Video[] { v });
     }

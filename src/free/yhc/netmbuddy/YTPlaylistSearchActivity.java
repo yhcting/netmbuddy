@@ -92,8 +92,7 @@ public class YTPlaylistSearchActivity extends YTSearchActivity {
         return YTUtils.insertVideoToPlaylist(plid,
                                              e.media.videoId,
                                              e.media.title,
-                                             e.media.description,
-                                             e.media.thumbnailUrl,
+                                             e.author.name,
                                              playtm,
                                              Policy.DEFAULT_VIDEO_VOLUME);
     }

@@ -1,12 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android" >
-    <item android:id="@+id/add_to"              android:title="@string/add_to"></item>
-    <item android:id="@+id/move_to"             android:title="@string/move_to"></item>
-    <item android:id="@+id/rename"              android:title="@string/rename"></item>
-    <item android:id="@+id/plthumbnail"         android:title="@string/set_to_plthumbnail"></item>
-    <item android:id="@+id/volume"              android:title="@string/volume"></item>
-    <item android:id="@+id/append_to_playq"     android:title="@string/append_to_playq"></item>
-    <item android:id="@+id/play_video"          android:title="@string/play_video"></item>
+    <!--
+    Order of Menu should reflect easy-usecase.
+    Menus near bottom is easier to access. (most users grab bottom half of device)
+    So, frequent-used-menu should be located at bottom of the order.
+    -->
     <item android:id="@+id/delete"              android:title="@string/delete"></item>
+    <item android:id="@+id/play_video"          android:title="@string/play_video"></item>
+    <item android:id="@+id/plthumbnail"         android:title="@string/set_to_plthumbnail"></item>
     <item android:id="@+id/detail_info"         android:title="@string/detail_info"></item>
+    <item android:id="@+id/volume"              android:title="@string/volume"></item>
+    <item android:id="@+id/videos_of_this_author"       android:title="@string/videos_of_this_author"></item>
+    <item android:id="@+id/playlists_of_this_author"    android:title="@string/playlists_of_this_author"></item>
+    <item android:id="@+id/rename"              android:title="@string/rename"></item>
+    <item android:id="@+id/move_to"             android:title="@string/move_to"></item>
+    <item android:id="@+id/add_to"              android:title="@string/add_to"></item>
+    <item android:id="@+id/append_to_playq"     android:title="@string/append_to_playq"></item>
 </menu>

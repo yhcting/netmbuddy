@@ -28,7 +28,9 @@ import org.json.JSONObject;
 
 import android.database.Cursor;
 import free.yhc.netmbuddy.model.DB;
+import free.yhc.netmbuddy.model.DB.ColPlaylist;
 import free.yhc.netmbuddy.model.Policy;
+import free.yhc.netmbuddy.utils.Utils;
 
 
 //============================================================================
@@ -65,8 +67,10 @@ class Json {
     static final String FPLAYLIST   = "playlist";
     static final String FMAGIC      = "magic";
     static final String FTYPE       = "type";
+    static final String FTHUMBNAIL_YTVID = "thumbnail_ytvid";
     static final String FTIME       = "time";
     static final String FYTID       = "ytid";
+    static final String FAUTHOR     = "author";
     static final String FVOLUME     = "volume";
     static final String FPLAYTIME   = "playtime";
     static final String FTITLE      = "title";
@@ -104,12 +108,14 @@ class Json {
     videoToJson(long vid) {
         final int COLI_VIDEOID  = 0;
         final int COLI_TITLE    = 1;
-        final int COLI_VOLUME   = 2;
-        final int COLI_PLAYTIME = 3;
+        final int COLI_AUTHOR   = 2;
+        final int COLI_VOLUME   = 3;
+        final int COLI_PLAYTIME = 4;
         Cursor c = DB.get().queryVideo(vid,
                                        new DB.ColVideo[] {
                 DB.ColVideo.VIDEOID,
                 DB.ColVideo.TITLE,
+                DB.ColVideo.AUTHOR,
                 DB.ColVideo.VOLUME,
                 DB.ColVideo.PLAYTIME
         });
@@ -123,6 +129,13 @@ class Json {
         try {
             jo.put(FYTID,     c.getString(COLI_VIDEOID));
             jo.put(FTITLE,    c.getString(COLI_TITLE));
+
+            // NOTE
+            // Below field - author - is newly added at Database version 2
+            // So, we cannot sure that DB includes valid field value for them.
+            if (Utils.isValidValue(c.getString(COLI_AUTHOR)))
+                jo.put(FAUTHOR,   c.getString(COLI_AUTHOR));
+
             jo.put(FPLAYTIME, c.getInt(COLI_PLAYTIME));
             int vol = c.getInt(COLI_VOLUME);
             if (Policy.DEFAULT_VIDEO_VOLUME != vol)
@@ -150,6 +163,10 @@ class Json {
         JSONObject jo = new JSONObject();
         try {
             jo.put(FTITLE, DB.get().getPlaylistInfo(plid, DB.ColPlaylist.TITLE));
+            String thumbnailYtvid = (String)DB.get().getPlaylistInfo(plid, ColPlaylist.THUMBNAIL_YTVID);
+            if (Utils.isValidValue(thumbnailYtvid))
+                jo.put(FTHUMBNAIL_YTVID, thumbnailYtvid);
+
             JSONArray  jarr = new JSONArray();
             do {
                 JSONObject jov = videoToJson(c.getLong(COLI_ID));

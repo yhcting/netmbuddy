@@ -350,7 +350,7 @@ public class UiUtils {
                                 return;
                             }
 
-                            long plid = db.insertPlaylist(title, "");
+                            long plid = db.insertPlaylist(title);
                             if (plid < 0) {
                                 UiUtils.showTextToast(context, R.string.err_db_unknown);
                                 return;
@@ -371,6 +371,17 @@ public class UiUtils {
         return bldr.create();
     }
 
+    /**
+     * This function is a kind of HACK to save memory used by thumbnail.
+     * Very dangerous and difficult at maintenance.
+     * But, I failed to find any better way to save memory for thumbnail display.
+     *
+     * NOTE
+     * If exception like "Exception : try to used recycled bitmap ..." is shown up,
+     *   read and understand what this function does with highest priority!
+     * @param v
+     * @param imgdata
+     */
     public static void
     setThumbnailImageView(ImageView v, byte[] imgdata) {
         // NOTE
@@ -603,6 +614,7 @@ public class UiUtils {
         DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
             final class VideoDetailInfo {
                 String      title           = "";
+                String      author          = "";
                 String      timeAdded       = "";
                 String      timeLastPlayed  = "";
                 String      volume          = "";
@@ -615,12 +627,19 @@ public class UiUtils {
             @Override
             public void
             onPostExecute(DiagAsyncTask task, Err result) {
+                String author = Utils.getResText(R.string.author) + " : ";
+                if (Utils.isValidValue(_mVdi.author))
+                    author +=  _mVdi.author;
+                else
+                    author += Utils.getResText(R.string.unknown);
+
                 String playbackTm = Utils.getResText(R.string.playback_time) + " : " + _mVdi.playTime
                                         + Utils.getResText(R.string.seconds);
                 String volume = Utils.getResText(R.string.volume) + " : " + _mVdi.volume + " / 100";
                 String timeAdded = Utils.getResText(R.string.time_added) + " : " + _mVdi.timeAdded;
                 String timePlayed = Utils.getResText(R.string.time_last_played) + " : " + _mVdi.timeLastPlayed;
                 String msg = _mVdi.title + "\n\n"
+                             + author + "\n"
                              + playbackTm + "\n"
                              + volume + "\n"
                              + timeAdded + "\n"
@@ -640,14 +659,16 @@ public class UiUtils {
             public Err
             doBackgroundWork(DiagAsyncTask task) {
                 final int COLI_TITLE        = 0;
-                final int COLI_VOLUME       = 1;
-                final int COLI_PLAYTIME     = 2;
-                final int COLI_TIME_ADD     = 3;
-                final int COLI_TIME_PLAYED  = 4;
+                final int COLI_AUTHOR       = 1;
+                final int COLI_VOLUME       = 2;
+                final int COLI_PLAYTIME     = 3;
+                final int COLI_TIME_ADD     = 4;
+                final int COLI_TIME_PLAYED  = 5;
                 DateFormat df = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM);
                 DB db = DB.get();
                 Cursor c = db.queryVideo(vid, new DB.ColVideo[] {
                         DB.ColVideo.TITLE,
+                        DB.ColVideo.AUTHOR,
                         DB.ColVideo.VOLUME,
                         DB.ColVideo.PLAYTIME,
                         DB.ColVideo.TIME_ADD,
@@ -660,6 +681,7 @@ public class UiUtils {
                 }
 
                 _mVdi.title = c.getString(COLI_TITLE);
+                _mVdi.author = c.getString(COLI_AUTHOR);
                 _mVdi.volume = "" + c.getInt(COLI_VOLUME);
                 _mVdi.playTime = Utils.secsToMinSecText(c.getInt(COLI_PLAYTIME));
                 _mVdi.timeAdded = df.format(new Date(c.getLong(COLI_TIME_ADD)));

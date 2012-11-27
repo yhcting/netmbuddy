@@ -49,7 +49,6 @@ import android.widget.ListView;
 import android.widget.TextView;
 import free.yhc.netmbuddy.PlaylistAdapter.ItemButton;
 import free.yhc.netmbuddy.model.DB;
-import free.yhc.netmbuddy.model.DB.ColVideo;
 import free.yhc.netmbuddy.model.Policy;
 import free.yhc.netmbuddy.model.SearchSuggestionProvider;
 import free.yhc.netmbuddy.model.YTPlayer;
@@ -58,6 +57,18 @@ import free.yhc.netmbuddy.utils.UiUtils;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class PlaylistActivity extends Activity {
+    private static final DB.ColVideo[] sVideoProjectionToPlay
+        = new DB.ColVideo[] { DB.ColVideo.VIDEOID,
+                              DB.ColVideo.TITLE,
+                              DB.ColVideo.AUTHOR,
+                              DB.ColVideo.VOLUME,
+                              DB.ColVideo.PLAYTIME};
+    private static final int COLI_VID_YTVID     = 0;
+    private static final int COLI_VID_TITLE     = 1;
+    private static final int COLI_VID_AUTHOR    = 2;
+    private static final int COLI_VID_VOLUME    = 3;
+    private static final int COLI_VID_PLAYTIME  = 4;
+
     private final DB            mDb = DB.get();
     private final YTPlayer      mMp = YTPlayer.get();
 
@@ -104,7 +115,14 @@ public class PlaylistActivity extends Activity {
                           (ViewGroup)findViewById(R.id.list_drawer),
                           null,
                           mMp.getVideoToolButton());
-        mMp.startVideos(c, 0, 1, 2, 3, Utils.isPrefSuffle());
+        mMp.startVideos(c,
+                        COLI_VID_YTVID,
+                        COLI_VID_TITLE,
+                        COLI_VID_AUTHOR,
+                        COLI_VID_VOLUME,
+                        COLI_VID_PLAYTIME,
+                        Utils.isPrefSuffle());
+
     }
 
     private void
@@ -114,11 +132,7 @@ public class PlaylistActivity extends Activity {
 
     private void
     playAllMusics(View anchor) {
-        playMusics(mDb.queryVideos(new DB.ColVideo[] { DB.ColVideo.VIDEOID,
-                                                       DB.ColVideo.TITLE,
-                                                       DB.ColVideo.VOLUME,
-                                                       DB.ColVideo.PLAYTIME},
-                                   null, false));
+        playMusics(mDb.queryVideos(sVideoProjectionToPlay, null, false));
         UiUtils.showTextToast(this, R.string.msg_play_all_musics);
     }
 
@@ -805,12 +819,7 @@ public class PlaylistActivity extends Activity {
 
     private void
     onListItemClick(View view, int position, long itemId) {
-        playMusics(mDb.queryVideos(itemId,
-                                   new ColVideo[] { ColVideo.VIDEOID,
-                                                    ColVideo.TITLE,
-                                                    ColVideo.VOLUME,
-                                                    ColVideo.PLAYTIME},
-                                   null, false));
+        playMusics(mDb.queryVideos(itemId, sVideoProjectionToPlay, null, false));
     }
 
     @Override

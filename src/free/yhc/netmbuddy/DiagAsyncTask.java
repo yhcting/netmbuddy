@@ -171,6 +171,7 @@ View.OnClickListener {
     /**
      * This is used usually to avoid "leaked window..." error.
      * But be careful to use it.
+     * This function dismiss ONLY dialog and doens't cancel background job!
      */
     public void
     forceDismissDialog() {

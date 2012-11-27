@@ -546,10 +546,9 @@ OnSharedPreferenceChangeListener {
             public Err
             doBackgroundWork(DiagAsyncTask task) {
                 if (YTUtils.insertVideoToPlaylist(plid,
-                                                  video.videoId,
+                                                  video.ytvid,
                                                   video.title,
-                                                  "",
-                                                  YTHacker.getYtVideoThumbnailUrl(video.videoId),
+                                                  video.author,
                                                   video.playtime,
                                                   volume)) {
                     return Err.NO_ERR;
@@ -658,7 +657,7 @@ OnSharedPreferenceChangeListener {
     pvOnMoreButtonClicked(View v) {
         final YTPlayer.Video video  = mMp.getActiveVideo();
         final int[] opts;
-        final Long vid = (Long)mDb.getVideoInfo(video.videoId, DB.ColVideo.ID);
+        final Long vid = (Long)mDb.getVideoInfo(video.ytvid, DB.ColVideo.ID);
         if (null != vid)
             opts = new int[] { R.string.detail_info,
                                R.string.add_to,
@@ -689,11 +688,11 @@ OnSharedPreferenceChangeListener {
                     break;
 
                 case R.string.volume:
-                    changeVideoVolume(video.title, video.videoId);
+                    changeVideoVolume(video.title, video.ytvid);
                     break;
 
                 case R.string.delete:
-                    pvMoreControlDelete(vid, video.videoId);
+                    pvMoreControlDelete(vid, video.ytvid);
                     break;
 
                 default:
@@ -1093,7 +1092,7 @@ OnSharedPreferenceChangeListener {
     }
 
     void
-    changeVideoVolume(final String title, final String videoId) {
+    changeVideoVolume(final String title, final String ytvid) {
         if (null == mVActivity)
             return;
 
@@ -1101,12 +1100,12 @@ OnSharedPreferenceChangeListener {
         // Retrieve current volume
         int curvol = Policy.DEFAULT_VIDEO_VOLUME;
         if (mMp.isVideoPlaying()
-            && mMp.getActiveVideo().videoId.equals(videoId)) {
+            && mMp.getActiveVideo().ytvid.equals(ytvid)) {
             runningVideo = true;
             curvol = mMp.playerGetVolume();
         } else {
             runningVideo = false;
-            Long i = (Long)mDb.getVideoInfo(videoId, DB.ColVideo.VOLUME);
+            Long i = (Long)mDb.getVideoInfo(ytvid, DB.ColVideo.VOLUME);
             if (null != i)
                 curvol = i.intValue();
         }
@@ -1148,7 +1147,7 @@ OnSharedPreferenceChangeListener {
                 // NOTE
                 // Should I consider about performance?
                 // Not yet. do something when performance is issued.
-                mDb.updateVideo(DB.ColVideo.VIDEOID, videoId,
+                mDb.updateVideo(DB.ColVideo.VIDEOID, ytvid,
                                 DB.ColVideo.VOLUME, newVolume);
             }
         });

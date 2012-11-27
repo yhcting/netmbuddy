@@ -39,6 +39,7 @@
     <string name="license">License</string>
     <string name="seconds">sec.</string>
     <string name="minutes">min.</string>
+    <string name="unknown">Unknown</string>
 
     <string name="enter_keyword">Enter search keyword</string>
     <string name="new_search">New search</string>
@@ -116,6 +117,12 @@
     <string name="guide_desc_playlist_row">Play all musics belonging to the playlist by touching row at the list.</string>
     <string name="guide_desc_detaillist">Lists all musics belongs to the playlist.</string>
 
+    <string name="msg_init_app">
+Initializing App.\n
+It may takes long time(up to several minutes) in case that:\n
+  - DB is very big\n
+  - First run after updating App.
+    </string>
     <string name="msg_not_implemented">Not implemented yet.</string>
     <string name="msg_ytplayer_err">Fail in playing.</string>
     <string name="msg_initialize_app">Preparing application.</string>
@@ -163,7 +170,13 @@
     <string name="err_no_match">No matching result.</string>
     <string name="err_ytsearch">Fail in searching Youtube.</string>
     <string name="err_ytprotocol">Error in communication with Youtube.</string>
-    <string name="err_ytparsehtml">Error getting video from Youtube.\nThis can be caused by one of below reasons.\n* Temporal error.\n* Video is not available(ex. country constraints).\n* Old NetMBuddy version.</string>
+    <string name="err_ytparsehtml">
+Error getting video from Youtube.\n
+This can be caused by one of below reasons.\n
+  - Temporal error.\n
+  - Video is not available(ex. country constraints).\n
+  - Old NetMBuddy version.
+    </string>
     <string name="err_ytnot_supported_vidformat">Not supported video format.</string>
     <string name="err_ytinvalid_param">Invalid Youtube parameter.</string>
     <string name="err_network_unavailable">Network is unavailable.</string>

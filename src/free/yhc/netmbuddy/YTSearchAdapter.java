@@ -122,6 +122,7 @@ YTSearchHelper.LoadThumbnailDoneReceiver {
         for (Bitmap bm : mThumbnails)
             if (null != bm)
                 bm.recycle();
+
         mHelper = null;
     }
 

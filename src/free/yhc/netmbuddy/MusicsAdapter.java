@@ -31,6 +31,7 @@ import android.widget.ImageView;
 import android.widget.ResourceCursorAdapter;
 import android.widget.TextView;
 import free.yhc.netmbuddy.model.DB;
+import free.yhc.netmbuddy.model.YTPlayer;
 import free.yhc.netmbuddy.utils.UiUtils;
 import free.yhc.netmbuddy.utils.Utils;
 
@@ -38,11 +39,12 @@ public class MusicsAdapter extends ResourceCursorAdapter {
     private static final int LAYOUT = R.layout.musics_row;
 
     // Below value SHOULD match queries of 'createCursor()'
-    private static final int COLI_ID        = 0;
-    private static final int COLI_VIDEOID   = 1;
-    private static final int COLI_TITLE     = 2;
-    private static final int COLI_VOLUME    = 3;
-    private static final int COLI_PLAYTIME  = 4;
+    private static final int COLI_ID            = 0;
+    private static final int COLI_VIDEOID       = 1;
+    private static final int COLI_TITLE         = 2;
+    private static final int COLI_AUTHOR        = 3;
+    private static final int COLI_VOLUME        = 4;
+    private static final int COLI_PLAYTIME      = 5;
 
     // Check Button Tag Key
     private static final int VTAGKEY_POS        = R.drawable.btncheck_on;
@@ -51,6 +53,7 @@ public class MusicsAdapter extends ResourceCursorAdapter {
         = new DB.ColVideo[] { DB.ColVideo.ID,
                               DB.ColVideo.VIDEOID,
                               DB.ColVideo.TITLE,
+                              DB.ColVideo.AUTHOR,
                               DB.ColVideo.VOLUME,
                               DB.ColVideo.PLAYTIME,
                               };
@@ -109,6 +112,23 @@ public class MusicsAdapter extends ResourceCursorAdapter {
         mCheckListener.onStateChanged(mCheckedMap.size(), pos, false);
     }
 
+    private String
+    getCursorInfoString(int pos, int colIndex) {
+        Cursor c = getCursor();
+        if (!c.moveToPosition(pos))
+            eAssert(false);
+        return c.getString(colIndex);
+    }
+
+    private int
+    getCursorInfoInt(int pos, int colIndex) {
+        Cursor c = getCursor();
+        if (!c.moveToPosition(pos))
+            eAssert(false);
+        return c.getInt(colIndex);
+    }
+
+
     private Cursor
     createCursor() {
         if (UiUtils.PLID_RECENT_PLAYED == mCurArg.plid)
@@ -131,18 +151,17 @@ public class MusicsAdapter extends ResourceCursorAdapter {
 
     public String
     getMusicYtid(int pos) {
-        Cursor c = getCursor();
-        if (!c.moveToPosition(pos))
-            eAssert(false);
-        return c.getString(COLI_VIDEOID);
+        return getCursorInfoString(pos, COLI_VIDEOID);
     }
 
     public String
     getMusicTitle(int pos) {
-        Cursor c = getCursor();
-        if (!c.moveToPosition(pos))
-            eAssert(false);
-        return c.getString(COLI_TITLE);
+        return getCursorInfoString(pos, COLI_TITLE);
+    }
+
+    public String
+    getMusicAuthor(int pos) {
+        return getCursorInfoString(pos, COLI_AUTHOR);
     }
 
     public byte[]
@@ -155,18 +174,21 @@ public class MusicsAdapter extends ResourceCursorAdapter {
 
     public int
     getMusicVolume(int pos) {
-        Cursor c = getCursor();
-        if (!c.moveToPosition(pos))
-            eAssert(false);
-        return c.getInt(COLI_VOLUME);
+        return getCursorInfoInt(pos, COLI_VOLUME);
     }
 
     public int
     getMusicPlaytime(int pos) {
-        Cursor c = getCursor();
-        if (!c.moveToPosition(pos))
-            eAssert(false);
-        return c.getInt(COLI_PLAYTIME);
+        return getCursorInfoInt(pos, COLI_PLAYTIME);
+    }
+
+    public YTPlayer.Video
+    getYTPlayerVideo(int pos) {
+        return new YTPlayer.Video(getMusicYtid(pos),
+                                  getMusicTitle(pos),
+                                  getMusicAuthor(pos),
+                                  getMusicVolume(pos),
+                                  getMusicPlaytime(pos));
     }
 
     /**
@@ -231,11 +253,14 @@ public class MusicsAdapter extends ResourceCursorAdapter {
     }
 
     @Override
-    public void bindView(View v, Context context, Cursor cur) {
+    public void
+    bindView(View v, Context context, Cursor cur) {
         ImageView checkv     = (ImageView)v.findViewById(R.id.checkbtn);
         ImageView thumbnailv = (ImageView)v.findViewById(R.id.thumbnail);
         TextView  titlev     = (TextView)v.findViewById(R.id.title);
+        TextView  authorv    = (TextView)v.findViewById(R.id.author);
         TextView  playtmv    = (TextView)v.findViewById(R.id.playtime);
+        TextView  uploadtmv  = (TextView)v.findViewById(R.id.uploadedtime);
 
         int pos = cur.getPosition();
         checkv.setTag(VTAGKEY_POS, pos);
@@ -247,6 +272,12 @@ public class MusicsAdapter extends ResourceCursorAdapter {
             checkv.setImageResource(R.drawable.btncheck_off);
 
         titlev.setText(cur.getString(COLI_TITLE));
+        String author = cur.getString(COLI_AUTHOR);
+        if (Utils.isValidValue(author))
+            authorv.setText(author);
+        else
+            authorv.setVisibility(View.GONE);
+        uploadtmv.setVisibility(View.GONE);
         playtmv.setText(Utils.secsToMinSecText(cur.getInt(COLI_PLAYTIME)));
         byte[] thumbnailData = (byte[])DB.get().getVideoInfo(cur.getString(COLI_VIDEOID), DB.ColVideo.THUMBNAIL);
         UiUtils.setThumbnailImageView(thumbnailv, thumbnailData);

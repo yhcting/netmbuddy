@@ -23,6 +23,7 @@ package free.yhc.netmbuddy.utils;
 import free.yhc.netmbuddy.R;
 import free.yhc.netmbuddy.model.DB;
 import free.yhc.netmbuddy.model.Policy;
+import free.yhc.netmbuddy.model.YTHacker;
 import free.yhc.netmbuddy.model.YTSearchHelper;
 
 public class YTUtils {
@@ -31,6 +32,16 @@ public class YTUtils {
         return 11 == ytvid.length();
     }
 
+    public static YTSearchHelper.LoadThumbnailReturn
+    loadYtVideoThumbnail(String ytvid) {
+        String thumbnailUrl = YTHacker.getYtVideoThumbnailUrl(ytvid);
+        YTSearchHelper.LoadThumbnailArg targ = new YTSearchHelper.LoadThumbnailArg(
+                null,
+                thumbnailUrl,
+                Utils.getAppContext().getResources().getDimensionPixelSize(R.dimen.thumbnail_width),
+                Utils.getAppContext().getResources().getDimensionPixelSize(R.dimen.thumbnail_height));
+        return YTSearchHelper.loadThumbnail(targ);
+    }
 
     /**
      * This function download thumbnail image through network synchronously.
@@ -39,25 +50,15 @@ public class YTUtils {
     insertVideoToPlaylist(long      plid,
                           String    ytvid,
                           String    title,
-                          String    description,
-                          String    thumbnailUrl,
+                          String    author,
                           int       playtime,
                           int       volume) {
-        YTSearchHelper.LoadThumbnailArg targ = new YTSearchHelper.LoadThumbnailArg(
-                null,
-                thumbnailUrl,
-                Utils.getAppContext().getResources().getDimensionPixelSize(R.dimen.thumbnail_width),
-                Utils.getAppContext().getResources().getDimensionPixelSize(R.dimen.thumbnail_height));
-        YTSearchHelper.LoadThumbnailReturn tr;
-        tr = YTSearchHelper.loadThumbnail(targ);
-        if (YTSearchHelper.Err.NO_ERR != tr.err)
-            return false;
         // Loading thumbnail is done.
-
+        YTSearchHelper.LoadThumbnailReturn tr = loadYtVideoThumbnail(ytvid);
         DB.Err err = DB.get().insertVideoToPlaylist(plid,
-                                                    title,
-                                                    description,
                                                     ytvid,
+                                                    title,
+                                                    author,
                                                     playtime,
                                                     ImageUtils.compressBitmap(tr.bm),
                                                     Policy.DEFAULT_VIDEO_VOLUME);
