@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="free.yhc.netmbuddy"
-    android:versionCode="12"
-    android:versionName="1.2.1" >
+    android:versionCode="13"
+    android:versionName="1.2.2" >
     <uses-sdk android:minSdkVersion="10" />
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -15,6 +15,7 @@
     <application
         android:icon="@drawable/app_icon"
         android:label="@string/app_name"
+        android:allowBackup="true"
         android:name=".YTMPApp"
         >
         <activity
@@ -33,6 +34,7 @@
             android:configChanges="orientation|keyboardHidden"
             android:theme="@android:style/Theme.NoTitleBar"
             android:launchMode="singleTop"
+            android:exported="false"
             >
             <meta-data
                 android:name="android.app.default_searchable"
@@ -48,12 +50,15 @@
             android:name=".MusicsActivity"
             android:configChanges="orientation|keyboardHidden"
             android:theme="@android:style/Theme.NoTitleBar"
+            android:launchMode="singleTop"
+            android:exported="false"
             />
         <activity
             android:name=".YTVideoSearchKeywordActivity"
             android:configChanges="orientation|keyboardHidden"
             android:theme="@android:style/Theme.NoTitleBar"
             android:launchMode="singleTop"
+            android:exported="false"
             >
             <meta-data
                 android:name="android.app.default_searchable"
@@ -70,6 +75,7 @@
             android:configChanges="orientation|keyboardHidden"
             android:theme="@android:style/Theme.NoTitleBar"
             android:launchMode="singleTop"
+            android:exported="false"
             >
             <meta-data
                 android:name="android.app.default_searchable"
@@ -86,6 +92,7 @@
             android:configChanges="orientation|keyboardHidden"
             android:theme="@android:style/Theme.NoTitleBar"
             android:launchMode="singleTop"
+            android:exported="false"
             >
             <meta-data
                 android:name="android.app.default_searchable"
@@ -102,6 +109,7 @@
             android:configChanges="orientation|keyboardHidden"
             android:theme="@android:style/Theme.NoTitleBar"
             android:launchMode="singleTop"
+            android:exported="false"
             >
             <meta-data
                 android:name="android.app.default_searchable"
@@ -117,22 +125,26 @@
             android:name=".YTMPPreferenceActivity"
             android:configChanges="orientation|keyboardHidden"
             android:theme="@android:style/Theme.NoTitleBar"
+            android:exported="false"
             />
         <activity
             android:name=".VideoPlayerActivity"
             android:configChanges="orientation|keyboardHidden"
             android:theme="@android:style/Theme.NoTitleBar"
+            android:exported="false"
             />
         <activity
             android:name=".LockScreenActivity"
             android:configChanges="orientation|keyboardHidden"
             android:theme="@android:style/Theme.NoTitleBar"
+            android:exported="false"
             />
         <activity
             android:name=".ImportShareActivity"
             android:configChanges="orientation|keyboardHidden"
             android:theme="@android:style/Theme.Dialog"
             android:launchMode="singleTop"
+            android:exported="false"
             />
         <!--
         Why complex and stupid path pattern is used for 'ImportShareContentActivity'
@@ -159,6 +171,7 @@
             android:name=".ImportShareContentActivity"
             android:configChanges="orientation|keyboardHidden"
             android:theme="@android:style/Theme.Dialog"
+            android:exported="false"
             >
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -194,6 +207,7 @@
             android:name=".ImportShareFileActivity"
             android:configChanges="orientation|keyboardHidden"
             android:theme="@android:style/Theme.Dialog"
+            android:exported="false"
             >
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -207,17 +221,26 @@
                 <data android:pathPattern=".*\\..*\\..*\\..*\\.netmbuddy"/>
             </intent-filter>
         </activity>
-        <receiver android:name=".model.YTPlayer$TelephonyMonitor">
+        <receiver
+            android:name=".model.YTPlayer$TelephonyMonitor"
+            android:exported="false"
+            >
             <intent-filter>
                 <action android:name="android.intent.action.PHONE_STATE" />
             </intent-filter>
         </receiver>
-        <receiver android:name=".model.YTPlayer$NetworkMonitor">
+        <receiver
+            android:name=".model.YTPlayer$NetworkMonitor"
+            android:exported="false"
+            >
             <intent-filter>
                 <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
             </intent-filter>
         </receiver>
-        <receiver android:name=".model.NotiManager$NotiIntentReceiver">
+        <receiver
+            android:name=".model.NotiManager$NotiIntentReceiver"
+            android:exported="false"
+            >
             <intent-filter>
                 <action android:name="ytmplayer.intent.action.NOTIFICATION_DELETE" />
                 <action android:name="ytmplayer.intent.action.NOTIFICATION_ACTION" />
@@ -225,6 +248,7 @@
         </receiver>
         <provider
             android:name=".model.SearchSuggestionProvider"
-            android:authorities="free.yhc.netmbuddy" />
+            android:authorities="free.yhc.netmbuddy"
+            />
     </application>
 </manifest>
