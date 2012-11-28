@@ -175,19 +175,23 @@ class DBManager {
 
     private static Err
     verifyExternalDBFile(File exDbf) {
-        if (!exDbf.canRead())
-            return Err.IO_FILE;
-
-        SQLiteDatabase exDb = null;
+        Err err = Err.INVALID_DB;
         try {
-            exDb = SQLiteDatabase.openDatabase(exDbf.getAbsolutePath(), null, SQLiteDatabase.OPEN_READONLY);
-        } catch (SQLiteException e) {
-            return Err.INVALID_DB;
+            if (!exDbf.canRead())
+                return Err.IO_FILE;
+
+            SQLiteDatabase exDb = null;
+            try {
+                exDb = SQLiteDatabase.openDatabase(exDbf.getAbsolutePath(), null, SQLiteDatabase.OPEN_READONLY);
+            } catch (SQLiteException e) {
+                return Err.INVALID_DB;
+            }
+
+            err = verifyDB(exDb);
+            exDb.close();
+        } catch (Exception e) {
+            err = Err.INVALID_DB;
         }
-
-        Err err = verifyDB(exDb);
-        exDb.close();
-
         return err;
     }
 
