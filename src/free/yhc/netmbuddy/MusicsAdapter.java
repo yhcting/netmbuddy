@@ -274,9 +274,10 @@ public class MusicsAdapter extends ResourceCursorAdapter {
 
         titlev.setText(cur.getString(COLI_TITLE));
         String author = cur.getString(COLI_AUTHOR);
-        if (Utils.isValidValue(author))
+        if (Utils.isValidValue(author)) {
+            authorv.setVisibility(View.VISIBLE);
             authorv.setText(author);
-        else
+        } else
             authorv.setVisibility(View.GONE);
         uploadtmv.setVisibility(View.GONE);
         playtmv.setText(Utils.secsToMinSecText(cur.getInt(COLI_PLAYTIME)));
