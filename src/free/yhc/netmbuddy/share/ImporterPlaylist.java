@@ -26,7 +26,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import free.yhc.netmbuddy.model.DB;
+import free.yhc.netmbuddy.db.ColPlaylist;
+import free.yhc.netmbuddy.db.DB;
 import free.yhc.netmbuddy.model.MultiThreadRunner;
 import free.yhc.netmbuddy.model.Policy;
 import free.yhc.netmbuddy.model.YTSearchHelper;
@@ -190,8 +191,8 @@ class ImporterPlaylist implements ImporterI {
                     if (YTSearchHelper.Err.NO_ERR == ltr.err) {
                         byte[] data = ImageUtils.compressBitmap(ltr.bm);
                         db.updatePlaylist(plid,
-                                          new DB.ColPlaylist[] { DB.ColPlaylist.THUMBNAIL,
-                                                                 DB.ColPlaylist.THUMBNAIL_YTVID },
+                                          new ColPlaylist[] { ColPlaylist.THUMBNAIL,
+                                                              ColPlaylist.THUMBNAIL_YTVID },
                                           new Object[] { data,
                                                          thumbnailYtvid });
                         ltr.bm.recycle();

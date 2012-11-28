@@ -25,6 +25,8 @@ import android.widget.TextView;
 import free.yhc.netmbuddy.DiagAsyncTask;
 import free.yhc.netmbuddy.Err;
 import free.yhc.netmbuddy.R;
+import free.yhc.netmbuddy.db.ColVideo;
+import free.yhc.netmbuddy.db.DB;
 import free.yhc.netmbuddy.model.YTPlayer.DBUpdateType;
 import free.yhc.netmbuddy.model.YTPlayer.Video;
 import free.yhc.netmbuddy.utils.UiUtils;
@@ -657,7 +659,7 @@ OnSharedPreferenceChangeListener {
     pvOnMoreButtonClicked(View v) {
         final YTPlayer.Video video  = mMp.getActiveVideo();
         final int[] opts;
-        final Long vid = (Long)mDb.getVideoInfo(video.ytvid, DB.ColVideo.ID);
+        final Long vid = (Long)mDb.getVideoInfo(video.ytvid, ColVideo.ID);
         if (null != vid)
             opts = new int[] { R.string.detail_info,
                                R.string.add_to,
@@ -1105,7 +1107,7 @@ OnSharedPreferenceChangeListener {
             curvol = mMp.playerGetVolume();
         } else {
             runningVideo = false;
-            Long i = (Long)mDb.getVideoInfo(ytvid, DB.ColVideo.VOLUME);
+            Long i = (Long)mDb.getVideoInfo(ytvid, ColVideo.VOLUME);
             if (null != i)
                 curvol = i.intValue();
         }
@@ -1147,8 +1149,8 @@ OnSharedPreferenceChangeListener {
                 // NOTE
                 // Should I consider about performance?
                 // Not yet. do something when performance is issued.
-                mDb.updateVideo(DB.ColVideo.VIDEOID, ytvid,
-                                DB.ColVideo.VOLUME, newVolume);
+                mDb.updateVideo(ColVideo.VIDEOID, ytvid,
+                                ColVideo.VOLUME, newVolume);
             }
         });
         aDiag.show();

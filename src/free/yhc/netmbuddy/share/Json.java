@@ -27,8 +27,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.database.Cursor;
-import free.yhc.netmbuddy.model.DB;
-import free.yhc.netmbuddy.model.DB.ColPlaylist;
+import free.yhc.netmbuddy.db.ColPlaylist;
+import free.yhc.netmbuddy.db.ColVideo;
+import free.yhc.netmbuddy.db.DB;
 import free.yhc.netmbuddy.model.Policy;
 import free.yhc.netmbuddy.utils.Utils;
 
@@ -112,12 +113,12 @@ class Json {
         final int COLI_VOLUME   = 3;
         final int COLI_PLAYTIME = 4;
         Cursor c = DB.get().queryVideo(vid,
-                                       new DB.ColVideo[] {
-                DB.ColVideo.VIDEOID,
-                DB.ColVideo.TITLE,
-                DB.ColVideo.AUTHOR,
-                DB.ColVideo.VOLUME,
-                DB.ColVideo.PLAYTIME
+                                       new ColVideo[] {
+                ColVideo.VIDEOID,
+                ColVideo.TITLE,
+                ColVideo.AUTHOR,
+                ColVideo.VOLUME,
+                ColVideo.PLAYTIME
         });
 
         if (!c.moveToFirst()) {
@@ -152,7 +153,7 @@ class Json {
     playlistToJson(long plid) {
         final int COLI_ID   = 0;
         Cursor c = DB.get().queryVideos(plid,
-                                        new DB.ColVideo[] { DB.ColVideo.ID },
+                                        new ColVideo[] { ColVideo.ID },
                                         null,
                                         false);
         if (!c.moveToFirst()) {
@@ -162,7 +163,7 @@ class Json {
 
         JSONObject jo = new JSONObject();
         try {
-            jo.put(FTITLE, DB.get().getPlaylistInfo(plid, DB.ColPlaylist.TITLE));
+            jo.put(FTITLE, DB.get().getPlaylistInfo(plid, ColPlaylist.TITLE));
             String thumbnailYtvid = (String)DB.get().getPlaylistInfo(plid, ColPlaylist.THUMBNAIL_YTVID);
             if (Utils.isValidValue(thumbnailYtvid))
                 jo.put(FTHUMBNAIL_YTVID, thumbnailYtvid);

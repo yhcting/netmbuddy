@@ -29,7 +29,7 @@ import android.content.Context;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
-import free.yhc.netmbuddy.model.DB;
+import free.yhc.netmbuddy.db.DB;
 import free.yhc.netmbuddy.model.Policy;
 import free.yhc.netmbuddy.model.YTFeed;
 import free.yhc.netmbuddy.model.YTPlayer;

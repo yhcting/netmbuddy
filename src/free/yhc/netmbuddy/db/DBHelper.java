@@ -18,8 +18,10 @@
  *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *****************************************************************************/
 
-package free.yhc.netmbuddy.model;
+package free.yhc.netmbuddy.db;
 
+import free.yhc.netmbuddy.model.YTVideoFeed;
+import free.yhc.netmbuddy.model.YTVideoFeed.Entry;
 import free.yhc.netmbuddy.utils.Utils;
 import android.os.Handler;
 import android.os.HandlerThread;

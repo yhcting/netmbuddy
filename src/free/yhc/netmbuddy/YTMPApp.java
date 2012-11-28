@@ -22,7 +22,7 @@ package free.yhc.netmbuddy;
 
 import android.app.Application;
 import android.content.res.Configuration;
-import free.yhc.netmbuddy.model.DB;
+import free.yhc.netmbuddy.db.DB;
 import free.yhc.netmbuddy.model.NotiManager;
 import free.yhc.netmbuddy.model.RTState;
 import free.yhc.netmbuddy.model.YTPlayer;

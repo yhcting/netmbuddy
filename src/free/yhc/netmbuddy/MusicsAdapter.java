@@ -30,7 +30,8 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.ResourceCursorAdapter;
 import android.widget.TextView;
-import free.yhc.netmbuddy.model.DB;
+import free.yhc.netmbuddy.db.ColVideo;
+import free.yhc.netmbuddy.db.DB;
 import free.yhc.netmbuddy.model.YTPlayer;
 import free.yhc.netmbuddy.utils.UiUtils;
 import free.yhc.netmbuddy.utils.Utils;
@@ -49,14 +50,14 @@ public class MusicsAdapter extends ResourceCursorAdapter {
     // Check Button Tag Key
     private static final int VTAGKEY_POS        = R.drawable.btncheck_on;
 
-    private static final DB.ColVideo[] sQueryCols
-        = new DB.ColVideo[] { DB.ColVideo.ID,
-                              DB.ColVideo.VIDEOID,
-                              DB.ColVideo.TITLE,
-                              DB.ColVideo.AUTHOR,
-                              DB.ColVideo.VOLUME,
-                              DB.ColVideo.PLAYTIME,
-                              };
+    private static final ColVideo[] sQueryCols
+        = new ColVideo[] { ColVideo.ID,
+                           ColVideo.VIDEOID,
+                           ColVideo.TITLE,
+                           ColVideo.AUTHOR,
+                           ColVideo.VOLUME,
+                           ColVideo.PLAYTIME,
+                           };
 
     private final Context       mContext;
     private final CursorArg     mCurArg;
@@ -132,11 +133,11 @@ public class MusicsAdapter extends ResourceCursorAdapter {
     private Cursor
     createCursor() {
         if (UiUtils.PLID_RECENT_PLAYED == mCurArg.plid)
-            return DB.get().queryVideos(sQueryCols, DB.ColVideo.TIME_PLAYED, false);
+            return DB.get().queryVideos(sQueryCols, ColVideo.TIME_PLAYED, false);
         else if (UiUtils.PLID_SEARCHED == mCurArg.plid)
             return DB.get().queryVideosSearchTitle(sQueryCols, mCurArg.extra.split("\\s"));
         else
-            return DB.get().queryVideos(mCurArg.plid, sQueryCols, DB.ColVideo.TITLE, true);
+            return DB.get().queryVideos(mCurArg.plid, sQueryCols, ColVideo.TITLE, true);
     }
 
     public MusicsAdapter(Context context,
@@ -169,7 +170,7 @@ public class MusicsAdapter extends ResourceCursorAdapter {
         Cursor c = getCursor();
         if (!c.moveToPosition(pos))
             eAssert(false);
-        return (byte[])DB.get().getVideoInfo(c.getString(COLI_VIDEOID), DB.ColVideo.THUMBNAIL);
+        return (byte[])DB.get().getVideoInfo(c.getString(COLI_VIDEOID), ColVideo.THUMBNAIL);
     }
 
     public int
@@ -279,7 +280,7 @@ public class MusicsAdapter extends ResourceCursorAdapter {
             authorv.setVisibility(View.GONE);
         uploadtmv.setVisibility(View.GONE);
         playtmv.setText(Utils.secsToMinSecText(cur.getInt(COLI_PLAYTIME)));
-        byte[] thumbnailData = (byte[])DB.get().getVideoInfo(cur.getString(COLI_VIDEOID), DB.ColVideo.THUMBNAIL);
+        byte[] thumbnailData = (byte[])DB.get().getVideoInfo(cur.getString(COLI_VIDEOID), ColVideo.THUMBNAIL);
         UiUtils.setThumbnailImageView(thumbnailv, thumbnailData);
     }
 }

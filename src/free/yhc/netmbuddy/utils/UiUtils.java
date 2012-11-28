@@ -52,7 +52,9 @@ import android.widget.Toast;
 import free.yhc.netmbuddy.DiagAsyncTask;
 import free.yhc.netmbuddy.Err;
 import free.yhc.netmbuddy.R;
-import free.yhc.netmbuddy.model.DB;
+import free.yhc.netmbuddy.db.ColPlaylist;
+import free.yhc.netmbuddy.db.ColVideo;
+import free.yhc.netmbuddy.db.DB;
 import free.yhc.netmbuddy.model.YTHacker;
 import free.yhc.netmbuddy.model.YTPlayer;
 
@@ -297,11 +299,11 @@ public class UiUtils {
         final String[] userMenus = (null == userMenuStrings)? new String[0]: userMenuStrings;
 
         // Create menu list
-        final Cursor c = db.queryPlaylist(new DB.ColPlaylist[] { DB.ColPlaylist.ID,
-                                                                 DB.ColPlaylist.TITLE });
+        final Cursor c = db.queryPlaylist(new ColPlaylist[] { ColPlaylist.ID,
+                                                              ColPlaylist.TITLE });
 
-        final int iTitle = c.getColumnIndex(DB.ColPlaylist.TITLE.getName());
-        final int iId    = c.getColumnIndex(DB.ColPlaylist.ID.getName());
+        final int iTitle = c.getColumnIndex(ColPlaylist.TITLE.getName());
+        final int iId    = c.getColumnIndex(ColPlaylist.ID.getName());
 
         LinkedList<String> menul = new LinkedList<String>();
         LinkedList<Long>   idl   = new LinkedList<Long>();
@@ -671,13 +673,13 @@ public class UiUtils {
                 final int COLI_TIME_PLAYED  = 5;
                 DateFormat df = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM);
                 DB db = DB.get();
-                Cursor c = db.queryVideo(vid, new DB.ColVideo[] {
-                        DB.ColVideo.TITLE,
-                        DB.ColVideo.AUTHOR,
-                        DB.ColVideo.VOLUME,
-                        DB.ColVideo.PLAYTIME,
-                        DB.ColVideo.TIME_ADD,
-                        DB.ColVideo.TIME_PLAYED
+                Cursor c = db.queryVideo(vid, new ColVideo[] {
+                        ColVideo.TITLE,
+                        ColVideo.AUTHOR,
+                        ColVideo.VOLUME,
+                        ColVideo.PLAYTIME,
+                        ColVideo.TIME_ADD,
+                        ColVideo.TIME_PLAYED
                 });
 
                 if (!c.moveToFirst()) {
@@ -701,7 +703,7 @@ public class UiUtils {
                 long[] plids = db.getPlaylistsContainVideo(vid);
                 _mVdi.pls = new String[plids.length];
                 for (int i = 0; i < plids.length; i++)
-                    _mVdi.pls[i] = (String)db.getPlaylistInfo(plids[i], DB.ColPlaylist.TITLE);
+                    _mVdi.pls[i] = (String)db.getPlaylistInfo(plids[i], ColPlaylist.TITLE);
 
                 return Err.NO_ERR;
             }
