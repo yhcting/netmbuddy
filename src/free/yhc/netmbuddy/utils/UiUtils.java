@@ -52,7 +52,9 @@ import android.widget.Toast;
 import free.yhc.netmbuddy.DiagAsyncTask;
 import free.yhc.netmbuddy.Err;
 import free.yhc.netmbuddy.R;
-import free.yhc.netmbuddy.model.DB;
+import free.yhc.netmbuddy.db.ColPlaylist;
+import free.yhc.netmbuddy.db.ColVideo;
+import free.yhc.netmbuddy.db.DB;
 import free.yhc.netmbuddy.model.YTHacker;
 import free.yhc.netmbuddy.model.YTPlayer;
 
@@ -62,6 +64,11 @@ public class UiUtils {
     public static final long PLID_UNKNOWN       = PLID_INVALID - 1;
     public static final long PLID_RECENT_PLAYED = PLID_INVALID - 2;
     public static final long PLID_SEARCHED      = PLID_INVALID - 3;
+
+    // NOTE
+    // To save time for decoding image, pre-decoded bitmap is uses for unknown thumbnail image.
+    private static final Bitmap sBmIcUnknownImage
+        = BitmapFactory.decodeResource(Utils.getAppContext().getResources(), R.drawable.ic_unknown_image);
 
     public interface EditTextAction {
         void prepare(Dialog dialog, EditText edit);
@@ -292,11 +299,11 @@ public class UiUtils {
         final String[] userMenus = (null == userMenuStrings)? new String[0]: userMenuStrings;
 
         // Create menu list
-        final Cursor c = db.queryPlaylist(new DB.ColPlaylist[] { DB.ColPlaylist.ID,
-                                                                 DB.ColPlaylist.TITLE });
+        final Cursor c = db.queryPlaylist(new ColPlaylist[] { ColPlaylist.ID,
+                                                              ColPlaylist.TITLE });
 
-        final int iTitle = c.getColumnIndex(DB.ColPlaylist.TITLE.getName());
-        final int iId    = c.getColumnIndex(DB.ColPlaylist.ID.getName());
+        final int iTitle = c.getColumnIndex(ColPlaylist.TITLE.getName());
+        final int iId    = c.getColumnIndex(ColPlaylist.ID.getName());
 
         LinkedList<String> menul = new LinkedList<String>();
         LinkedList<Long>   idl   = new LinkedList<Long>();
@@ -372,7 +379,7 @@ public class UiUtils {
     }
 
     /**
-     * This function is a kind of HACK to save memory used by thumbnail.
+     * This function is a kind of HACK - actually FULL OF HACK - to save memory used by thumbnail.
      * Very dangerous and difficult at maintenance.
      * But, I failed to find any better way to save memory for thumbnail display.
      *
@@ -386,7 +393,7 @@ public class UiUtils {
     setThumbnailImageView(ImageView v, byte[] imgdata) {
         // NOTE
         // Why Bitmap instance is created even if R.drawable.ic_unknown_image?
-        // ImageView has BitmapDrawable to draw it's canvas, and every input-drawble
+        // ImageView has BitmapDrawable to draw it's canvas, and every input-drawable
         //   - resource, uri etc - is converted to BitmapDrawable eventually.
         // But, ImageView.setImageResource() doesn't update drawable if current image resource
         //   is same with new one - See "ImageView.java for details"
@@ -396,8 +403,7 @@ public class UiUtils {
         if (null != imgdata && imgdata.length > 0)
             thumbnailBm = BitmapFactory.decodeByteArray(imgdata, 0, imgdata.length);
         else
-            thumbnailBm = BitmapFactory.decodeResource(Utils.getAppContext().getResources(),
-                                                       R.drawable.ic_unknown_image);
+            thumbnailBm = sBmIcUnknownImage;
 
         // This assumes that Drawable of ImageView is set only by this function.
         // => Setting drawable directly through ImageView interface may lead to exception
@@ -407,7 +413,8 @@ public class UiUtils {
         if (drawable instanceof BitmapDrawable) { // to make sure.
             BitmapDrawable bmd = (BitmapDrawable)drawable;
             Bitmap bitmap = bmd.getBitmap();
-            bitmap.recycle();
+            if (bitmap != sBmIcUnknownImage)
+                bitmap.recycle();
         }
 
         // change to new one.
@@ -666,13 +673,13 @@ public class UiUtils {
                 final int COLI_TIME_PLAYED  = 5;
                 DateFormat df = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM);
                 DB db = DB.get();
-                Cursor c = db.queryVideo(vid, new DB.ColVideo[] {
-                        DB.ColVideo.TITLE,
-                        DB.ColVideo.AUTHOR,
-                        DB.ColVideo.VOLUME,
-                        DB.ColVideo.PLAYTIME,
-                        DB.ColVideo.TIME_ADD,
-                        DB.ColVideo.TIME_PLAYED
+                Cursor c = db.queryVideo(vid, new ColVideo[] {
+                        ColVideo.TITLE,
+                        ColVideo.AUTHOR,
+                        ColVideo.VOLUME,
+                        ColVideo.PLAYTIME,
+                        ColVideo.TIME_ADD,
+                        ColVideo.TIME_PLAYED
                 });
 
                 if (!c.moveToFirst()) {
@@ -696,7 +703,7 @@ public class UiUtils {
                 long[] plids = db.getPlaylistsContainVideo(vid);
                 _mVdi.pls = new String[plids.length];
                 for (int i = 0; i < plids.length; i++)
-                    _mVdi.pls[i] = (String)db.getPlaylistInfo(plids[i], DB.ColPlaylist.TITLE);
+                    _mVdi.pls[i] = (String)db.getPlaylistInfo(plids[i], ColPlaylist.TITLE);
 
                 return Err.NO_ERR;
             }

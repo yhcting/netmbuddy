@@ -62,6 +62,13 @@ YTSearchHelper.LoadThumbnailDoneReceiver {
         long delay = 0;
         for (int i = 0; i < mItemViews.length; i++) {
             mItemViews[i] = UiUtils.inflateLayout(Utils.getAppContext(), rowLayout);
+            // NOTE!
+            // IMPORTANT! : DO NOT put R.drawable.ic_unknown_image at layout!
+            // Because of 'memory optimization' for thumbnail bitmap,
+            //   putting drawable at Layout may lead to "Exception : try to used recycled bitmap ...".
+            // See comments at UiUtils.setThumbnailImageView() for details.
+            // Initialize thumbnail to ic_unknown_image
+            UiUtils.setThumbnailImageView((ImageView)mItemViews[i].findViewById(R.id.thumbnail), null);
             setViewInvalid(mItemViews[i]);
             final YTSearchHelper.LoadThumbnailArg arg
                 = new YTSearchHelper.LoadThumbnailArg(i,

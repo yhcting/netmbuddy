@@ -54,6 +54,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import free.yhc.netmbuddy.R;
 import free.yhc.netmbuddy.VideoPlayerActivity;
+import free.yhc.netmbuddy.db.ColVideo;
+import free.yhc.netmbuddy.db.DB;
 import free.yhc.netmbuddy.model.YTDownloader.DnArg;
 import free.yhc.netmbuddy.model.YTDownloader.DownloadDoneReceiver;
 import free.yhc.netmbuddy.utils.FileUtils;
@@ -1313,8 +1315,8 @@ SurfaceHolder.Callback {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                mDb.updateVideo(DB.ColVideo.VIDEOID, videoId,
-                                DB.ColVideo.TIME_PLAYED, System.currentTimeMillis());
+                mDb.updateVideo(ColVideo.VIDEOID, videoId,
+                                ColVideo.TIME_PLAYED, System.currentTimeMillis());
             }
 
         }).start();
@@ -1429,7 +1431,7 @@ SurfaceHolder.Callback {
         int storedPos = 0;
         int storedVol = Policy.DEFAULT_VIDEO_VOLUME;
         if (mVlm.hasActiveVideo()) {
-            Long vol = (Long)mDb.getVideoInfo(mVlm.getActiveVideo().ytvid, DB.ColVideo.VOLUME);
+            Long vol = (Long)mDb.getVideoInfo(mVlm.getActiveVideo().ytvid, ColVideo.VOLUME);
             if (null != vol)
                 storedVol = vol.intValue();
         }

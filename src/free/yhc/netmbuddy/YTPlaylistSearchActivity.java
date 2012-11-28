@@ -36,7 +36,7 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.TextView;
-import free.yhc.netmbuddy.model.DB;
+import free.yhc.netmbuddy.db.DB;
 import free.yhc.netmbuddy.model.MultiThreadRunner;
 import free.yhc.netmbuddy.model.MultiThreadRunner.Job;
 import free.yhc.netmbuddy.model.Policy;

@@ -27,7 +27,8 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.ResourceCursorAdapter;
 import android.widget.TextView;
-import free.yhc.netmbuddy.model.DB;
+import free.yhc.netmbuddy.db.ColPlaylist;
+import free.yhc.netmbuddy.db.DB;
 import free.yhc.netmbuddy.utils.UiUtils;
 
 public class PlaylistAdapter extends ResourceCursorAdapter {
@@ -57,10 +58,10 @@ public class PlaylistAdapter extends ResourceCursorAdapter {
 
     private Cursor
     createCursor() {
-        return DB.get().queryPlaylist(new DB.ColPlaylist[] {
-                DB.ColPlaylist.ID,
-                DB.ColPlaylist.TITLE,
-                DB.ColPlaylist.SIZE
+        return DB.get().queryPlaylist(new ColPlaylist[] {
+                ColPlaylist.ID,
+                ColPlaylist.TITLE,
+                ColPlaylist.SIZE
         });
     }
 
@@ -113,7 +114,7 @@ public class PlaylistAdapter extends ResourceCursorAdapter {
     getItemThumbnail(int pos) {
         Cursor c = getCursor();
         if (c.moveToPosition(pos))
-            return (byte[])DB.get().getPlaylistInfo(c.getLong(COLI_ID), DB.ColPlaylist.THUMBNAIL);
+            return (byte[])DB.get().getPlaylistInfo(c.getLong(COLI_ID), ColPlaylist.THUMBNAIL);
         eAssert(false);
         return null;
     }
@@ -130,7 +131,7 @@ public class PlaylistAdapter extends ResourceCursorAdapter {
 
         titlev.setText(cur.getString(COLI_TITLE));
         nritemsv.setText(cur.getLong(COLI_SIZE) + "");
-        byte[] thumbnailData = (byte[])DB.get().getPlaylistInfo(cur.getLong(COLI_ID), DB.ColPlaylist.THUMBNAIL);
+        byte[] thumbnailData = (byte[])DB.get().getPlaylistInfo(cur.getLong(COLI_ID), ColPlaylist.THUMBNAIL);
         UiUtils.setThumbnailImageView(thumbnailv, thumbnailData);
     }
 }

@@ -21,7 +21,7 @@
 package free.yhc.netmbuddy.utils;
 
 import free.yhc.netmbuddy.R;
-import free.yhc.netmbuddy.model.DB;
+import free.yhc.netmbuddy.db.DB;
 import free.yhc.netmbuddy.model.Policy;
 import free.yhc.netmbuddy.model.YTHacker;
 import free.yhc.netmbuddy.model.YTSearchHelper;

@@ -38,8 +38,9 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
-import free.yhc.netmbuddy.model.DB;
-import free.yhc.netmbuddy.model.DB.ColPlaylist;
+import free.yhc.netmbuddy.db.ColPlaylist;
+import free.yhc.netmbuddy.db.ColVideo;
+import free.yhc.netmbuddy.db.DB;
 import free.yhc.netmbuddy.model.YTPlayer;
 import free.yhc.netmbuddy.utils.UiUtils;
 import free.yhc.netmbuddy.utils.Utils;
@@ -145,8 +146,8 @@ public class MusicsActivity extends Activity {
         eAssert(UiUtils.isUserPlaylist(mPlid));
         byte[] data = getAdapter().getMusicThumbnail(pos);
         mDb.updatePlaylist(mPlid,
-                           new ColPlaylist[] { DB.ColPlaylist.THUMBNAIL,
-                                               DB.ColPlaylist.THUMBNAIL_YTVID },
+                           new ColPlaylist[] { ColPlaylist.THUMBNAIL,
+                                               ColPlaylist.THUMBNAIL_YTVID },
                            new Object[] { data,
                                           getAdapter().getMusicYtid(pos) });
         UiUtils.setThumbnailImageView(((ImageView)findViewById(R.id.thumbnail)), data);
@@ -299,8 +300,8 @@ public class MusicsActivity extends Activity {
             @Override
             public void
             onOk(Dialog dialog, EditText edit) {
-                mDb.updateVideo(DB.ColVideo.ID, id,
-                                DB.ColVideo.TITLE, edit.getText().toString());
+                mDb.updateVideo(ColVideo.ID, id,
+                                ColVideo.TITLE, edit.getText().toString());
                 getAdapter().reloadCursorAsync();
             }
         };
