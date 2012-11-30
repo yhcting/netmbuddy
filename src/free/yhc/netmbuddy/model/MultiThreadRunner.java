@@ -366,7 +366,8 @@ public class MultiThreadRunner {
     public void
     waitAllDone() throws InterruptedException {
         synchronized (mQLock) {
-            mQLock.wait();
+            if (!isAllJobsDoneLocked())
+                mQLock.wait();
         }
     }
 }
