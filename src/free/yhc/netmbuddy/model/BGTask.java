@@ -78,11 +78,6 @@ public abstract class BGTask<R> {
         TERMINATED
     }
 
-    private boolean
-    isCurrentOwnerThread() {
-        return Thread.currentThread() == mOwner.getLooper().getThread();
-    }
-
     private void
     postOnCancelled() {
         mOwner.post(new Runnable() {
@@ -190,9 +185,29 @@ public abstract class BGTask<R> {
         this(DEFAULT_THREAD_NAME, Utils.getUiHandler(), PRIORITY_MIDLOW);
     }
 
-    public State
+    public final String
+    getName() {
+        return mThread.getName();
+    }
+
+    public final void
+    setName(String name) {
+        mThread.setName(name);
+    }
+
+    public final State
     getState() {
         return mState.get();
+    }
+
+    public final Handler
+    getOwner() {
+        return mOwner;
+    }
+
+    public final boolean
+    isOwnerThread(Thread thread) {
+        return thread == mOwner.getLooper().getThread();
     }
 
     public final boolean
@@ -205,7 +220,7 @@ public abstract class BGTask<R> {
         return mThread.isInterrupted();
     }
 
-    public void
+    public final void
     publishProgress(final int prog) {
         mOwner.post(new Runnable() {
             @Override
@@ -233,7 +248,7 @@ public abstract class BGTask<R> {
         return true;
     }
 
-    public void
+    public final void
     run() {
         eAssert(State.READY == mState.get());
         mOwner.post(new Runnable() {
