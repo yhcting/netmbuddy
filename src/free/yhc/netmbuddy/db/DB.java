@@ -337,8 +337,12 @@ public class DB {
             r =  mDb.delete(getVideoRefTableName(plid),
                             ColVideoRef.VIDEOID.getName() + " = " + vid,
                             null);
-            eAssert(0 == r || 1 == r);
-            if (r > 0) {
+
+            // NOTE
+            // "eAssert(0 == r || 1 == r);" is expected.
+            // But, who knows? (may from unknown bug...)
+            // To increase code tolerance, case that "r > 1" is also handled here.
+            while (r-- > 0) {
                 decVideoReference(vid);
                 decPlaylistSize(plid);
             }
@@ -678,7 +682,8 @@ public class DB {
     }
 
     /**
-     *
+     * This is NOT THREAD SAFE
+     * checking for duplication and inserting to DB is not an atomic operation in this function.
      * @param plid
      *   Playlist DB id
      * @param title
