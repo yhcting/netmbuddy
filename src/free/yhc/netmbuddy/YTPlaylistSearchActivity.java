@@ -22,8 +22,8 @@ package free.yhc.netmbuddy;
 
 import static free.yhc.netmbuddy.utils.Utils.eAssert;
 
-import java.util.Iterator;
-import java.util.LinkedList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import android.content.Intent;
@@ -115,8 +115,13 @@ public class YTPlaylistSearchActivity extends YTSearchActivity {
         YTSearchHelper.SearchReturn sr;
         int maxPage = -1;
         int curPage = 1;
-        LinkedList<YTVideoFeed.Entry> plvl = new LinkedList<YTVideoFeed.Entry>();
 
+        // NOTE
+        // Hash map with Youtube video id, should be used because,
+        //   youtube playlist may contain more than one video - duplicated video.
+        // But, NetMBuddy doesn't allow duplicated video in the playlist.
+        // So, use hashmap instead of linked list.
+        HashMap<String, YTVideoFeed.Entry> map = new HashMap<String, YTVideoFeed.Entry>();
         int lastPv = -1;
         // PV : progress value
         int pvBase = 0;
@@ -144,7 +149,7 @@ public class YTPlaylistSearchActivity extends YTSearchActivity {
                 // Check that this video is in DB or not.
                 // And add video only that is missed at selected local playlist
                 if (!db.containsVideo(plid, e.media.videoId))
-                    plvl.addLast(e);
+                    map.put(e.media.videoId, e);
             }
 
             int curPv = pvBase + (curPage * 100 / maxPage) * pvPortion / 100;
@@ -161,7 +166,6 @@ public class YTPlaylistSearchActivity extends YTSearchActivity {
         pvBase += pvPortion;
         pvPortion = 100 - pvBase; // all remains.
 
-        Iterator<YTVideoFeed.Entry> itr = plvl.iterator();
         final int progressBase = pvBase;
         MultiThreadRunner.OnProgressListener progListener = new MultiThreadRunner.OnProgressListener() {
             @Override
@@ -173,9 +177,10 @@ public class YTPlaylistSearchActivity extends YTSearchActivity {
         mtrunner.setOnProgressListener(progListener);
 
         Err err = Err.NO_ERR;
-        while (itr.hasNext()) {
-            final YTVideoFeed.Entry e = itr.next();
-            mtrunner.appendJob(new Job<Integer>((float)pvPortion/ (float)100 / plvl.size()) {
+        Map.Entry<String, YTVideoFeed.Entry>[] mes = map.entrySet().toArray(new Map.Entry[0]);
+        for (Map.Entry<String, YTVideoFeed.Entry> me : mes) {
+            final YTVideoFeed.Entry e = me.getValue();
+            mtrunner.appendJob(new Job<Integer>((float)pvPortion/ (float)100 / mes.length) {
                 @Override
                 public Integer
                 doJob() {
