@@ -103,6 +103,9 @@ public class MusicsAdapter extends ResourceCursorAdapter {
     setToChecked(int pos, ImageView v) {
         mCheckedMap.put(pos, System.currentTimeMillis());
         v.setImageResource(R.drawable.btncheck_on);
+        // Sometimes check-box view is not updated as expected.
+        // I'm not sure this can be workaround... but, let's try.
+        v.invalidate();
         mCheckListener.onStateChanged(mCheckedMap.size(), pos, true);
     }
 
@@ -110,6 +113,8 @@ public class MusicsAdapter extends ResourceCursorAdapter {
     setToUnchecked(int pos, ImageView v) {
         mCheckedMap.remove(pos);
         v.setImageResource(R.drawable.btncheck_off);
+        // See comments at 'MusicsActivity.setToChecked()' for details.
+        v.invalidate();
         mCheckListener.onStateChanged(mCheckedMap.size(), pos, false);
     }
 
