@@ -21,35 +21,22 @@
 package free.yhc.netmbuddy;
 
 import static free.yhc.netmbuddy.utils.Utils.eAssert;
-import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
-import android.view.ContextMenu;
-import android.view.ContextMenu.ContextMenuInfo;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.TextView;
 import free.yhc.netmbuddy.db.DB;
-import free.yhc.netmbuddy.db.DBHelper;
-import free.yhc.netmbuddy.model.YTFeed;
 import free.yhc.netmbuddy.model.YTPlayer;
-import free.yhc.netmbuddy.model.YTSearchHelper;
 import free.yhc.netmbuddy.model.YTVideoFeed;
 import free.yhc.netmbuddy.utils.ImageUtils;
 import free.yhc.netmbuddy.utils.UiUtils;
 import free.yhc.netmbuddy.utils.Utils;
 
-public abstract class YTVideoSearchActivity extends YTSearchActivity implements
-YTSearchHelper.SearchDoneReceiver,
-DBHelper.CheckDupDoneReceiver {
+public abstract class YTVideoSearchActivity extends YTSearchActivity {
     private final DB        mDb = DB.get();
     private final YTPlayer  mMp = YTPlayer.get();
 
-    private DBHelper        mDbHelper;
     private View.OnClickListener mToolBtnSearchAction;
 
     private YTVideoSearchAdapter.CheckStateListener mAdapterCheckListener
@@ -62,169 +49,18 @@ DBHelper.CheckDupDoneReceiver {
             } else {
                 setupToolBtn1(R.drawable.ic_add, new View.OnClickListener() {
                     @Override
-                    public void onClick(View v) {
+                    public void
+                    onClick(View v) {
                         addCheckedMusicsTo();
                     }
                 });
             }
         }
     };
-    private final OnPlayerUpdateDBListener mOnPlayerUpdateDbListener
-        = new OnPlayerUpdateDBListener();
-
-    private class OnPlayerUpdateDBListener implements YTPlayer.OnDBUpdatedListener {
-        @Override
-        public void
-        onDbUpdated(YTPlayer.DBUpdateType ty) {
-            switch (ty) {
-            case PLAYLIST:
-                showLoadingLookAndFeel();
-                checkDupAsync(null, (YTVideoFeed.Entry[])getAdapter().getEntries());
-            }
-            // others are ignored.
-        }
-    }
 
     private YTVideoSearchAdapter
-    getAdapter() {
-        return (YTVideoSearchAdapter)mListv.getAdapter();
-    }
-
-    private void
-    showPlayer() {
-        ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
-        playerv.setVisibility(View.VISIBLE);
-    }
-
-    /**
-     * @return
-     *   0 for success, otherwise error message id.
-     */
-    private int
-    addToPlaylist(final long plid, final int pos, final int volume) {
-        // NOTE
-        // This function is designed to be able to run in background.
-        // But, getting volume is related with YTPlayer instance.
-        // And lots of functions of YTPlayer instance, requires running on UI Context
-        //   to avoid synchronization issue.
-        // So, volume should be gotten out of this function.
-        eAssert(plid >= 0);
-
-        Bitmap bm = getAdapter().getItemThumbnail(pos);
-        if (null == bm) {
-            return R.string.msg_no_thumbnail;
-        }
-
-        final YTVideoFeed.Entry entry = (YTVideoFeed.Entry)getAdapter().getItem(pos);
-        int playtm = 0;
-        try {
-             playtm = Integer.parseInt(entry.media.playTime);
-        } catch (NumberFormatException ex) {
-            return R.string.msg_unknown_format;
-        }
-
-        DB.Err err = mDb.insertVideoToPlaylist(plid,
-                                               entry.media.videoId,
-                                               entry.media.title,
-                                               entry.author.name,
-                                               playtm,
-                                               ImageUtils.compressBitmap(bm),
-                                               volume);
-        if (DB.Err.NO_ERR != err) {
-            if (DB.Err.DUPLICATED == err)
-                return R.string.msg_existing_muisc;
-            else
-                return Err.map(err).getMessage();
-        }
-
-        runOnUiThread(new Runnable() {
-            @Override
-            public void
-            run() {
-                getAdapter().setToDup(pos);
-            }
-        });
-
-        return 0;
-    }
-
-    private void
-    appendToPlayQ(YTPlayer.Video[] vids) {
-        mMp.appendToPlayQ(vids);
-        showPlayer();
-    }
-
-    private void
-    appendCheckMusicsToPlayQ() {
-        // # of adapter items are at most Policy.YTSEARCH_MAX_RESULTS
-        // So, just do it at main UI thread!
-        YTVideoSearchAdapter adpr = getAdapter();
-        int[] checkedItems = adpr.getCheckItemSortedByTime();
-        YTPlayer.Video[] vids = new YTPlayer.Video[checkedItems.length];
-        int j = 0;
-        for (int i : checkedItems) {
-            vids[j++] = adpr.getYTPlayerVideo(i);
-        }
-        appendToPlayQ(vids);
-        adpr.cleanChecked();
-    }
-
-
-    private void
-    addCheckedMusicsToPlaylist(final long plid) {
-        // Scan to check all thumbnails are loaded.
-        // And prepare data for background execution.
-        final YTVideoSearchAdapter adpr = getAdapter();
-        final int[] checkedItems = adpr.getCheckedItem();
-        final int[] itemVolumes = new int[checkedItems.length];
-        for (int i = 0; i < checkedItems.length; i++) {
-            int pos = checkedItems[i];
-            if (null == adpr.getItemThumbnail(pos)) {
-                UiUtils.showTextToast(this, R.string.msg_no_all_thumbnail);
-                return;
-            }
-            itemVolumes[i] = adpr.getItemVolume(pos);
-        }
-
-        DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
-            private int failedCnt = 0;
-
-            @Override
-            public void
-            onPostExecute(DiagAsyncTask task, Err result) {
-                adpr.cleanChecked();
-                if (failedCnt > 0) {
-                    CharSequence msg = getResources().getText(R.string.msg_fails_to_add);
-                    UiUtils.showTextToast(YTVideoSearchActivity.this,
-                                          msg + " : " + failedCnt);
-                }
-            }
-
-            @Override
-            public Err
-            doBackgroundWork(DiagAsyncTask task) {
-                mDb.beginTransaction();
-                try {
-                    for (int i = 0; i < checkedItems.length; i++) {
-                        int pos = checkedItems[i];
-                        int r = addToPlaylist(plid, pos, itemVolumes[i]);
-                        if (0 != r && R.string.msg_existing_muisc != r)
-                            failedCnt++;
-                    }
-                    mDb.setTransactionSuccessful();
-                } finally {
-                    mDb.endTransaction();
-                }
-                return Err.NO_ERR;
-            }
-        };
-
-        new DiagAsyncTask(this,
-                          worker,
-                          DiagAsyncTask.Style.SPIN,
-                          R.string.adding)
-            .run();
-
+    getPrimaryListAdapter() {
+        return ((YTVideoSearchFragment)getPagerAdapter().getPrimaryFragment()).getListAdapter();
     }
 
     private void
@@ -267,108 +103,74 @@ DBHelper.CheckDupDoneReceiver {
     }
 
     private void
-    onContextMenuAddTo(final int position) {
-        UiUtils.OnPlaylistSelectedListener action = new UiUtils.OnPlaylistSelectedListener() {
-            @Override
-            public void onPlaylist(long plid, Object user) {
-                int pos = (Integer)user;
-                int volume = getAdapter().getItemVolume(pos);
-                int msg = addToPlaylist(plid, pos, volume);
-                if (0 != msg)
-                    UiUtils.showTextToast(YTVideoSearchActivity.this, msg);
+    addCheckedMusicsToPlaylist(final long plid) {
+        // Scan to check all thumbnails are loaded.
+        // And prepare data for background execution.
+        final YTVideoSearchAdapter adpr = getPrimaryListAdapter();
+        final int[] checkedItems = adpr.getCheckedItem();
+        final int[] itemVolumes = new int[checkedItems.length];
+        for (int i = 0; i < checkedItems.length; i++) {
+            int pos = checkedItems[i];
+            if (null == adpr.getItemThumbnail(pos)) {
+                UiUtils.showTextToast(this, R.string.msg_no_all_thumbnail);
+                return;
             }
+            itemVolumes[i] = adpr.getItemVolume(pos);
+        }
+
+        DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
+            private int failedCnt = 0;
 
             @Override
             public void
-            onUserMenu(int pos, Object user) {}
+            onPostExecute(DiagAsyncTask task, Err result) {
+                adpr.cleanChecked();
+                if (failedCnt > 0) {
+                    CharSequence msg = getResources().getText(R.string.msg_fails_to_add);
+                    UiUtils.showTextToast(YTVideoSearchActivity.this, msg + " : " + failedCnt);
+                }
+            }
 
+            @Override
+            public Err
+            doBackgroundWork(DiagAsyncTask task) {
+                mDb.beginTransaction();
+                try {
+                    for (int i = 0; i < checkedItems.length; i++) {
+                        int pos = checkedItems[i];
+                        int r = addToPlaylist(getPrimaryListAdapter(), plid, pos, itemVolumes[i]);
+                        if (0 != r && R.string.msg_existing_muisc != r)
+                            failedCnt++;
+                    }
+                    mDb.setTransactionSuccessful();
+                } finally {
+                    mDb.endTransaction();
+                }
+                return Err.NO_ERR;
+            }
         };
 
-        UiUtils.buildSelectPlaylistDialog(mDb,
-                                          this,
-                                          R.string.add_to,
-                                          null,
-                                          action,
-                                          DB.INVALID_PLAYLIST_ID,
-                                          position)
-               .show();
-    }
-
-    private void
-    onContextMenuAppendToPlayQ(final int position) {
-        YTPlayer.Video vid = getAdapter().getYTPlayerVideo(position);
-        appendToPlayQ(new YTPlayer.Video[] { vid });
+        new DiagAsyncTask(this,
+                          worker,
+                          DiagAsyncTask.Style.SPIN,
+                          R.string.adding)
+            .run();
 
     }
 
     private void
-    onContextMenuPlayVideo(final int position) {
-        UiUtils.playAsVideo(this, getAdapter().getItemVideoId(position));
-    }
-
-    private void
-    onContextMenuVideosOfThisAuthor(final int position) {
-        Intent i = new Intent(this, YTVideoSearchAuthorActivity.class);
-        i.putExtra(MAP_KEY_SEARCH_TEXT, getAdapter().getItemAuthor(position));
-        startActivity(i);
-    }
-
-    private void
-    onContextMenuPlaylistsOfThisAuthor(final int position) {
-        Intent i = new Intent(this, YTPlaylistSearchActivity.class);
-        i.putExtra(MAP_KEY_SEARCH_TEXT, getAdapter().getItemAuthor(position));
-        startActivity(i);
-    }
-
-    private void
-    onListItemClick(View view, int position, long itemId) {
-        YTPlayer.Video v = getAdapter().getYTPlayerVideo(position);
-        showPlayer();
-        mMp.startVideos(new YTPlayer.Video[] { v });
-    }
-
-    private void
-    checkDupAsync(Object tag, YTVideoFeed.Entry[] entries) {
-        mDbHelper.close();
-
-        // Create new instance whenever it used to know owner of each callback.
-        mDbHelper = new DBHelper();
-        mDbHelper.setCheckDupDoneReceiver(this);
-        mDbHelper.open();
-        mDbHelper.checkDupAsync(new DBHelper.CheckDupArg(tag, entries));
-    }
-
-    private void
-    checkDupDoneNewEntries(DBHelper.CheckDupArg arg, boolean[] results) {
-        YTSearchHelper.SearchArg sarg = (YTSearchHelper.SearchArg)arg.tag;
-        saveSearchArg(sarg.text, sarg.title);
-        String titleText = getTitlePrefix() + " : " + sarg.title;
-        ((TextView)findViewById(R.id.title)).setText(titleText);
-
-        // helper's event receiver is changed to adapter in adapter's constructor.
-        YTVideoSearchAdapter adapter = new YTVideoSearchAdapter(this,
-                                                               mSearchHelper,
-                                                               mAdapterCheckListener,
-                                                               arg.ents);
-        // First request is done!
-        // Now we know total Results.
-        // Let's build adapter and enable list.
-        applyDupCheckResults(adapter, results);
-        YTVideoSearchAdapter oldAdapter = getAdapter();
-        mListv.setAdapter(adapter);
-        // Cleanup before as soon as possible to secure memories.
-        if (null != oldAdapter)
-            oldAdapter.cleanup();
-    }
-
-    private void
-    applyDupCheckResults(YTVideoSearchAdapter adapter, boolean[] results) {
-        for (int i = 0; i < results.length; i++) {
-            if (results[i])
-                adapter.setToDup(i);
-            else
-                adapter.setToNew(i);
+    appendCheckMusicsToPlayQ() {
+        // # of adapter items are at most Policy.YTSEARCH_MAX_RESULTS
+        // So, just do it at main UI thread!
+        YTVideoSearchAdapter adpr = getPrimaryListAdapter();
+        int[] checkedItems = adpr.getCheckItemSortedByTime();
+        YTPlayer.Video[] vids = new YTPlayer.Video[checkedItems.length];
+        int j = 0;
+        for (int i : checkedItems) {
+            vids[j++] = adpr.getYTPlayerVideo(i);
         }
+        appendToPlayQ(vids);
+        adpr.cleanChecked();
     }
 
     // ========================================================================
@@ -377,20 +179,21 @@ DBHelper.CheckDupDoneReceiver {
     //
     // ========================================================================
     @Override
-    protected abstract YTSearchHelper.SearchType getSearchType();
+    protected Class<? extends YTSearchFragment>
+    getFragmentClass() {
+        return YTVideoSearchFragment.class;
+    }
+
+    @Override
+    protected void
+    onSearchMetaInformationReady(String text, String title, int totalResults) {
+        String titleText = getTitlePrefix() + " : " + title;
+        ((TextView)findViewById(R.id.title)).setText(titleText);
+    }
 
     protected void
     onCreateInternal(String stext, String stitle) {
-        mListv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void
-            onItemClick(AdapterView<?> parent, View view, int position, long itemId) {
-                onListItemClick(view, position, itemId);
-            }
-        });
-
-        mDbHelper = new DBHelper();
-        mToolBtnSearchAction = new View.OnClickListener() {
+      mToolBtnSearchAction = new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 doNewSearch();
@@ -401,10 +204,11 @@ DBHelper.CheckDupDoneReceiver {
                        0, null);
 
         if (null != stext)
-            loadFirstPage(getSearchType(), stext, stitle);
+            startNewSearch(stext, stitle);
         else
             doNewSearch();
     }
+
 
     /**
      * Override it to enabel tool button for search.
@@ -429,85 +233,74 @@ DBHelper.CheckDupDoneReceiver {
     //
     //
     // ========================================================================
-    @Override
-    protected YTPlayer.OnDBUpdatedListener
-    getOnPlayerUpdateDbListener() {
-        return mOnPlayerUpdateDbListener;
+    public YTVideoSearchAdapter.CheckStateListener
+    getAdapterCheckStateListener() {
+        return mAdapterCheckListener;
     }
 
-    @Override
     public void
-    searchDone(YTSearchHelper helper, YTSearchHelper.SearchArg arg,
-               YTFeed.Result result, YTSearchHelper.Err err) {
-        if (!handleSearchResult(helper, arg, result, err))
-            return; // There is an error in search
-        checkDupAsync(arg, (YTVideoFeed.Entry[])result.entries);
+    showPlayer() {
+        ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
+        playerv.setVisibility(View.VISIBLE);
     }
 
-    @Override
     public void
-    checkDupDone(DBHelper helper, DBHelper.CheckDupArg arg,
-                 boolean[] results, DBHelper.Err err) {
-        if (null == mDbHelper || helper != mDbHelper) {
-            helper.close();
-            return; // invalid callback.
+    appendToPlayQ(YTPlayer.Video[] vids) {
+        mMp.appendToPlayQ(vids);
+        showPlayer();
+    }
+
+    /**
+     * @return
+     *   0 for success, otherwise error message id.
+     */
+    public int
+    addToPlaylist(final YTVideoSearchAdapter adapter,
+                  final long plid, final int pos, final int volume) {
+        // NOTE
+        // This function is designed to be able to run in background.
+        // But, getting volume is related with YTPlayer instance.
+        // And lots of functions of YTPlayer instance, requires running on UI Context
+        //   to avoid synchronization issue.
+        // So, volume should be gotten out of this function.
+        eAssert(plid >= 0);
+
+        Bitmap bm = adapter.getItemThumbnail(pos);
+        if (null == bm) {
+            return R.string.msg_no_thumbnail;
         }
 
-        stopLoadingLookAndFeel();
-
-        if (DBHelper.Err.NO_ERR != err
-            || results.length != arg.ents.length) {
-            UiUtils.showTextToast(this, R.string.err_db_unknown);
-            return;
+        final YTVideoFeed.Entry entry = (YTVideoFeed.Entry)adapter.getItem(pos);
+        int playtm = 0;
+        try {
+             playtm = Integer.parseInt(entry.media.playTime);
+        } catch (NumberFormatException ex) {
+            return R.string.msg_unknown_format;
         }
 
-        if (null != getAdapter()
-            && arg.ents == getAdapter().getEntries())
-            // Entry is same with current adapter.
-            // That means 'dup. checking is done for exsiting entries"
-            applyDupCheckResults(getAdapter(), results);
-        else
-            checkDupDoneNewEntries(arg, results);
-
-    }
-
-    @Override
-    public boolean
-    onContextItemSelected(MenuItem mItem) {
-        AdapterContextMenuInfo info = (AdapterContextMenuInfo)mItem.getMenuInfo();
-        switch (mItem.getItemId()) {
-        case R.id.add_to:
-            onContextMenuAddTo(info.position);
-            return true;
-
-        case R.id.append_to_playq:
-            onContextMenuAppendToPlayQ(info.position);
-            return true;
-
-        case R.id.play_video:
-            onContextMenuPlayVideo(info.position);
-            return true;
-
-        case R.id.videos_of_this_author:
-            onContextMenuVideosOfThisAuthor(info.position);
-            return true;
-
-        case R.id.playlists_of_this_author:
-            onContextMenuPlaylistsOfThisAuthor(info.position);
-            return true;
+        DB.Err err = mDb.insertVideoToPlaylist(plid,
+                                               entry.media.videoId,
+                                               entry.media.title,
+                                               entry.author.name,
+                                               playtm,
+                                               ImageUtils.compressBitmap(bm),
+                                               volume);
+        if (DB.Err.NO_ERR != err) {
+            if (DB.Err.DUPLICATED == err)
+                return R.string.msg_existing_muisc;
+            else
+                return Err.map(err).getMessage();
         }
-        return false;
-    }
 
-    @Override
-    public void
-    onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
-        super.onCreateContextMenu(menu, v, menuInfo);
-        MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.ytvideosearch_context, menu);
-        // AdapterContextMenuInfo mInfo = (AdapterContextMenuInfo)menuInfo;
-        boolean visible = (YTSearchHelper.SearchType.VID_AUTHOR == getSearchType())? false: true;
-        menu.findItem(R.id.videos_of_this_author).setVisible(visible);
+        this.runOnUiThread(new Runnable() {
+            @Override
+            public void
+            run() {
+                adapter.setToDup(pos);
+            }
+        });
+
+        return 0;
     }
 
     @Override
@@ -518,31 +311,7 @@ DBHelper.CheckDupDoneReceiver {
 
     @Override
     protected void
-    onResume() {
-        super.onResume();
-
-        if (mDb.isRegisteredToVideoTableWatcher(this)) {
-            if (mDb.isVideoTableUpdated(this)
-                && null != getAdapter()) {
-                showLoadingLookAndFeel();
-                checkDupAsync(null, (YTVideoFeed.Entry[])getAdapter().getEntries());
-            }
-            mDb.unregisterToVideoTableWatcher(this);
-        }
-    }
-
-    @Override
-    protected void
-    onPause() {
-        mDb.registerToVideoTableWatcher(this);
-        super.onPause();
-    }
-
-    @Override
-    protected void
     onDestroy() {
-        mDbHelper.close();
-        mDb.unregisterToVideoTableWatcher(this);
         super.onDestroy();
     }
 }

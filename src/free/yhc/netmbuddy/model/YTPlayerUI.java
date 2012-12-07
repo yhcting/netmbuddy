@@ -1,6 +1,9 @@
 package free.yhc.netmbuddy.model;
 
 import static free.yhc.netmbuddy.utils.Utils.eAssert;
+
+import java.util.Iterator;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -51,7 +54,8 @@ OnSharedPreferenceChangeListener {
     // UI Control.
     // ------------------------------------------------------------------------
     private Activity            mVActivity      = null;
-    private YTPlayer.OnDBUpdatedListener    mDbUpdatedListener = null;
+    private KBLinkedList<YTPlayer.OnDBUpdatedListener>    mDbUpdatedListenerl
+        = new KBLinkedList<YTPlayer.OnDBUpdatedListener>();
     private LinearLayout        mPlayerv        = null;
     private LinearLayout        mPlayerLDrawer  = null;
 
@@ -576,8 +580,9 @@ OnSharedPreferenceChangeListener {
                 if (Err.NO_ERR != result)
                     return;
 
-                if (null != mDbUpdatedListener)
-                    mDbUpdatedListener.onDbUpdated(DBUpdateType.PLAYLIST);
+                Iterator<YTPlayer.OnDBUpdatedListener> iter = mDbUpdatedListenerl.iterator();
+                while (iter.hasNext())
+                    iter.next().onDbUpdated(DBUpdateType.PLAYLIST);
             }
         };
 
@@ -623,9 +628,11 @@ OnSharedPreferenceChangeListener {
                     return;
 
                 mMp.removeVideo(ytvid);
-                if (null != mDbUpdatedListener
-                    && null != vid)
-                    mDbUpdatedListener.onDbUpdated(DBUpdateType.PLAYLIST);
+                if (null != vid) {
+                    Iterator<YTPlayer.OnDBUpdatedListener> iter = mDbUpdatedListenerl.iterator();
+                    while (iter.hasNext())
+                        iter.next().onDbUpdated(DBUpdateType.PLAYLIST);
+                }
             }
         };
 
@@ -1011,8 +1018,17 @@ OnSharedPreferenceChangeListener {
     }
 
     void
+    addOnDbUpdatedListener(Object key, YTPlayer.OnDBUpdatedListener listener) {
+        mDbUpdatedListenerl.add(key, listener);
+    }
+
+    void
+    removeOnDbUpdatedListener(Object key) {
+        mDbUpdatedListenerl.remove(key);
+    }
+
+    void
     setController(Activity  activity,
-                  YTPlayer.OnDBUpdatedListener dbUpdatedListener,
                   ViewGroup playerv,
                   ViewGroup playerLDrawer,
                   SurfaceView surfacev,
@@ -1034,7 +1050,7 @@ OnSharedPreferenceChangeListener {
             return;
 
         mVActivity = activity;
-        mDbUpdatedListener = dbUpdatedListener;
+        mDbUpdatedListenerl.clear();
         mPlayerv = (LinearLayout)playerv;
         mPlayerLDrawer = (LinearLayout)playerLDrawer;
         mSurfacev = surfacev;
@@ -1057,7 +1073,7 @@ OnSharedPreferenceChangeListener {
             unregisterTimeTickReceiver();
             mPlayerv = null;
             mVActivity = null;
-            mDbUpdatedListener = null;
+            mDbUpdatedListenerl.clear();
             mPlayerLDrawer = null;
             mSurfacev = null;
         }

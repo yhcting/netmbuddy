@@ -44,8 +44,8 @@ public class YTVideoSearchAdapter extends YTSearchAdapter {
 
     private final HashSet<Integer>          mDupSet     = new HashSet<Integer>();
     private final HashMap<Integer, Long>    mCheckedMap = new HashMap<Integer, Long>();
-    private final CheckStateListener        mCheckListener;
 
+    private CheckStateListener  mCheckListener = null;
     private final View.OnClickListener mMarkOnClick = new View.OnClickListener() {
         @Override
         public void
@@ -106,7 +106,8 @@ public class YTVideoSearchAdapter extends YTSearchAdapter {
         eAssert(Utils.isUiThread());
         setToChecked(mItemViews[pos]);
         mCheckedMap.put(pos, System.currentTimeMillis());
-        mCheckListener.onStateChanged(mCheckedMap.size(), pos, true);
+        if (null != mCheckListener)
+            mCheckListener.onStateChanged(mCheckedMap.size(), pos, true);
     }
 
     private void
@@ -114,22 +115,22 @@ public class YTVideoSearchAdapter extends YTSearchAdapter {
         eAssert(Utils.isUiThread());
         setToUnchecked(mItemViews[pos]);
         mCheckedMap.remove(pos);
-        mCheckListener.onStateChanged(mCheckedMap.size(), pos, false);
+        if (null != mCheckListener)
+            mCheckListener.onStateChanged(mCheckedMap.size(), pos, false);
     }
 
     YTVideoSearchAdapter(Context context,
                          YTSearchHelper helper,
-                         CheckStateListener listener,
                          YTVideoFeed.Entry[] entries) {
         super(context, helper, R.layout.ytvideosearch_row, entries);
-        mCheckListener = listener;
         for (int i = 0; i < mItemViews.length; i++) {
             View v = mItemViews[i].findViewById(R.id.checkbtn);
             v.setOnClickListener(mMarkOnClick);
             v.setTag(VTAGKEY_POS, i);
         }
         // initial notification to callback.
-        mCheckListener.onStateChanged(0, -1, false);
+        if (null != mCheckListener)
+            mCheckListener.onStateChanged(0, -1, false);
     }
 
     @Override
@@ -248,6 +249,16 @@ public class YTVideoSearchAdapter extends YTSearchAdapter {
     }
 
     public void
+    setCheckStateListener(CheckStateListener listener) {
+        mCheckListener = listener;
+    }
+
+    public void
+    unsetCheckStateListener() {
+        mCheckListener = null;
+    }
+
+    public void
     setToDup(int pos) {
         if (!mDupSet.contains(pos)) {
             setToDup(mItemViews[pos]);
@@ -268,6 +279,7 @@ public class YTVideoSearchAdapter extends YTSearchAdapter {
         mCheckedMap.clear();
         for (View v : mItemViews)
             setToUnchecked(v);
-        mCheckListener.onStateChanged(0, -1, false);
+        if (null != mCheckListener)
+            mCheckListener.onStateChanged(0, -1, false);
     }
 }

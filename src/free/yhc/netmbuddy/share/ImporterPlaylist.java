@@ -120,7 +120,7 @@ class ImporterPlaylist implements ImporterI {
     ImporterPlaylist(JSONObject jo) {
         mJo = jo;
         mMtrunner =  new MultiThreadRunner(Utils.getUiHandler(),
-                                           Policy.YTSEARCH_MAX_LOAD_THUMBNAIL_THREAD);
+                                           Policy.YTIMPORT_MAX_LOAD_THUMBNAIL_THREAD);
 
     }
 

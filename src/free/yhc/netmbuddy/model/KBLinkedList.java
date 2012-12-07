@@ -100,6 +100,11 @@ public class KBLinkedList<T> {
         return false;
     }
 
+    public void
+    clear() {
+        mL.clear();
+    }
+
     public Iterator<T>
     iterator() {
         return new Iter();

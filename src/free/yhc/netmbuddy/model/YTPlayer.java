@@ -1913,6 +1913,18 @@ SurfaceHolder.Callback {
         mPStateLsnrl.remove(key);
     }
 
+
+    public void
+    addOnDbUpdatedListener(Object key, YTPlayer.OnDBUpdatedListener listener) {
+        mUi.addOnDbUpdatedListener(key, listener);
+    }
+
+    public void
+    removeOnDbUpdatedListener(Object key) {
+        mUi.removeOnDbUpdatedListener(key);
+    }
+
+
     public void
     setSurfaceHolder(SurfaceHolder holder) {
         if (null != mSurfHolder
@@ -1962,12 +1974,11 @@ SurfaceHolder.Callback {
 
     public void
     setController(Activity  activity,
-                  OnDBUpdatedListener dbUpdatedListener,
                   ViewGroup playerv,
                   ViewGroup playerLDrawer,
                   SurfaceView surfacev,
                   ToolButton toolBtn) {
-        mUi.setController(activity, dbUpdatedListener, playerv, playerLDrawer, surfacev, toolBtn);
+        mUi.setController(activity, playerv, playerLDrawer, surfacev, toolBtn);
 
         if (!mVlm.hasActiveVideo())
             return;

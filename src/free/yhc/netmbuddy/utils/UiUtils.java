@@ -337,7 +337,8 @@ public class UiUtils {
             = new ArrayAdapter<String>(context, android.R.layout.select_dialog_item, menus);
         bldr.setAdapter(adapter, new DialogInterface.OnClickListener() {
             @Override
-            public void onClick(DialogInterface dialog, int which) {
+            public void
+            onClick(DialogInterface dialog, int which) {
                 eAssert(which >= 0);
                 dialog.dismiss();
                 if (userMenus.length > which) {

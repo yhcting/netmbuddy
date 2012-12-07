@@ -463,11 +463,11 @@ public class MusicsActivity extends Activity {
         super.onResume();
         ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
         mMp.setController(this,
-                          mOnPlayerUpdateDbListener,
                           playerv,
                           (ViewGroup)findViewById(R.id.list_drawer),
                           null,
                           mMp.getVideoToolButton());
+        mMp.addOnDbUpdatedListener(this, mOnPlayerUpdateDbListener);
         if (mMp.hasActiveVideo())
             playerv.setVisibility(View.VISIBLE);
         else
@@ -477,6 +477,7 @@ public class MusicsActivity extends Activity {
     @Override
     protected void
     onPause() {
+        mMp.removeOnDbUpdatedListener(this);
         mMp.unsetController(this);
         super.onPause();
     }

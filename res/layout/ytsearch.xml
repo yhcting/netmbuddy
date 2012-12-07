@@ -58,32 +58,12 @@
                 android:visibility="gone"
                 />
         </LinearLayout>
-        <ImageView
-            android:id="@+id/prev"
-            android:layout_width="@dimen/toolbtn_width"
-            android:layout_height="@dimen/toolbtn_height"
-            android:layout_toRightOf="@id/toolbar"
-            android:gravity="center"
-            android:scaleType="fitCenter"
-            android:clickable="true"
-            android:src="@drawable/ic_prev"
-            />
-        <ImageView
-            android:id="@+id/next"
-            android:layout_width="@dimen/toolbtn_width"
-            android:layout_height="@dimen/toolbtn_height"
-            android:layout_alignParentRight="true"
-            android:gravity="center"
-            android:scaleType="fitCenter"
-            android:clickable="true"
-            android:src="@drawable/ic_next"
-            />
         <HorizontalScrollView
             android:id="@+id/indexbar"
             android:layout_width="fill_parent"
             android:layout_height="@dimen/toolbtn_height"
-            android:layout_toRightOf="@id/prev"
-            android:layout_toLeftOf="@id/next"
+            android:layout_alignParentRight="true"
+            android:layout_toRightOf="@id/toolbar"
             android:fillViewport="true"
             >
             <LinearLayout
@@ -106,41 +86,13 @@
         >
         <include layout="@layout/mplayer" />
     </LinearLayout>
-    <ListView
-        android:id="@+id/list"
+    <android.support.v4.view.ViewPager
+        android:id="@+id/pager"
         android:layout_width="match_parent"
         android:layout_height="fill_parent"
         android:layout_below="@id/topbar"
         android:layout_above="@id/player"
         />
-    <LinearLayout
-        android:id="@+id/loading"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_below="@id/topbar"
-        android:layout_above="@id/player"
-        android:gravity="center"
-        android:orientation="vertical"
-        android:visibility="gone"
-        >
-        <TextView
-            android:id="@+id/loading_msg"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textSize="@dimen/title_text_size"
-            android:textColor="@color/title_text_color_new"
-            android:gravity="center"
-            />
-        <ImageView
-            android:id="@+id/loading_img"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="5dp"
-            android:gravity="center"
-            android:src="@drawable/spinner_large"
-            android:scaleType="fitCenter"
-            />
-    </LinearLayout>
     <LinearLayout
         android:id="@+id/list_drawer"
         android:layout_width="match_parent"

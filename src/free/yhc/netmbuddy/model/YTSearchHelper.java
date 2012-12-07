@@ -224,7 +224,8 @@ public class YTSearchHelper {
 
             case MSG_WHAT_CLOSE: {
                 _mClosed = true;
-                _mMtrunner.cancel();
+                if (null != _mMtrunner)
+                    _mMtrunner.cancel();
                 ((HandlerThread)getLooper().getThread()).quit();
             } break;
 

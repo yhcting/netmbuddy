@@ -21,59 +21,72 @@
 package free.yhc.netmbuddy;
 
 import static free.yhc.netmbuddy.utils.Utils.eAssert;
-import android.app.Activity;
+import static free.yhc.netmbuddy.utils.Utils.logI;
 import android.app.SearchManager;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
+import android.support.v4.app.FragmentActivity;
+import android.support.v4.view.ViewPager;
+import android.view.ContextMenu;
+import android.view.ContextMenu.ContextMenuInfo;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.ListView;
-import android.widget.TextView;
 import free.yhc.netmbuddy.model.Policy;
 import free.yhc.netmbuddy.model.SearchSuggestionProvider;
-import free.yhc.netmbuddy.model.YTFeed;
 import free.yhc.netmbuddy.model.YTPlayer;
 import free.yhc.netmbuddy.model.YTSearchHelper;
-import free.yhc.netmbuddy.utils.UiUtils;
 import free.yhc.netmbuddy.utils.Utils;
 
-public abstract class YTSearchActivity extends Activity implements
-YTSearchHelper.SearchDoneReceiver {
+public abstract class YTSearchActivity extends FragmentActivity {
     public static final String  MAP_KEY_SEARCH_TYPE     = "searchtype";
     public static final String  MAP_KEY_SEARCH_TEXT     = "searchtext";
     public static final String  MAP_KEY_SEARCH_TITLE    = "searchtitle";
 
-    private static final int NR_ENTRY_PER_PAGE = Policy.YTSEARCH_MAX_RESULTS;
-
     protected   final YTPlayer  mMp = YTPlayer.get();
+    private     final ViewPager.OnPageChangeListener mPCListener = new OnPageViewChange();
 
-    protected   YTSearchHelper  mSearchHelper;
-    protected   ListView        mListv;     // viewHolder for ListView
-
-    // Variable to store current activity state.
-    private     YtSearchState   mSearchSt   = new YtSearchState();
-
+    private     ViewPager       mPager  = null;
+    private     YTSearchFragment    mContextMenuOwner = null;
     private     Button[]        mPageBtnHolder;
     private     LinearLayout.LayoutParams mPageBtnLPHolder;
     private     View.OnClickListener mPageOnClick = new View.OnClickListener() {
         @Override
-        public void onClick(View v) {
+        public void
+        onClick(View v) {
             int page = (Integer)v.getTag();
-            loadPage(getSearchType(), mSearchSt.text, mSearchSt.title, page);
+            if (getPagerAdapter().getPrimaryPage() != page)
+                mPager.setCurrentItem(getPagerAdapter().pageToPos(page));
+            else
+                // reload
+                getPagerAdapter().getPrimaryFragment().reloadPage();
         }
     };
 
-    private static class YtSearchState {
-        String  text            = "";
-        String  title           = "";
-        int     curPage         = -1;
-        int     totalResults    = -1;
+    private class OnPageViewChange implements ViewPager.OnPageChangeListener {
+        @Override
+        public void
+        onPageSelected(int arg0) {
+            logI("OnPageViewChange : onPageSelected : " + arg0);
+            adjustPageUserAction(getPagerAdapter().posToPage(arg0));
+        }
+
+        @Override
+        public void
+        onPageScrolled(int arg0, float arg1, int arg2) {
+            //logI("OnPageViewChange : onPageScrolled : " + arg0 + "/" + arg1 + "/" + arg2);
+        }
+
+        @Override
+        public void
+        onPageScrollStateChanged(int arg0) {
+            logI("OnPageViewChange : onPageScrollStateChanged : " + arg0);
+            YTSearchActivity.this.closeContextMenu();
+        }
     }
 
     // ========================================================================
@@ -81,18 +94,6 @@ YTSearchHelper.SearchDoneReceiver {
     //
     //
     // ========================================================================
-    private int
-    getStarti(int pageNum) {
-        int starti = (pageNum - 1) * NR_ENTRY_PER_PAGE + 1;
-        return starti < 1? 1: starti;
-    }
-
-    private int
-    getLastPage() {
-        int page = (mSearchSt.totalResults - 1) / NR_ENTRY_PER_PAGE + 1;
-        return page < 1? 1: page;
-    }
-
     private void
     preparePageButtons() {
         mPageBtnHolder = new Button[Policy.YTSEARCH_NR_PAGE_INDEX];
@@ -108,28 +109,14 @@ YTSearchHelper.SearchDoneReceiver {
     }
 
     private void
-    adjustPageUserAction() {
-        int lastPage = getLastPage();
-        eAssert(mSearchSt.curPage >= 1 && mSearchSt.curPage <= lastPage);
-
-        View barv = findViewById(R.id.bottombar);
-        ImageView nextBtn = (ImageView)barv.findViewById(R.id.next);
-        ImageView prevBtn = (ImageView)barv.findViewById(R.id.prev);
-
-        prevBtn.setVisibility(View.VISIBLE);
-        nextBtn.setVisibility(View.VISIBLE);
-
-        if (1 == mSearchSt.curPage)
-            prevBtn.setVisibility(View.GONE);
-
-        if (lastPage == mSearchSt.curPage)
-            nextBtn.setVisibility(View.GONE);
+    adjustPageUserAction(int curPage) {
+        int nrPages = getPagerAdapter().getNrPages();
+        eAssert(curPage >= 1 && curPage <= nrPages);
 
         // Setup index buttons.
         LinearLayout ll = (LinearLayout)findViewById(R.id.indexgroup);
         ll.removeAllViews();
-        int nrPages = mSearchSt.totalResults / NR_ENTRY_PER_PAGE + 1;
-        int mini = mSearchSt.curPage - (Policy.YTSEARCH_NR_PAGE_INDEX / 2);
+        int mini = curPage - (Policy.YTSEARCH_NR_PAGE_INDEX / 2);
         if (mini < 1)
             mini = 1;
 
@@ -148,53 +135,7 @@ YTSearchHelper.SearchDoneReceiver {
             mPageBtnHolder[bi].setBackgroundResource(R.drawable.btnbg_normal);
             ll.addView(mPageBtnHolder[bi], mPageBtnLPHolder);
         }
-        mPageBtnHolder[mSearchSt.curPage - mini].setBackgroundResource(R.drawable.btnbg_focused);
-    }
-
-    /**
-     *
-     * @param pagei
-     *   1-based page number
-     */
-    private void
-    loadPage(YTSearchHelper.SearchType type, String text, String title, int pageNumber) {
-        if (pageNumber < 1
-            || pageNumber > getLastPage()) {
-            UiUtils.showTextToast(this, R.string.err_ytsearch);
-            return;
-        }
-
-        // close helper to cancel all existing work.
-        mSearchHelper.close();
-
-        // Create new helper instance to know owner instance at callback from helper.
-        mSearchHelper = new YTSearchHelper();
-        mSearchHelper.setSearchDoneRecevier(this);
-        // open again to support new search.
-        mSearchHelper.open();
-        YTSearchHelper.SearchArg arg
-            = new YTSearchHelper.SearchArg(pageNumber,
-                                           type,
-                                           text,
-                                           title,
-                                           getStarti(pageNumber),
-                                           NR_ENTRY_PER_PAGE);
-        YTSearchHelper.Err err = mSearchHelper.searchAsync(arg);
-        if (YTSearchHelper.Err.NO_ERR == err)
-            showLoadingLookAndFeel();
-        else
-            UiUtils.showTextToast(this, Err.map(err).getMessage());
-    }
-
-    private void
-    loadNext() {
-        loadPage(getSearchType(), mSearchSt.text, mSearchSt.title, mSearchSt.curPage + 1);
-    }
-
-    private void
-    loadPrev() {
-        eAssert(mSearchSt.curPage > 1);
-        loadPage(getSearchType(), mSearchSt.text, mSearchSt.title, mSearchSt.curPage - 1);
+        mPageBtnHolder[curPage - mini].setBackgroundResource(R.drawable.btnbg_focused);
     }
 
     private void
@@ -211,22 +152,33 @@ YTSearchHelper.SearchDoneReceiver {
         }
     }
 
-    // ========================================================================
-    //
-    //
-    //
-    // ========================================================================
-    protected abstract YTSearchHelper.SearchType getSearchType();
-
-    protected YTPlayer.OnDBUpdatedListener
-    getOnPlayerUpdateDbListener() {
-        return null;
+    private void
+    disablePageIndexBar() {
+        findViewById(R.id.indexbar).setVisibility(View.INVISIBLE);
     }
 
-    protected void
-    saveSearchArg(String text, String title) {
-        mSearchSt.text = text;
-        mSearchSt.title = title;
+    private void
+    enablePageIndexBar() {
+        findViewById(R.id.indexbar).setVisibility(View.VISIBLE);
+    }
+
+    // ========================================================================
+    //
+    //
+    //
+    // ========================================================================
+    protected abstract YTSearchHelper.SearchType
+    getSearchType();
+
+    protected abstract Class<? extends YTSearchFragment>
+    getFragmentClass();
+
+    protected abstract void
+    onSearchMetaInformationReady(String text, String title, int totalResults);
+
+    protected YTSearchPagerAdapter
+    getPagerAdapter() {
+        return (YTSearchPagerAdapter)mPager.getAdapter();
     }
 
     protected void
@@ -246,113 +198,8 @@ YTSearchHelper.SearchDoneReceiver {
                    View.OnClickListener tool1OnClick,
                    int tool2Drawable,
                    View.OnClickListener tool2OnClick) {
-        View barv = findViewById(R.id.bottombar);
-        ImageView iv = (ImageView)barv.findViewById(R.id.next);
-        iv.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                loadNext();
-            }
-        });
-        iv.setVisibility(View.GONE);
-
-        iv = (ImageView)barv.findViewById(R.id.prev);
-        iv.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                loadPrev();
-            }
-        });
-        iv.setVisibility(View.GONE);
-
         setupToolBtn1(tool1Drawable, tool1OnClick);
         setupToolBtn2(tool2Drawable, tool2OnClick);
-    }
-
-    protected void
-    showLoadingLookAndFeel() {
-        View loadingv = findViewById(R.id.loading);
-        if (View.VISIBLE == loadingv.getVisibility()) {
-            eAssert(View.VISIBLE != mListv.getVisibility());
-            return;
-        }
-
-        ImageView iv = (ImageView)loadingv.findViewById(R.id.loading_img);
-        TextView  tv = (TextView)loadingv.findViewById(R.id.loading_msg);
-        tv.setText(R.string.loading);
-        loadingv.setVisibility(View.VISIBLE);
-        mListv.setVisibility(View.GONE);
-        iv.startAnimation(AnimationUtils.loadAnimation(YTSearchActivity.this, R.anim.rotate));
-    }
-
-    protected void
-    stopLoadingLookAndFeel() {
-        View loadingv = findViewById(R.id.loading);
-        if (View.VISIBLE != loadingv.getVisibility()) {
-            eAssert(View.VISIBLE == mListv.getVisibility());
-            return;
-        }
-
-        ImageView iv = (ImageView)loadingv.findViewById(R.id.loading_img);
-        if (null != iv.getAnimation()) {
-            iv.getAnimation().cancel();
-            iv.getAnimation().reset();
-        }
-        loadingv.setVisibility(View.GONE);
-        mListv.setVisibility(View.VISIBLE);
-    }
-
-    /**
-     *
-     * @param helper
-     * @param arg
-     * @param result
-     * @param err
-     * @return
-     *   false : there is error in search, otherwise true.
-     */
-    protected boolean
-    handleSearchResult(YTSearchHelper helper, YTSearchHelper.SearchArg arg,
-                       YTFeed.Result result, YTSearchHelper.Err err) {
-        if (null == mSearchHelper || mSearchHelper != helper)
-            return false;
-
-        Err r = Err.NO_ERR;
-        do {
-            if (YTSearchHelper.Err.NO_ERR != err) {
-                r = Err.map(err);
-                break;
-            }
-
-            mSearchSt.curPage = (Integer)arg.tag;
-
-            if (result.entries.length <= 0
-                && 1 == mSearchSt.curPage) {
-                r = Err.NO_MATCH;
-                break;
-            }
-
-            try {
-                mSearchSt.totalResults = Integer.parseInt(result.header.totalResults);
-            } catch (NumberFormatException e) {
-                r = Err.YTSEARCH;
-                break;
-            }
-        } while (false);
-
-        if (Err.NO_ERR != r) {
-            stopLoadingLookAndFeel();
-            UiUtils.showTextToast(this, r.getMessage());
-            return false;
-        }
-
-        adjustPageUserAction();
-        return true;
-    }
-
-    protected void
-    loadFirstPage(YTSearchHelper.SearchType type, String text, String title) {
-        loadPage(type, text, title, 1);
     }
 
     protected void
@@ -360,22 +207,53 @@ YTSearchHelper.SearchDoneReceiver {
         onSearchRequested();
     }
 
+    protected void
+    startNewSearch(final String text, final String title) {
+        // Creating adapter and attaching it will lead to start loading pages.
+        YTSearchPagerAdapter adapter = new YTSearchPagerAdapter(
+                getSupportFragmentManager(),
+                getFragmentClass(),
+                getSearchType(),
+                text,
+                title);
+        adapter.setOnInitializedListener(new YTSearchPagerAdapter.OnInitializedListener() {
+            @Override
+            public void
+            onInitialized(YTSearchPagerAdapter adapter) {
+                adjustPageUserAction(1); // first page.
+                enablePageIndexBar();
+                onSearchMetaInformationReady(text, title, adapter.getTotalResults());
+            }
+        });
+        mPager.setAdapter(adapter);
+    }
     // ========================================================================
     //
     //
     //
     // ========================================================================
+    public boolean
+    isContextMenuOwner(YTSearchFragment fragment) {
+        return fragment == mContextMenuOwner;
+    }
+
+    @Override
+    public void
+    onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
+        super.onCreateContextMenu(menu, v, menuInfo);
+        mContextMenuOwner = getPagerAdapter().getPrimaryFragment();
+        mContextMenuOwner.onCreateContextMenu2(menu, v, menuInfo);
+    }
+
     @Override
     public void
     onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.ytsearch);
-        mListv = (ListView)findViewById(R.id.list);
-        mListv.setEmptyView(UiUtils.inflateLayout(this, R.layout.ytsearch_empty_list));
-        registerForContextMenu(mListv);
-        mSearchHelper = new YTSearchHelper(); // initialization.
-
+        mPager = (ViewPager)findViewById(R.id.pager);
+        mPager.setOnPageChangeListener(mPCListener);
         preparePageButtons();
+        disablePageIndexBar();
     }
 
     @Override
@@ -388,10 +266,12 @@ YTSearchHelper.SearchDoneReceiver {
 
         final String query = intent.getStringExtra(SearchManager.QUERY);
         SearchSuggestionProvider.saveRecentQuery(query);
+        disablePageIndexBar();
         Utils.getUiHandler().post(new Runnable() {
             @Override
-            public void run() {
-                loadFirstPage(getSearchType(), query, query);
+            public void
+            run() {
+                startNewSearch(query, query);
             }
         });
     }
@@ -399,10 +279,12 @@ YTSearchHelper.SearchDoneReceiver {
     @Override
     protected void
     onResume() {
+        // onResume of each fragments SHOULD be called after 'setController'.
+        // So, super.onResume() is located at the bottom of onResume().
         super.onResume();
+
         ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
         mMp.setController(this,
-                          getOnPlayerUpdateDbListener(),
                           playerv,
                           (ViewGroup)findViewById(R.id.list_drawer),
                           null,
@@ -429,7 +311,7 @@ YTSearchHelper.SearchDoneReceiver {
     @Override
     protected void
     onDestroy() {
-        mSearchHelper.close();
+
         super.onDestroy();
     }
 

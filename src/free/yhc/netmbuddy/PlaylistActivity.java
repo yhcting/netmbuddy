@@ -111,12 +111,6 @@ public class PlaylistActivity extends Activity {
         }
         ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
         playerv.setVisibility(View.VISIBLE);
-        mMp.setController(this,
-                          mOnPlayerUpdateDbListener,
-                          playerv,
-                          (ViewGroup)findViewById(R.id.list_drawer),
-                          null,
-                          mMp.getVideoToolButton());
         mMp.startVideos(c,
                         COLI_VID_YTVID,
                         COLI_VID_TITLE,
@@ -914,11 +908,11 @@ public class PlaylistActivity extends Activity {
         super.onResume();
         ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
         mMp.setController(this,
-                          mOnPlayerUpdateDbListener,
                           playerv,
                           (ViewGroup)findViewById(R.id.list_drawer),
                           null,
                           mMp.getVideoToolButton());
+        mMp.addOnDbUpdatedListener(this, mOnPlayerUpdateDbListener);
         if (mMp.hasActiveVideo())
             playerv.setVisibility(View.VISIBLE);
         else
@@ -934,6 +928,7 @@ public class PlaylistActivity extends Activity {
     @Override
     protected void
     onPause() {
+        mMp.removeOnDbUpdatedListener(this);
         mMp.unsetController(this);
         mDb.registerToPlaylistTableWatcher(this);
         super.onPause();
