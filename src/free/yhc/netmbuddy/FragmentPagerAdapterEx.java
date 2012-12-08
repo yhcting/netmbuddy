@@ -2,6 +2,7 @@ package free.yhc.netmbuddy;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+import android.os.Bundle;
 import android.os.Parcelable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -12,6 +13,8 @@ import android.view.ViewGroup;
 
 public abstract class FragmentPagerAdapterEx extends PagerAdapter {
     private static final AtomicInteger sId = new AtomicInteger(0);
+
+    private static final String KEY_PARENT_STATE = "FragmentPagerAdapterEx:parent_state";
 
     private final int mId;
     private final FragmentManager mFragmentManager;
@@ -56,9 +59,8 @@ public abstract class FragmentPagerAdapterEx extends PagerAdapter {
     @Override
     public Object
     instantiateItem(ViewGroup container, int position) {
-        if (mCurTransaction == null) {
+        if (mCurTransaction == null)
             mCurTransaction = mFragmentManager.beginTransaction();
-        }
 
         // Do we already have this fragment?
         String name = getFragmentName(position);
@@ -122,13 +124,26 @@ public abstract class FragmentPagerAdapterEx extends PagerAdapter {
         return ((Fragment)object).getView() == view;
     }
 
+    protected void
+    onSaveInstanceState(Bundle outState) { }
+
+    protected void
+    onRestoreInstanceState(Bundle inState) { }
+
     @Override
-    public Parcelable
+    public final Parcelable
     saveState() {
-        return null;
+        Bundle data = new Bundle();
+        data.putParcelable(KEY_PARENT_STATE, super.saveState());
+        onSaveInstanceState(data);
+        return data;
     }
 
     @Override
-    public void
-    restoreState(Parcelable state, ClassLoader loader) { }
+    public final void
+    restoreState(Parcelable state, ClassLoader loader) {
+        Bundle data = (Bundle)state;
+        super.restoreState((null == data)? null: data.getParcelable(KEY_PARENT_STATE), loader);
+        onRestoreInstanceState(data);
+    }
 }

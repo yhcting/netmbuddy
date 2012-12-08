@@ -303,6 +303,11 @@ public abstract class YTVideoSearchActivity extends YTSearchActivity {
         return 0;
     }
 
+    // ========================================================================
+    //
+    //
+    //
+    // ========================================================================
     @Override
     public void
     onCreate(Bundle savedInstanceState) {

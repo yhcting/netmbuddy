@@ -24,13 +24,20 @@ YTSearchHelper.SearchDoneReceiver {
     private static final int INVALID_PAGE   = -1;
     private static final int NR_ENTRY_PER_PAGE = Policy.YTSEARCH_MAX_RESULTS;
 
+    private static final String KEY_SEARCH_DONE_RESPONSE    = "YTSearchFragment:search_done_response";
+    private static final String KEY_TYPE    = "YTSearchFragment:type";
+    private static final String KEY_TEXT    = "YTSearchFragment:text";
+    private static final String KEY_TITLE   = "YTSearchFragment:title";
+    private static final String KEY_PAGE    = "YTSearchFragment:page";
+    private static final String KEY_PRIMARY = "YTSearchFragment:primary";
+
+
     protected YTSearchHelper    mSearchHelper;
     protected ListView          mListv  = null;
     protected ViewGroup         mRootv  = null;
-    protected OnPostHandleSearchResultListener mPostHandleListener = null;
 
+    private boolean mSearchDoneResponseRequired = false;
     private boolean mPrimary = false;
-    private OnSearchDoneListener mSearchDoneListener = null;
     private YTSearchHelper.SearchType   mType;
     // TODO
     // refactoing is required for below two variable... is it really required?
@@ -38,15 +45,9 @@ YTSearchHelper.SearchDoneReceiver {
     private String                      mTitle;
     private int                         mPage = INVALID_PAGE;
 
-    interface OnSearchDoneListener {
-        void onSearchDone(YTSearchFragment fragment,
-                          Err result,
-                          int totalResults);
-    }
-
-    interface OnPostHandleSearchResultListener {
-        void onPostHandle(YTVideoSearchFragment fragment, Err result);
-
+    private YTSearchActivity
+    getMyActivity() {
+        return (YTSearchActivity)super.getActivity();
     }
 
     private int
@@ -187,10 +188,8 @@ YTSearchHelper.SearchDoneReceiver {
             }
         } while (false);
 
-        if (null != mSearchDoneListener)
-            mSearchDoneListener.onSearchDone(this,
-                                             r,
-                                             totalResults);
+        if (mSearchDoneResponseRequired)
+            getMyActivity().onFragmentSearchDone(this, r, totalResults);
 
         if (Err.NO_ERR != r) {
             stopLoadingLookAndFeel();
@@ -235,16 +234,16 @@ YTSearchHelper.SearchDoneReceiver {
     }
 
     public final void
-    setOnSearchDoneListener(OnSearchDoneListener listener) {
-        mSearchDoneListener = listener;
-    }
-
-    public final void
     setAttributes(YTSearchHelper.SearchType type, String text, String title, int page) {
         mType = type;
         mText = text;
         mTitle = title;
         mPage = page;
+    }
+
+    public final void
+    setSearchDoneResponseRequired(boolean required) {
+        mSearchDoneResponseRequired = required;
     }
 
     public void
@@ -263,8 +262,44 @@ YTSearchHelper.SearchDoneReceiver {
 
     @Override
     public void
+    onSaveInstanceState(Bundle outState) {
+        outState.putBoolean(KEY_SEARCH_DONE_RESPONSE, mSearchDoneResponseRequired);
+        outState.putString(KEY_TYPE, mType.name());
+        outState.putString(KEY_TEXT, mText);
+        outState.putString(KEY_TITLE, mTitle);
+        outState.putInt(KEY_PAGE, mPage);
+        outState.putBoolean(KEY_PRIMARY, mPrimary);
+    }
+
+    private void
+    restoreInstanceState(Bundle data) {
+        if (null == data)
+            return;
+        mSearchDoneResponseRequired = data.getBoolean(KEY_SEARCH_DONE_RESPONSE, mSearchDoneResponseRequired);
+        String tmp = data.getString(KEY_TYPE);
+        if (null != tmp)
+            mType = YTSearchHelper.SearchType.valueOf(tmp);
+        tmp = data.getString(KEY_TEXT);
+        if (null != tmp)
+            mText = tmp;
+        tmp = data.getString(KEY_TITLE);
+        if (null != tmp)
+            mTitle = tmp;
+        mPage = data.getInt(KEY_PAGE, mPage);
+        mPrimary = data.getBoolean(KEY_PRIMARY, mPrimary);
+    }
+
+    @Override
+    public void
+    onViewStateRestored(Bundle savedInstanceState) {
+        super.onViewStateRestored(savedInstanceState);
+    }
+
+    @Override
+    public void
     onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        restoreInstanceState(savedInstanceState);
         mSearchHelper = new YTSearchHelper(); // initialization.
     }
 

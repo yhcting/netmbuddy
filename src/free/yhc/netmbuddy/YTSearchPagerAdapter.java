@@ -2,7 +2,7 @@ package free.yhc.netmbuddy;
 
 import static free.yhc.netmbuddy.utils.Utils.eAssert;
 import static free.yhc.netmbuddy.utils.Utils.logI;
-import android.os.Parcelable;
+import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.view.ViewGroup;
@@ -16,9 +16,6 @@ public class YTSearchPagerAdapter extends FragmentPagerAdapterEx {
     private final String                    mSearchText;
     private final String                    mSearchTitle;
 
-    private final YTSearchFragment.OnSearchDoneListener mFirstSearchDone = new OnFirstSearchDone();
-
-
     private boolean mInitialized    = false;
     private int     mTotalResults   = -1;
     private int     mNrPages        = 1; // at least one page is required even if it's empty.
@@ -29,21 +26,6 @@ public class YTSearchPagerAdapter extends FragmentPagerAdapterEx {
 
     interface OnInitializedListener {
         void onInitialized(YTSearchPagerAdapter adapter);
-    }
-
-    private class OnFirstSearchDone implements YTSearchFragment.OnSearchDoneListener {
-        @Override
-        public void
-        onSearchDone(YTSearchFragment fragment,
-                     Err result,
-                     int totalResults) {
-            if (Err.NO_MATCH == result)
-                totalResults = 0;
-            else if (Err.NO_ERR != result)
-                return; // nothing to do.
-
-            initialize(totalResults);
-        }
     }
 
     private int
@@ -117,6 +99,22 @@ public class YTSearchPagerAdapter extends FragmentPagerAdapterEx {
         return (YTSearchFragment) super.getCurrentPrimaryFragment();
     }
 
+    public void
+    onFragmentSearchDone(YTSearchFragment fragment,
+                      Err result,
+                      int totalResults) {
+        if (mInitialized
+            || 1 != fragment.getPage())
+            return;
+
+        if (Err.NO_MATCH == result)
+            totalResults = 0;
+        else if (Err.NO_ERR != result)
+            return; // nothing to do.
+
+        initialize(totalResults);
+    }
+
     @Override
     public void
     setPrimaryItem(ViewGroup container, int position, Object object) {
@@ -154,7 +152,7 @@ public class YTSearchPagerAdapter extends FragmentPagerAdapterEx {
         if (0 == position
             && !mInitialized)
             // if this is first page of search.
-            fragment.setOnSearchDoneListener(mFirstSearchDone);
+            fragment.setSearchDoneResponseRequired(true);
 
         return fragment;
     }
@@ -163,20 +161,6 @@ public class YTSearchPagerAdapter extends FragmentPagerAdapterEx {
     public long
     getItemId(int position) {
         return position;
-    }
-
-    @Override
-    public Parcelable
-    saveState() {
-        logI("PagerAdapter : saveState()");
-        return super.saveState();
-    }
-
-    @Override
-    public void
-    restoreState(Parcelable state, ClassLoader loader) {
-        logI("PagerAdapter : restoreState");
-        super.restoreState(state, loader);
     }
 
     @Override
@@ -209,5 +193,17 @@ public class YTSearchPagerAdapter extends FragmentPagerAdapterEx {
         super.destroyItem(container, position, object);
         if (null != fragment)
             fragment.onEarlyDestroy();
+    }
+
+    @Override
+    protected void
+    onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+    }
+
+    @Override
+    protected void
+    onRestoreInstanceState(Bundle inState) {
+        super.onRestoreInstanceState(inState);
     }
 }

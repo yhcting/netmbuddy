@@ -229,7 +229,15 @@ public abstract class YTSearchActivity extends FragmentActivity {
     }
     // ========================================================================
     //
+    // Bridge between App and Fragment.
     //
+    // NOTE
+    // Fragment is destroyed and re-instantiated inside FragmentManager implicitly.
+    // So, saving/restoring runtime state of Fragment is mandatory.
+    // But, reference of class instance is NOT allowed to save!
+    // That is, Fragment SHOULD NOT have any runtime data that cannot be stored
+    //   as Parcelable data.
+    // That's why this bridge is required.
     //
     // ========================================================================
     public boolean
@@ -237,6 +245,20 @@ public abstract class YTSearchActivity extends FragmentActivity {
         return fragment == mContextMenuOwner;
     }
 
+    public void
+    onFragmentSearchDone(YTSearchFragment fragment,
+                         Err result,
+                         int totalResults) {
+        if (null != getPagerAdapter())
+            getPagerAdapter().onFragmentSearchDone(fragment, result, totalResults);
+    }
+
+
+    // ========================================================================
+    //
+    //
+    //
+    // ========================================================================
     @Override
     public void
     onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {

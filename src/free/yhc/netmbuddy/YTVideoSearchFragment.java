@@ -43,14 +43,14 @@ DBHelper.CheckDupDoneReceiver {
         }
     }
 
-    private YTVideoSearchAdapter
-    getAdapter() {
-        return (YTVideoSearchAdapter)mListv.getAdapter();
-    }
-
     private YTVideoSearchActivity
     getMyActivity() {
         return (YTVideoSearchActivity)super.getActivity();
+    }
+
+    private YTVideoSearchAdapter
+    getAdapter() {
+        return (YTVideoSearchAdapter)mListv.getAdapter();
     }
 
     private void
@@ -139,9 +139,6 @@ DBHelper.CheckDupDoneReceiver {
         // Cleanup before as soon as possible to secure memories.
         if (null != oldAdapter)
             oldAdapter.cleanup();
-
-        if (null != mPostHandleListener)
-            mPostHandleListener.onPostHandle(this, Err.NO_ERR);
     }
 
     private void
@@ -170,11 +167,6 @@ DBHelper.CheckDupDoneReceiver {
     public
     YTVideoSearchFragment() {
         super();
-    }
-
-    public void
-    setOnPostHandleSearchResultListener(OnPostHandleSearchResultListener listener) {
-        mPostHandleListener = listener;
     }
 
     public YTVideoSearchAdapter
