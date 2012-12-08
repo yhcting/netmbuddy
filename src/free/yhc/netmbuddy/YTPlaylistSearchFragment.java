@@ -393,6 +393,12 @@ public class YTPlaylistSearchFragment extends YTSearchFragment {
 
     @Override
     public void
+    onEarlyDestroy() {
+        super.onEarlyDestroy();
+    }
+
+    @Override
+    public void
     onDestroyView() {
         super.onDestroyView();
     }
@@ -400,7 +406,6 @@ public class YTPlaylistSearchFragment extends YTSearchFragment {
     @Override
     public void
     onDestroy() {
-        mSearchHelper.close();
         super.onDestroy();
     }
 

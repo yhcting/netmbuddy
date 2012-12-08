@@ -20,14 +20,13 @@
 
 package free.yhc.netmbuddy.db;
 
-import free.yhc.netmbuddy.model.YTVideoFeed;
-import free.yhc.netmbuddy.model.YTVideoFeed.Entry;
-import free.yhc.netmbuddy.utils.Utils;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
 import android.os.Process;
+import free.yhc.netmbuddy.model.YTVideoFeed;
+import free.yhc.netmbuddy.utils.Utils;
 
 public class DBHelper {
     private static final int MSG_WHAT_CLOSE         = 0;
@@ -168,7 +167,9 @@ public class DBHelper {
         // Stop running thread!
         // Need to check that below code works as expected perfectly.
         // "interrupting thread" is quite annoying and unpredictable job!
-        if (null != mBgHandler)
+        if (null != mBgHandler) {
             mBgHandler.close();
+            mBgHandler = null;
+        }
     }
 }

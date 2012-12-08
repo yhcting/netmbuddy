@@ -140,13 +140,32 @@ public class YTSearchHelper {
     }
 
     private static class BGThread extends HandlerThread {
+        private BGHandler mHandler = null;
         BGThread() {
             super("YTSearchHelper.BGThread",Process.THREAD_PRIORITY_BACKGROUND);
         }
+
+        void
+        setBgHandler(BGHandler handler) {
+            mHandler = handler;
+        }
+
         @Override
         protected void
         onLooperPrepared() {
             super.onLooperPrepared();
+        }
+
+        @Override
+        public void
+        run() {
+            try {
+                super.run();
+            } catch (Exception ignored) {
+            } finally {
+                if (null != mHandler)
+                    mHandler.cleanupPostClose();
+            }
         }
     }
 
@@ -189,14 +208,34 @@ public class YTSearchHelper {
             return;
         }
 
+        /**
+         * This function will be called end of 'run()' function in HandlerThread.
+         */
         void
-        close() {
+        cleanupPostClose() {
+            if (null != _mMtrunner) {
+                _mMtrunner.cancel();
+                _mMtrunner = null;
+            }
+        }
+
+        void
+        close(boolean interrupt) {
+            if (_mClosed)
+                return; // already closed.
+
             removeMessages(MSG_WHAT_OPEN);
             removeMessages(MSG_WHAT_SEARCH);
             removeMessages(MSG_WHAT_LOAD_THUMBNAIL);
-            sendEmptyMessage(MSG_WHAT_CLOSE);
             _mSearchRcvr = null;
             _mThumbnailRcvr = null;
+            if (interrupt) {
+                _mClosed = true;
+                getLooper().getThread().interrupt();
+                ((HandlerThread)getLooper().getThread()).quit();
+                return;
+            } else
+                sendEmptyMessage(MSG_WHAT_CLOSE);
         }
 
         void
@@ -224,8 +263,6 @@ public class YTSearchHelper {
 
             case MSG_WHAT_CLOSE: {
                 _mClosed = true;
-                if (null != _mMtrunner)
-                    _mMtrunner.cancel();
                 ((HandlerThread)getLooper().getThread()).quit();
             } break;
 
@@ -238,7 +275,7 @@ public class YTSearchHelper {
             case MSG_WHAT_LOAD_THUMBNAIL: {
                 final LoadThumbnailArg arg = (LoadThumbnailArg)msg.obj;
                 MultiThreadRunner.Job<Integer> job
-                    = new MultiThreadRunner.Job<Integer>(0) {
+                    = new MultiThreadRunner.Job<Integer>(true, 0) {
                     @Override
                     public Integer
                     doJob() {
@@ -440,21 +477,24 @@ public class YTSearchHelper {
 
     public void
     open() {
-        HandlerThread hThread = new BGThread();
+        BGThread hThread = new BGThread();
         hThread.start();
         mBgHandler = new BGHandler(hThread.getLooper(), this);
+        hThread.setBgHandler(mBgHandler);
         mBgHandler.sendEmptyMessage(MSG_WHAT_OPEN);
         mBgHandler.setSearchDoneRecevier(mSearchRcvr);
         mBgHandler.setLoadThumbnailDoneRecevier(mThumbnailRcvr);
     }
 
     public void
-    close() {
+    close(boolean interrupt) {
         // TODO
         // Stop running thread!
         // Need to check that below code works as expected perfectly.
         // "interrupting thread" is quite annoying and unpredictable job!
-        if (null != mBgHandler)
-            mBgHandler.close();
+        if (null != mBgHandler) {
+            mBgHandler.close(interrupt);
+            mBgHandler = null;
+        }
     }
 }

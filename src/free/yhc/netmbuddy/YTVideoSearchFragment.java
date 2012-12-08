@@ -340,15 +340,27 @@ DBHelper.CheckDupDoneReceiver {
 
     @Override
     public void
+    onEarlyDestroy() {
+        onDestroyInternal();
+        super.onEarlyDestroy();
+    }
+
+    @Override
+    public void
     onDestroyView() {
         super.onDestroyView();
+    }
+
+    private void
+    onDestroyInternal() {
+        mDbHelper.close();
+        mDb.unregisterToVideoTableWatcher(this);
     }
 
     @Override
     public void
     onDestroy() {
-        mDbHelper.close();
-        mDb.unregisterToVideoTableWatcher(this);
+        onDestroyInternal();
         super.onDestroy();
     }
 

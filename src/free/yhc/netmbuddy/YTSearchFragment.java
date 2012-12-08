@@ -62,7 +62,7 @@ YTSearchHelper.SearchDoneReceiver {
     private void
     loadPage(YTSearchHelper.SearchType type, String text, String title, int pageNumber) {
         // close helper to cancel all existing work.
-        mSearchHelper.close();
+        mSearchHelper.close(true);
 
         // Create new helper instance to know owner instance at callback from helper.
         mSearchHelper = new YTSearchHelper();
@@ -317,18 +317,42 @@ YTSearchHelper.SearchDoneReceiver {
         super.onStop();
     }
 
+    /**
+     * Pager adapter - YTSearchPagerAdapter - calls this function when the fragment is no more used.
+     * In general, onDestroy() is the callback for cleanup.
+     * But, in case that system is very busy, calling onDestroy() is delayed
+     *   and this may make huge amount of garbage resource usage.
+     * To reduce above issue 'onEarlyDestroy()' is introduced.
+     */
+    public void
+    onEarlyDestroy() {
+        // release resources that should be freed as soon as possible.
+        onDestroyViewInternal();
+        onDestroyInternal();
+    }
+
+    private void
+    onDestroyViewInternal() {
+        if (null != getAdapter())
+            getAdapter().cleanup();
+    }
+
     @Override
     public void
     onDestroyView() {
-        if (null != getAdapter())
-            getAdapter().cleanup();
+        onDestroyViewInternal();
         super.onDestroyView();
+    }
+
+    private void
+    onDestroyInternal() {
+        mSearchHelper.close(true);
     }
 
     @Override
     public void
     onDestroy() {
-        mSearchHelper.close();
+        onDestroyInternal();
         super.onDestroy();
     }
 

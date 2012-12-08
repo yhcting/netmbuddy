@@ -126,9 +126,12 @@ YTSearchHelper.LoadThumbnailDoneReceiver {
     public void
     cleanup() {
         eAssert(Utils.isUiThread());
-        for (Bitmap bm : mThumbnails)
-            if (null != bm)
-                bm.recycle();
+        for (int i = 0; i < mThumbnails.length; i++) {
+            if (null != mThumbnails[i]) {
+                mThumbnails[i].recycle();
+                mThumbnails[i] = null;
+            }
+        }
 
         mHelper = null;
     }
@@ -149,7 +152,7 @@ YTSearchHelper.LoadThumbnailDoneReceiver {
     loadThumbnailDone(YTSearchHelper helper, YTSearchHelper.LoadThumbnailArg arg,
                       Bitmap bm, YTSearchHelper.Err err) {
         if (null == mHelper || mHelper != helper) {
-            helper.close();
+            helper.close(true);
             return; // invalid callback.
         }
 

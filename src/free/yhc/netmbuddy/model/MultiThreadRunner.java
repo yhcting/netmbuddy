@@ -194,13 +194,14 @@ public class MultiThreadRunner {
         @Override
         protected void
         onPreRun() {
+            eAssert(isOwnerThread());
             _mJob.onPreRun();
         }
 
         @Override
         protected void
         onCancelled() {
-            eAssert(_mMtrunner.getOwner().getLooper().getThread() == Thread.currentThread());
+            eAssert(isOwnerThread());
             _mJob.onCancelled();
             _mMtrunner.onTaskDone(Task.this, true);
         }
@@ -208,7 +209,7 @@ public class MultiThreadRunner {
         @Override
         protected void
         onPostRun(final R r) {
-            eAssert(_mMtrunner.getOwner().getLooper().getThread() == Thread.currentThread());
+            eAssert(isOwnerThread());
             _mJob.onPostRun(r);
             _mMtrunner.onTaskDone(this, false);
         }

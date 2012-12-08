@@ -204,7 +204,10 @@ public class YTSearchPagerAdapter extends FragmentPagerAdapterEx {
     public void
     destroyItem(ViewGroup container, int position, Object object) {
         logI("PagerAdapter : destroyItem : " + position);
+        YTSearchFragment fragment = (YTSearchFragment)getFragmentManager()
+                                        .findFragmentByTag(getFragmentName(position));
         super.destroyItem(container, position, object);
+        if (null != fragment)
+            fragment.onEarlyDestroy();
     }
-
 }
