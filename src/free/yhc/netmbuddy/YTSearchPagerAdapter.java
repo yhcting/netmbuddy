@@ -5,7 +5,6 @@ import static free.yhc.netmbuddy.utils.Utils.logI;
 import android.os.Parcelable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
-import android.util.Log;
 import android.view.ViewGroup;
 import free.yhc.netmbuddy.model.Policy;
 import free.yhc.netmbuddy.model.YTSearchHelper;
@@ -55,7 +54,6 @@ public class YTSearchPagerAdapter extends FragmentPagerAdapterEx {
 
     private void
     initialize(int totalResults) {
-        Log.d(this.getClass().getName(), "Intialize");
         mInitialized = true;
         mTotalResults = totalResults;
         int lastPage = getLastPage(totalResults);
@@ -122,7 +120,6 @@ public class YTSearchPagerAdapter extends FragmentPagerAdapterEx {
     @Override
     public void
     setPrimaryItem(ViewGroup container, int position, Object object) {
-        Log.d(this.getClass().getSimpleName(), "setPrimaryItem : " + position);
         YTSearchFragment oldf = getPrimaryFragment();
         super.setPrimaryItem(container, position, object);
         YTSearchFragment newf = getPrimaryFragment();
@@ -144,7 +141,6 @@ public class YTSearchPagerAdapter extends FragmentPagerAdapterEx {
     @Override
     public Fragment
     getItem(int position) {
-        Log.d(this.getClass().getSimpleName(), "getItem : " + position);
         YTSearchFragment fragment;
         try {
             fragment = mFragmentClass.newInstance();
