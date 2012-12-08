@@ -35,6 +35,9 @@ import free.yhc.netmbuddy.utils.Utils;
 
 public abstract class YTSearchAdapter extends BaseAdapter implements
 YTSearchHelper.LoadThumbnailDoneReceiver {
+    private static final boolean DBG = false;
+    private static final Utils.Logger P = new Utils.Logger(YTSearchAdapter.class);
+
     // So, assign one of them as view tag's key value.
     protected static final int VTAGKEY_VALID      = R.id.content;
 

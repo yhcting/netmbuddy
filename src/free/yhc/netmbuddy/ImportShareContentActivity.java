@@ -26,8 +26,12 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.os.Bundle;
+import free.yhc.netmbuddy.utils.Utils;
 
 public class ImportShareContentActivity extends Activity {
+    private static final boolean DBG = false;
+    private static final Utils.Logger P = new Utils.Logger(ImportShareContentActivity.class);
+
     @Override
     public void
     onCreate(Bundle savedInstanceState) {

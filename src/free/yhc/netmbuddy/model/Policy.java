@@ -21,8 +21,12 @@
 package free.yhc.netmbuddy.model;
 
 import android.os.Environment;
+import free.yhc.netmbuddy.utils.Utils;
 
 public class Policy {
+    private static final boolean DBG = false;
+    private static final Utils.Logger P = new Utils.Logger(Policy.class);
+
     public static final String  APPBASENAME             = "netmbuddy";
     public static final String  REPORT_RECEIVER         = "yhcting77@gmail.com";
     public static final String  EXTSTORAGE_DIR          = Environment.getExternalStorageDirectory().getPath() + "/";

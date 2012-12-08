@@ -31,15 +31,17 @@ import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.Iterator;
 import java.util.LinkedList;
 
-import free.yhc.netmbuddy.utils.Utils;
-
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
+import free.yhc.netmbuddy.utils.Utils;
 
 public class UnexpectedExceptionHandler implements
 UncaughtExceptionHandler {
+    private static final boolean DBG = false;
+    private static final Utils.Logger P = new Utils.Logger(UnexpectedExceptionHandler.class);
+
     private static final String UNKNOWN = "unknown";
 
     private static UnexpectedExceptionHandler sInstance = null;

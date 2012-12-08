@@ -24,9 +24,13 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
+import free.yhc.netmbuddy.utils.Utils;
 
 public class YTMPPreferenceActivity extends PreferenceActivity implements
 SharedPreferences.OnSharedPreferenceChangeListener {
+    private static final boolean DBG = false;
+    private static final Utils.Logger P = new Utils.Logger(YTMPPreferenceActivity.class);
+
     @Override
     public void
     onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {

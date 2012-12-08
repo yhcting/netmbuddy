@@ -22,8 +22,12 @@ package free.yhc.netmbuddy;
 
 import android.os.Bundle;
 import free.yhc.netmbuddy.model.YTSearchHelper;
+import free.yhc.netmbuddy.utils.Utils;
 
 public class YTVideoSearchPlaylistActivity extends YTVideoSearchActivity {
+    private static final boolean DBG = false;
+    private static final Utils.Logger P = new Utils.Logger(YTVideoSearchPlaylistActivity.class);
+
     @Override
     protected YTSearchHelper.SearchType
     getSearchType() {

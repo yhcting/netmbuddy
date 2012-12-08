@@ -21,7 +21,6 @@
 package free.yhc.netmbuddy.utils;
 
 import static free.yhc.netmbuddy.utils.Utils.eAssert;
-import static free.yhc.netmbuddy.utils.Utils.logI;
 
 import java.io.ByteArrayOutputStream;
 
@@ -29,6 +28,9 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
 public class ImageUtils {
+    private static final boolean DBG = false;
+    private static final Utils.Logger P = new Utils.Logger(ImageUtils.class);
+
     /**
      * Decode image from file path(String) or raw data (byte[]).
      * @param image
@@ -211,7 +213,7 @@ public class ImageUtils {
         long time = System.currentTimeMillis();
         ByteArrayOutputStream baos = new ByteArrayOutputStream(1024);
         bm.compress(Bitmap.CompressFormat.JPEG, 100, baos);
-        logI("TIME: Compress Image : " + (System.currentTimeMillis() - time));
+        if (DBG) P.v("TIME: Compress Image : " + (System.currentTimeMillis() - time));
         return baos.toByteArray();
     }
 

@@ -21,7 +21,6 @@
 package free.yhc.netmbuddy;
 
 import static free.yhc.netmbuddy.utils.Utils.eAssert;
-import static free.yhc.netmbuddy.utils.Utils.logI;
 import android.app.SearchManager;
 import android.content.Intent;
 import android.content.res.Configuration;
@@ -43,6 +42,9 @@ import free.yhc.netmbuddy.model.YTSearchHelper;
 import free.yhc.netmbuddy.utils.Utils;
 
 public abstract class YTSearchActivity extends FragmentActivity {
+    private static final boolean DBG = false;
+    private static final Utils.Logger P = new Utils.Logger(YTSearchActivity.class);
+
     public static final String  MAP_KEY_SEARCH_TYPE     = "searchtype";
     public static final String  MAP_KEY_SEARCH_TEXT     = "searchtext";
     public static final String  MAP_KEY_SEARCH_TITLE    = "searchtitle";
@@ -71,7 +73,7 @@ public abstract class YTSearchActivity extends FragmentActivity {
         @Override
         public void
         onPageSelected(int arg0) {
-            logI("OnPageViewChange : onPageSelected : " + arg0);
+            if (DBG) P.v("OnPageViewChange : onPageSelected : " + arg0);
             adjustPageUserAction(getPagerAdapter().posToPage(arg0));
         }
 
@@ -84,7 +86,7 @@ public abstract class YTSearchActivity extends FragmentActivity {
         @Override
         public void
         onPageScrollStateChanged(int arg0) {
-            logI("OnPageViewChange : onPageScrollStateChanged : " + arg0);
+            if (DBG) P.v("OnPageViewChange : onPageScrollStateChanged : " + arg0);
             YTSearchActivity.this.closeContextMenu();
         }
     }

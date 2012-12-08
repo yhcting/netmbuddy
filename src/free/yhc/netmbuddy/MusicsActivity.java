@@ -46,6 +46,9 @@ import free.yhc.netmbuddy.utils.UiUtils;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class MusicsActivity extends Activity {
+    private static final boolean DBG = false;
+    private static final Utils.Logger P = new Utils.Logger(MusicsActivity.class);
+
     public static final String MAP_KEY_PLAYLIST_ID  = "playlistid";
     public static final String MAP_KEY_TITLE        = "title";
     public static final String MAP_KEY_KEYWORD      = "keyword";

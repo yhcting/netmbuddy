@@ -26,6 +26,9 @@ import java.util.LinkedList;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class KBLinkedList<T> {
+    private static final boolean DBG = false;
+    private static final Utils.Logger P = new Utils.Logger(KBLinkedList.class);
+
     private LinkedList<Elem> mL = new LinkedList<Elem>();
 
     private static class Elem {

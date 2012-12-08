@@ -59,7 +59,10 @@ import free.yhc.netmbuddy.model.Policy;
 import free.yhc.netmbuddy.model.RTState;
 
 public class Utils {
-    private static final boolean DBG    = false;
+    private static final boolean DBG = false;
+    private static final Utils.Logger P = new Logger(Utils.class);
+
+    //private static final boolean DBG    = false;
     private static final boolean LOGF   = false;
     private static final String  TAG    = "[YoutubeMusicPlayer]";
 
@@ -219,19 +222,33 @@ public class Utils {
         }
     }
 
+    public static class Logger {
+        private final Class _mCls;
+        public Logger(Class cls) {
+            _mCls = cls;
+        }
+        // For logging
+        public void v(String msg) { log(_mCls, LogLV.V, msg); }
+        public void d(String msg) { log(_mCls, LogLV.D, msg); }
+        public void i(String msg) { log(_mCls, LogLV.I, msg); }
+        public void w(String msg) { log(_mCls, LogLV.W, msg); }
+        public void e(String msg) { log(_mCls, LogLV.E, msg); }
+        public void f(String msg) { log(_mCls, LogLV.F, msg); }
+    }
+
     private static void
-    log(LogLV lv, String msg) {
-        if (!DBG || null == msg)
+    log(Class cls, LogLV lv, String msg) {
+        if (null == msg)
             return;
 
         if (!LOGF) {
             switch(lv) {
-            case V: Log.v(TAG, msg); break;
-            case D: Log.d(TAG, msg); break;
-            case I: Log.i(TAG, msg); break;
-            case W: Log.w(TAG, msg); break;
-            case E: Log.e(TAG, msg); break;
-            case F: Log.wtf(TAG, msg); break;
+            case V: Log.v(cls.getSimpleName(), msg); break;
+            case D: Log.d(cls.getSimpleName(), msg); break;
+            case I: Log.i(cls.getSimpleName(), msg); break;
+            case W: Log.w(cls.getSimpleName(), msg); break;
+            case E: Log.e(cls.getSimpleName(), msg); break;
+            case F: Log.wtf(cls.getSimpleName(), msg); break;
             }
         } else {
             long timems = System.currentTimeMillis();
@@ -250,14 +267,6 @@ public class Utils {
         if (!cond)
             throw new AssertionError();
     }
-
-    // For logging
-    public static void logV(String msg) { log(LogLV.V, msg); }
-    public static void logD(String msg) { log(LogLV.D, msg); }
-    public static void logI(String msg) { log(LogLV.I, msg); }
-    public static void logW(String msg) { log(LogLV.W, msg); }
-    public static void logE(String msg) { log(LogLV.E, msg); }
-    public static void logF(String msg) { log(LogLV.F, msg); }
 
     public static Context
     getAppContext() {

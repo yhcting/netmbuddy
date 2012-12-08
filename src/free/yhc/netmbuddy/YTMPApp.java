@@ -29,6 +29,9 @@ import free.yhc.netmbuddy.model.YTPlayer;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class YTMPApp extends Application {
+    private static final boolean DBG = false;
+    private static final Utils.Logger P = new Utils.Logger(YTMPApp.class);
+
     @Override
     public void
     onConfigurationChanged(Configuration newConfig) {

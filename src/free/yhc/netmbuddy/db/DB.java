@@ -36,6 +36,9 @@ import android.database.sqlite.SQLiteOpenHelper;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class DB {
+    private static final boolean DBG = false;
+    private static final Utils.Logger P = new Utils.Logger(DB.class);
+
     public static final long    INVALID_PLAYLIST_ID = -1;
     public static final int     INVALID_VOLUME      = -1;
 

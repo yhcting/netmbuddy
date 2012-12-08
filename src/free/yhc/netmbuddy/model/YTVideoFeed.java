@@ -32,6 +32,9 @@ import android.net.Uri;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class YTVideoFeed extends YTFeed {
+    private static final boolean DBG = false;
+    private static final Utils.Logger P = new Utils.Logger(YTVideoFeed.class);
+
     static final String sQueryProjection = "fields=openSearch:totalResults,openSearch:startIndex,openSearch:itemsPerPage,"
             + "entry(author(name),media:group(media:title,yt:videoid,media:thumbnail[@yt:name='default'](@url),yt:duration,yt:uploaded))";
 

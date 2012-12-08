@@ -20,12 +20,15 @@
 
 package free.yhc.netmbuddy.model;
 
-import static free.yhc.netmbuddy.utils.Utils.logI;
-
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
+import free.yhc.netmbuddy.utils.Utils;
+
 public abstract class YTFeed {
+    private static final boolean DBG = false;
+    private static final Utils.Logger P = new Utils.Logger(YTFeed.class);
+
     public static enum Err {
         NO_ERR,
         UNKNOWN,   // err inside module
@@ -114,7 +117,7 @@ public abstract class YTFeed {
             msg = msg + " / " + n.getNodeName();
             n = n.getNextSibling();
         }
-        logI(msg + "\n");
+        if (DBG) P.v(msg + "\n");
     }
 
 

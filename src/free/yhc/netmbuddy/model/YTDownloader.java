@@ -21,7 +21,6 @@
 package free.yhc.netmbuddy.model;
 
 import static free.yhc.netmbuddy.utils.Utils.eAssert;
-import static free.yhc.netmbuddy.utils.Utils.logI;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -38,6 +37,9 @@ import free.yhc.netmbuddy.utils.Utils;
 
 
 public class YTDownloader {
+    private static final boolean DBG = false;
+    private static final Utils.Logger P = new Utils.Logger(YTDownloader.class);
+
     private static final int MSG_WHAT_CLOSE     = 0;
     private static final int MSG_WHAT_DOWNLOAD  = 1;
 
@@ -123,7 +125,7 @@ public class YTDownloader {
             if (null != _mTmpF)
                 _mTmpF.delete();
 
-            logI("YTDownloader : Start Download : " + arg.ytvid + " => " + arg.outf.getAbsolutePath());
+            if (DBG) P.v("Start Download : " + arg.ytvid + " => " + arg.outf.getAbsolutePath());
             YTHacker hack = new YTHacker(arg.ytvid);
             FileOutputStream fos = null;
             try {
@@ -154,17 +156,17 @@ public class YTDownloader {
                 // file returned by YTHacker is mpeg format!
                 _mTmpF.renameTo(arg.outf);
                 sendResult(arg, Err.NO_ERR);
-                logI("YTDownloader : Download Done : " + arg.ytvid);
+                if (DBG) P.v("Download Done : " + arg.ytvid);
             } catch (FileNotFoundException e) {
                 sendResult(arg, Err.IO_FILE);
             } catch (InterruptedException e) {
-                logI("YTDownloader : Download Interrupted!");
+                if (DBG) P.v("Download Interrupted!");
                 sendResult(arg, Err.INTERRUPTED);
             } catch (IOException e) {
-                logI("YTDownloader : Download IOException!");
+                if (DBG) P.v("Download IOException!");
                 sendResult(arg, Err.IO_FILE);
             } catch (NetLoader.LocalException e) {
-                logI("YTDownloader : NetLoader Exception!");
+                if (DBG) P.v("NetLoader Exception!");
                 sendResult(arg, map(e.error()));
             } finally {
                 _mLoader.close();

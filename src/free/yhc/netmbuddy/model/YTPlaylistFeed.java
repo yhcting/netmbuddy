@@ -26,9 +26,8 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
-import free.yhc.netmbuddy.utils.Utils;
-
 import android.net.Uri;
+import free.yhc.netmbuddy.utils.Utils;
 
 
 
@@ -58,6 +57,8 @@ import android.net.Uri;
 //  <yt:playlistId>PLxrXSNAnHXeL1puk5TwZnVzU9c-8WTWVQ</yt:playlistId>
 //</entry>
 public class YTPlaylistFeed extends YTFeed {
+    private static final boolean DBG = false;
+    private static final Utils.Logger P = new Utils.Logger(YTPlaylistFeed.class);
 
     // Most of them are not used yet.
     // But for future use...

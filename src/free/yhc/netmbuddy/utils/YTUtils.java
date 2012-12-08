@@ -27,6 +27,9 @@ import free.yhc.netmbuddy.model.YTHacker;
 import free.yhc.netmbuddy.model.YTSearchHelper;
 
 public class YTUtils {
+    private static final boolean DBG = false;
+    private static final Utils.Logger P = new Utils.Logger(YTUtils.class);
+
     public static boolean
     verifyYoutubeVideoId(String ytvid) {
         return 11 == ytvid.length();

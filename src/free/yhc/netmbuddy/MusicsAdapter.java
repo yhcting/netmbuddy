@@ -37,6 +37,9 @@ import free.yhc.netmbuddy.utils.UiUtils;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class MusicsAdapter extends ResourceCursorAdapter {
+    private static final boolean DBG = false;
+    private static final Utils.Logger P = new Utils.Logger(MusicsAdapter.class);
+
     private static final int LAYOUT = R.layout.musics_row;
 
     // Below value SHOULD match queries of 'createCursor()'

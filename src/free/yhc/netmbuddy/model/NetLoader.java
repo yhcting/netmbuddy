@@ -21,8 +21,6 @@
 package free.yhc.netmbuddy.model;
 
 import static free.yhc.netmbuddy.utils.Utils.eAssert;
-import static free.yhc.netmbuddy.utils.Utils.logI;
-import static free.yhc.netmbuddy.utils.Utils.logW;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -43,9 +41,13 @@ import org.apache.http.params.HttpParams;
 import org.apache.http.params.HttpProtocolParams;
 
 import android.net.Uri;
+import free.yhc.netmbuddy.utils.Utils;
 
 
 public class NetLoader {
+    private static final boolean DBG = false;
+    private static final Utils.Logger P = new Utils.Logger(NetLoader.class);
+
     private boolean         mUserClose  = false;
     private HttpClient      mHttpClient = null;
 
@@ -167,7 +169,7 @@ public class NetLoader {
     getHttpContent(Uri uri, boolean source)
             throws LocalException  {
         if (null == mHttpClient) {
-            logI("NetLoader Fail to get HttpClient");
+            if (DBG) P.v("NetLoader Fail to get HttpClient");
             throw new LocalException(Err.UNKNOWN);
         }
 
@@ -181,12 +183,12 @@ public class NetLoader {
                 HttpGet httpGet = new HttpGet(uriString);
                 HttpHost httpTarget = new HttpHost(uri.getHost());
 
-                logI("executing request: " + httpGet.getRequestLine().toString());
+                if (DBG) P.v("executing request: " + httpGet.getRequestLine().toString());
                 //logI("uri: " + httpGet.getURI().toString());
                 //logI("target: " + httpTarget.getHostName());
 
                 HttpResponse httpResp = mHttpClient.execute(httpTarget, httpGet);
-                logI("NetLoader HTTP response status line : " + httpResp.getStatusLine().toString());
+                if (DBG) P.v("NetLoader HTTP response status line : " + httpResp.getStatusLine().toString());
 
                 // TODO
                 // Need more case-handling-code.
@@ -200,7 +202,7 @@ public class NetLoader {
 
                 default:
                     // Unexpected response
-                    logW("NetLoader Unexpected Response  status code : " + httpResp.getStatusLine().getStatusCode());
+                    if (DBG) P.w("Unexpected Response  status code : " + httpResp.getStatusLine().getStatusCode());
                     throw new LocalException(Err.HTTPGET, statusCode);
                 }
 
@@ -212,7 +214,7 @@ public class NetLoader {
                     HttpEntity httpEntity = httpResp.getEntity();
 
                     if (null == httpEntity) {
-                        logW("NetLoader Unexpected NULL entity");
+                        if (DBG) P.w("Unexpected NULL entity");
                         throw new LocalException(Err.HTTPGET, statusCode);
                     }
                     contentStream = httpEntity.getContent();
@@ -221,14 +223,14 @@ public class NetLoader {
 
                 return new HttpRespContent(statusCode, contentStream, contentType);
             } catch (ClientProtocolException e) {
-                logI("NetLoader ClientProtocolException : " + e.getMessage());
+                if (DBG) P.v("NetLoader ClientProtocolException : " + e.getMessage());
                 throw new LocalException(Err.UNKNOWN);
             } catch (IllegalArgumentException e) {
-                logI("Illegal Argument Exception : " + e.getMessage() + "\n"
+                if (DBG) P.v("Illegal Argument Exception : " + e.getMessage() + "\n"
                      + "URI : " + uriString);
                 throw new LocalException(Err.IO_NET);
             } catch (UnknownHostException e) {
-                logI("NetLoader UnknownHostException : Maybe timeout?" + e.getMessage());
+                if (DBG) P.v("NetLoader UnknownHostException : Maybe timeout?" + e.getMessage());
                 if (mUserClose)
                     throw new LocalException(Err.INTERRUPTED);
 
@@ -243,10 +245,10 @@ public class NetLoader {
                 }
                 throw new LocalException(Err.IO_NET);
             } catch (IOException e) {
-                logI("NetLoader IOException : " + e.getMessage());
+                if (DBG) P.v("NetLoader IOException : " + e.getMessage());
                 throw new LocalException(Err.IO_NET);
             } catch (IllegalStateException e) {
-                logI("NetLoader IllegalStateException : " + e.getMessage());
+                if (DBG) P.v("NetLoader IllegalStateException : " + e.getMessage());
                 throw new LocalException(Err.UNKNOWN);
             }
         }

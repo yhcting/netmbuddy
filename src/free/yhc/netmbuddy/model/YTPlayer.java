@@ -21,9 +21,6 @@
 package free.yhc.netmbuddy.model;
 
 import static free.yhc.netmbuddy.utils.Utils.eAssert;
-import static free.yhc.netmbuddy.utils.Utils.logD;
-import static free.yhc.netmbuddy.utils.Utils.logI;
-import static free.yhc.netmbuddy.utils.Utils.logW;
 
 import java.io.File;
 import java.io.IOException;
@@ -71,6 +68,9 @@ MediaPlayer.OnVideoSizeChangedListener,
 MediaPlayer.OnSeekCompleteListener,
 // To support video
 SurfaceHolder.Callback {
+    private static final boolean DBG = false;
+    private static final Utils.Logger P = new Utils.Logger(YTPlayer.class);
+
     // State Flags - Package private.
     static final int    MPSTATE_FLAG_IDLE       = 0x0;
     static final int    MPSTATE_FLAG_SEEKING    = 0x1;
@@ -264,7 +264,7 @@ SurfaceHolder.Callback {
 
             String exst = intent.getExtras().getString(TelephonyManager.EXTRA_STATE);
             if (null == exst) {
-                logW("TelephonyMonitor Unexpected broadcast message");
+                if (DBG) P.w("TelephonyMonitor Unexpected broadcast message");
                 return;
             }
 
@@ -275,7 +275,7 @@ SurfaceHolder.Callback {
                 if (!YTPlayer.get().ytpIsSuspended())
                     YTPlayer.get().ytpSuspendPlaying();
             } else {
-                logW("TelephonyMonitor Unexpected extra state : " + exst);
+                if (DBG) P.w("TelephonyMonitor Unexpected extra state : " + exst);
                 return; // ignore others.
             }
         }
@@ -293,17 +293,17 @@ SurfaceHolder.Callback {
             NetworkInfo networkInfo =
                 (NetworkInfo)intent.getParcelableExtra(ConnectivityManager.EXTRA_NETWORK_INFO);
             if (networkInfo.isConnected()) {
-                logI("YTPlayer : Network connected : " + networkInfo.getType());
+                if (DBG) P.v("Network connected : " + networkInfo.getType());
                 switch (networkInfo.getType()) {
                 case ConnectivityManager.TYPE_WIFI:
-                    logI("YTPlayer : Network connected : WIFI");
+                    if (DBG) P.v("Network connected : WIFI");
                     break;
                 case ConnectivityManager.TYPE_MOBILE:
-                    logI("YTPlayer : Network connected : MOBILE");
+                    if (DBG) P.v("Network connected : MOBILE");
                     break;
                 }
             } else
-                logI("YTPlayer : Network lost");
+                if (DBG) P.v("Network lost");
         }
     }
 
@@ -333,7 +333,7 @@ SurfaceHolder.Callback {
                 break;
 
             default:
-                logW("Unknown WiredHeadset State : " + state);
+                if (DBG) P.w("Unknown WiredHeadset State : " + state);
                 break;
             }
         }
@@ -481,7 +481,7 @@ SurfaceHolder.Callback {
 
     private void
     mpSetState(MPState newState) {
-        logD("MusicPlayer : State : " + mMpS.name() + " => " + newState.name());
+        if (DBG) P.v("State : " + mMpS.name() + " => " + newState.name());
         // NOTE
         // DO NOT write CODE like "if (oldS == mMpS) return;"
         // most case, this is MediaPlay's state.
@@ -502,7 +502,7 @@ SurfaceHolder.Callback {
 
     private void
     mpSetStateFlag(int newStateFlag) {
-        logD("MusicPlayer : StateFlag : " + mMpSFlag + " => " + newStateFlag);
+        if (DBG) P.v("StateFlag : " + mMpSFlag + " => " + newStateFlag);
         int old = mMpSFlag;
         mMpSFlag = newStateFlag;
         onMpStateChanged(mMpS, old, mMpS, mMpSFlag);
@@ -563,7 +563,7 @@ SurfaceHolder.Callback {
             return;
         }
 
-        logI("MP [" + mpGetState().name() + "] : setDataSource ignored : ");
+        if (DBG) P.v("MP [" + mpGetState().name() + "] : setDataSource ignored : ");
     }
 
     private void
@@ -578,7 +578,7 @@ SurfaceHolder.Callback {
             mMp.prepareAsync();
             return;
         }
-        logI("MP [" + mpGetState().name() + "] : prepareAsync ignored : ");
+        if (DBG) P.v("MP [" + mpGetState().name() + "] : prepareAsync ignored : ");
     }
 
     private void
@@ -625,7 +625,7 @@ SurfaceHolder.Callback {
             mpSetState(MPState.IDLE);
             return;
         }
-        logI("MP [" + mpGetState().name() + "] : reset ignored : ");
+        if (DBG) P.v("MP [" + mpGetState().name() + "] : reset ignored : ");
     }
 
     private void
@@ -666,7 +666,7 @@ SurfaceHolder.Callback {
             return;
         }
 
-        logI("MP [" + mpGetState().name() + "] : setVolume ignored : ");
+        if (DBG) P.v("MP [" + mpGetState().name() + "] : setVolume ignored : ");
     }
 
     private int
@@ -674,7 +674,7 @@ SurfaceHolder.Callback {
         switch(mpGetState()) {
         case INVALID:
         case END:
-            logI("MP [" + mpGetState().name() + "] : mpGetVolume ignored : ");
+            if (DBG) P.v("MP [" + mpGetState().name() + "] : mpGetVolume ignored : ");
             return Policy.DEFAULT_VIDEO_VOLUME;
         }
         return mMpVol;
@@ -698,7 +698,7 @@ SurfaceHolder.Callback {
         case PLAYBACK_COMPLETED:
             return mMp.getCurrentPosition();
         }
-        logI("MP [" + mpGetState().name() + "] : getCurrentPosition ignored : ");
+        if (DBG) P.v("MP [" + mpGetState().name() + "] : getCurrentPosition ignored : ");
         return 0;
     }
 
@@ -716,7 +716,7 @@ SurfaceHolder.Callback {
         case PLAYBACK_COMPLETED:
             return mMp.getDuration();
         }
-        logI("MP [" + mpGetState().name() + "] : getDuration ignored : ");
+        if (DBG) P.v("MP [" + mpGetState().name() + "] : getDuration ignored : ");
         return 0;
     }
 
@@ -736,7 +736,7 @@ SurfaceHolder.Callback {
         case PLAYBACK_COMPLETED:
             return mMp.getVideoWidth();
         }
-        logI("MP [" + mpGetState().name() + "] : getVideoWidth ignored : ");
+        if (DBG) P.v("MP [" + mpGetState().name() + "] : getVideoWidth ignored : ");
         return 0;
 
     }
@@ -757,7 +757,7 @@ SurfaceHolder.Callback {
         case PLAYBACK_COMPLETED:
             return mMp.getVideoHeight();
         }
-        logI("MP [" + mpGetState().name() + "] : getVideoHeight ignored : ");
+        if (DBG) P.v("MP [" + mpGetState().name() + "] : getVideoHeight ignored : ");
         return 0;
     }
 
@@ -778,7 +778,7 @@ SurfaceHolder.Callback {
 
     private void
     mpPause() {
-        logD("MPlayer - pause");
+        if (DBG) P.v("MPlayer - pause");
         if (null == mMp)
             return;
 
@@ -789,12 +789,12 @@ SurfaceHolder.Callback {
             mpSetState(MPState.PAUSED);
             return;
         }
-        logI("MP [" + mpGetState().name() + "] : pause ignored : ");
+        if (DBG) P.v("MP [" + mpGetState().name() + "] : pause ignored : ");
     }
 
     private void
     mpSeekTo(int pos) {
-        logD("MPlayer - seekTo : " + pos);
+        if (DBG) P.v("MPlayer - seekTo : " + pos);
         if (null == mMp)
             return;
 
@@ -808,12 +808,12 @@ SurfaceHolder.Callback {
             mMp.seekTo(pos);
             return;
         }
-        logI("MP [" + mpGetState().name() + "] : seekTo ignored : ");
+        if (DBG) P.v("MP [" + mpGetState().name() + "] : seekTo ignored : ");
     }
 
     private void
     mpStart() {
-        logD("MPlayer - start");
+        if (DBG) P.v("MPlayer - start");
         if (null == mMp)
             return;
 
@@ -829,12 +829,12 @@ SurfaceHolder.Callback {
             mpSetState(MPState.STARTED);
             return;
         }
-        logI("MP [" + mpGetState().name() + "] : start ignored : ");
+        if (DBG) P.v("MP [" + mpGetState().name() + "] : start ignored : ");
     }
 
     private void
     mpStop() {
-        logD("MPlayer - stop");
+        if (DBG) P.v("MPlayer - stop");
         if (null == mMp)
             return;
 
@@ -850,7 +850,7 @@ SurfaceHolder.Callback {
             mpSetState(MPState.STOPPED);
             return;
         }
-        logI("MP [" + mpGetState().name() + "] : stop ignored : ");
+        if (DBG) P.v("MP [" + mpGetState().name() + "] : stop ignored : ");
     }
 
     // ========================================================================
@@ -1125,7 +1125,7 @@ SurfaceHolder.Callback {
                     return; // ignore preparing for old media player.
 
                 if (retry < 0) {
-                    logW("YTPlayer : video surface is never created! Preparing will be stopped.");
+                    if (DBG) P.w("YTPlayer : video surface is never created! Preparing will be stopped.");
                     mpStop();
                     return;
                 }
@@ -1156,7 +1156,7 @@ SurfaceHolder.Callback {
         try {
             mpSetDataSource(ytv.url);
         } catch (IOException e) {
-            logW("YTPlayer SetDataSource IOException : " + e.getMessage());
+            if (DBG) P.w("YTPlayer SetDataSource IOException : " + e.getMessage());
             mStartVideoRecovery.executeRecoveryStart(mVlm.getActiveVideo(), 500);
             return;
         }
@@ -1166,7 +1166,7 @@ SurfaceHolder.Callback {
 
     private void
     prepareVideoStreaming(final String videoId) {
-        logI("Prepare Video Streaming : " + videoId);
+        if (DBG) P.v("Prepare Video Streaming : " + videoId);
 
         YTHacker hacker = RTState.get().getCachedYtHacker(videoId);
         if (null != hacker
@@ -1198,7 +1198,7 @@ SurfaceHolder.Callback {
                 if (mYtHack != ythack) {
                     // Another try is already done.
                     // So, this response should be ignored.
-                    logD("YTPlayer Old Youtube connection is finished. Ignored");
+                    if (DBG) P.v("YTPlayer Old Youtube connection is finished. Ignored");
                     loader.close();
                     return;
                 }
@@ -1209,7 +1209,7 @@ SurfaceHolder.Callback {
                 mLoader = loader;
 
                 if (YTHacker.Err.NO_ERR != result) {
-                    logW("YTPlayer YTHack Fails : " + result.name());
+                    if (DBG) P.w("YTPlayer YTHack Fails : " + result.name());
                     switch (result) {
                     case IO_NET:
                         mStartVideoRecovery.executeRecoveryStart(mVlm.getActiveVideo());
@@ -1232,7 +1232,7 @@ SurfaceHolder.Callback {
             public void
             onHackCancelled(YTHacker ythack, String ytvid, Object user) {
                 if (mYtHack != ythack) {
-                    logD("Old Youtube connection is cancelled. Ignored");
+                    if (DBG) P.v("Old Youtube connection is cancelled. Ignored");
                     return;
                 }
 
@@ -1245,7 +1245,7 @@ SurfaceHolder.Callback {
 
     private void
     prepareCachedVideo(File cachedVid) {
-        logI("Prepare Cached video: " + cachedVid.getAbsolutePath());
+        if (DBG) P.v("Prepare Cached video: " + cachedVid.getAbsolutePath());
         // We have cached one.
         // So play in local!
         try {
@@ -1254,7 +1254,7 @@ SurfaceHolder.Callback {
             // Something wrong at cached file.
             // Clean cache and try again - next time as streaming!
             cleanCache(true);
-            logW("YTPlayer SetDataSource to Cached File IOException : " + e.getMessage());
+            if (DBG) P.w("YTPlayer SetDataSource to Cached File IOException : " + e.getMessage());
             mStartVideoRecovery.executeRecoveryStart(mVlm.getActiveVideo());
             return;
         }
@@ -1288,9 +1288,11 @@ SurfaceHolder.Callback {
                     if (mVlm.hasNextVideo()) {
                         if (mVlm.hasActiveVideo()) {
                             Video v = mVlm.getActiveVideo();
-                            logW("YTPlayer Recovery video play Fails");
-                            logW("    ytvid : " + v.ytvid);
-                            logW("    title : " + v.title);
+                            if (DBG) {
+                                P.w("YTPlayer Recovery video play Fails");
+                                P.w("    ytvid : " + v.ytvid);
+                                P.w("    title : " + v.title);
+                            }
                         }
                         startNext(); // move to next video.
                     } else
@@ -1385,7 +1387,7 @@ SurfaceHolder.Callback {
 
     private void
     stopPlay(StopState st) {
-        logD("YTPlayer stopPlay : " + st.name());
+        if (DBG) P.v("YTPlayer stopPlay : " + st.name());
         if (null != mYtHack)
             mYtHack.forceCancel();
 
@@ -1503,20 +1505,20 @@ SurfaceHolder.Callback {
     public void
     surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
         if (holder != mSurfHolder)
-            logW("MPlayer - surfaceCreated with invalid holder");
+            if (DBG) P.w("MPlayer - surfaceCreated with invalid holder");
 
-        logD("MPlayer - surfaceChanged : " + format + ", " + width + ", " + height);
+        if (DBG) P.v("MPlayer - surfaceChanged : " + format + ", " + width + ", " + height);
     }
 
     @Override
     public void
     surfaceCreated(SurfaceHolder holder) {
         if (holder != mSurfHolder)
-            logW("MPlayer - surfaceCreated with invalid holder");
+            if (DBG) P.w("MPlayer - surfaceCreated with invalid holder");
 
-        logD("MPlayer - surfaceCreated");
+        if (DBG) P.v("MPlayer - surfaceCreated");
         if (isSurfaceReady())
-            logW("MPlayer - surfaceCreated is called at [surfaceReady]");
+            if (DBG) P.w("MPlayer - surfaceCreated is called at [surfaceReady]");
 
         setSurfaceReady(true);
 
@@ -1528,11 +1530,11 @@ SurfaceHolder.Callback {
     public void
     surfaceDestroyed(SurfaceHolder holder) {
         if (holder != mSurfHolder)
-            logW("MPlayer - surfaceCreated with invalid holder");
+            if (DBG) P.w("MPlayer - surfaceCreated with invalid holder");
 
-        logD("MPlayer - surfaceDestroyed");
+        if (DBG) P.v("MPlayer - surfaceDestroyed");
         if (!isSurfaceReady())
-            logW("MPlayer - surfaceDestroyed is called at [NOT-surfaceReady]");
+            if (DBG) P.w("MPlayer - surfaceDestroyed is called at [NOT-surfaceReady]");
 
         setSurfaceReady(false);
     }
@@ -1545,7 +1547,7 @@ SurfaceHolder.Callback {
     @Override
     public void
     onBufferingUpdate (MediaPlayer mp, int percent) {
-        logD("MPlayer - onBufferingUpdate : " + percent + " %");
+        if (DBG) P.v("MPlayer - onBufferingUpdate : " + percent + " %");
         // See comments around MEDIA_INFO_BUFFERING_START in onInfo()
         //mpSetState(MPState.BUFFERING);
         Iterator<PlayerStateListener> iter = mPStateLsnrl.iterator();
@@ -1556,14 +1558,14 @@ SurfaceHolder.Callback {
     @Override
     public void
     onCompletion(MediaPlayer mp) {
-        logD("MPlayer - onCompletion");
+        if (DBG) P.v("MPlayer - onCompletion");
         mpSetState(MPState.PLAYBACK_COMPLETED);
         startNext();
     }
 
     private void
     onPreparedCompletely() {
-        logD("MPlayer - onPreparedInternal");
+        if (DBG) P.v("MPlayer - onPreparedInternal");
         boolean autoStart = true;
         if (haveStoredPlayerState()) {
             autoStart = !isStoredPlayerStatePaused();
@@ -1587,12 +1589,12 @@ SurfaceHolder.Callback {
         // To do this, ytplayer should compare that current media player is prepared one or not.
         if (mp != mpGet()) {
             // ignore.
-            logD("MPlayer - old invalid player is prepared.");
+            if (DBG) P.v("MPlayer - old invalid player is prepared.");
             return;
         }
 
         mpSetState(MPState.PREPARED_AUDIO);
-        logD("MPlayer - onPrepared - (PREPARED_AUDIO)");
+        if (DBG) P.v("MPlayer - onPrepared - (PREPARED_AUDIO)");
 
         if (isPreparedCompletely())
             onPreparedCompletely();
@@ -1601,7 +1603,7 @@ SurfaceHolder.Callback {
     @Override
     public void
     onVideoSizeChanged(MediaPlayer mp, int width, int height) {
-        logD("MPlayer - onVideoSizeChanged");
+        if (DBG) P.v("MPlayer - onVideoSizeChanged");
         setVideoSizeReady(true);
 
         if (isPreparedCompletely())
@@ -1611,7 +1613,7 @@ SurfaceHolder.Callback {
     @Override
     public void
     onSeekComplete(MediaPlayer mp) {
-        logD("MPlayer - onSeekComplete");
+        if (DBG) P.v("MPlayer - onSeekComplete");
         if (mp != mpGet())
             return;
 
@@ -1626,31 +1628,31 @@ SurfaceHolder.Callback {
         mpSetState(MPState.ERROR);
         switch (what) {
         case MediaPlayer.MEDIA_ERROR_NOT_VALID_FOR_PROGRESSIVE_PLAYBACK:
-            logD("MPlayer - onError : NOT_VALID_FOR_PROGRESSIVE_PLAYBACK");
+            if (DBG) P.v("MPlayer - onError : NOT_VALID_FOR_PROGRESSIVE_PLAYBACK");
             tryAgain = false;
             break;
 
         case MediaPlayer.MEDIA_ERROR_SERVER_DIED:
-            logD("MPlayer - onError : MEDIA_ERROR_SERVER_DIED");
+            if (DBG) P.v("MPlayer - onError : MEDIA_ERROR_SERVER_DIED");
             break;
 
         case MediaPlayer.MEDIA_ERROR_UNKNOWN:
-            logD("MPlayer - onError : UNKNOWN");
+            if (DBG) P.v("MPlayer - onError : UNKNOWN");
             break;
 
         default:
-            logD("MPlayer - onError");
+            if (DBG) P.v("MPlayer - onError");
         }
 
         if (tryAgain
             && mVlm.hasActiveVideo()
             && (MPState.INITIALIZED == origState
                 || MPState.PREPARING == origState)) {
-            logD("MPlayer - Try to recover!");
+            if (DBG) P.v("MPlayer - Try to recover!");
             startVideo(mVlm.getActiveVideo(), true);
         } else {
             if (!haveStoredPlayerState()) {
-                logI("MPlayer - not-recoverable error : " + what + "/" + extra);
+                if (DBG) P.v("MPlayer - not-recoverable error : " + what + "/" + extra);
                 stopPlay(StopState.UNKNOWN_ERROR);
             }
         }
@@ -1661,7 +1663,7 @@ SurfaceHolder.Callback {
     @Override
     public boolean
     onInfo(MediaPlayer mp, int what, int extra) {
-        logD("MPlayer - onInfo : " + what);
+        if (DBG) P.v("MPlayer - onInfo : " + what);
         switch (what) {
         case MediaPlayer.MEDIA_INFO_VIDEO_TRACK_LAGGING:
             break;

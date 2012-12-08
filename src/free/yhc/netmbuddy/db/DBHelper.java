@@ -29,6 +29,9 @@ import free.yhc.netmbuddy.model.YTVideoFeed;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class DBHelper {
+    private static final boolean DBG = false;
+    private static final Utils.Logger P = new Utils.Logger(DBHelper.class);
+
     private static final int MSG_WHAT_CLOSE         = 0;
     private static final int MSG_WHAT_CHECK_EXIST   = 1;
 

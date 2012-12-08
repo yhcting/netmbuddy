@@ -39,6 +39,9 @@ import free.yhc.netmbuddy.utils.Utils;
 
 
 public class YTVideoSearchAdapter extends YTSearchAdapter {
+    private static final boolean DBG = false;
+    private static final Utils.Logger P = new Utils.Logger(YTVideoSearchAdapter.class);
+
     // Check Button Tag Key
     private static final int VTAGKEY_POS        = R.drawable.btncheck_on;
 

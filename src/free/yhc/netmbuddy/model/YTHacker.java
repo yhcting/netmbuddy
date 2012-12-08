@@ -21,7 +21,6 @@
 package free.yhc.netmbuddy.model;
 
 import static free.yhc.netmbuddy.utils.Utils.eAssert;
-import static free.yhc.netmbuddy.utils.Utils.logW;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -40,6 +39,9 @@ import free.yhc.netmbuddy.utils.Utils;
 // This is main class for HACKING Youtube protocol.
 //
 public class YTHacker {
+    private static final boolean DBG = false;
+    private static final Utils.Logger P = new Utils.Logger(YTHacker.class);
+
     public static final int     YTQUALITY_SCORE_MAXIMUM     = 100;
     public static final int     YTQUALITY_SCORE_HIGHEST     = 100;
     public static final int     YTQUALITY_SCORE_HIGH        = 80;
@@ -220,7 +222,7 @@ public class YTHacker {
             if (null != sig)
                 ve.url += "&signature=" + sig;
             else
-                logW("NO SIGNATURE in URL STRING!!!");
+                if (DBG) P.w("NO SIGNATURE in URL STRING!!!");
             ve.qscore = getQuailityScore(ve.tag);
             return ve;
         }

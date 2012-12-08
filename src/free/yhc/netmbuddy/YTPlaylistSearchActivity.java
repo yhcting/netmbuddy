@@ -24,8 +24,12 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
 import free.yhc.netmbuddy.model.YTSearchHelper;
+import free.yhc.netmbuddy.utils.Utils;
 
 public class YTPlaylistSearchActivity extends YTSearchActivity {
+    private static final boolean DBG = false;
+    private static final Utils.Logger P = new Utils.Logger(YTPlaylistSearchActivity.class);
+
     @Override
     protected YTSearchHelper.SearchType
     getSearchType() {

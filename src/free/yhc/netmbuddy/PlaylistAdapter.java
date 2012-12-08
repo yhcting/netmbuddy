@@ -30,8 +30,12 @@ import android.widget.TextView;
 import free.yhc.netmbuddy.db.ColPlaylist;
 import free.yhc.netmbuddy.db.DB;
 import free.yhc.netmbuddy.utils.UiUtils;
+import free.yhc.netmbuddy.utils.Utils;
 
 public class PlaylistAdapter extends ResourceCursorAdapter {
+    private static final boolean DBG = false;
+    private static final Utils.Logger P = new Utils.Logger(PlaylistAdapter.class);
+
     private static final int LAYOUT = R.layout.playlist_row;
 
     private static final int COLI_ID        = 0;

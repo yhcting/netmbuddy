@@ -28,11 +28,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import android.os.Handler;
+import free.yhc.netmbuddy.utils.Utils;
 
 // [ Naming Convention ]
 // Runnable => Job
 // Thread   => Task
 public class MultiThreadRunner {
+    private static final boolean DBG = false;
+    private static final Utils.Logger P = new Utils.Logger(MultiThreadRunner.class);
+
     private final Handler               mOwner;
     private final Object                mQLock      = new Object();
     private final LinkedList<Job<?>>    mReadyQ     = new LinkedList<Job<?>>();

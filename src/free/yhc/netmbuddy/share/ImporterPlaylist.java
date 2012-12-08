@@ -43,6 +43,9 @@ import free.yhc.netmbuddy.utils.Utils;
 import free.yhc.netmbuddy.utils.YTUtils;
 
 class ImporterPlaylist implements ImporterI {
+    private static final boolean DBG = false;
+    private static final Utils.Logger P = new Utils.Logger(ImporterPlaylist.class);
+
     private final JSONObject            mJo;
     private final MultiThreadRunner     mMtrunner;
 

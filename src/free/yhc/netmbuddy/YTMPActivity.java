@@ -24,8 +24,12 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
+import free.yhc.netmbuddy.utils.Utils;
 
 public class YTMPActivity extends Activity {
+    private static final boolean DBG = false;
+    private static final Utils.Logger P = new Utils.Logger(YTMPActivity.class);
+
     @Override
     public void
     onCreate(Bundle savedInstanceState) {

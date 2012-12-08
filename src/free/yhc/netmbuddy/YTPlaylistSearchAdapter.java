@@ -27,8 +27,12 @@ import android.widget.TextView;
 import free.yhc.netmbuddy.model.YTFeed;
 import free.yhc.netmbuddy.model.YTPlaylistFeed;
 import free.yhc.netmbuddy.model.YTSearchHelper;
+import free.yhc.netmbuddy.utils.Utils;
 
 public class YTPlaylistSearchAdapter extends YTSearchAdapter {
+    private static final boolean DBG = false;
+    private static final Utils.Logger P = new Utils.Logger(YTPlaylistSearchAdapter.class);
+
     YTPlaylistSearchAdapter(Context context,
                             YTSearchHelper helper,
                             YTPlaylistFeed.Entry[] entries) {

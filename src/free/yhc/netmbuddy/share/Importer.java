@@ -35,6 +35,7 @@ import free.yhc.netmbuddy.share.Share.LocalException;
 import free.yhc.netmbuddy.share.Share.OnProgressListener;
 import free.yhc.netmbuddy.share.Share.Type;
 import free.yhc.netmbuddy.utils.FileUtils;
+import free.yhc.netmbuddy.utils.Utils;
 
 // ============================================================================
 //
@@ -44,6 +45,9 @@ import free.yhc.netmbuddy.utils.FileUtils;
 //
 // ============================================================================
 class Importer implements ImporterI {
+    private static final boolean DBG = false;
+    private static final Utils.Logger P = new Utils.Logger(Importer.class);
+
     private final ZipInputStream    mZis;
     // concrete importer instance (depends on share type)
     private ImporterI               mImporter = null;

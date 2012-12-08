@@ -42,6 +42,9 @@ import free.yhc.netmbuddy.utils.FileUtils;
 import free.yhc.netmbuddy.utils.Utils;
 
 class ExporterPlaylist implements ExporterI {
+    private static final boolean DBG = false;
+    private static final Utils.Logger P = new Utils.Logger(ExporterPlaylist.class);
+
     private final File  _mFout;
     private final long  _mPlid;
 

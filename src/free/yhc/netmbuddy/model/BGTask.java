@@ -54,6 +54,9 @@ import android.os.Handler;
 import free.yhc.netmbuddy.utils.Utils;
 
 public abstract class BGTask<R> {
+    private static final boolean DBG = false;
+    private static final Utils.Logger P = new Utils.Logger(BGTask.class);
+
     public static final int PRIORITY_MIN    = Thread.MIN_PRIORITY;  // 1
     public static final int PRIORITY_MAX    = Thread.MAX_PRIORITY;  // 10
     public static final int PRIORITY_NORM   = Thread.NORM_PRIORITY; // 5

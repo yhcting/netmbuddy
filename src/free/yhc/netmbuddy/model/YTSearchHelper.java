@@ -21,7 +21,6 @@
 package free.yhc.netmbuddy.model;
 
 import static free.yhc.netmbuddy.utils.Utils.eAssert;
-import static free.yhc.netmbuddy.utils.Utils.logW;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -44,6 +43,9 @@ import free.yhc.netmbuddy.utils.ImageUtils;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class YTSearchHelper {
+    private static final boolean DBG = false;
+    private static final Utils.Logger P = new Utils.Logger(YTSearchHelper.class);
+
     public static final int MAX_NR_RESULT_PER_PAGE      = 50; // See Youtube API Document
 
     private static final int MSG_WHAT_OPEN                  = 0;
@@ -398,13 +400,13 @@ public class YTSearchHelper {
                 eAssert(false);
             }
         } catch (IOException e) {
-            logW("YTSearchHelper.JobHandler : DOM IO error!");
+            if (DBG) P.w("YTSearchHelper.JobHandler : DOM IO error!");
             return new SearchReturn(null, Err.IO_NET);
         } catch (SAXException e) {
-            logW("YTSearchHelper.JobHandler : Parse unexpected format!");
+            if (DBG) P.w("YTSearchHelper.JobHandler : Parse unexpected format!");
             return new SearchReturn(null, Err.FEED_FORMAT);
         } catch (ParserConfigurationException pe) {
-            logW("YTSearchHelper.JobHandler : Parse cofiguration exception!");
+            if (DBG) P.w("YTSearchHelper.JobHandler : Parse cofiguration exception!");
             return new SearchReturn(null, Err.UNKNOWN);
         } catch (NetLoader.LocalException e) {
             eAssert(NetLoader.Err.NO_ERR != e.error());

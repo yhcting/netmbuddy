@@ -61,6 +61,9 @@ import free.yhc.netmbuddy.utils.Utils;
 //}
 //============================================================================
 class Json {
+    private static final boolean DBG = false;
+    private static final Utils.Logger P = new Utils.Logger(Json.class);
+
     // Field name constants.
     static final String MAGIC       = "!*&@$$#$%~NetMBuddy!@@@@!%^^*#$$##";
     static final String FVERSION    = "version";

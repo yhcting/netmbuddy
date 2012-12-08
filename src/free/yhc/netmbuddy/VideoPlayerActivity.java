@@ -30,6 +30,9 @@ import free.yhc.netmbuddy.utils.Utils;
 public class VideoPlayerActivity extends Activity implements
 YTPlayer.PlayerStateListener,
 YTPlayer.VideosStateListener {
+    private static final boolean DBG = false;
+    private static final Utils.Logger P = new Utils.Logger(VideoPlayerActivity.class);
+
     private final YTPlayer      mMp = YTPlayer.get();
     private SurfaceView         mSurfv;
     private Utils.PrefQuality   mVQuality = Utils.getPrefQuality();

@@ -31,6 +31,9 @@ import free.yhc.netmbuddy.R;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class NotiManager {
+    private static final boolean DBG = false;
+    private static final Utils.Logger P = new Utils.Logger(NotiManager.class);
+
     private static final String NOTI_INTENT_DELETE
         = "ytmplayer.intent.action.NOTIFICATION_DELETE";
     private static final String NOTI_INTENT_ACTION

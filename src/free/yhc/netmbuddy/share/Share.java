@@ -24,12 +24,17 @@ import java.io.File;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.ZipInputStream;
 
+import free.yhc.netmbuddy.utils.Utils;
+
 // ============================================================================
 //
 // Interface class of this package.
 //
 // ============================================================================
 public class Share {
+    private static final boolean DBG = false;
+    private static final Utils.Logger P = new Utils.Logger(Share.class);
+
     public static interface OnProgressListener {
         void onProgress(float prog);
     }

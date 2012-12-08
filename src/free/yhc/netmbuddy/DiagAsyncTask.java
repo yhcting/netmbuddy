@@ -33,6 +33,9 @@ import free.yhc.netmbuddy.utils.Utils;
 public class DiagAsyncTask extends BGTask<Err> implements
 DialogInterface.OnDismissListener,
 View.OnClickListener {
+    private static final boolean DBG = false;
+    private static final Utils.Logger P = new Utils.Logger(DiagAsyncTask.class);
+
     private Context         mContext        = null;
     private ProgressDialog  mDialog         = null;
     private CharSequence    mTitle          = null;

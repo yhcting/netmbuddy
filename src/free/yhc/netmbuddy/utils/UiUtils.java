@@ -59,6 +59,9 @@ import free.yhc.netmbuddy.model.YTHacker;
 import free.yhc.netmbuddy.model.YTPlayer;
 
 public class UiUtils {
+    private static final boolean DBG = false;
+    private static final Utils.Logger P = new Utils.Logger(UiUtils.class);
+
     public static final long PLID_INVALID       = DB.INVALID_PLAYLIST_ID;
     // Special playlist id that represents that this is unknown non-user playlist.
     public static final long PLID_UNKNOWN       = PLID_INVALID - 1;

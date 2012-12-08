@@ -20,7 +20,12 @@
 
 package free.yhc.netmbuddy.model;
 
+import free.yhc.netmbuddy.utils.Utils;
+
 public class HttpUtils {
+    private static final boolean DBG = false;
+    private static final Utils.Logger P = new Utils.Logger(HttpUtils.class);
+
     // Statuc Codes
     // ============
     // Informational    : 1xx

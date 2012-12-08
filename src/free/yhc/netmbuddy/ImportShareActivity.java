@@ -21,7 +21,6 @@
 package free.yhc.netmbuddy;
 
 import static free.yhc.netmbuddy.utils.Utils.eAssert;
-import static free.yhc.netmbuddy.utils.Utils.logE;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -45,6 +44,9 @@ import free.yhc.netmbuddy.utils.UiUtils;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class ImportShareActivity extends Activity {
+    private static final boolean DBG = false;
+    private static final Utils.Logger P = new Utils.Logger(ImportShareActivity.class);
+
     private DiagAsyncTask   mDiagTask   = null;
     private AlertDialog     mDiag       = null;
     private ZipInputStream  mZis        = null;
@@ -100,8 +102,8 @@ public class ImportShareActivity extends Activity {
                 success = r.success.get();
                 fail = r.fail.get();
             } else
-                logE("ImportShareActivity : Unexpected Error (returned result is null!)\n"
-                     + "   recovered");
+                if (DBG) P.e("Unexpected Error (returned result is null!)\n"
+                        + "   recovered");
 
             CharSequence title = " [ " + Utils.getResText(R.string.app_name) + " ]\n"
                                  + Utils.getResText(R.string.import_) + " : "

@@ -34,6 +34,9 @@ import free.yhc.netmbuddy.utils.UiUtils;
 import free.yhc.netmbuddy.utils.Utils;
 
 public abstract class YTVideoSearchActivity extends YTSearchActivity {
+    private static final boolean DBG = false;
+    private static final Utils.Logger P = new Utils.Logger(YTVideoSearchActivity.class);
+
     private final DB        mDb = DB.get();
     private final YTPlayer  mMp = YTPlayer.get();
 

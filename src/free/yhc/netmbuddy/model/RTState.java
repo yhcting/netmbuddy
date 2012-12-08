@@ -25,8 +25,12 @@ import static free.yhc.netmbuddy.utils.Utils.eAssert;
 import java.util.HashMap;
 
 import android.support.v4.util.LruCache;
+import free.yhc.netmbuddy.utils.Utils;
 
 public class RTState {
+    private static final boolean DBG = false;
+    private static final Utils.Logger P = new Utils.Logger(RTState.class);
+
     private static RTState sInstance = null;
 
     // TODO

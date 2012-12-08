@@ -59,6 +59,9 @@ import free.yhc.netmbuddy.utils.UiUtils;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class PlaylistActivity extends Activity {
+    private static final boolean DBG = false;
+    private static final Utils.Logger P = new Utils.Logger(PlaylistActivity.class);
+
     private static final ColVideo[] sVideoProjectionToPlay
         = new ColVideo[] { ColVideo.VIDEOID,
                            ColVideo.TITLE,
