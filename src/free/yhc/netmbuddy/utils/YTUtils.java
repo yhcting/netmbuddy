@@ -58,6 +58,9 @@ public class YTUtils {
                           int       volume) {
         // Loading thumbnail is done.
         YTSearchHelper.LoadThumbnailReturn tr = loadYtVideoThumbnail(ytvid);
+        if (null == tr.bm)
+            return false;
+
         DB.Err err = DB.get().insertVideoToPlaylist(plid,
                                                     ytvid,
                                                     title,
@@ -65,8 +68,7 @@ public class YTUtils {
                                                     playtime,
                                                     ImageUtils.compressBitmap(tr.bm),
                                                     Policy.DEFAULT_VIDEO_VOLUME);
-        if (null != tr.bm)
-            tr.bm.recycle();
+        tr.bm.recycle();
 
         if (DB.Err.NO_ERR != err)
             return false;
