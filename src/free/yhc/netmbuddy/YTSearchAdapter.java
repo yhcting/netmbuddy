@@ -27,7 +27,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
-import free.yhc.netmbuddy.model.Policy;
 import free.yhc.netmbuddy.model.YTFeed;
 import free.yhc.netmbuddy.model.YTSearchHelper;
 import free.yhc.netmbuddy.utils.UiUtils;
@@ -62,7 +61,6 @@ YTSearchHelper.LoadThumbnailDoneReceiver {
         mThumbnails = new Bitmap[mEntries.length];
 
         mHelper.setLoadThumbnailDoneRecevier(this);
-        long delay = 0;
         for (int i = 0; i < mItemViews.length; i++) {
             mItemViews[i] = UiUtils.inflateLayout(Utils.getAppContext(), rowLayout);
             // NOTE!
@@ -79,15 +77,8 @@ YTSearchHelper.LoadThumbnailDoneReceiver {
                                                       mCxt.getResources().getDimensionPixelSize(R.dimen.thumbnail_width),
                                                       mCxt.getResources().getDimensionPixelSize(R.dimen.thumbnail_height));
             mThumbnails[i] = null;
-            Utils.getUiHandler().postDelayed(new Runnable() {
-                @Override
-                public void
-                run() {
-                    if (null != mHelper)
-                        mHelper.loadThumbnailAsync(arg);
-                }
-            }, delay);
-            delay += Policy.YTSEARCH_LOAD_THUMBNAIL_INTERVAL;
+            if (null != mHelper)
+                mHelper.loadThumbnailAsync(arg);
         }
     }
 

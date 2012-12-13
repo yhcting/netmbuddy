@@ -462,6 +462,9 @@ public class YTSearchHelper {
 
     public void
     loadThumbnailAsync(LoadThumbnailArg arg) {
+        if (null == mBgHandler)
+            return;
+
         Message msg = mBgHandler.obtainMessage(MSG_WHAT_LOAD_THUMBNAIL, arg);
         mBgHandler.sendMessage(msg);
     }
