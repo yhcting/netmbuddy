@@ -203,8 +203,8 @@ OnSharedPreferenceChangeListener {
         }
 
         @Override
-        public
-        void run() {
+        public void
+        run() {
             update(mMp.playerGetDuration(), mMp.playerGetPosition());
             Utils.getUiHandler().postDelayed(this, UPDATE_INTERVAL_MS);
         }
@@ -662,13 +662,14 @@ OnSharedPreferenceChangeListener {
         if (null == vid) {
             UiUtils.ConfirmAction action = new UiUtils.ConfirmAction() {
                 @Override
-                public void onOk(Dialog dialog) {
+                public void
+                onOk(Dialog dialog) {
                     listener.onPostExecute(Err.NO_ERR, null);
                 }
 
                 @Override
-                public
-                void onCancel(Dialog dialog) { }
+                public void
+                onCancel(Dialog dialog) { }
             };
             UiUtils.buildConfirmDialog(mVActivity,
                     R.string.delete,
@@ -740,7 +741,8 @@ OnSharedPreferenceChangeListener {
         ImageView btn = (ImageView)playerv.findViewById(R.id.mplayer_btnplay);
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) {
+            public void
+            onClick(View v) {
                 // See pvConfigControl() for details.
                 YTPlayer.MPState nextst = (YTPlayer.MPState)v.getTag();
                 if (null == nextst)
@@ -771,7 +773,8 @@ OnSharedPreferenceChangeListener {
         btn = (ImageView)playerv.findViewById(R.id.mplayer_btnprev);
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) {
+            public void
+            onClick(View v) {
                 mMp.startPrevVideo();
             }
         });
@@ -779,7 +782,8 @@ OnSharedPreferenceChangeListener {
         btn = (ImageView)playerv.findViewById(R.id.mplayer_btnnext);
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) {
+            public void
+            onClick(View v) {
                 mMp.startNextVideo();
             }
         });
@@ -787,7 +791,8 @@ OnSharedPreferenceChangeListener {
         btn = (ImageView)playerv.findViewById(R.id.mplayer_btnmore);
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) {
+            public void
+            onClick(View v) {
                 pvOnMoreButtonClicked(v);
             }
         });
@@ -813,14 +818,16 @@ OnSharedPreferenceChangeListener {
     pvInit(ViewGroup playerv, ViewGroup playerLDrawer, SurfaceView surfacev) {
         mMp.addPlayerStateListener(this, new YTPlayer.PlayerStateListener() {
             @Override
-            public void onStateChanged(YTPlayer.MPState from, int fromFlag,
-                                       YTPlayer.MPState to,   int toFlag) {
+            public void
+            onStateChanged(YTPlayer.MPState from, int fromFlag,
+                           YTPlayer.MPState to,   int toFlag) {
                 pvConfigureAll(mPlayerv, mPlayerLDrawer, from, fromFlag, to, toFlag);
                 notiConfigure(from, fromFlag, to, toFlag);
             }
 
             @Override
-            public void onBufferingChanged(int percent) {
+            public void
+            onBufferingChanged(int percent) {
                 mUpdateProg.updateSecondary(percent);
             }
         });
@@ -861,7 +868,8 @@ OnSharedPreferenceChangeListener {
 
             mMp.addVideosStateListener(this, new YTPlayer.VideosStateListener() {
                 @Override
-                public void onStopped(YTPlayer.StopState state) {
+                public void
+                onStopped(YTPlayer.StopState state) {
                     boolean      needToNotification = true;
                     CharSequence msg = "";
                     switch (state) {
@@ -894,13 +902,15 @@ OnSharedPreferenceChangeListener {
                 }
 
                 @Override
-                public void onStarted() {
+                public void
+                onStarted() {
                     if (null != mPlayerv)
                         pvEnableLDrawer(mPlayerLDrawer);
                 }
 
                 @Override
-                public void onChanged() {
+                public void
+                onChanged() {
                     // Control button should be re-checked due to 'next' and 'prev' button.
                     if (null != mPlayerv)
                         pvConfigureControl((ViewGroup)mPlayerv.findViewById(R.id.mplayer_control),
