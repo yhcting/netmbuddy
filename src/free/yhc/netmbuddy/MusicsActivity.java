@@ -90,21 +90,13 @@ public class MusicsActivity extends Activity {
     }
 
     private void
-    showPlayer() {
-        ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
-        playerv.setVisibility(View.VISIBLE);
-    }
-
-    private void
     startVideos(YTPlayer.Video[] vs) {
-        showPlayer();
         mMp.startVideos(vs);
     }
 
     private void
     appendToPlayQ(YTPlayer.Video[] vids) {
         mMp.appendToPlayQ(vids);
-        showPlayer();
     }
 
     private void

@@ -121,6 +121,10 @@ SurfaceHolder.Callback {
     private WakeLock            mWl         = null;
     private WifiLock            mWfl        = null;
     private MediaPlayer         mMp         = null;
+    // Video Player Session Id.
+    // Whenever new video - even if it is same video with previous one - is started,
+    //   session id is increased.
+    private long                mMpSessId   = 0;
     private MPState             mMpS        = MPState.INVALID; // state of mMp;
     private int                 mMpSFlag    = MPSTATE_FLAG_IDLE;
     private boolean             mMpSurfAttached = false;
@@ -539,6 +543,7 @@ SurfaceHolder.Callback {
     private void
     mpNewInstance() {
         mMp = new MediaPlayer();
+        mMpSessId++;
         mMpSurfAttached = false;
         mMpVol = Policy.DEFAULT_VIDEO_VOLUME;
         initMediaPlayer(mMp);
@@ -597,7 +602,8 @@ SurfaceHolder.Callback {
         final MediaPlayer mp = mMp;
         new Thread(new Runnable() {
             @Override
-            public void run() {
+            public void
+            run() {
                 mpUnsetVideoSurface();
                 mp.release();
             }
@@ -1399,6 +1405,9 @@ SurfaceHolder.Callback {
             }
         }
 
+        if (StopState.FORCE_STOPPED == st)
+            mUi.setPlayerVisibility(View.GONE);
+
         // Play is already stopped.
         // So, auto stop should be inactive here.
         mAutoStop.unset();
@@ -2076,6 +2085,7 @@ SurfaceHolder.Callback {
             Iterator<VideosStateListener> iter = mVStateLsnrl.iterator();
             while (iter.hasNext())
                 iter.next().onStarted();
+            mUi.setPlayerVisibility(View.VISIBLE);
         }
     }
 
@@ -2139,6 +2149,21 @@ SurfaceHolder.Callback {
     stopVideos() {
         if (mVlm.hasActiveVideo())
             stopPlay(StopState.FORCE_STOPPED);
+    }
+
+    /**
+     * Player session id.
+     * Even if same video is re-played, session id is different.
+     * @return
+     */
+    public long
+    getPlayerSessionId() {
+        return mMpSessId;
+    }
+
+    public MPState
+    getPlayerState() {
+        return mMpS;
     }
 
     public String

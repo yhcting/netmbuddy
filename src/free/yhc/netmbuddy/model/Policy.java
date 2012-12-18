@@ -89,6 +89,7 @@ public class Policy {
     // At the beginning of streaming, device is very busy.
     // So, caching need to be started with delay.
     public static final long    YTPLAYER_CACHING_DELAY  = 10000; // 10 seconds.
+    public static final long    YTPLAYER_DOUBLE_TOUCH_INTERVAL  = 500;
 
     // --------------------------------------------------------------------
     // Network access

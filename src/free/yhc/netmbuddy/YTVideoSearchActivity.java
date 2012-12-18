@@ -24,7 +24,6 @@ import static free.yhc.netmbuddy.utils.Utils.eAssert;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.TextView;
 import free.yhc.netmbuddy.db.DB;
 import free.yhc.netmbuddy.model.YTPlayer;
@@ -242,15 +241,8 @@ public abstract class YTVideoSearchActivity extends YTSearchActivity {
     }
 
     public void
-    showPlayer() {
-        ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
-        playerv.setVisibility(View.VISIBLE);
-    }
-
-    public void
     appendToPlayQ(YTPlayer.Video[] vids) {
         mMp.appendToPlayQ(vids);
-        showPlayer();
     }
 
     /**

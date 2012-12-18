@@ -179,7 +179,6 @@ DBHelper.CheckDupDoneReceiver {
     protected void
     onListItemClick(View view, int position, long itemId) {
         YTPlayer.Video v = getAdapter().getYTPlayerVideo(position);
-        getMyActivity().showPlayer();
         mMp.startVideos(new YTPlayer.Video[] { v });
     }
 

@@ -115,7 +115,8 @@ YTPlayer.VideosStateListener {
         SurfaceView surfv = withSurface? (SurfaceView)findViewById(R.id.surface): null;
         View.OnClickListener onClick = new View.OnClickListener() {
             @Override
-            public void onClick(View v) {
+            public void
+            onClick(View v) {
                 changeVideoQuality(v);
             }
         };

@@ -104,6 +104,16 @@ OnSharedPreferenceChangeListener {
         }
     }
 
+    private enum PlayBtnState {
+        START,
+        PAUSE,
+        STOP,
+        // Temporal state to notify that user triggers 'pause'.
+        // This state will be overwritten to the other state immediately
+        //   at state machine that configures control buttons.
+        USER_PAUSE,
+    }
+
     private class UpdateProgress implements Runnable {
         private static final int UPDATE_INTERVAL_MS = 1000;
 
@@ -359,11 +369,11 @@ OnSharedPreferenceChangeListener {
 
 
         controlv.setVisibility(View.VISIBLE);
-        ImageView nextv = (ImageView)controlv.findViewById(R.id.mplayer_btnnext);
-        ImageView prevv = (ImageView)controlv.findViewById(R.id.mplayer_btnprev);
-        ImageView playv = (ImageView)controlv.findViewById(R.id.mplayer_btnplay);
-        ImageView morev = (ImageView)controlv.findViewById(R.id.mplayer_btnmore);
-        ImageView toolv = (ImageView)controlv.findViewById(R.id.mplayer_btntool);
+        final ImageView nextv = (ImageView)controlv.findViewById(R.id.mplayer_btnnext);
+        final ImageView prevv = (ImageView)controlv.findViewById(R.id.mplayer_btnprev);
+        final ImageView playv = (ImageView)controlv.findViewById(R.id.mplayer_btnplay);
+        final ImageView morev = (ImageView)controlv.findViewById(R.id.mplayer_btnmore);
+        final ImageView toolv = (ImageView)controlv.findViewById(R.id.mplayer_btntool);
 
         // --------------------------------------------------------------------
         // configure prev/next/more
@@ -400,16 +410,43 @@ OnSharedPreferenceChangeListener {
         // --------------------------------------------------------------------
         switch (to) {
         case PREPARED:
-        case PAUSED:
-            pvEnableButton(playv, R.drawable.ic_media_play);
-            // Set next state be moved to on click as 'Tag'
-            playv.setTag(YTPlayer.MPState.STARTED);
-            break;
+        case PAUSED: {
+            PlayBtnState st = (PlayBtnState)playv.getTag();
+            if (PlayBtnState.USER_PAUSE == st) {
+                pvEnableButton(playv, R.drawable.ic_media_stop);
+                playv.setTag(PlayBtnState.STOP);
+
+                // [ Implementing Usecase]
+                // - Single touch while playing video pauses video.
+                // - Double-touch while playing video stops videos.
+                final long sessionId = mMp.getPlayerSessionId();
+                final Activity activity = mVActivity;
+                Utils.getUiHandler().postDelayed(new Runnable() {
+                    @Override
+                    public void
+                    run() {
+                        // Strict check to know that player UI is still at the same screen and state
+                        //   with the moment when user-pause is triggered.
+                        if (mMp.getPlayerSessionId() == sessionId
+                            && YTPlayer.MPState.PAUSED == mMp.getPlayerState()
+                            && PlayBtnState.STOP == (PlayBtnState)playv.getTag()
+                            && activity == mVActivity) {
+                            playv.setImageResource(R.drawable.ic_media_play);
+                            playv.setTag(PlayBtnState.START);
+                        }
+                    }
+                }, Policy.YTPLAYER_DOUBLE_TOUCH_INTERVAL);
+
+            } else {
+                pvEnableButton(playv, R.drawable.ic_media_play);
+                playv.setTag(PlayBtnState.START);
+            }
+        } break;
 
         case STARTED:
             pvEnableButton(playv, R.drawable.ic_media_pause);
             // Set next state be moved to on click as 'Tag'
-            playv.setTag(YTPlayer.MPState.PAUSED);
+            playv.setTag(PlayBtnState.PAUSE);
             break;
 
         case IDLE:
@@ -418,7 +455,7 @@ OnSharedPreferenceChangeListener {
         case PREPARING:
             pvEnableButton(playv, R.drawable.ic_media_stop);
             // Set next state be moved to on click as 'Tag'
-            playv.setTag(YTPlayer.MPState.STOPPED);
+            playv.setTag(PlayBtnState.STOP);
             break;
 
         default:
@@ -744,21 +781,21 @@ OnSharedPreferenceChangeListener {
             public void
             onClick(View v) {
                 // See pvConfigControl() for details.
-                YTPlayer.MPState nextst = (YTPlayer.MPState)v.getTag();
-                if (null == nextst)
+                PlayBtnState st = (PlayBtnState)v.getTag();
+                if (null == st)
                     return; // Nothing to do.
 
-                switch (nextst) {
-                case STARTED:
+                switch (st) {
+                case START:
                     mMp.playerStart();
                     break;
 
-                case PAUSED:
+                case PAUSE:
+                    v.setTag(PlayBtnState.USER_PAUSE);
                     mMp.playerPause();
-                    // prevent clickable during transition player state.
                     break;
 
-                case STOPPED:
+                case STOP:
                     // This doesn't means "Stop only this video",
                     //   but means stop playing vidoes - previous user request.
                     mMp.stopVideos();
@@ -1126,6 +1163,12 @@ OnSharedPreferenceChangeListener {
     notifyToUser(String msg) {
         if (null != mVActivity)
             UiUtils.showTextToast(mVActivity, msg);
+    }
+
+    void
+    setPlayerVisibility(int visibility) {
+        if (null != mPlayerv)
+            mPlayerv.setVisibility(visibility);
     }
 
     void
