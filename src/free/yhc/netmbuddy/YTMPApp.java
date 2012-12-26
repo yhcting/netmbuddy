@@ -26,6 +26,7 @@ import free.yhc.netmbuddy.db.DB;
 import free.yhc.netmbuddy.model.NotiManager;
 import free.yhc.netmbuddy.model.RTState;
 import free.yhc.netmbuddy.model.YTPlayer;
+import free.yhc.netmbuddy.model.YTPlayerLifeSupportService;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class YTMPApp extends Application {
@@ -48,6 +49,7 @@ public class YTMPApp extends Application {
         NotiManager.get();
         YTPlayer.get();
         LockScreenActivity.ScreenMonitor.init();
+        YTPlayerLifeSupportService.init();
     }
 
     @Override

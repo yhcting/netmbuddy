@@ -221,6 +221,9 @@
                 <data android:pathPattern=".*\\..*\\..*\\..*\\.netmbuddy"/>
             </intent-filter>
         </activity>
+        <service android:name=".model.YTPlayerLifeSupportService"
+                 android:exported="false"
+                 />
         <receiver
             android:name=".model.YTPlayer$TelephonyMonitor"
             android:exported="false"

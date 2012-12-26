@@ -42,18 +42,19 @@ public class NotiManager {
     private static NotiManager sInstance = null;
 
     // active notification set.
-    private final NotificationManager   nm = (NotificationManager)Utils.getAppContext()
-                                                                       .getSystemService(Context.NOTIFICATION_SERVICE);
+    private final NotificationManager mNm = (NotificationManager)Utils.getAppContext()
+                                                                      .getSystemService(Context.NOTIFICATION_SERVICE);
+    private Notification mLastPlayerNotification = null;
 
     // NOTE
     public static enum NotiType {
         // All player type notification uses same notification id because
         //   these notification SHOULD NOT be multiple-displayed.
-        BASE    (R.drawable.noti_base,  R.drawable.noti_base),
-        START   (R.drawable.noti_start, R.drawable.noti_base),
-        PAUSE   (R.drawable.noti_pause, R.drawable.noti_base),
-        STOP    (R.drawable.noti_stop,  R.drawable.noti_base),
-        ALERT   (R.drawable.noti_alert, R.drawable.noti_base),
+        BASE    (R.drawable.noti_base,  getPlayerNotificationId()),
+        START   (R.drawable.noti_start, getPlayerNotificationId()),
+        PAUSE   (R.drawable.noti_pause, getPlayerNotificationId()),
+        STOP    (R.drawable.noti_stop,  getPlayerNotificationId()),
+        ALERT   (R.drawable.noti_alert, getPlayerNotificationId()),
 
         // General notification - not used yet.
         // Why?
@@ -189,17 +190,23 @@ public class NotiManager {
         return sInstance;
     }
 
+    public static final int
+    getPlayerNotificationId() {
+        return R.drawable.noti_base;
+    }
+
     public void
     removeNotification(NotiType type) {
         // To avoid unexpected race-condition.
         eAssert(Utils.isUiThread());
         // Player notification shares same notification id.
-        nm.cancel(type.getId());
+        mNm.cancel(type.getId());
     }
 
     public void
     removePlayerNotification() {
         removeNotification(NotiType.BASE);
+        mLastPlayerNotification = null;
     }
 
     public void
@@ -211,11 +218,25 @@ public class NotiManager {
                                            title,
                                            description);
         n.when = System.currentTimeMillis();
-        nm.notify(type.getId(), n);
+        mNm.notify(type.getId(), n);
+        switch (type) {
+        case BASE:
+        case START:
+        case PAUSE:
+        case STOP:
+        case ALERT:
+            // In case of player notification
+            mLastPlayerNotification = n;
+        }
     }
 
     public void
     putPlayerNotification(NotiType type, String videoTitle) {
         putNotification(type, Utils.getResText(R.string.app_name), videoTitle);
+    }
+
+    public Notification
+    getLastPlayerNotification() {
+        return mLastPlayerNotification;
     }
 }
