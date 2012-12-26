@@ -35,7 +35,6 @@ import android.os.Message;
 import android.os.Process;
 import free.yhc.netmbuddy.utils.Utils;
 
-
 public class YTDownloader {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(YTDownloader.class);

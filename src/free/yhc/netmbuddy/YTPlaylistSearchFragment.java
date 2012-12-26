@@ -50,7 +50,6 @@ import free.yhc.netmbuddy.utils.UiUtils;
 import free.yhc.netmbuddy.utils.Utils;
 import free.yhc.netmbuddy.utils.YTUtils;
 
-
 public class YTPlaylistSearchFragment extends YTSearchFragment {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(YTPlaylistSearchFragment.class);

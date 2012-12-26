@@ -33,7 +33,6 @@ import free.yhc.netmbuddy.db.DB;
 import free.yhc.netmbuddy.model.Policy;
 import free.yhc.netmbuddy.utils.Utils;
 
-
 //============================================================================
 //[ Data File Format (JSON) ]
 //{

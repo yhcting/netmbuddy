@@ -43,7 +43,6 @@ import org.apache.http.params.HttpProtocolParams;
 import android.net.Uri;
 import free.yhc.netmbuddy.utils.Utils;
 
-
 public class NetLoader {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(NetLoader.class);

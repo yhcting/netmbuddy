@@ -1,5 +1,3 @@
-package free.yhc.netmbuddy.db;
-
 /*****************************************************************************
  *    Copyright (C) 2012 Younghyung Cho. <yhcting77@gmail.com>
  *
@@ -19,6 +17,8 @@ package free.yhc.netmbuddy.db;
  *    You should have received a copy of the GNU General Public License
  *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *****************************************************************************/
+
+package free.yhc.netmbuddy.db;
 
 import free.yhc.netmbuddy.utils.Utils;
 

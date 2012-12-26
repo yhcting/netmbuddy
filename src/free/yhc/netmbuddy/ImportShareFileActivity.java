@@ -19,6 +19,7 @@
  *****************************************************************************/
 
 package free.yhc.netmbuddy;
+
 import android.R.style;
 import android.app.Activity;
 import android.content.Intent;
@@ -26,7 +27,6 @@ import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.os.Bundle;
 import free.yhc.netmbuddy.utils.Utils;
-
 
 public class ImportShareFileActivity extends Activity {
     private static final boolean DBG = false;

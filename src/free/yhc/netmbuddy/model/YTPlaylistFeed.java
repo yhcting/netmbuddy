@@ -29,8 +29,6 @@ import org.w3c.dom.Node;
 import android.net.Uri;
 import free.yhc.netmbuddy.utils.Utils;
 
-
-
 //<entry gd:etag='W/&quot;DkYEQ347eCp7I2A9WhJbEU8.&quot;'>
 //  <id>tag:youtube.com,2008:user:hanitv:playlist:PLxrXSNAnHXeL1puk5TwZnVzU9c-8WTWVQ</id>
 //  <published>2012-09-20T06:54:16.000Z</published>

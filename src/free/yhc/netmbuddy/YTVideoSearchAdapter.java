@@ -19,6 +19,7 @@
  *****************************************************************************/
 
 package free.yhc.netmbuddy;
+
 import static free.yhc.netmbuddy.utils.Utils.eAssert;
 
 import java.util.Date;
@@ -36,7 +37,6 @@ import free.yhc.netmbuddy.model.YTPlayer;
 import free.yhc.netmbuddy.model.YTSearchHelper;
 import free.yhc.netmbuddy.model.YTVideoFeed;
 import free.yhc.netmbuddy.utils.Utils;
-
 
 public class YTVideoSearchAdapter extends YTSearchAdapter {
     private static final boolean DBG = false;
