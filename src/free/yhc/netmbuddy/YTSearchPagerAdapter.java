@@ -28,6 +28,7 @@ import android.view.ViewGroup;
 import free.yhc.netmbuddy.model.Policy;
 import free.yhc.netmbuddy.model.YTSearchHelper;
 import free.yhc.netmbuddy.utils.Utils;
+import free.yhc.netmbuddy.utils.YTUtils;
 
 public class YTSearchPagerAdapter extends FragmentPagerAdapterEx {
     private static final boolean DBG = false;
@@ -52,7 +53,8 @@ public class YTSearchPagerAdapter extends FragmentPagerAdapterEx {
 
     private int
     getLastPage(int totalResults) {
-        int page = (totalResults - 1) / Policy.YTSEARCH_MAX_RESULTS + 1;
+        int avaiableTotalResults = YTUtils.getAvailableTotalResults(totalResults);
+        int page = (avaiableTotalResults - 1) / Policy.YTSEARCH_MAX_RESULTS + 1;
         return page < 1? 1: page;
     }
 

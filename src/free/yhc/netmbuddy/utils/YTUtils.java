@@ -23,6 +23,7 @@ package free.yhc.netmbuddy.utils;
 import free.yhc.netmbuddy.R;
 import free.yhc.netmbuddy.db.DB;
 import free.yhc.netmbuddy.model.Policy;
+import free.yhc.netmbuddy.model.YTConstants;
 import free.yhc.netmbuddy.model.YTHacker;
 import free.yhc.netmbuddy.model.YTSearchHelper;
 
@@ -33,6 +34,13 @@ public class YTUtils {
     public static boolean
     verifyYoutubeVideoId(String ytvid) {
         return 11 == ytvid.length();
+    }
+
+    public static int
+    getAvailableTotalResults(int totalResults) {
+        return totalResults < YTConstants.MAX_AVAILABLE_RESULTS_FOR_QUERY?
+               totalResults:
+               YTConstants.MAX_AVAILABLE_RESULTS_FOR_QUERY;
     }
 
     public static YTSearchHelper.LoadThumbnailReturn

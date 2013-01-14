@@ -49,7 +49,7 @@ public class Policy {
     public static final int     DEFAULT_VIDEO_VOLUME    = 50;
     public static final int     YTSEARCH_MAX_RESULTS    = 20; // 1 ~ 50
     // Using ViewPager requires # of threads twice of this value.
-    public static final int     YTSEARCH_NR_PAGE_INDEX  = 10;
+    public static final int     YTSEARCH_NR_PAGE_INDEX_BUTTONS     = 10;
 
     // Performance for loading thumbnail
     public static final int     YTSEARCH_LOAD_THUMBNAIL_INTERVAL    = 100; // 100ms

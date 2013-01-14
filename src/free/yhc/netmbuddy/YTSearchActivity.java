@@ -98,7 +98,7 @@ public abstract class YTSearchActivity extends FragmentActivity {
     // ========================================================================
     private void
     preparePageButtons() {
-        mPageBtnHolder = new Button[Policy.YTSEARCH_NR_PAGE_INDEX];
+        mPageBtnHolder = new Button[Policy.YTSEARCH_NR_PAGE_INDEX_BUTTONS];
         mPageBtnLPHolder =
                 new LinearLayout.LayoutParams(getResources().getDimensionPixelSize(R.dimen.ytsearch_idxbtn_width),
                                               getResources().getDimensionPixelSize(R.dimen.ytsearch_idxbtn_height));
@@ -118,14 +118,14 @@ public abstract class YTSearchActivity extends FragmentActivity {
         // Setup index buttons.
         LinearLayout ll = (LinearLayout)findViewById(R.id.indexgroup);
         ll.removeAllViews();
-        int mini = curPage - (Policy.YTSEARCH_NR_PAGE_INDEX / 2);
+        int mini = curPage - (Policy.YTSEARCH_NR_PAGE_INDEX_BUTTONS / 2);
         if (mini < 1)
             mini = 1;
 
-        int maxi = mini + Policy.YTSEARCH_NR_PAGE_INDEX - 1;
+        int maxi = mini + Policy.YTSEARCH_NR_PAGE_INDEX_BUTTONS - 1;
         if (maxi > nrPages) {
             maxi = nrPages;
-            mini = maxi - Policy.YTSEARCH_NR_PAGE_INDEX + 1;
+            mini = maxi - Policy.YTSEARCH_NR_PAGE_INDEX_BUTTONS + 1;
             if (mini < 1)
                 mini = 1;
         }

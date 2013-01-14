@@ -42,6 +42,7 @@ import free.yhc.netmbuddy.db.DB;
 import free.yhc.netmbuddy.model.MultiThreadRunner;
 import free.yhc.netmbuddy.model.MultiThreadRunner.Job;
 import free.yhc.netmbuddy.model.Policy;
+import free.yhc.netmbuddy.model.YTConstants;
 import free.yhc.netmbuddy.model.YTFeed;
 import free.yhc.netmbuddy.model.YTPlaylistFeed;
 import free.yhc.netmbuddy.model.YTSearchHelper;
@@ -110,7 +111,7 @@ public class YTPlaylistSearchFragment extends YTSearchFragment {
                 ytplid,
                 "",
                 1,
-                YTSearchHelper.MAX_NR_RESULT_PER_PAGE);
+                YTConstants.MAX_RESULTS_PER_PAGE);
         YTSearchHelper.SearchReturn sr;
         int maxPage = -1;
         int curPage = 1;
@@ -126,7 +127,7 @@ public class YTPlaylistSearchFragment extends YTSearchFragment {
         int pvBase = 0;
         int pvPortion  = 10;
         do {
-            sarg.starti = YTSearchHelper.MAX_NR_RESULT_PER_PAGE * (curPage - 1) + 1;
+            sarg.starti = YTConstants.MAX_RESULTS_PER_PAGE * (curPage - 1) + 1;
             sr = YTSearchHelper.search(sarg);
             checkInterrupted();
             if (YTSearchHelper.Err.NO_ERR != sr.err)
@@ -140,7 +141,7 @@ public class YTPlaylistSearchFragment extends YTSearchFragment {
                     return Err.YTSEARCH;
                 }
                 // Do only once.
-                maxPage = total / YTSearchHelper.MAX_NR_RESULT_PER_PAGE + 1;
+                maxPage = total / YTConstants.MAX_RESULTS_PER_PAGE + 1;
             }
 
             YTVideoFeed.Entry[] ents = (YTVideoFeed.Entry[])sr.r.entries;

@@ -46,8 +46,6 @@ public class YTSearchHelper {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(YTSearchHelper.class);
 
-    public static final int MAX_NR_RESULT_PER_PAGE      = 50; // See Youtube API Document
-
     private static final int MSG_WHAT_OPEN                  = 0;
     private static final int MSG_WHAT_CLOSE                 = 1;
     private static final int MSG_WHAT_SEARCH                = 2;
