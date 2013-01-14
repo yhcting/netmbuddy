@@ -297,8 +297,8 @@ public class YTHacker {
             if (line.contains("/generate_204?")) {
                 Matcher m = sYtUrlGenerate204Pattern.matcher(line);
                 if (!m.matches())
-                    P.w("Oops... This is unexpected html source for youtube query : \n"
-                        + "  generate204 line : " + line + "\n");
+                    if (DBG) P.w("Oops... This is unexpected html source for youtube query : \n"
+                                 + "  generate204 line : " + line + "\n");
                 else {
                     line = m.group(1);
                     line = line.replaceAll("\\\\u0026", "&");
@@ -308,8 +308,8 @@ public class YTHacker {
             } else if (line.contains("\"url_encoded_fmt_stream_map\":")) {
                 Matcher m = sYtUrlStreamMapPattern.matcher(line);
                 if (!m.matches())
-                    P.w("Oops... This is unexpected html source for youtube query : \n"
-                        + "  url_encoded_fmt_stream_map line : " + line + "\n");
+                    if (DBG) P.w("Oops... This is unexpected html source for youtube query : \n"
+                                 + "  url_encoded_fmt_stream_map line : " + line + "\n");
                 else {
                     line = m.group(1);
                     String[] vidElemUrls = line.split(",");
