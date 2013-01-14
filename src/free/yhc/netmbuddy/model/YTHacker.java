@@ -273,6 +273,12 @@ public class YTHacker {
         return "www.youtube.com";
     }
 
+    private static boolean
+    verifyYtVideoHtmlResult(YtVideoHtmlResult ytr) {
+        return ytr.vids.length > 0
+               && Utils.isValidValue(ytr.generate_204_url);
+    }
+
     private static YtVideoHtmlResult
     parseYtVideoHtml(BufferedReader brdr)
             throws LocalException {
@@ -291,26 +297,30 @@ public class YTHacker {
             if (line.contains("/generate_204?")) {
                 Matcher m = sYtUrlGenerate204Pattern.matcher(line);
                 if (!m.matches())
-                    eAssert(false);
-
-                line = m.group(1);
-                line = line.replaceAll("\\\\u0026", "&");
-                line = line.replaceAll("\\\\", "");
-                result.generate_204_url = line;
+                    P.w("Oops... This is unexpected html source for youtube query : \n"
+                        + "  generate204 line : " + line + "\n");
+                else {
+                    line = m.group(1);
+                    line = line.replaceAll("\\\\u0026", "&");
+                    line = line.replaceAll("\\\\", "");
+                    result.generate_204_url = line;
+                }
             } else if (line.contains("\"url_encoded_fmt_stream_map\":")) {
                 Matcher m = sYtUrlStreamMapPattern.matcher(line);
                 if (!m.matches())
-                    eAssert(false);
-
-                line = m.group(1);
-                String[] vidElemUrls = line.split(",");
-                ArrayList<YtVideoElem> al = new ArrayList<YtVideoElem>(vidElemUrls.length);
-                for (String s : vidElemUrls) {
-                    YtVideoElem ve = YtVideoElem.parse(s);
-                    if (null != ve)
-                        al.add(ve);
+                    P.w("Oops... This is unexpected html source for youtube query : \n"
+                        + "  url_encoded_fmt_stream_map line : " + line + "\n");
+                else {
+                    line = m.group(1);
+                    String[] vidElemUrls = line.split(",");
+                    ArrayList<YtVideoElem> al = new ArrayList<YtVideoElem>(vidElemUrls.length);
+                    for (String s : vidElemUrls) {
+                        YtVideoElem ve = YtVideoElem.parse(s);
+                        if (null != ve)
+                            al.add(ve);
+                    }
+                    result.vids = al.toArray(new YtVideoElem[0]);
                 }
-                result.vids = al.toArray(new YtVideoElem[0]);
             }
         }
         result.tmstamp = System.currentTimeMillis();
@@ -337,7 +347,7 @@ public class YTHacker {
                 content = mLoader.getHttpContent(Uri.parse(getYtVideoPageUrl(mYtvid)), true);
                 eAssert(content.type.toLowerCase().startsWith("text/html"));
                 mYtr = parseYtVideoHtml(new BufferedReader(new InputStreamReader(content.stream)));
-                if (mYtr.vids.length <= 0) {
+                if (!verifyYtVideoHtmlResult(mYtr)) {
                     // this is invalid result value.
                     // Ignore this result.
                     // If not, this may cause mis-understanding that hacking is successful.
