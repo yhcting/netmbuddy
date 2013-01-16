@@ -1513,8 +1513,9 @@ SurfaceHolder.Callback {
     @Override
     public void
     surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-        if (holder != mSurfHolder)
+        if (holder != mSurfHolder) {
             if (DBG) P.w("MPlayer - surfaceCreated with invalid holder");
+        }
 
         if (DBG) P.v("MPlayer - surfaceChanged : " + format + ", " + width + ", " + height);
     }
@@ -1522,12 +1523,14 @@ SurfaceHolder.Callback {
     @Override
     public void
     surfaceCreated(SurfaceHolder holder) {
-        if (holder != mSurfHolder)
+        if (holder != mSurfHolder) {
             if (DBG) P.w("MPlayer - surfaceCreated with invalid holder");
+        }
 
         if (DBG) P.v("MPlayer - surfaceCreated");
-        if (isSurfaceReady())
+        if (isSurfaceReady()) {
             if (DBG) P.w("MPlayer - surfaceCreated is called at [surfaceReady]");
+        }
 
         setSurfaceReady(true);
 
@@ -1538,12 +1541,14 @@ SurfaceHolder.Callback {
     @Override
     public void
     surfaceDestroyed(SurfaceHolder holder) {
-        if (holder != mSurfHolder)
+        if (holder != mSurfHolder) {
             if (DBG) P.w("MPlayer - surfaceCreated with invalid holder");
+        }
 
         if (DBG) P.v("MPlayer - surfaceDestroyed");
-        if (!isSurfaceReady())
+        if (!isSurfaceReady()) {
             if (DBG) P.w("MPlayer - surfaceDestroyed is called at [NOT-surfaceReady]");
+        }
 
         setSurfaceReady(false);
     }
