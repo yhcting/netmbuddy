@@ -20,6 +20,7 @@
 
 package free.yhc.netmbuddy.model;
 
+import android.app.Notification;
 import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
@@ -88,8 +89,12 @@ public class YTPlayerLifeSupportService extends Service {
             return START_NOT_STICKY;
         }
         NotiManager nm = NotiManager.get();
-        startForeground(NotiManager.getPlayerNotificationId(),
-                        nm.getLastPlayerNotification());
+        Notification noti = nm.getLastPlayerNotification();
+        // I'm not sure that what usecase can lead to following state.
+        // But, bug report says that "null == noti".
+        // So, let's ignore this exceptional case until root-cause is revealed
+        if (null != noti)
+            startForeground(NotiManager.getPlayerNotificationId(), noti);
         return START_NOT_STICKY;
     }
 
