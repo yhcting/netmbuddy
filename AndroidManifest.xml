@@ -244,6 +244,7 @@
             <intent-filter>
                 <action android:name="ytmplayer.intent.action.NOTIFICATION_DELETE" />
                 <action android:name="ytmplayer.intent.action.NOTIFICATION_ACTION" />
+                <action android:name="ytmplayer.intent.action.NOTIFICATION_STOP_PLAYER" />
             </intent-filter>
         </receiver>
         <provider
