@@ -61,7 +61,9 @@ DBHelper.CheckDupDoneReceiver {
             switch (ty) {
             case PLAYLIST:
                 showLoadingLookAndFeel();
-                checkDupAsync(null, (YTVideoFeed.Entry[])getAdapter().getEntries());
+                YTVideoSearchAdapter adapter = getAdapter();
+                if (null != adapter)
+                    checkDupAsync(null, (YTVideoFeed.Entry[])adapter.getEntries());
             }
             // others are ignored.
         }
