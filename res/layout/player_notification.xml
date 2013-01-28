@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- layout height (64dp) is documented at "http://developer.android.com/guide/topics/ui/notifiers/notifications.html" -->
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="64dp"
+    >
+    <ImageView
+        android:id="@+id/action"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:padding="5dp"
+        android:layout_alignParentLeft="true"
+        android:gravity="center"
+        android:scaleType="fitCenter"
+        android:clickable="true"
+        />
+    <ImageView
+        android:id="@+id/stop"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:padding="5dp"
+        android:layout_alignParentRight="true"
+        android:gravity="center"
+        android:scaleType="fitCenter"
+        android:clickable="true"
+        />
+    <TextView
+        android:id="@+id/title"
+        android:layout_width="fill_parent"
+        android:layout_height="match_parent"
+        android:layout_toRightOf="@id/action"
+        android:layout_toLeftOf="@id/stop"
+        android:textSize="@dimen/title_text_size"
+        android:textColor="@color/title_text_color_new"
+        android:gravity="center"
+        android:ellipsize="end"
+        />
+</RelativeLayout>
