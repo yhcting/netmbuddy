@@ -237,12 +237,14 @@ public class MusicsAdapter extends ResourceCursorAdapter {
         DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
             private Cursor newCursor;
             @Override
-            public void onPostExecute(DiagAsyncTask task, Err result) {
+            public void
+            onPostExecute(DiagAsyncTask task, Err result) {
                 changeCursor(newCursor);
             }
 
             @Override
-            public Err doBackgroundWork(DiagAsyncTask task) {
+            public Err
+            doBackgroundWork(DiagAsyncTask task) {
                 newCursor = createCursor();
                 // NOTE
                 // First-call of'getCount()', can make 'Cursor' cache lots of internal information.

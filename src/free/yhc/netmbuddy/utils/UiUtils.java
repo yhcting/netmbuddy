@@ -173,7 +173,8 @@ public class UiUtils {
                          context.getResources().getText(R.string.yes),
                          new DialogInterface.OnClickListener() {
             @Override
-            public void onClick(DialogInterface diag, int which) {
+            public void
+            onClick(DialogInterface diag, int which) {
                 action.onOk(dialog);
                 dialog.dismiss();
             }
@@ -183,7 +184,8 @@ public class UiUtils {
                          context.getResources().getText(R.string.no),
                          new DialogInterface.OnClickListener() {
             @Override
-            public void onClick(DialogInterface diag, int which) {
+            public void
+            onClick(DialogInterface diag, int which) {
                 action.onCancel(dialog);
                 diag.dismiss();
             }
@@ -233,7 +235,8 @@ public class UiUtils {
         edit.setSelection(initText.length());
         edit.setOnKeyListener(new View.OnKeyListener() {
             @Override
-            public boolean onKey(View v, int keyCode, KeyEvent event) {
+            public boolean
+            onKey(View v, int keyCode, KeyEvent event) {
                 // If the event is a key-down event on the "enter" button
                 if ((KeyEvent.ACTION_DOWN == event.getAction()) && (KeyEvent.KEYCODE_ENTER == keyCode)) {
                     dialog.dismiss();
@@ -250,7 +253,8 @@ public class UiUtils {
                          context.getResources().getText(R.string.ok),
                          new DialogInterface.OnClickListener() {
             @Override
-            public void onClick(DialogInterface dia, int which) {
+            public void
+            onClick(DialogInterface dia, int which) {
                 dialog.dismiss();
                 if (!edit.getText().toString().isEmpty())
                     action.onOk(dialog, edit);
@@ -261,7 +265,8 @@ public class UiUtils {
                          context.getResources().getText(R.string.cancel),
                          new DialogInterface.OnClickListener() {
             @Override
-            public void onClick(DialogInterface dialog, int which) {
+            public void
+            onClick(DialogInterface dialog, int which) {
                 dialog.dismiss();
             }
         });
@@ -351,10 +356,12 @@ public class UiUtils {
                     // Need to get new playlist name.
                     UiUtils.EditTextAction edAction = new UiUtils.EditTextAction() {
                         @Override
-                        public void prepare(Dialog dialog, EditText edit) { }
+                        public void
+                        prepare(Dialog dialog, EditText edit) { }
 
                         @Override
-                        public void onOk(Dialog dialog, EditText edit) {
+                        public void
+                        onOk(Dialog dialog, EditText edit) {
                             String title = edit.getText().toString();
                             if (db.containsPlaylist(title)) {
                                 UiUtils.showTextToast(context, R.string.msg_existing_playlist);

@@ -101,54 +101,66 @@ public class NotiManager {
 
     public static class NotiIntentReceiver extends BroadcastReceiver {
         @Override
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-            NotiManager nm = NotiManager.get();
-            YTPlayer ytp = YTPlayer.get();
-            if (NOTI_INTENT_DELETE.equals(action))
-                nm.removePlayerNotification();
-            else if (NOTI_INTENT_STOP_PLAYER.equals(action))
-                ytp.stopVideos();
-            else if (NOTI_INTENT_ACTION.equals(action)) {
-                String typeName = intent.getStringExtra("type");
-                if (DBG) P.v("Intent action type : " + typeName);
-                eAssert(null != typeName);
-                NotiType nt = NotiType.valueOf(typeName);
-                eAssert(null != nt);
-                switch (nt) {
-                case BASE:
-                    // Ignore this action!!
-                    break;
-
-                case START:
-                    ytp.playerStart();
-                    break;
-
-                case PAUSE:
-                    ytp.playerPause();
-                    break;
-
-                case STOP:
-                    ytp.stopVideos();
-                    break;
-
-                case ALERT:
-                    // Just remove notification
-                    nm.removePlayerNotification();
-                    break;
-
-                case IMPORT:
-                    Utils.resumeApp();
-                    break;
-
-                default:
-                    eAssert(false);
+        public void
+        onReceive(Context context, final Intent intent) {
+            Utils.getUiHandler().post(new Runnable() {
+                @Override
+                public void
+                run() {
+                    handleNotificationIntent(intent);
                 }
-            }
+            });
         }
     }
 
     private NotiManager() {
+    }
+
+    private static void
+    handleNotificationIntent(Intent intent) {
+        String action = intent.getAction();
+        NotiManager nm = NotiManager.get();
+        YTPlayer ytp = YTPlayer.get();
+        if (NOTI_INTENT_DELETE.equals(action))
+            nm.removePlayerNotification();
+        else if (NOTI_INTENT_STOP_PLAYER.equals(action))
+            ytp.stopVideos();
+        else if (NOTI_INTENT_ACTION.equals(action)) {
+            String typeName = intent.getStringExtra("type");
+            if (DBG) P.v("Intent action type : " + typeName);
+            eAssert(null != typeName);
+            NotiType nt = NotiType.valueOf(typeName);
+            eAssert(null != nt);
+            switch (nt) {
+            case BASE:
+                // Ignore this action!!
+                break;
+
+            case START:
+                ytp.playerStart();
+                break;
+
+            case PAUSE:
+                ytp.playerPause();
+                break;
+
+            case STOP:
+                ytp.stopVideos();
+                break;
+
+            case ALERT:
+                // Just remove notification
+                nm.removePlayerNotification();
+                break;
+
+            case IMPORT:
+                Utils.resumeApp();
+                break;
+
+            default:
+                eAssert(false);
+            }
+        }
     }
 
     Notification

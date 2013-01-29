@@ -46,7 +46,8 @@ public class PlaylistAdapter extends ResourceCursorAdapter {
     private final OnItemButtonClickListener   mOnItemBtnClick;
     private final View.OnClickListener        mDetailListOnClick = new View.OnClickListener() {
         @Override
-        public void onClick(View v) {
+        public void
+        onClick(View v) {
             if (null != mOnItemBtnClick)
                 mOnItemBtnClick.onClick((Integer)v.getTag(), ItemButton.LIST);
         }
