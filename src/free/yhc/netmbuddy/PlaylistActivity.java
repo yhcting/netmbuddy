@@ -205,7 +205,8 @@ public class PlaylistActivity extends Activity {
         final Object uiWait = new Object();
         Utils.getUiHandler().post(new Runnable() {
             @Override
-            public void run() {
+            public void
+            run() {
                 // NOTE & IMPORTANT
                 // Stop/Pause all operations that might use DB before changing and reloading DB.
                 // At this moment, playing video is only operation accessing DB
@@ -628,14 +629,16 @@ public class PlaylistActivity extends Activity {
     setupToolButtons() {
         ((ImageView)findViewById(R.id.playall)).setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) {
+            public void
+            onClick(View v) {
                 playAllMusics(v);
             }
         });
 
         ((ImageView)findViewById(R.id.recently_played)).setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) {
+            public void
+            onClick(View v) {
                 Intent i = new Intent(PlaylistActivity.this, MusicsActivity.class);
                 i.putExtra(MusicsActivity.MAP_KEY_PLAYLIST_ID, UiUtils.PLID_RECENT_PLAYED);
                 startActivity(i);
@@ -644,21 +647,24 @@ public class PlaylistActivity extends Activity {
 
         ((ImageView)findViewById(R.id.dbsearch)).setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) {
+            public void
+            onClick(View v) {
                 searchMusics(v);
             }
         });
 
         ((ImageView)findViewById(R.id.ytsearch)).setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) {
+            public void
+            onClick(View v) {
                 startActivity(new Intent(PlaylistActivity.this, YTVideoSearchKeywordActivity.class));
             }
         });
 
         ((ImageView)findViewById(R.id.preferences)).setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) {
+            public void
+            onClick(View v) {
                 Intent i = new Intent(PlaylistActivity.this, YTMPPreferenceActivity.class);
                 startActivity(i);
             }
@@ -666,7 +672,8 @@ public class PlaylistActivity extends Activity {
 
         ((ImageView)findViewById(R.id.more)).setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(final View v) {
+            public void
+            onClick(final View v) {
                 onMenuMore(v);
             }
         });
@@ -676,9 +683,11 @@ public class PlaylistActivity extends Activity {
     onContextMenuRename(final AdapterContextMenuInfo info) {
         UiUtils.EditTextAction action = new UiUtils.EditTextAction() {
             @Override
-            public void prepare(Dialog dialog, EditText edit) { }
+            public void
+            prepare(Dialog dialog, EditText edit) { }
             @Override
-            public void onOk(Dialog dialog, EditText edit) {
+            public void
+            onOk(Dialog dialog, EditText edit) {
                 String word = edit.getText().toString();
                 mDb.updatePlaylist(info.id, ColPlaylist.TITLE, word);
                 getAdapter().reloadCursorAsync();

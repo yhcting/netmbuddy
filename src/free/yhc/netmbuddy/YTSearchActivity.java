@@ -335,7 +335,6 @@ public abstract class YTSearchActivity extends FragmentActivity {
     @Override
     protected void
     onDestroy() {
-
         super.onDestroy();
     }
 

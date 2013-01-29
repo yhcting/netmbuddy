@@ -235,7 +235,8 @@ public class MusicsActivity extends Activity {
         ImageView iv = (ImageView)findViewById(R.id.play);
         iv.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) {
+            public void
+            onClick(View v) {
                 onToolPlay(v);
             }
         });
@@ -243,7 +244,8 @@ public class MusicsActivity extends Activity {
         iv = (ImageView)findViewById(R.id.append_playq);
         iv.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) {
+            public void
+            onClick(View v) {
                 onToolAppendPlayQ(v);
             }
         });
@@ -251,7 +253,8 @@ public class MusicsActivity extends Activity {
         iv = (ImageView)findViewById(R.id.copy);
         iv.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) {
+            public void
+            onClick(View v) {
                 onToolCopy(v);
             }
         });
@@ -259,7 +262,8 @@ public class MusicsActivity extends Activity {
         iv = (ImageView)findViewById(R.id.move);
         iv.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) {
+            public void
+            onClick(View v) {
                 onToolMove(v);
             }
         });
@@ -267,7 +271,8 @@ public class MusicsActivity extends Activity {
         iv = (ImageView)findViewById(R.id.delete);
         iv.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) {
+            public void
+            onClick(View v) {
                 onToolDelete(v);
             }
         });

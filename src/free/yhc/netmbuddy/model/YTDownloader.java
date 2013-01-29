@@ -106,7 +106,8 @@ public class YTDownloader {
 
             Utils.getUiHandler().post(new Runnable() {
                 @Override
-                public void run() {
+                public void
+                run() {
                     DownloadDoneReceiver rcvr = _mYtDownloader.getDownloadDoneReceiver();
                     if (!_mClosed && null != rcvr)
                         rcvr.downloadDone(_mYtDownloader, arg, result);
@@ -304,7 +305,8 @@ public class YTDownloader {
                 // already downloaded.
                 Utils.getUiHandler().post(new Runnable() {
                     @Override
-                    public void run() {
+                    public void
+                    run() {
                         mDnDoneRcvr.downloadDone(YTDownloader.this,
                                                  new DnArg(ytvid, outf, qscore),
                                                  Err.NO_ERR);

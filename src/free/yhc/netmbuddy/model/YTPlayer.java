@@ -219,7 +219,7 @@ SurfaceHolder.Callback {
         public final String author;
         public final int    volume;
         public final int    playtime; // This is to workaround not-correct value returns from getDuration() function
-                                        //   of youtube player (Seconds).
+                                      //   of youtube player (Seconds).
         public Video(String aYtvid, String aTitle, String aAuthor,
                      int aVolume, int aPlaytime) {
             ytvid = aYtvid;
@@ -419,8 +419,8 @@ SurfaceHolder.Callback {
 
         // DO NOT run this explicitly.
         @Override
-        public
-        void run() {
+        public void
+        run() {
             eAssert(Utils.isUiThread());
             if (null != _mV)
                 startVideo(_mV, true);
@@ -1322,7 +1322,8 @@ SurfaceHolder.Callback {
         // It's not perfectly right moment but it's fair enough
         new Thread(new Runnable() {
             @Override
-            public void run() {
+            public void
+            run() {
                 mDb.updateVideo(ColVideo.VIDEOID, videoId,
                                 ColVideo.TIME_PLAYED, System.currentTimeMillis());
             }
@@ -1975,7 +1976,8 @@ SurfaceHolder.Callback {
     getVideoToolButton() {
         View.OnClickListener onClick = new View.OnClickListener() {
             @Override
-            public void onClick(View v) {
+            public void
+            onClick(View v) {
                 if (!hasActiveVideo()
                     || null == mUi.getActivity())
                     return;
@@ -2106,14 +2108,16 @@ SurfaceHolder.Callback {
 
         new Thread(new Runnable() {
             @Override
-            public void run() {
+            public void
+            run() {
                 final Video[] vs = getVideos(c,
                                              coliYtvid, coliTitle, coliAuthor,
                                              coliVolume, coliPlaytime,
                                              shuffle);
                 Utils.getUiHandler().post(new Runnable() {
                     @Override
-                    public void run() {
+                    public void
+                    run() {
                         startVideos(vs);
                     }
                 });

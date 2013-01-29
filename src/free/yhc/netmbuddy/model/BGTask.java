@@ -86,7 +86,8 @@ public abstract class BGTask<R> {
     postOnCancelled() {
         mOwner.post(new Runnable() {
             @Override
-            public void run() {
+            public void
+            run() {
                 onCancelled();
                 mState.set(State.TERMINATED);
             }
@@ -97,7 +98,8 @@ public abstract class BGTask<R> {
     postOnPostRun(final R r) {
         mOwner.post(new Runnable() {
             @Override
-            public void run() {
+            public void
+            run() {
                 onPostRun(r);
                 mState.set(State.TERMINATED);
             }
@@ -227,7 +229,8 @@ public abstract class BGTask<R> {
     publishProgress(final int prog) {
         mOwner.post(new Runnable() {
             @Override
-            public void run() {
+            public void
+            run() {
                 onProgress(prog);
             }
         });
@@ -241,7 +244,8 @@ public abstract class BGTask<R> {
 
         mOwner.post(new Runnable() {
             @Override
-            public void run() {
+            public void
+            run() {
                 onCancel();
                 synchronized(mPostRunKeeperLock) {
                     if (interrupt
@@ -258,7 +262,8 @@ public abstract class BGTask<R> {
         eAssert(State.READY == mState.get());
         mOwner.post(new Runnable() {
             @Override
-            public void run() {
+            public void
+            run() {
                 onPreRun();
                 mThread.start();
             }

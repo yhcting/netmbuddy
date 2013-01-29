@@ -83,7 +83,8 @@ DBHelper.CheckDupDoneReceiver {
     onContextMenuAddTo(final int position) {
         UiUtils.OnPlaylistSelectedListener action = new UiUtils.OnPlaylistSelectedListener() {
             @Override
-            public void onPlaylist(long plid, Object user) {
+            public void
+            onPlaylist(long plid, Object user) {
                 int pos = (Integer)user;
                 int volume = getAdapter().getItemVolume(pos);
                 int msg = getMyActivity().addToPlaylist(getAdapter(), plid, pos, volume);

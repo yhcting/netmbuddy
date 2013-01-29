@@ -75,7 +75,8 @@ public abstract class YTVideoSearchActivity extends YTSearchActivity {
 
         UiUtils.OnPlaylistSelectedListener action = new UiUtils.OnPlaylistSelectedListener() {
             @Override
-            public void onPlaylist(final long plid, Object user) {
+            public void
+            onPlaylist(final long plid, Object user) {
                 addCheckedMusicsToPlaylist(plid);
             }
 
@@ -197,7 +198,8 @@ public abstract class YTVideoSearchActivity extends YTSearchActivity {
     onCreateInternal(String stext, String stitle) {
       mToolBtnSearchAction = new View.OnClickListener() {
             @Override
-            public void onClick(View v) {
+            public void
+            onClick(View v) {
                 doNewSearch();
             }
         };
