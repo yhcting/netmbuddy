@@ -63,6 +63,7 @@ OnSharedPreferenceChangeListener {
 
     private static final int    SEEKBAR_MAX         = 1000;
 
+    private static YTPlayerUI   sInstance = null;
     // ------------------------------------------------------------------------
     //
     // ------------------------------------------------------------------------
@@ -98,9 +99,16 @@ OnSharedPreferenceChangeListener {
         @Override
         public void
         onReceive(Context context, Intent intent) {
-            YTPlayer mp = YTPlayer.get();
-            if (null != _mYtpui)
-                _mYtpui.updateStatusAutoStopSet(mp.isAutoStopSet(), mp.getAutoStopTime());
+            // To minimize time spending in 'Broadcast Receiver'.
+            Utils.getUiHandler().post(new Runnable() {
+                @Override
+                public void
+                run() {
+                    YTPlayer mp = YTPlayer.get();
+                    if (null != _mYtpui)
+                        _mYtpui.updateStatusAutoStopSet(mp.isAutoStopSet(), mp.getAutoStopTime());
+                }
+            });
         }
     }
 
@@ -1085,6 +1093,10 @@ OnSharedPreferenceChangeListener {
     // ============================================================================
     YTPlayerUI(YTPlayer ytplayer) {
         mMp = ytplayer;
+        if (null == sInstance)
+            sInstance = this;
+        else
+            eAssert(false); // This SHOULD BE SINGLETON (Only YTPlayer has this!)
     }
 
     void
