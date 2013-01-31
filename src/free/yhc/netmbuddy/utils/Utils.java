@@ -600,6 +600,11 @@ public class Utils {
     //
     // ------------------------------------------------------------------------
     public static boolean
+    isIcsOrLater() {
+        return android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.ICE_CREAM_SANDWICH;
+    }
+
+    public static boolean
     copyAssetFile(String dest, String assetFile) {
         try {
             InputStream is = Utils.getAppContext().getAssets().open(assetFile);

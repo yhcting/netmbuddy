@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="free.yhc.netmbuddy"
-    android:versionCode="22"
-    android:versionName="ICS-1.2.6" >
-    <uses-sdk android:minSdkVersion="15" />
+    android:versionCode="21"
+    android:versionName="1.2.6" >
+    <uses-sdk android:minSdkVersion="10" />
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
@@ -21,7 +21,7 @@
         <activity
             android:name=".YTMPActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
-            android:theme="@android:style/Theme.NoTitleBar"
+            android:theme="@style/NetMBuddy.Theme.NoTitleBar"
             android:launchMode="singleTop"
             >
             <intent-filter>
@@ -32,7 +32,7 @@
         <activity
             android:name=".PlaylistActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
-            android:theme="@android:style/Theme.NoTitleBar"
+            android:theme="@style/NetMBuddy.Theme.NoTitleBar"
             android:launchMode="singleTop"
             android:exported="false"
             >
@@ -49,14 +49,14 @@
         <activity
             android:name=".MusicsActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
-            android:theme="@android:style/Theme.NoTitleBar"
+            android:theme="@style/NetMBuddy.Theme.NoTitleBar"
             android:launchMode="singleTop"
             android:exported="false"
             />
         <activity
             android:name=".YTVideoSearchKeywordActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
-            android:theme="@android:style/Theme.NoTitleBar"
+            android:theme="@style/NetMBuddy.Theme.NoTitleBar"
             android:launchMode="singleTop"
             android:exported="false"
             >
@@ -73,7 +73,7 @@
         <activity
             android:name=".YTVideoSearchAuthorActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
-            android:theme="@android:style/Theme.NoTitleBar"
+            android:theme="@style/NetMBuddy.Theme.NoTitleBar"
             android:launchMode="singleTop"
             android:exported="false"
             >
@@ -90,7 +90,7 @@
         <activity
             android:name=".YTVideoSearchPlaylistActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
-            android:theme="@android:style/Theme.NoTitleBar"
+            android:theme="@style/NetMBuddy.Theme.NoTitleBar"
             android:launchMode="singleTop"
             android:exported="false"
             >
@@ -107,7 +107,7 @@
         <activity
             android:name=".YTPlaylistSearchActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
-            android:theme="@android:style/Theme.NoTitleBar"
+            android:theme="@style/NetMBuddy.Theme.NoTitleBar"
             android:launchMode="singleTop"
             android:exported="false"
             >
@@ -124,25 +124,25 @@
         <activity
             android:name=".YTMPPreferenceActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
-            android:theme="@android:style/Theme.NoTitleBar"
+            android:theme="@style/NetMBuddy.Theme.NoTitleBar"
             android:exported="false"
             />
         <activity
             android:name=".VideoPlayerActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
-            android:theme="@android:style/Theme.NoTitleBar"
+            android:theme="@style/NetMBuddy.Theme.NoTitleBar"
             android:exported="false"
             />
         <activity
             android:name=".LockScreenActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
-            android:theme="@android:style/Theme.NoTitleBar"
+            android:theme="@style/NetMBuddy.Theme.NoTitleBar"
             android:exported="false"
             />
         <activity
             android:name=".ImportShareActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
-            android:theme="@android:style/Theme.Dialog"
+            android:theme="@style/NetMBuddy.Theme.Dialog"
             android:launchMode="singleTop"
             android:exported="false"
             />
@@ -170,7 +170,7 @@
         <activity
             android:name=".ImportShareContentActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
-            android:theme="@android:style/Theme.Dialog"
+            android:theme="@style/NetMBuddy.Theme.Dialog"
             android:exported="false"
             >
             <intent-filter>
@@ -206,7 +206,7 @@
         <activity
             android:name=".ImportShareFileActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
-            android:theme="@android:style/Theme.Dialog"
+            android:theme="@style/NetMBuddy.Theme.Dialog"
             android:exported="false"
             >
             <intent-filter>

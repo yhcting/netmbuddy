@@ -1,3 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <style name="NetMBuddy.Theme" parent="@android:style/Theme.Holo">
+    </style>
+    <style name="NetMBuddy.Theme.Dialog" parent="@android:style/Theme.Dialog">
+    </style>
+    <style name="NetMBuddy.Theme.NoTitleBar" parent="@android:style/Theme.Holo">
+        <item name="android:windowNoTitle">true</item>
+    </style>
 </resources>
