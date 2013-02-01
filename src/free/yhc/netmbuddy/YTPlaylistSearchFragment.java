@@ -279,7 +279,7 @@ public class YTPlaylistSearchFragment extends YTSearchFragment {
 
     private void
     onContextMenuImport(int pos) {
-        UiUtils.OnPlaylistSelectedListener action = new UiUtils.OnPlaylistSelectedListener() {
+        UiUtils.OnPlaylistSelected action = new UiUtils.OnPlaylistSelected() {
             @Override
             public void
             onPlaylist(final long plid, final Object user) {

@@ -662,7 +662,7 @@ OnSharedPreferenceChangeListener {
                                 new long[] { vid },
                                 false);
         } else {
-            UiUtils.OnPlaylistSelectedListener action = new UiUtils.OnPlaylistSelectedListener() {
+            UiUtils.OnPlaylistSelected action = new UiUtils.OnPlaylistSelected() {
                 @Override
                 public void
                 onPlaylist(long plid, Object user) {

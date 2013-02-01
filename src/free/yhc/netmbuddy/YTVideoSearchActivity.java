@@ -73,7 +73,7 @@ public abstract class YTVideoSearchActivity extends YTSearchActivity {
         for (int i = 0; i < menuTextIds.length; i++)
             userMenu[i] = Utils.getResText(menuTextIds[i]);
 
-        UiUtils.OnPlaylistSelectedListener action = new UiUtils.OnPlaylistSelectedListener() {
+        UiUtils.OnPlaylistSelected action = new UiUtils.OnPlaylistSelected() {
             @Override
             public void
             onPlaylist(final long plid, Object user) {

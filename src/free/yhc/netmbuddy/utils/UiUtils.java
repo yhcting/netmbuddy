@@ -83,9 +83,13 @@ public class UiUtils {
         void onCancel(Dialog dialog);
     }
 
-    public interface OnPlaylistSelectedListener {
+    public interface OnPlaylistSelected {
         void onUserMenu(int pos, Object user);
         void onPlaylist(long plid, Object user);
+    }
+
+    public interface OnMenuSelected {
+        void onSelected(int pos, int menuTitle);
     }
 
     public interface OnPostExecuteListener {
@@ -297,13 +301,35 @@ public class UiUtils {
     }
 
     public static AlertDialog
-    buildSelectPlaylistDialog(final DB                          db,
-                              final Context                     context,
-                              final int                         diagTitle,
-                              final String[]                    userMenuStrings,
-                              final OnPlaylistSelectedListener  action,
-                              long                              plidExcluded,
-                              final Object                      user) {
+    buildPopupMenuDialog(final Activity         activity,
+                         final OnMenuSelected   action,
+                         final int              diagTitle,
+                         final int[]            menuTitles) {
+        final CharSequence[] items = new CharSequence[menuTitles.length];
+        for (int i = 0; i < menuTitles.length; i++)
+            items[i] = activity.getResources().getText(menuTitles[i]);
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+        if (diagTitle >= 0)
+            builder.setTitle(diagTitle);
+        builder.setItems(items, new DialogInterface.OnClickListener() {
+            @Override
+            public void
+            onClick(DialogInterface dialog, int item) {
+                action.onSelected(item, menuTitles[item]);
+            }
+        });
+        return builder.create();
+    }
+
+    public static AlertDialog
+    buildSelectPlaylistDialog(final DB                  db,
+                              final Context             context,
+                              final int                 diagTitle,
+                              final String[]            userMenuStrings,
+                              final OnPlaylistSelected  action,
+                              long                      plidExcluded,
+                              final Object              user) {
         final String[] userMenus = (null == userMenuStrings)? new String[0]: userMenuStrings;
 
         // Create menu list
@@ -604,7 +630,7 @@ public class UiUtils {
                 final long[]                  vids,
                 final boolean                 move) {
         final long srcPlid = UiUtils.isUserPlaylist(plid)? plid: DB.INVALID_PLAYLIST_ID;
-        UiUtils.OnPlaylistSelectedListener action = new UiUtils.OnPlaylistSelectedListener() {
+        UiUtils.OnPlaylistSelected action = new UiUtils.OnPlaylistSelected() {
             @Override
             public void
             onPlaylist(long plid, Object user) {

@@ -428,22 +428,16 @@ public class PlaylistActivity extends Activity {
 
     private void
     onMenuMoreDB(final View anchor) {
-        final int[] optStringIds = {
+        final int[] menus = {
                 R.string.export,
                 R.string.import_,
                 R.string.merge };
 
-        final CharSequence[] items = new CharSequence[optStringIds.length];
-        for (int i = 0; i < optStringIds.length; i++)
-            items[i] = getResources().getText(optStringIds[i]);
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle(R.string.database);
-        builder.setItems(items, new DialogInterface.OnClickListener() {
+        UiUtils.OnMenuSelected action = new UiUtils.OnMenuSelected() {
             @Override
             public void
-            onClick(DialogInterface dialog, int item) {
-                switch (optStringIds[item]) {
+            onSelected(int pos, int menuTitle) {
+                switch (menuTitle) {
                 case R.string.export:
                     onMenuMoreDbExport(anchor);
                     break;
@@ -460,8 +454,13 @@ public class PlaylistActivity extends Activity {
                     eAssert(false);
                 }
             }
-        });
-        builder.create().show();
+        };
+
+        UiUtils.buildPopupMenuDialog(this,
+                                     action,
+                                     R.string.database,
+                                     menus)
+               .show();
     }
 
     private void
@@ -477,21 +476,15 @@ public class PlaylistActivity extends Activity {
 
     private void
     onMenuMoreYtSearch(final View anchor) {
-        final int[] optStringIds = {
+        final int[] menus = {
                 R.string.videos_with_author,
                 R.string.user_playlist };
 
-        final CharSequence[] items = new CharSequence[optStringIds.length];
-        for (int i = 0; i < optStringIds.length; i++)
-            items[i] = getResources().getText(optStringIds[i]);
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle(R.string.ytsearch);
-        builder.setItems(items, new DialogInterface.OnClickListener() {
+        UiUtils.OnMenuSelected action = new UiUtils.OnMenuSelected() {
             @Override
             public void
-            onClick(DialogInterface dialog, int item) {
-                switch (optStringIds[item]) {
+            onSelected(int pos, int menuTitle) {
+                switch (menuTitle) {
                 case R.string.videos_with_author:
                     onMenuMoreYtSearchAuthor(anchor);
                     break;
@@ -503,8 +496,13 @@ public class PlaylistActivity extends Activity {
                     eAssert(false);
                 }
             }
-        });
-        builder.create().show();
+        };
+
+        UiUtils.buildPopupMenuDialog(this,
+                                     action,
+                                     R.string.ytsearch,
+                                     menus)
+               .show();
     }
 
     private void
@@ -517,14 +515,14 @@ public class PlaylistActivity extends Activity {
                 this,
                 Policy.REPORT_RECEIVER,
                 getResources().getText(R.string.choose_app),
-                 "[ " + getResources().getText(R.string.app_name) + " ] " + getResources().getText(R.string.feedback),
-                 "",
-                 null);
+                "[ " + getResources().getText(R.string.app_name) + " ] " + getResources().getText(R.string.feedback),
+                "",
+                null);
     }
 
     private void
     onMenuMoreAutoStop(View anchor) {
-        final int[] optStringIds = {
+        final int[] menus = {
                 R.string.off,
                 R.string.time10m,
                 R.string.time20m,
@@ -532,19 +530,12 @@ public class PlaylistActivity extends Activity {
                 R.string.time1h,
                 R.string.time2h };
 
-
-        final CharSequence[] items = new CharSequence[optStringIds.length];
-        for (int i = 0; i < optStringIds.length; i++)
-            items[i] = getResources().getText(optStringIds[i]);
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle(R.string.autostop);
-        builder.setItems(items, new DialogInterface.OnClickListener() {
+        UiUtils.OnMenuSelected action = new UiUtils.OnMenuSelected() {
             @Override
             public void
-            onClick(DialogInterface dialog, int item) {
+            onSelected(int pos, int menuTitle) {
                 long timems = 0;
-                switch (optStringIds[item]) {
+                switch (menuTitle) {
                 case R.string.off:      timems = 0;                     break;
                 case R.string.time10m:  timems = 10 * 60 * 1000;        break;
                 case R.string.time20m:  timems = 20 * 60 * 1000;        break;
@@ -560,14 +551,18 @@ public class PlaylistActivity extends Activity {
                 else
                     mMp.unsetAutoStop();
             }
-        });
-        builder.create().show();
+        };
 
+        UiUtils.buildPopupMenuDialog(this,
+                                     action,
+                                     R.string.autostop,
+                                     menus)
+               .show();
     }
 
     private void
     onMenuMore(final View anchor) {
-        final int[] optStringIds = {
+        final int[] menus = {
                 R.string.app_info,
                 R.string.license,
                 R.string.clear_search_history,
@@ -576,16 +571,11 @@ public class PlaylistActivity extends Activity {
                 R.string.feedback,
                 R.string.autostop };
 
-        final CharSequence[] items = new CharSequence[optStringIds.length];
-        for (int i = 0; i < optStringIds.length; i++)
-            items[i] = getResources().getText(optStringIds[i]);
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setItems(items, new DialogInterface.OnClickListener() {
+        UiUtils.OnMenuSelected action = new UiUtils.OnMenuSelected() {
             @Override
             public void
-            onClick(DialogInterface dialog, int item) {
-                switch (optStringIds[item]) {
+            onSelected(int pos, int menuTitle) {
+                switch (menuTitle) {
                 case R.string.autostop:
                     if (mMp.hasActiveVideo())
                         onMenuMoreAutoStop(anchor);
@@ -621,8 +611,13 @@ public class PlaylistActivity extends Activity {
                     eAssert(false);
                 }
             }
-        });
-        builder.create().show();
+        };
+
+        UiUtils.buildPopupMenuDialog(this,
+                                     action,
+                                     -1,
+                                     menus)
+               .show();
     }
 
     private void
@@ -747,7 +742,7 @@ public class PlaylistActivity extends Activity {
 
     private void
     onContextMenuCopyTo(final AdapterContextMenuInfo info) {
-        UiUtils.OnPlaylistSelectedListener action = new UiUtils.OnPlaylistSelectedListener() {
+        UiUtils.OnPlaylistSelected action = new UiUtils.OnPlaylistSelected() {
             @Override
             public void
             onPlaylist(final long plid, final Object user) {
