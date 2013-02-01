@@ -25,7 +25,6 @@ import static free.yhc.netmbuddy.utils.Utils.eAssert;
 import java.io.File;
 import java.io.IOException;
 
-import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -47,7 +46,6 @@ import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
-import android.widget.PopupMenu;
 import android.widget.TextView;
 import free.yhc.netmbuddy.PlaylistAdapter.ItemButton;
 import free.yhc.netmbuddy.db.ColPlaylist;
@@ -564,38 +562,7 @@ public class PlaylistActivity extends Activity {
             }
         });
         builder.create().show();
-    }
 
-    @TargetApi(15)
-    private void
-    onMenuMoreAutoStopICS(View anchor) {
-        PopupMenu popup = new PopupMenu(this, anchor);
-        popup.getMenuInflater().inflate(R.menu.popup_more_autostop, popup.getMenu());
-        popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
-            @Override
-            public boolean
-            onMenuItemClick(MenuItem item) {
-                long timems = 0;
-                switch (item.getItemId()) {
-                case R.id.off:      timems = 0;                     break;
-                case R.id.time10m:  timems = 10 * 60 * 1000;        break;
-                case R.id.time20m:  timems = 20 * 60 * 1000;        break;
-                case R.id.time30m:  timems = 30 * 60 * 1000;        break;
-                case R.id.time1h:   timems = 1 * 60 * 60 * 1000;    break;
-                case R.id.time2h:   timems = 2 * 60 * 60 * 1000;    break;
-                default:
-                    eAssert(false);
-                }
-
-                if (0 <= timems)
-                    mMp.setAutoStop(timems);
-                else
-                    mMp.unsetAutoStop();
-
-                return true;
-            }
-        });
-        popup.show();
     }
 
     private void
@@ -658,56 +625,6 @@ public class PlaylistActivity extends Activity {
         builder.create().show();
     }
 
-    @TargetApi(15)
-    private void
-    onMenuMoreICS(final View anchor) {
-        PopupMenu popup = new PopupMenu(this, anchor);
-        popup.getMenuInflater().inflate(R.menu.popup_more, popup.getMenu());
-        popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
-            @Override
-            public boolean
-            onMenuItemClick(MenuItem item) {
-                switch (item.getItemId()) {
-                case R.id.app_info:
-                    onMenuMoreAppInfo(anchor);
-                    break;
-
-                case R.id.license:
-                    onMenuMoreLicense(anchor);
-                    break;
-
-                case R.id.clear_search_history:
-                    onMenuMoreClearSearchHistory(anchor);
-                    break;
-
-                case R.id.dbmore:
-                    onMenuMoreDB(anchor);
-                    break;
-
-                case R.id.ytsearchmore:
-                    onMenuMoreYtSearch(anchor);
-                    break;
-
-                case R.id.feedback:
-                    onMenuMoreSendOpinion(anchor);
-                    break;
-
-                case R.id.autostop:
-                    if (mMp.hasActiveVideo())
-                        onMenuMoreAutoStopICS(anchor);
-                    else
-                        UiUtils.showTextToast(PlaylistActivity.this, R.string.msg_autostop_not_allowed);
-                    break;
-
-                default:
-                    eAssert(false);
-                }
-                return true;
-            }
-        });
-        popup.show();
-    }
-
     private void
     setupToolButtons() {
         ((ImageView)findViewById(R.id.playall)).setOnClickListener(new View.OnClickListener() {
@@ -757,10 +674,7 @@ public class PlaylistActivity extends Activity {
             @Override
             public void
             onClick(final View v) {
-                if (Utils.isIcsOrLater())
-                    onMenuMoreICS(v);
-                else
-                    onMenuMore(v);
+                onMenuMore(v);
             }
         });
     }
