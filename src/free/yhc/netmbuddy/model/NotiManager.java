@@ -163,13 +163,13 @@ public class NotiManager {
         }
     }
 
-    Notification
-    buildNotification(NotiType ntype, CharSequence title) {
+    private Notification
+    buildNotificationICS(NotiType ntype, CharSequence videoTitle) {
         RemoteViews rv = new RemoteViews(Utils.getAppContext().getPackageName(),
                                          R.layout.player_notification);
         NotificationCompat.Builder nbldr = new NotificationCompat.Builder(Utils.getAppContext());
 
-        rv.setTextViewText(R.id.title, title);
+        rv.setTextViewText(R.id.title, videoTitle);
 
         Intent intent = new Intent(Utils.getAppContext(), NotiManager.NotiIntentReceiver.class);
         intent.setAction(NOTI_INTENT_ACTION);
@@ -204,6 +204,57 @@ public class NotiManager {
              .setSmallIcon(ntype.getIcon())
              .setTicker(null);
         return nbldr.build();
+    }
+
+    private Notification
+    buildNotificationGB(NotiType ntype, CharSequence videoTitle) {
+        Intent intent = new Intent(Utils.getAppContext(), NotiManager.NotiIntentReceiver.class);
+        intent.setAction(NOTI_INTENT_DELETE);
+        PendingIntent piDelete = PendingIntent.getBroadcast(Utils.getAppContext(), 0, intent,
+                                                            PendingIntent.FLAG_UPDATE_CURRENT);
+
+        intent = new Intent(Utils.getAppContext(), NotiManager.NotiIntentReceiver.class);
+        intent.setAction(NOTI_INTENT_ACTION);
+        intent.putExtra("type", ntype.name());
+        PendingIntent piContent = PendingIntent.getBroadcast(Utils.getAppContext(), 0, intent,
+                                                             PendingIntent.FLAG_UPDATE_CURRENT);
+
+        /*
+         * NOTE
+         * Below way is deprecated but works well better than using recommended way - notification builder.
+         * (See commends below about using builder)
+         */
+        Notification n = new Notification(ntype.getIcon(), null, System.currentTimeMillis());
+        n.setLatestEventInfo(Utils.getAppContext(),
+                             Utils.getResText(R.string.app_name),
+                             videoTitle,
+                             piContent);
+        n.deleteIntent = piDelete;
+        n.flags = 0;
+
+        return n;
+        /* Below code generates "java.lang.NoClassDefFoundError : android.support.v4.app.NotificationCompat$Builder"
+         * So, comment out!
+         * (Damn Android!
+         *
+        NotificationCompat.Builder nbldr = new NotificationCompat.Builder(Utils.getAppContext());
+        nbldr.setSmallIcon(ntype.getIcon())
+             .setTicker(null)
+             .setContentTitle(title)
+             .setContentText(desc)
+             .setAutoCancel(true)
+             .setContentIntent(piContent)
+             .setDeleteIntent(piDelete);
+        return nbldr.build();
+        */
+    }
+
+    Notification
+    buildNotification(NotiType ntype, CharSequence videoTitle) {
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+            return buildNotificationGB(ntype, videoTitle);
+        else
+            return buildNotificationICS(ntype, videoTitle);
     }
 
     public static NotiManager
@@ -248,6 +299,8 @@ public class NotiManager {
         case ALERT:
             // In case of player notification
             mLastPlayerNotification = n;
+        default:
+            // ignored for other cases.
         }
     }
 
