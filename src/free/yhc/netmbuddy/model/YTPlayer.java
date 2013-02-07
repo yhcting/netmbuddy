@@ -67,7 +67,8 @@ MediaPlayer.OnInfoListener,
 MediaPlayer.OnVideoSizeChangedListener,
 MediaPlayer.OnSeekCompleteListener,
 // To support video
-SurfaceHolder.Callback {
+SurfaceHolder.Callback,
+UnexpectedExceptionHandler.Evidence {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(YTPlayer.class);
 
@@ -1864,6 +1865,7 @@ SurfaceHolder.Callback {
     //
     // ============================================================================
     private YTPlayer() {
+        UnexpectedExceptionHandler.get().registerModule(this);
         mVlm = new YTPlayerVideoListManager(new YTPlayerVideoListManager.OnListChangedListener() {
             @Override
             public void
@@ -1875,6 +1877,12 @@ SurfaceHolder.Callback {
                     iter.next().onChanged();
             }
         });
+    }
+
+    @Override
+    public String
+    dump(UnexpectedExceptionHandler.DumpLevel lvl) {
+        return this.getClass().getName();
     }
 
     public static YTPlayer

@@ -40,6 +40,7 @@ import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
 import android.widget.TextView;
 import free.yhc.netmbuddy.model.RTState;
+import free.yhc.netmbuddy.model.UnexpectedExceptionHandler;
 import free.yhc.netmbuddy.model.YTHacker;
 import free.yhc.netmbuddy.model.YTPlayer;
 import free.yhc.netmbuddy.model.YTPlayer.StopState;
@@ -49,7 +50,8 @@ import free.yhc.netmbuddy.utils.Utils;
 
 public class VideoPlayerActivity extends Activity implements
 YTPlayer.PlayerStateListener,
-YTPlayer.VideosStateListener {
+YTPlayer.VideosStateListener,
+UnexpectedExceptionHandler.Evidence {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(VideoPlayerActivity.class);
 
@@ -328,9 +330,16 @@ YTPlayer.VideosStateListener {
     //
     // ========================================================================
     @Override
+    public String
+    dump(UnexpectedExceptionHandler.DumpLevel lvl) {
+        return this.getClass().getName();
+    }
+
+    @Override
     public void
     onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        UnexpectedExceptionHandler.get().registerModule(this);
 
         setContentView(R.layout.videoplayer);
         mSurfv = (SurfaceView)findViewById(R.id.surface);
@@ -419,6 +428,7 @@ YTPlayer.VideosStateListener {
         mMp.unsetSurfaceHolder(mSurfv.getHolder());
         mMp.removePlayerStateListener(this);
         mMp.removeVideosStateListener(this);
+        UnexpectedExceptionHandler.get().unregisterModule(this);
         super.onDestroy();
     }
 

@@ -27,7 +27,8 @@ import android.os.IBinder;
 import free.yhc.netmbuddy.model.YTPlayer.StopState;
 import free.yhc.netmbuddy.utils.Utils;
 
-public class YTPlayerLifeSupportService extends Service {
+public class YTPlayerLifeSupportService extends Service implements
+UnexpectedExceptionHandler.Evidence {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(YTPlayerLifeSupportService.class);
 
@@ -75,10 +76,17 @@ public class YTPlayerLifeSupportService extends Service {
     }
 
     @Override
+    public String
+    dump(UnexpectedExceptionHandler.DumpLevel lvl) {
+        return this.getClass().getName();
+    }
+
+    @Override
     public void
     onCreate() {
         if (DBG) P.v("onCreate");
         super.onCreate();
+        UnexpectedExceptionHandler.get().registerModule(this);
     }
 
     @Override
@@ -102,6 +110,7 @@ public class YTPlayerLifeSupportService extends Service {
     public void
     onDestroy() {
         if (DBG) P.v("onDestroy");
+        UnexpectedExceptionHandler.get().unregisterModule(this);
         super.onDestroy();
     }
 

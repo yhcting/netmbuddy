@@ -33,9 +33,11 @@ import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import free.yhc.netmbuddy.model.UnexpectedExceptionHandler;
 import free.yhc.netmbuddy.utils.Utils;
 
-public class DB {
+public class DB implements
+UnexpectedExceptionHandler.Evidence {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(DB.class);
 
@@ -144,6 +146,7 @@ public class DB {
     //
     // ======================================================================
     private DB() {
+        UnexpectedExceptionHandler.get().registerModule(this);
     }
 
     public static DB
@@ -459,6 +462,13 @@ public class DB {
         }
         return r;
     }
+
+    @Override
+    public String
+    dump(UnexpectedExceptionHandler.DumpLevel lvl) {
+        return this.getClass().getName();
+    }
+
     // ======================================================================
     //
     // Importing/Exporting DB

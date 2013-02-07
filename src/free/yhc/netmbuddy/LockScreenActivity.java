@@ -31,12 +31,14 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import free.yhc.netmbuddy.model.NotiManager;
+import free.yhc.netmbuddy.model.UnexpectedExceptionHandler;
 import free.yhc.netmbuddy.model.YTPlayer;
 import free.yhc.netmbuddy.model.YTPlayer.StopState;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class LockScreenActivity extends Activity implements
-YTPlayer.VideosStateListener {
+YTPlayer.VideosStateListener,
+UnexpectedExceptionHandler.Evidence {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(LockScreenActivity.class);
 
@@ -93,6 +95,7 @@ YTPlayer.VideosStateListener {
             moveTaskToBack(true);
         finish();
     }
+
     // ========================================================================
     //
     // Overriding 'YTPlayer.VideosStateListener'
@@ -115,10 +118,22 @@ YTPlayer.VideosStateListener {
 
     }
 
+    // ========================================================================
+    //
+    // Overriding
+    //
+    // ========================================================================
+    @Override
+    public String
+    dump(UnexpectedExceptionHandler.DumpLevel lvl) {
+        return this.getClass().getName();
+    }
+
     @Override
     public void
     onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        UnexpectedExceptionHandler.get().registerModule(this);
         mForeground = getIntent().getBooleanExtra(INTENT_KEY_APP_FOREGROUND, false);
 
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED);
@@ -170,6 +185,7 @@ YTPlayer.VideosStateListener {
     protected void
     onDestroy() {
         mMp.removeVideosStateListener(this);
+        UnexpectedExceptionHandler.get().unregisterModule(this);
         super.onDestroy();
     }
 

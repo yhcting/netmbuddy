@@ -21,10 +21,12 @@
 package free.yhc.netmbuddy;
 
 import android.os.Bundle;
+import free.yhc.netmbuddy.model.UnexpectedExceptionHandler;
 import free.yhc.netmbuddy.model.YTSearchHelper;
 import free.yhc.netmbuddy.utils.Utils;
 
-public class YTVideoSearchKeywordActivity extends YTVideoSearchActivity {
+public class YTVideoSearchKeywordActivity extends YTVideoSearchActivity implements
+UnexpectedExceptionHandler.Evidence {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(YTVideoSearchKeywordActivity.class);
 
@@ -47,10 +49,24 @@ public class YTVideoSearchKeywordActivity extends YTVideoSearchActivity {
     }
 
     @Override
+    public String
+    dump(UnexpectedExceptionHandler.DumpLevel lvl) {
+        return this.getClass().getName();
+    }
+
+    @Override
     public void
     onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        UnexpectedExceptionHandler.get().registerModule(this);
         String text = getIntent().getStringExtra(MAP_KEY_SEARCH_TEXT);
         onCreateInternal(text, text);
+    }
+
+    @Override
+    protected void
+    onDestroy() {
+        UnexpectedExceptionHandler.get().unregisterModule(this);
+        super.onDestroy();
     }
 }

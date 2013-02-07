@@ -24,12 +24,20 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
+import free.yhc.netmbuddy.model.UnexpectedExceptionHandler;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class YTMPPreferenceActivity extends PreferenceActivity implements
-SharedPreferences.OnSharedPreferenceChangeListener {
+SharedPreferences.OnSharedPreferenceChangeListener,
+UnexpectedExceptionHandler.Evidence {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(YTMPPreferenceActivity.class);
+
+    @Override
+    public String
+    dump(UnexpectedExceptionHandler.DumpLevel lvl) {
+        return this.getClass().getName();
+    }
 
     @Override
     public void
@@ -37,8 +45,11 @@ SharedPreferences.OnSharedPreferenceChangeListener {
     }
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void
+    onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        UnexpectedExceptionHandler.get().registerModule(this);
+
         addPreferencesFromResource(R.xml.preferences);
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         prefs.registerOnSharedPreferenceChangeListener(this);
@@ -47,6 +58,7 @@ SharedPreferences.OnSharedPreferenceChangeListener {
     @Override
     protected void
     onDestroy() {
+        UnexpectedExceptionHandler.get().unregisterModule(this);
         super.onDestroy();
     }
 }

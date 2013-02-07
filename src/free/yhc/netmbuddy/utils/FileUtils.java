@@ -20,10 +20,12 @@
 
 package free.yhc.netmbuddy.utils;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -221,5 +223,35 @@ public class FileUtils {
     public static boolean
     removeFileRecursive(File f) {
         return removeFileRecursive(f, new File[0]);
+    }
+
+    // ========================================================================
+    //
+    // Handling File Contents
+    //
+    // ========================================================================
+    /**
+     *
+     * @param file
+     *   Text file.
+     * @return
+     *   value when reading non-text files, is not defined.
+     */
+    public static String
+    readTextFile(File file) {
+        try {
+            StringBuffer fileData = new StringBuffer(4096);
+            BufferedReader reader = new BufferedReader(new FileReader(file));
+            char[] buf = new char[4096];
+            int bytes;
+            while(-1 != (bytes = reader.read(buf)))
+                fileData.append(buf, 0, bytes);
+            reader.close();
+            return fileData.toString();
+        } catch (FileNotFoundException e) {
+            return null;
+        } catch (IOException e) {
+            return null;
+        }
     }
 }

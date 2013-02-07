@@ -44,4 +44,14 @@
             android:entryValues="@array/strarr_on_off_value"
             />
     </PreferenceCategory>
+    <PreferenceCategory android:title="@string/pref_cat_report">
+        <ListPreference
+            android:title="@string/pref_err_report"
+            android:summary="@string/pref_err_report_desc"
+            android:key="@string/cserr_report"
+            android:defaultValue="@string/cson"
+            android:entries="@array/strarr_on_off_entry"
+            android:entryValues="@array/strarr_on_off_value"
+            />
+    </PreferenceCategory>
 </PreferenceScreen>

@@ -33,6 +33,7 @@ import android.view.ViewGroup;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 import free.yhc.netmbuddy.db.DB;
 import free.yhc.netmbuddy.db.DBHelper;
+import free.yhc.netmbuddy.model.UnexpectedExceptionHandler;
 import free.yhc.netmbuddy.model.YTFeed;
 import free.yhc.netmbuddy.model.YTPlayer;
 import free.yhc.netmbuddy.model.YTSearchHelper;
@@ -42,7 +43,8 @@ import free.yhc.netmbuddy.utils.Utils;
 
 public class YTVideoSearchFragment extends YTSearchFragment implements
 YTSearchHelper.SearchDoneReceiver,
-DBHelper.CheckDupDoneReceiver {
+DBHelper.CheckDupDoneReceiver,
+UnexpectedExceptionHandler.Evidence {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(YTVideoSearchFragment.class);
 
@@ -296,6 +298,12 @@ DBHelper.CheckDupDoneReceiver {
     }
 
     @Override
+    public String
+    dump(UnexpectedExceptionHandler.DumpLevel lvl) {
+        return this.getClass().getName();
+    }
+
+    @Override
     public void
     onAttach(Activity activity) {
         super.onAttach(activity);
@@ -305,6 +313,7 @@ DBHelper.CheckDupDoneReceiver {
     public void
     onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        UnexpectedExceptionHandler.get().registerModule(this);
         mDbHelper = new DBHelper();
     }
 
@@ -379,6 +388,7 @@ DBHelper.CheckDupDoneReceiver {
     public void
     onDestroy() {
         onDestroyInternal();
+        UnexpectedExceptionHandler.get().unregisterModule(this);
         super.onDestroy();
     }
 

@@ -42,6 +42,7 @@ import org.apache.http.impl.cookie.DateUtils;
 
 import android.app.Activity;
 import android.app.ActivityManager;
+import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -49,6 +50,7 @@ import android.content.res.Resources;
 import android.graphics.Rect;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.Uri;
 import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.util.Log;
@@ -160,6 +162,7 @@ public class Utils {
 
         new File(Policy.APPDATA_DIR).mkdirs();
         new File(Policy.APPDATA_VIDDIR).mkdirs();
+        new File(Policy.APPDATA_LOGDIR).mkdirs();
 
         // Clear/Create cache directory!
         File cacheF = new File(Policy.APPDATA_CACHEDIR);
@@ -471,6 +474,13 @@ public class Utils {
         return v.equals(getResText(R.string.cson));
     }
 
+    public static boolean
+    isPrefErrReport() {
+        String v = getPreference(getResText(R.string.cserr_report),
+                                            getResText(R.string.cson));
+        return v.equals(getResText(R.string.cson));
+    }
+
     // ------------------------------------------------------------------------
     //
     // Bit mask handling
@@ -612,6 +622,30 @@ public class Utils {
             return false;
         } catch (IOException e) {
             return false;
+        }
+    }
+
+    public static void
+    sendMail(Context    context,
+             String     receiver,
+             String     subject,
+             String     text,
+             File       attachment) {
+        if (!Utils.isNetworkAvailable())
+            return;
+
+        Intent intent = new Intent(Intent.ACTION_SEND);
+        if (null != receiver)
+            intent.putExtra(Intent.EXTRA_EMAIL, new String[] { receiver });
+        intent.putExtra(Intent.EXTRA_TEXT, text);
+        intent.putExtra(Intent.EXTRA_SUBJECT, subject);
+        if (null != attachment)
+            intent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(attachment));
+        intent.setType("message/rfc822");
+        try {
+            context.startActivity(intent);
+        } catch (ActivityNotFoundException e) {
+            UiUtils.showTextToast(context, R.string.msg_fail_find_app);
         }
     }
 

@@ -33,7 +33,7 @@ import free.yhc.netmbuddy.R;
 import free.yhc.netmbuddy.utils.UiUtils;
 import free.yhc.netmbuddy.utils.Utils;
 
-public class YTPlayerVideoListAdapter  extends BaseAdapter{
+public class YTPlayerVideoListAdapter extends BaseAdapter {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(YTPlayerVideoListAdapter.class);
 

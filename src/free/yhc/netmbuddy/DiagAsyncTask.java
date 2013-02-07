@@ -28,11 +28,13 @@ import android.content.DialogInterface;
 import android.view.KeyEvent;
 import android.view.View;
 import free.yhc.netmbuddy.model.BGTask;
+import free.yhc.netmbuddy.model.UnexpectedExceptionHandler;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class DiagAsyncTask extends BGTask<Err> implements
 DialogInterface.OnDismissListener,
-View.OnClickListener {
+View.OnClickListener,
+UnexpectedExceptionHandler.Evidence {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(DiagAsyncTask.class);
 
@@ -87,6 +89,7 @@ View.OnClickListener {
                          boolean cancelable,
                          boolean interruptOnCancel) {
         super();
+        UnexpectedExceptionHandler.get().registerModule(this);
         mContext= context;
         mWorker = listener;
         mMessage = msg;
@@ -180,6 +183,12 @@ View.OnClickListener {
     forceDismissDialog() {
         if (null != mDialog)
             mDialog.dismiss();
+    }
+
+    @Override
+    public String
+    dump(UnexpectedExceptionHandler.DumpLevel lvl) {
+        return this.getClass().getName();
     }
 
     @Override
@@ -298,11 +307,6 @@ View.OnClickListener {
     onDismiss(DialogInterface dialogI) {
         if (null != mOnDismissListener)
             mOnDismissListener.onDismiss(dialogI);
-    }
-
-    @Override
-    protected void
-    finalize() throws Throwable {
-        super.finalize();
+        UnexpectedExceptionHandler.get().unregisterModule(this);
     }
 }

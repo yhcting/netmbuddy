@@ -42,6 +42,7 @@ import free.yhc.netmbuddy.db.DB;
 import free.yhc.netmbuddy.model.MultiThreadRunner;
 import free.yhc.netmbuddy.model.MultiThreadRunner.Job;
 import free.yhc.netmbuddy.model.Policy;
+import free.yhc.netmbuddy.model.UnexpectedExceptionHandler;
 import free.yhc.netmbuddy.model.YTConstants;
 import free.yhc.netmbuddy.model.YTFeed;
 import free.yhc.netmbuddy.model.YTPlaylistFeed;
@@ -51,7 +52,8 @@ import free.yhc.netmbuddy.utils.UiUtils;
 import free.yhc.netmbuddy.utils.Utils;
 import free.yhc.netmbuddy.utils.YTUtils;
 
-public class YTPlaylistSearchFragment extends YTSearchFragment {
+public class YTPlaylistSearchFragment extends YTSearchFragment implements
+UnexpectedExceptionHandler.Evidence {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(YTPlaylistSearchFragment.class);
 
@@ -359,6 +361,12 @@ public class YTPlaylistSearchFragment extends YTSearchFragment {
     }
 
     @Override
+    public String
+    dump(UnexpectedExceptionHandler.DumpLevel lvl) {
+        return this.getClass().getName();
+    }
+
+    @Override
     public void
     onAttach(Activity activity) {
         super.onAttach(activity);
@@ -368,6 +376,7 @@ public class YTPlaylistSearchFragment extends YTSearchFragment {
     public void
     onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        UnexpectedExceptionHandler.get().registerModule(this);
     }
 
     @Override
@@ -429,6 +438,7 @@ public class YTPlaylistSearchFragment extends YTSearchFragment {
     @Override
     public void
     onDestroy() {
+        UnexpectedExceptionHandler.get().unregisterModule(this);
         super.onDestroy();
     }
 

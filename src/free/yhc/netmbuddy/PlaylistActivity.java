@@ -53,12 +53,15 @@ import free.yhc.netmbuddy.db.ColVideo;
 import free.yhc.netmbuddy.db.DB;
 import free.yhc.netmbuddy.model.Policy;
 import free.yhc.netmbuddy.model.SearchSuggestionProvider;
+import free.yhc.netmbuddy.model.UnexpectedExceptionHandler;
 import free.yhc.netmbuddy.model.YTPlayer;
 import free.yhc.netmbuddy.share.Share;
+import free.yhc.netmbuddy.utils.ReportUtils;
 import free.yhc.netmbuddy.utils.UiUtils;
 import free.yhc.netmbuddy.utils.Utils;
 
-public class PlaylistActivity extends Activity {
+public class PlaylistActivity extends Activity implements
+UnexpectedExceptionHandler.Evidence {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(PlaylistActivity.class);
 
@@ -511,13 +514,7 @@ public class PlaylistActivity extends Activity {
             UiUtils.showTextToast(this, R.string.err_network_unavailable);
             return;
         }
-        UiUtils.sendMail(
-                this,
-                Policy.REPORT_RECEIVER,
-                getResources().getText(R.string.choose_app),
-                "[ " + getResources().getText(R.string.app_name) + " ] " + getResources().getText(R.string.feedback),
-                "",
-                null);
+        ReportUtils.sendFeedback(this);
     }
 
     private void
@@ -793,12 +790,11 @@ public class PlaylistActivity extends Activity {
                 }
 
                 String plTitle = (String)DB.get().getPlaylistInfo(info.id, ColPlaylist.TITLE);
-                UiUtils.sendMail(PlaylistActivity.this,
-                                 null,
-                                 Utils.getResText(R.string.share_via_email),
-                                 Utils.getResText(R.string.share_pl_email_subject) + ":" + plTitle,
-                                 Utils.getResText(R.string.share_pl_email_text),
-                                 fTmp);
+                Utils.sendMail(PlaylistActivity.this,
+                               null,
+                               Utils.getResText(R.string.share_pl_email_subject) + ":" + plTitle,
+                               Utils.getResText(R.string.share_pl_email_text),
+                               fTmp);
             }
 
             @Override
@@ -823,6 +819,12 @@ public class PlaylistActivity extends Activity {
     private void
     onListItemClick(View view, int position, long itemId) {
         playMusics(mDb.queryVideos(itemId, sVideoProjectionToPlay, null, false));
+    }
+
+    @Override
+    public String
+    dump(UnexpectedExceptionHandler.DumpLevel lvl) {
+        return this.getClass().getName();
     }
 
     @Override
@@ -863,7 +865,9 @@ public class PlaylistActivity extends Activity {
     public void
     onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        UnexpectedExceptionHandler.get().registerModule(this);
 
+        ReportUtils.sendErrReport(this);
         setContentView(R.layout.playlist);
         mListv = (ListView)findViewById(R.id.list);
         registerForContextMenu(mListv);
@@ -951,6 +955,7 @@ public class PlaylistActivity extends Activity {
     protected void
     onDestroy() {
         mDb.unregisterToPlaylistTableWatcher(this);
+        UnexpectedExceptionHandler.get().unregisterModule(this);
         super.onDestroy();
     }
 

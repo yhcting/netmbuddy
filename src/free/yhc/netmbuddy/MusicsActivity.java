@@ -41,11 +41,13 @@ import android.widget.TextView;
 import free.yhc.netmbuddy.db.ColPlaylist;
 import free.yhc.netmbuddy.db.ColVideo;
 import free.yhc.netmbuddy.db.DB;
+import free.yhc.netmbuddy.model.UnexpectedExceptionHandler;
 import free.yhc.netmbuddy.model.YTPlayer;
 import free.yhc.netmbuddy.utils.UiUtils;
 import free.yhc.netmbuddy.utils.Utils;
 
-public class MusicsActivity extends Activity {
+public class MusicsActivity extends Activity implements
+UnexpectedExceptionHandler.Evidence {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(MusicsActivity.class);
 
@@ -337,6 +339,13 @@ public class MusicsActivity extends Activity {
         i.putExtra(YTSearchActivity.MAP_KEY_SEARCH_TEXT, getAdapter().getMusicAuthor(pos));
         startActivity(i);
     }
+
+    @Override
+    public String
+    dump(UnexpectedExceptionHandler.DumpLevel lvl) {
+        return this.getClass().getName();
+    }
+
     // ========================================================================
     //
     // Overriding Activity Member Functions
@@ -415,6 +424,7 @@ public class MusicsActivity extends Activity {
     public void
     onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        UnexpectedExceptionHandler.get().registerModule(this);
         setContentView(R.layout.musics);
 
         String searchWord = null;
@@ -491,6 +501,7 @@ public class MusicsActivity extends Activity {
     @Override
     protected void
     onDestroy() {
+        UnexpectedExceptionHandler.get().unregisterModule(this);
         super.onDestroy();
     }
 

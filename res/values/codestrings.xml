@@ -13,6 +13,7 @@ Usually, used for matching resource and code.
     <string name="csquality">quality</string>
     <string name="cslockscreen">lockscreen</string>
     <string name="csstop_on_back">stop_on_back</string>
+    <string name="cserr_report">err_report</string>
     
     <string name="csLOW">LOW</string>
     <string name="csMIDLOW">MIDLOW</string>

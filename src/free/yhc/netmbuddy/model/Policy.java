@@ -28,7 +28,6 @@ public class Policy {
     private static final Utils.Logger P = new Utils.Logger(Policy.class);
 
     public static final String  APPBASENAME             = "netmbuddy";
-    public static final String  REPORT_RECEIVER         = "yhcting77@gmail.com";
     public static final String  EXTSTORAGE_DIR          = Environment.getExternalStorageDirectory().getPath() + "/";
     public static final String  APPDATA_DIR             = EXTSTORAGE_DIR + APPBASENAME + "/";
     public static final String  APPDATA_TMPDIR          = APPDATA_DIR + "tmp/";
@@ -36,6 +35,7 @@ public class Policy {
     public static final String  APPDATA_CACHEDIR        = APPDATA_DIR + "cache/";
     // Downloaded video directory
     public static final String  APPDATA_VIDDIR          = APPDATA_DIR + "videos/";
+    public static final String  APPDATA_ERRLOG          = APPDATA_LOGDIR + "last_error";
     public static final String  EXTERNAL_DBFILE         = APPDATA_DIR + APPBASENAME + ".db";
 
     // --------------------------------------------------------------------
@@ -105,4 +105,10 @@ public class Policy {
     // --------------------------------------------------------------------
     // Video Player
     // --------------------------------------------------------------------
+
+    // --------------------------------------------------------------------
+    // Usage Report
+    // --------------------------------------------------------------------
+    public static final String REPORT_RECEIVER          = "yhcting77@gmail.com";
+    public static final String TIME_STAMP_FILE_SUFFIX   = "____tmstamp___";
 }

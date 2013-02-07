@@ -470,33 +470,6 @@ public class UiUtils {
         }
     }
 
-    public static void
-    sendMail(Context      context,
-             String       receiver,
-             CharSequence diagTitle,
-             CharSequence subject,
-             CharSequence text,
-             File attachment) {
-        if (!Utils.isNetworkAvailable())
-            return;
-
-        Intent intent = new Intent(Intent.ACTION_SEND);
-        if (null != receiver)
-            intent.putExtra(Intent.EXTRA_EMAIL, new String[] { receiver });
-        intent.putExtra(Intent.EXTRA_TEXT, text);
-        intent.putExtra(Intent.EXTRA_SUBJECT, subject);
-        if (null != attachment)
-            intent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(attachment));
-        intent.setType("message/rfc822");
-        try {
-            context.startActivity(intent);
-        } catch (ActivityNotFoundException e) {
-            UiUtils.showTextToast(context, R.string.msg_fail_find_app);
-        }
-    }
-
-
-
     public static boolean
     isUserPlaylist(long plid) {
         return plid >= 0;

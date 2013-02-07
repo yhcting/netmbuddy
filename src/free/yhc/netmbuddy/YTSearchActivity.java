@@ -37,6 +37,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import free.yhc.netmbuddy.model.Policy;
 import free.yhc.netmbuddy.model.SearchSuggestionProvider;
+import free.yhc.netmbuddy.model.UnexpectedExceptionHandler;
 import free.yhc.netmbuddy.model.YTPlayer;
 import free.yhc.netmbuddy.model.YTSearchHelper;
 import free.yhc.netmbuddy.utils.Utils;
@@ -273,6 +274,7 @@ public abstract class YTSearchActivity extends FragmentActivity {
     public void
     onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.ytsearch);
         mPager = (ViewPager)findViewById(R.id.pager);
         mPager.setOnPageChangeListener(mPCListener);

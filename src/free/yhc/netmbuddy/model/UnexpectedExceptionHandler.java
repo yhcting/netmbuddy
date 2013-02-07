@@ -35,6 +35,7 @@ import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
+import free.yhc.netmbuddy.utils.ReportUtils;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class UnexpectedExceptionHandler implements
@@ -48,15 +49,23 @@ UncaughtExceptionHandler {
 
     // This module to capturing unexpected exception.
     // So this SHOULD have minimum set of code in constructor,
-    //   because this module SHOULD be instancicate as early as possible
-    //   before any other module is instanciated
+    //   because this module SHOULD be instantiate as early as possible
+    //   before any other module is instantiated
     //
     // Dependency on only following modules are allowed
     // - Utils
     private final Thread.UncaughtExceptionHandler   mOldHandler = Thread.getDefaultUncaughtExceptionHandler();
-    private final LinkedList<TrackedModule>         mMods = new LinkedList<TrackedModule>();
+    private final LinkedList<Evidence>         mMods = new LinkedList<Evidence>();
     private final PackageReport mPr = new PackageReport();
     private final BuildReport   mBr = new BuildReport();
+
+    public enum DumpLevel {
+        FULL
+    }
+
+    public interface Evidence {
+        String dump(DumpLevel lvl);
+    }
 
     private class PackageReport {
         String packageName          = UNKNOWN;
@@ -80,14 +89,6 @@ UncaughtExceptionHandler {
         long   time                 = 0;
         String type                 = UNKNOWN;
         String user                 = UNKNOWN;
-    }
-
-    public enum DumpLevel {
-        FULL
-    }
-
-    public interface TrackedModule {
-        String dump(DumpLevel lvl);
     }
 
     // ========================
@@ -168,7 +169,7 @@ UncaughtExceptionHandler {
      * @return
      */
     public boolean
-    registerModule(TrackedModule m) {
+    registerModule(Evidence m) {
         if (null == m)
             return false;
 
@@ -182,7 +183,7 @@ UncaughtExceptionHandler {
     }
 
     public boolean
-    unregisterModule(TrackedModule m) {
+    unregisterModule(Evidence m) {
         synchronized (mMods) {
             return mMods.remove(m);
         }
@@ -195,9 +196,9 @@ UncaughtExceptionHandler {
         appendCommonReport(report);
 
         // collect dump informations
-        Iterator<TrackedModule> iter = mMods.iterator();
+        Iterator<Evidence> iter = mMods.iterator();
         while (iter.hasNext()) {
-            TrackedModule tm = iter.next();
+            Evidence tm = iter.next();
             report.append(tm.dump(DumpLevel.FULL)).append("\n\n");
         }
         StringWriter sw = new StringWriter();
@@ -206,6 +207,7 @@ UncaughtExceptionHandler {
         report.append(sw.toString());
         pw.close();
 
+        ReportUtils.storeErrReport(report.toString());
         mOldHandler.uncaughtException(thread, ex);
     }
 }

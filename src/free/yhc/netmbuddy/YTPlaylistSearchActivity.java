@@ -23,12 +23,20 @@ package free.yhc.netmbuddy;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
+import free.yhc.netmbuddy.model.UnexpectedExceptionHandler;
 import free.yhc.netmbuddy.model.YTSearchHelper;
 import free.yhc.netmbuddy.utils.Utils;
 
-public class YTPlaylistSearchActivity extends YTSearchActivity {
+public class YTPlaylistSearchActivity extends YTSearchActivity implements
+UnexpectedExceptionHandler.Evidence {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(YTPlaylistSearchActivity.class);
+
+    @Override
+    public String
+    dump(UnexpectedExceptionHandler.DumpLevel lvl) {
+        return this.getClass().getName();
+    }
 
     @Override
     protected YTSearchHelper.SearchType
@@ -53,6 +61,8 @@ public class YTPlaylistSearchActivity extends YTSearchActivity {
     public void
     onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        UnexpectedExceptionHandler.get().registerModule(this);
+
         setupBottomBar(R.drawable.ic_ytsearch,
                        new View.OnClickListener() {
             @Override
@@ -68,5 +78,12 @@ public class YTPlaylistSearchActivity extends YTSearchActivity {
             startNewSearch(stext, stext);
         else
             doNewSearch();
+    }
+
+    @Override
+    protected void
+    onDestroy() {
+        UnexpectedExceptionHandler.get().unregisterModule(this);
+        super.onDestroy();
     }
 }

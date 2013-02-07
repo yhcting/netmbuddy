@@ -27,7 +27,8 @@ import java.util.HashMap;
 import android.support.v4.util.LruCache;
 import free.yhc.netmbuddy.utils.Utils;
 
-public class RTState {
+public class RTState implements
+UnexpectedExceptionHandler.Evidence {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(RTState.class);
 
@@ -49,9 +50,16 @@ public class RTState {
     }
 
     private RTState() {
+        UnexpectedExceptionHandler.get().registerModule(this);
         mProxy = System.getenv("http_proxy");
         if (null == mProxy)
             mProxy = "";
+    }
+
+    @Override
+    public String
+    dump(UnexpectedExceptionHandler.DumpLevel lvl) {
+        return this.getClass().getName();
     }
 
     public static RTState

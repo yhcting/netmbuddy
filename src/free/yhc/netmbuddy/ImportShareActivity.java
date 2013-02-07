@@ -39,11 +39,13 @@ import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.net.Uri;
 import android.os.Bundle;
+import free.yhc.netmbuddy.model.UnexpectedExceptionHandler;
 import free.yhc.netmbuddy.share.Share;
 import free.yhc.netmbuddy.utils.UiUtils;
 import free.yhc.netmbuddy.utils.Utils;
 
-public class ImportShareActivity extends Activity {
+public class ImportShareActivity extends Activity implements
+UnexpectedExceptionHandler.Evidence {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(ImportShareActivity.class);
 
@@ -261,9 +263,16 @@ public class ImportShareActivity extends Activity {
     }
 
     @Override
+    public String
+    dump(UnexpectedExceptionHandler.DumpLevel lvl) {
+        return this.getClass().getName();
+    }
+
+    @Override
     public void
     onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        UnexpectedExceptionHandler.get().registerModule(this);
         Uri uri = getIntent().getData();
         eAssert(null != uri);
         InputStream is = null;
@@ -327,6 +336,7 @@ public class ImportShareActivity extends Activity {
             if (null != mZis)
                 mZis.close();
         } catch (IOException ignored) { }
+        UnexpectedExceptionHandler.get().unregisterModule(this);
         super.onDestroy();
     }
 

@@ -25,6 +25,7 @@ import android.content.res.Configuration;
 import free.yhc.netmbuddy.db.DB;
 import free.yhc.netmbuddy.model.NotiManager;
 import free.yhc.netmbuddy.model.RTState;
+import free.yhc.netmbuddy.model.UnexpectedExceptionHandler;
 import free.yhc.netmbuddy.model.YTPlayer;
 import free.yhc.netmbuddy.model.YTPlayerLifeSupportService;
 import free.yhc.netmbuddy.utils.Utils;
@@ -44,6 +45,10 @@ public class YTMPApp extends Application {
     onCreate() {
         super.onCreate();
         Utils.init(getApplicationContext());
+
+        // register default customized uncaught exception handler for error collecting.
+        Thread.setDefaultUncaughtExceptionHandler(UnexpectedExceptionHandler.get());
+
         DB.get().open();
         RTState.get();
         NotiManager.get();
