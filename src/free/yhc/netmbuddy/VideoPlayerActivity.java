@@ -22,6 +22,7 @@ package free.yhc.netmbuddy;
 
 import java.util.ArrayList;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
@@ -55,19 +56,81 @@ UnexpectedExceptionHandler.Evidence {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(VideoPlayerActivity.class);
 
+    private static final boolean sSystemUiCanBeHidden
+        = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.ICE_CREAM_SANDWICH;
+
     private final YTPlayer      mMp = YTPlayer.get();
     private SurfaceView         mSurfv;
     private Utils.PrefQuality   mVQuality = Utils.getPrefQuality();
-    private int                 mStatusBarHeight            = 0;
+    private int                 mStatusBarHeight    = 0;
 
     // If : Interface
     private boolean             mDelayedSetIfVisibility     = true;
-    private boolean             mUserIfShown                = false;
+    private boolean             mUserIfShown    = false;
 
     private static enum Orientation {
         PORTRAIT,
         LANDSCAPE,
         SYSTEM,     // current system status
+    }
+
+    private void
+    printWindowFrames() {
+        if (DBG) {
+            View dv = getWindow().getDecorView();
+            P.v("DecorView : " + dv.getLeft() + ", "
+                               + dv.getTop() + ", "
+                               + dv.getRight() + ","
+                               + dv.getBottom());
+            Rect rect = new Rect();
+            dv.getWindowVisibleDisplayFrame(rect);
+            P.v("VisibleFrame : " + rect.left + ", "
+                                  + rect.top + ","
+                                  + rect.right + ","
+                                  + rect.bottom);
+        }
+    }
+
+    @TargetApi(14)
+    private void
+    setSystemUiVisibility(boolean show) {
+        if (show)
+            getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_VISIBLE);
+        else
+            getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
+    }
+
+    @TargetApi(14)
+    private void
+    setOnSystemUiVisibilityChangeListener() {
+        getWindow().getDecorView().setOnSystemUiVisibilityChangeListener(
+                new View.OnSystemUiVisibilityChangeListener() {
+                    @Override
+                    public void
+                    onSystemUiVisibilityChange(int visibility) {
+                        // NOTE
+                        // There is one issue here.
+                        // Android Framework calls this function more than once especially
+                        //   in case hiding system ui.
+                        // (At my test, this function is calls 3 times for one
+                        //   setSystemUiVisibility(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION)
+                        // This leads to some strange UI bug.
+                        // CASE
+                        // ----
+                        //   Initial state : system ui is hidden.
+                        // - showing system ui by touching ground view
+                        // - touch ground view again in short time to hide system ui again.
+                        // => result
+                        //   - system ui is disappeared.
+                        //   - But soon, system ui is showing again
+                        //     (this callback(onSystemUiVisibilityChange) is called again
+                        //        - may be 2nd or 3rd one - after system ui is hidden.)
+                        //
+                        // But, this is NOT critical. So, ignore it at this time.
+                        if (DBG) P.v("onSystemUiVisibilityChange : visibility(" + visibility + ")");
+                        updateUserInterfaceVisibility(View.SYSTEM_UI_FLAG_VISIBLE == visibility);
+                    }
+                });
     }
 
     private void
@@ -107,6 +170,7 @@ UnexpectedExceptionHandler.Evidence {
         int sw = rect.width();
         // default is full screen.
         int sh = rect.bottom;
+
         // HACK! : if user interface is NOT shown, even if 0 != rect.top, it is ignored.
         if (isUserInterfaceShown())
             // When user interface is shown, status bar is also shown.
@@ -180,19 +244,24 @@ UnexpectedExceptionHandler.Evidence {
 
     private void
     updateUserInterfaceVisibility(boolean show) {
+        mUserIfShown = show;
+
         ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
         ViewGroup drawer = (ViewGroup)findViewById(R.id.list_drawer);
+
         if (show) {
-            mUserIfShown = true;
             getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
             playerv.setVisibility(View.VISIBLE);
             drawer.setVisibility(View.VISIBLE);
         } else {
-            mUserIfShown = false;
             getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
             playerv.setVisibility(View.GONE);
             drawer.setVisibility(View.GONE);
         }
+
+        if (sSystemUiCanBeHidden)
+            setSystemUiVisibility(show);
+
         fitVideoSurfaceToScreen(Orientation.SYSTEM);
     }
 
@@ -348,12 +417,16 @@ UnexpectedExceptionHandler.Evidence {
             @Override
             public void
             onClick(View v) {
+                if (DBG) P.v("touch_ground : On Click");
                 updateUserInterfaceVisibility(!isUserInterfaceShown());
             }
         });
 
         if (mMp.hasActiveVideo())
             getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
+        if (sSystemUiCanBeHidden)
+            setOnSystemUiVisibilityChangeListener();
 
         mMp.addPlayerStateListener(this, this);
         mMp.addVideosStateListener(this, this);
@@ -403,7 +476,8 @@ UnexpectedExceptionHandler.Evidence {
 
             if (mDelayedSetIfVisibility) {
                 mDelayedSetIfVisibility = false;
-                updateUserInterfaceVisibility(isUserInterfaceShown());
+                // At first, full screen mode is used.
+                updateUserInterfaceVisibility(false);
             }
         }
     }
