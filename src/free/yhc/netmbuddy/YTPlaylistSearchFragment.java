@@ -186,11 +186,16 @@ UnexpectedExceptionHandler.Evidence {
                 @Override
                 public Integer
                 doJob() {
-                    if (insertVideoToPlaylist(plid, e))
-                        mtpr.nrDone.incrementAndGet();
-                    else
-                        mtpr.nrIgnored.incrementAndGet();
-                    return 0;
+                    boolean r = false;
+                    try {
+                        r = insertVideoToPlaylist(plid, e);
+                        return 0;
+                    } finally {
+                        if (r)
+                            mtpr.nrDone.incrementAndGet();
+                        else
+                            mtpr.nrIgnored.incrementAndGet();
+                    }
                 }
             });
         }

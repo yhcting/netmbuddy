@@ -279,8 +279,15 @@ public class YTSearchHelper {
                     @Override
                     public Integer
                     doJob() {
-                        LoadThumbnailReturn r = doLoadThumbnail(arg);
-                        sendLoadThumbnailDone(arg, r.bm, r.err);
+                        LoadThumbnailReturn r = null;
+                        try {
+                            r = doLoadThumbnail(arg);
+                        } finally {
+                            if (null == r)
+                                sendLoadThumbnailDone(arg, null, YTSearchHelper.Err.UNKNOWN);
+                            else
+                                sendLoadThumbnailDone(arg, r.bm, r.err);
+                        }
                         return 0;
                     }
                 };

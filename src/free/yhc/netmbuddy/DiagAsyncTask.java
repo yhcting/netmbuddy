@@ -195,10 +195,14 @@ UnexpectedExceptionHandler.Evidence {
     protected Err
     doAsyncTask() {
         //logI("* Start background Job : SpinSyncTask\n");
-        Err ret = Err.NO_ERR;
-        if (null != mWorker)
-            ret = mWorker.doBackgroundWork(this);
-        return ret;
+        try {
+            Err ret = Err.NO_ERR;
+            if (null != mWorker)
+                ret = mWorker.doBackgroundWork(this);
+            return ret;
+        } catch (Throwable e) {
+            return Err.UNKNOWN;
+        }
     }
 
     @Override

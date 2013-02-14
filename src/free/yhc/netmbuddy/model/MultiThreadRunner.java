@@ -221,7 +221,8 @@ public class MultiThreadRunner {
         @Override
         protected R
         doAsyncTask() {
-            R r = _mJob.doJob();
+            R r = null;
+            r = _mJob.doJob();
             return r;
         }
     }
