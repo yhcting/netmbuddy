@@ -56,7 +56,7 @@ UnexpectedExceptionHandler.Evidence {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(VideoPlayerActivity.class);
 
-    private static final boolean sSystemUiCanBeHidden
+    private static final boolean sNavUiCanBeHidden
         = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.ICE_CREAM_SANDWICH;
 
     private final YTPlayer      mMp = YTPlayer.get();
@@ -66,7 +66,8 @@ UnexpectedExceptionHandler.Evidence {
 
     // If : Interface
     private boolean             mDelayedSetIfVisibility     = true;
-    private boolean             mUserIfShown    = false;
+    private boolean             mUserIfVisible  = false;
+    private int                 mLastSysUiVis   = 0;
 
     private static enum Orientation {
         PORTRAIT,
@@ -93,8 +94,8 @@ UnexpectedExceptionHandler.Evidence {
 
     @TargetApi(14)
     private void
-    setSystemUiVisibility(boolean show) {
-        if (show)
+    setNavVisibility(boolean visible) {
+        if (visible)
             getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_VISIBLE);
         else
             getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
@@ -108,6 +109,8 @@ UnexpectedExceptionHandler.Evidence {
                     @Override
                     public void
                     onSystemUiVisibilityChange(int visibility) {
+                        int diff = mLastSysUiVis ^ visibility;
+                        mLastSysUiVis = visibility;
                         // NOTE
                         // There is one issue here.
                         // Android Framework calls this function more than once especially
@@ -126,9 +129,18 @@ UnexpectedExceptionHandler.Evidence {
                         //     (this callback(onSystemUiVisibilityChange) is called again
                         //        - may be 2nd or 3rd one - after system ui is hidden.)
                         //
+                        // To avoid this case, 'diff' is used.
+                        // So, UserInterface becomes visible only when SYSTEM_UI_FLAG_HIDE_NAVIGATION bit
+                        //   is changed from 'set' to 'clear'
+                        // But, still, Android frameworks has bug of this case.
+                        // So, even if UserInterface works well, Navigation UI still visible in case
+                        //   hiding navigation bar as soon as showing it (like above CASE).
+                        //
                         // But, this is NOT critical. So, ignore it at this time.
                         if (DBG) P.v("onSystemUiVisibilityChange : visibility(" + visibility + ")");
-                        updateUserInterfaceVisibility(View.SYSTEM_UI_FLAG_VISIBLE == visibility);
+                        if (0 != (diff & View.SYSTEM_UI_FLAG_HIDE_NAVIGATION)
+                            && 0 == (visibility & View.SYSTEM_UI_FLAG_HIDE_NAVIGATION))
+                            updateUserInterfaceVisibility(true);
                     }
                 });
     }
@@ -172,7 +184,7 @@ UnexpectedExceptionHandler.Evidence {
         int sh = rect.bottom;
 
         // HACK! : if user interface is NOT shown, even if 0 != rect.top, it is ignored.
-        if (isUserInterfaceShown())
+        if (isUserInterfaceVisible())
             // When user interface is shown, status bar is also shown.
             sh -= mStatusBarHeight;
 
@@ -238,29 +250,31 @@ UnexpectedExceptionHandler.Evidence {
     }
 
     private boolean
-    isUserInterfaceShown() {
-        return mUserIfShown;
+    isUserInterfaceVisible() {
+        return mUserIfVisible;
     }
 
     private void
-    updateUserInterfaceVisibility(boolean show) {
-        mUserIfShown = show;
+    updateUserInterfaceVisibility(boolean visibility) {
+        mUserIfVisible = visibility;
 
         ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
         ViewGroup drawer = (ViewGroup)findViewById(R.id.list_drawer);
 
-        if (show) {
-            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        if (visibility) {
+            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN
+                                   | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN);
             playerv.setVisibility(View.VISIBLE);
             drawer.setVisibility(View.VISIBLE);
         } else {
-            getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN
+                                 | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN);
             playerv.setVisibility(View.GONE);
             drawer.setVisibility(View.GONE);
         }
 
-        if (sSystemUiCanBeHidden)
-            setSystemUiVisibility(show);
+        if (sNavUiCanBeHidden)
+            setNavVisibility(visibility);
 
         fitVideoSurfaceToScreen(Orientation.SYSTEM);
     }
@@ -418,14 +432,14 @@ UnexpectedExceptionHandler.Evidence {
             public void
             onClick(View v) {
                 if (DBG) P.v("touch_ground : On Click");
-                updateUserInterfaceVisibility(!isUserInterfaceShown());
+                updateUserInterfaceVisibility(!isUserInterfaceVisible());
             }
         });
 
         if (mMp.hasActiveVideo())
             getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-        if (sSystemUiCanBeHidden)
+        if (sNavUiCanBeHidden)
             setOnSystemUiVisibilityChangeListener();
 
         mMp.addPlayerStateListener(this, this);
