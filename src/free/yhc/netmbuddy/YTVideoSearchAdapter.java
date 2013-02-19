@@ -91,7 +91,8 @@ public class YTVideoSearchAdapter extends YTSearchAdapter {
     setToChecked(View v) {
         ImageView iv = (ImageView)v.findViewById(R.id.checkbtn);
         iv.setImageResource(R.drawable.btncheck_on);
-        // See comments at 'MusicsActivity.setToChecked()' for details.
+        // I'm not sure that below 'invalidate' really does any meaningful action.
+        // But, just in case...
         iv.invalidate();
 
     }
@@ -100,7 +101,8 @@ public class YTVideoSearchAdapter extends YTSearchAdapter {
     setToUnchecked(View v) {
         ImageView iv = (ImageView)v.findViewById(R.id.checkbtn);
         iv.setImageResource(R.drawable.btncheck_off);
-        // See comments at 'MusicsActivity.setToChecked()' for details.
+        // I'm not sure that below 'invalidate' really does any meaningful action.
+        // But, just in case...
         iv.invalidate();
     }
 

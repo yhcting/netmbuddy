@@ -399,6 +399,9 @@ UnexpectedExceptionHandler.Evidence {
             else
                 hideLoadingSpinProgress();
             break;
+
+        default:
+            ; // ignore it.
         }
     }
 
