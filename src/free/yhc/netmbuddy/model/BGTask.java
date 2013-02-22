@@ -45,9 +45,6 @@
 
 package free.yhc.netmbuddy.model;
 
-import static free.yhc.netmbuddy.utils.Utils.eAssert;
-
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import android.os.Handler;
@@ -67,41 +64,74 @@ public abstract class BGTask<R> {
 
     private final Thread            mThread;
     private final Handler           mOwner;
-    private final Object            mPostRunKeeperLock = new Object();
-    private final AtomicBoolean     mCancelled = new AtomicBoolean(false);
-    private final AtomicReference<State>    mState  = new AtomicReference<State>(State.READY);
+    private final Object            mStateLock  = new Object();
+    // NOTE
+    // Why this special variable 'mUserCancel' is required?
+    // Most of interface functions work asynchronously to keep order of State-event.
+    // (ex. NEW->START->CANCELING->CANCELLED etc)
+    // But, just after 'cancel' is called, this Task should be regarded as 'cancelled'
+    //   even if canceling is still ongoing.(User already cancel the task!)
+    // To resolve this issue, mUserCancel is introduced.
+    private final AtomicReference<Boolean> mUserCancel = new AtomicReference<Boolean>(false);
+    private State   mState  = State.READY;
 
     public enum State {
         // before background job is running
         READY,
+        // background job is started but not running yet.
+        STARTED,
         // background job is running
         RUNNING,
-        // background job is done, but post processing - onCancelled() or onPostRun() - is not done yet.
+        // job is canceling
+        CANCELING,
+        // background job is done, but post processing - onPostRun() - is not done yet.
         DONE,
+        // background job is done, but post processing - onCancelled() - is not done yet.
+        CANCELLED,
         // background job and according post processing is completely finished.
-        TERMINATED
+        TERMINATED,
+        TERMINATED_CANCELLED
+
+
+    }
+
+    private void
+    setStateLocked(State st) {
+        if (DBG) P.v("State Set to : " + mState.name());
+        mState = st;
+    }
+
+    private State
+    getStateLocked() {
+        return mState;
     }
 
     private void
     postOnCancelled() {
+        if (DBG) P.v("postOnCancelled");
         mOwner.post(new Runnable() {
             @Override
             public void
             run() {
                 onCancelled();
-                mState.set(State.TERMINATED);
+                synchronized (mStateLock) {
+                    setStateLocked(State.TERMINATED_CANCELLED);
+                }
             }
         });
     }
 
     private void
     postOnPostRun(final R r) {
+        if (DBG) P.v("postOnPostRun");
         mOwner.post(new Runnable() {
             @Override
             public void
             run() {
                 onPostRun(r);
-                mState.set(State.TERMINATED);
+                synchronized (mStateLock) {
+                    setStateLocked(State.TERMINATED);
+                }
             }
         });
     }
@@ -110,18 +140,39 @@ public abstract class BGTask<R> {
     bgRun() {
         R r = null;
         try {
-            mState.set(State.RUNNING);
-            if (mCancelled.get())
-                return;
+            synchronized (mStateLock) {
+                switch (getStateLocked()) {
+                case CANCELING:
+                    return;
+
+                case STARTED:
+                    // Normal case
+                    setStateLocked(State.RUNNING);
+                    break;
+
+                default:
+                    if (DBG) P.w("bgRun : Invalid state (" + getStateLocked().name() + ")");
+                    return; // nothing to do
+                }
+            }
 
             r = doAsyncTask();
         } finally {
-            synchronized (mPostRunKeeperLock) {
-                mState.set(State.DONE);
-                if (mCancelled.get())
+            synchronized (mStateLock) {
+                switch (getStateLocked()) {
+                case CANCELING:
+                    setStateLocked(State.CANCELLED);
                     postOnCancelled();
-                else
+                    break;
+
+                case RUNNING:
+                    setStateLocked(State.DONE);
                     postOnPostRun(r);
+                    break;
+
+                default:
+                    ;// unexpected... just ignore it...
+                }
             }
         }
     }
@@ -202,7 +253,9 @@ public abstract class BGTask<R> {
 
     public final State
     getState() {
-        return mState.get();
+        synchronized (mStateLock) {
+            return getStateLocked();
+        }
     }
 
     public final Handler
@@ -215,9 +268,14 @@ public abstract class BGTask<R> {
         return thread == mOwner.getLooper().getThread();
     }
 
+    /**
+     * Is task cancelled by user? (by calling 'cancel()')
+     * This function returns 'true' even if task is under CANCELING state.
+     * @return
+     */
     public final boolean
     isCancelled() {
-        return mCancelled.get();
+        return mUserCancel.get();
     }
 
     public final boolean
@@ -236,21 +294,43 @@ public abstract class BGTask<R> {
         });
     }
 
+    /**
+     * @param interrupt
+     * @return
+     *   'false' if task is already cancelled - cancel() is called more than once!
+     */
     public final boolean
     cancel(final boolean interrupt) {
-        if (mCancelled.getAndSet(true)
-            || State.RUNNING != mState.get())
+        if (mUserCancel.getAndSet(true))
             return false;
 
         mOwner.post(new Runnable() {
             @Override
             public void
             run() {
-                onCancel();
-                synchronized(mPostRunKeeperLock) {
-                    if (interrupt
-                        && State.RUNNING == mState.get())
-                        mThread.interrupt();
+                synchronized(mStateLock) {
+                    switch (getStateLocked()) {
+                    case STARTED:
+                    case RUNNING:
+                        setStateLocked(State.CANCELING);
+                        if (DBG) P.v("cancel : before onCancel()");
+                        // NOTE
+                        // onCancel() SHOULD be HERE!
+                        // The reason is that state of "BG job" should be in 'CANCELLING' while onCancel is called.
+                        // Putting onCancel() outside of this critical section, breaks above rule because
+                        //   background thread may change state into CANCELLED.
+                        //
+                        // Issue is, onCancel() may take lots of time.
+                        // But, this blocks only background thread.
+                        // This is NOT critical to user experience.
+                        onCancel();
+                        if (interrupt)
+                            mThread.interrupt();
+                        break;
+
+                    default:
+                        // ignored
+                    }
                 }
             }
         });
@@ -259,13 +339,22 @@ public abstract class BGTask<R> {
 
     public final void
     run() {
-        eAssert(State.READY == mState.get());
         mOwner.post(new Runnable() {
             @Override
             public void
             run() {
-                onPreRun();
-                mThread.start();
+                boolean canRun = false;
+                synchronized (mStateLock) {
+                    if (State.READY == getStateLocked()) {
+                        setStateLocked(State.STARTED);
+                        canRun = true;
+                    }
+                }
+
+                if (canRun) {
+                    onPreRun();
+                    mThread.start();
+                }
             }
         });
     }
