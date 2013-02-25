@@ -22,7 +22,6 @@ package free.yhc.netmbuddy.utils;
 
 import static free.yhc.netmbuddy.utils.Utils.eAssert;
 
-import java.io.File;
 import java.text.DateFormat;
 import java.util.Date;
 import java.util.LinkedList;
@@ -403,10 +402,7 @@ public class UiUtils {
                             action.onPlaylist(plid, user);
                         }
                     };
-                    UiUtils.buildOneLineEditTextDialog(context,
-                                                       R.string.enter_playlist_title,
-                                                       R.string.enter_playlist_title,
-                                                       edAction)
+                    UiUtils.buildOneLineEditTextDialog(context, R.string.enter_playlist_title, edAction)
                            .show();
                 } else
                     action.onPlaylist(ids[which], user);
