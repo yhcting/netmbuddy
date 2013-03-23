@@ -355,7 +355,16 @@ public class YTHacker {
                 // HACK youtube protocol!
                 // Do dummy 'GET' request with generate_204 url.
                 content = mLoader.getHttpContent(Uri.parse(mYtr.generate_204_url), false);
-                eAssert(HttpUtils.SC_NO_CONTENT == content.stcode);
+                if (HttpUtils.SC_NO_CONTENT != content.stcode) {
+                    // This is unexpected! One of following reasons may lead to this state
+                    // - Youtube server doing something bad.
+                    // - Youtube's video request protocol is changed.
+                    // - Something unexpected.
+                    err = Err.PARSE_HTML;
+                    // 'mYtr' is NOT available in this case!
+                    mYtr = null;
+                    break;
+                }
                 // Now all are ready to download!
             } while (false);
         } catch (NetLoader.LocalException e){
