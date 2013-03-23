@@ -1325,10 +1325,14 @@ UnexpectedExceptionHandler.Evidence {
             @Override
             public void
             run() {
-                mDb.updateVideo(ColVideo.VIDEOID, videoId,
-                                ColVideo.TIME_PLAYED, System.currentTimeMillis());
+                // Updating 'Recently played video' is NOT FATAL operation.
+                // Updating not only seldom fails, but not fatal.
+                // So, exception is ignored for this operation.
+                try {
+                    mDb.updateVideo(ColVideo.VIDEOID, videoId,
+                                    ColVideo.TIME_PLAYED, System.currentTimeMillis());
+                } catch (Exception ignored) { }
             }
-
         }).start();
 
         // NOTE
