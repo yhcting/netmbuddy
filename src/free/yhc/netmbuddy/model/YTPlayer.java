@@ -243,7 +243,6 @@ UnexpectedExceptionHandler.Evidence {
 
     private static class PlayerState {
         MPState mpState     = MPState.INVALID;
-        int     mpStateFlag = MPSTATE_FLAG_IDLE;
         Video   vidobj      = null;
         int     pos         = -1;
         int     vol         = -1;
@@ -295,11 +294,12 @@ UnexpectedExceptionHandler.Evidence {
             if (!action.equals(ConnectivityManager.CONNECTIVITY_ACTION))
                 return;
 
-            NetworkInfo networkInfo =
-                (NetworkInfo)intent.getParcelableExtra(ConnectivityManager.EXTRA_NETWORK_INFO);
-            if (networkInfo.isConnected()) {
-                if (DBG) P.v("Network connected : " + networkInfo.getType());
-                switch (networkInfo.getType()) {
+            ConnectivityManager cm = (ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
+            NetworkInfo ni = cm.getActiveNetworkInfo();
+            if (null != ni
+                && ni.isConnected()) {
+                if (DBG) P.v("Network connected : " + ni.getType());
+                switch (ni.getType()) {
                 case ConnectivityManager.TYPE_WIFI:
                     if (DBG) P.v("Network connected : WIFI");
                     break;
@@ -477,13 +477,6 @@ UnexpectedExceptionHandler.Evidence {
     // Media Player Interfaces
     //
     // ========================================================================
-    private boolean
-    mpIsAvailable() {
-        return null != mMp
-               && MPState.END != mpGetState()
-               && MPState.INVALID != mpGetState();
-    }
-
     private void
     mpSetState(MPState newState) {
         if (DBG) P.v("State : " + mMpS.name() + " => " + newState.name());
@@ -567,6 +560,9 @@ UnexpectedExceptionHandler.Evidence {
             mMp.setDataSource(path);
             mpSetState(MPState.INITIALIZED);
             return;
+
+        default:
+            ; // ignored
         }
 
         if (DBG) P.v("MP [" + mpGetState().name() + "] : setDataSource ignored : ");
@@ -583,6 +579,9 @@ UnexpectedExceptionHandler.Evidence {
             mpSetState(MPState.PREPARING);
             mMp.prepareAsync();
             return;
+
+        default:
+            ; // ignored
         }
         if (DBG) P.v("MP [" + mpGetState().name() + "] : prepareAsync ignored : ");
     }
@@ -631,6 +630,9 @@ UnexpectedExceptionHandler.Evidence {
             mMp.reset();
             mpSetState(MPState.IDLE);
             return;
+
+        default:
+            ; // ignored
         }
         if (DBG) P.v("MP [" + mpGetState().name() + "] : reset ignored : ");
     }
@@ -671,6 +673,9 @@ UnexpectedExceptionHandler.Evidence {
             mMpVol = vol;
             mMp.setVolume(volf, volf);
             return;
+
+        default:
+            ; // ignored
         }
 
         if (DBG) P.v("MP [" + mpGetState().name() + "] : setVolume ignored : ");
@@ -683,6 +688,9 @@ UnexpectedExceptionHandler.Evidence {
         case END:
             if (DBG) P.v("MP [" + mpGetState().name() + "] : mpGetVolume ignored : ");
             return Policy.DEFAULT_VIDEO_VOLUME;
+
+        default:
+            ; // ignored
         }
         return mMpVol;
     }
@@ -704,6 +712,9 @@ UnexpectedExceptionHandler.Evidence {
         case STOPPED:
         case PLAYBACK_COMPLETED:
             return mMp.getCurrentPosition();
+
+        default:
+            ; // ignored
         }
         if (DBG) P.v("MP [" + mpGetState().name() + "] : getCurrentPosition ignored : ");
         return 0;
@@ -722,6 +733,9 @@ UnexpectedExceptionHandler.Evidence {
         case STOPPED:
         case PLAYBACK_COMPLETED:
             return mMp.getDuration();
+
+        default:
+            ; // ignored
         }
         if (DBG) P.v("MP [" + mpGetState().name() + "] : getDuration ignored : ");
         return 0;
@@ -742,6 +756,9 @@ UnexpectedExceptionHandler.Evidence {
         case STOPPED:
         case PLAYBACK_COMPLETED:
             return mMp.getVideoWidth();
+
+        default:
+            ; // ignored
         }
         if (DBG) P.v("MP [" + mpGetState().name() + "] : getVideoWidth ignored : ");
         return 0;
@@ -763,6 +780,9 @@ UnexpectedExceptionHandler.Evidence {
         case STOPPED:
         case PLAYBACK_COMPLETED:
             return mMp.getVideoHeight();
+
+        default:
+            ; // ignored
         }
         if (DBG) P.v("MP [" + mpGetState().name() + "] : getVideoHeight ignored : ");
         return 0;
@@ -776,7 +796,6 @@ UnexpectedExceptionHandler.Evidence {
 
     private boolean
     mpIsPlaying() {
-        //logD("MPlayer - isPlaying");
         if (null == mMp)
             return false;
 
@@ -795,6 +814,9 @@ UnexpectedExceptionHandler.Evidence {
             mMp.pause();
             mpSetState(MPState.PAUSED);
             return;
+
+        default:
+            ; // ignored
         }
         if (DBG) P.v("MP [" + mpGetState().name() + "] : pause ignored : ");
     }
@@ -814,6 +836,9 @@ UnexpectedExceptionHandler.Evidence {
             mpSetStateFlagBit(MPSTATE_FLAG_SEEKING);
             mMp.seekTo(pos);
             return;
+
+        default:
+            ; // ignored
         }
         if (DBG) P.v("MP [" + mpGetState().name() + "] : seekTo ignored : ");
     }
@@ -835,6 +860,9 @@ UnexpectedExceptionHandler.Evidence {
             mMp.start();
             mpSetState(MPState.STARTED);
             return;
+
+        default:
+            ; // ignored
         }
         if (DBG) P.v("MP [" + mpGetState().name() + "] : start ignored : ");
     }
@@ -856,6 +884,9 @@ UnexpectedExceptionHandler.Evidence {
             mMp.stop();
             mpSetState(MPState.STOPPED);
             return;
+
+        default:
+            ; // ignored
         }
         if (DBG) P.v("MP [" + mpGetState().name() + "] : stop ignored : ");
     }
@@ -939,6 +970,9 @@ UnexpectedExceptionHandler.Evidence {
             if (null != mLoader)
                 mLoader.close();
             break;
+
+        default:
+            ; // ignored
         }
     }
 
@@ -1507,6 +1541,9 @@ UnexpectedExceptionHandler.Evidence {
         case PREPARED_AUDIO:
         case PREPARED:
             return true;
+
+        default:
+            ; // ignored
         }
         return false;
     }
