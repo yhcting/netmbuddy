@@ -82,7 +82,7 @@ UnexpectedExceptionHandler.Evidence {
     public void
     cachingYtHacker(YTHacker hacker) {
         eAssert(hacker.hasHackedResult());
-        mHackerCache.put(hacker.getYtVideoId(), hacker);
+        mHackerCache.put(hacker.getYtvid(), hacker);
     }
 
     public YTHacker
