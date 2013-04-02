@@ -278,6 +278,28 @@ UnexpectedExceptionHandler.Evidence {
         return r;
     }
 
+    /**
+     * Update video value
+     * @param where
+     *   field of where clause
+     * @param wherev
+     *   field value of where clause
+     * @param field
+     *   field to update
+     * @param v
+     *   new field value
+     * @return
+     *   number of rows that are updated.
+     */
+    private int
+    updateVideo(ColVideo where, Object wherev,
+                ColVideo field, Object v) {
+        return updateVideo(where,
+                           wherev,
+                           new ColVideo[] { field },
+                           new Object[] { v });
+    }
+
     private int
     updateVideo(long id, ColVideo[] cols, Object[] vs) {
         return updateVideo(ColVideo.ID, id, cols, vs);
@@ -747,26 +769,21 @@ UnexpectedExceptionHandler.Evidence {
         return Err.NO_ERR;
     }
 
-    /**
-     * Update video value
-     * @param where
-     *   field of where clause
-     * @param wherev
-     *   field value of where clause
-     * @param field
-     *   field to update
-     * @param v
-     *   new field value
-     * @return
-     *   number of rows that are updated.
-     */
     public int
-    updateVideo(ColVideo where, Object wherev,
-                ColVideo field, Object v) {
-        return updateVideo(where,
-                           wherev,
-                           new ColVideo[] { field },
-                           new Object[] { v });
+    updateVideoTitle(long vid, String title) {
+        eAssert(null != title
+                && !title.isEmpty());
+        return updateVideo(ColVideo.ID, vid, ColVideo.TITLE, title);
+    }
+
+    public int
+    updateVideoTimePlayed(String ytvid, long time) {
+        return updateVideo(ColVideo.VIDEOID, ytvid, ColVideo.TIME_PLAYED, time);
+    }
+
+    public int
+    updateVideoVolume(String ytvid, int volume) {
+        return updateVideo(ColVideo.VIDEOID, ytvid, ColVideo.VOLUME, volume);
     }
 
     /**

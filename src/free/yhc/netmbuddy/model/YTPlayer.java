@@ -1010,7 +1010,7 @@ UnexpectedExceptionHandler.Evidence {
     }
 
     private static String
-    getYtVideoIdOfCachedFile(String path) {
+    getYtvidOfCachedFile(String path) {
         int idStartI = path.lastIndexOf('/') + 1;
         int idEndI   = path.lastIndexOf('-');
         eAssert(11 == path.substring(idStartI, idEndI).length());
@@ -1117,7 +1117,7 @@ UnexpectedExceptionHandler.Evidence {
         if (null == dningFile)
             return;
 
-        String dnvid = getYtVideoIdOfCachedFile(dningFile);
+        String dnvid = getYtvidOfCachedFile(dningFile);
         if (dnvid.equals(ytvid))
             mYtDnr.close();
     }
@@ -1206,12 +1206,12 @@ UnexpectedExceptionHandler.Evidence {
     }
 
     private void
-    prepareVideoStreaming(final String videoId) {
-        if (DBG) P.v("Prepare Video Streaming : " + videoId);
+    prepareVideoStreaming(final String ytvid) {
+        if (DBG) P.v("Prepare Video Streaming : " + ytvid);
 
-        YTHacker hacker = RTState.get().getCachedYtHacker(videoId);
+        YTHacker hacker = RTState.get().getCachedYtHacker(ytvid);
         if (null != hacker
-            && videoId.equals(hacker.getYtVideoId())
+            && ytvid.equals(hacker.getYtvid())
             && (System.currentTimeMillis() - hacker.getHackTimeStamp()) < Policy.YTHACK_REUSE_TIMEOUT) {
             eAssert(hacker.hasHackedResult());
             // Let's try to reuse it.
@@ -1220,7 +1220,7 @@ UnexpectedExceptionHandler.Evidence {
         }
 
         if (null != mYtHack
-            && videoId.equals(mYtHack.getYtVideoId())
+            && ytvid.equals(mYtHack.getYtvid())
             && !mYtHack.hasHackedResult())
             // hacking for this video is already on-going.
             // this request is ignored.
@@ -1280,7 +1280,7 @@ UnexpectedExceptionHandler.Evidence {
                 mYtHack = null;
             }
         };
-        mYtHack = new YTHacker(videoId, null, listener);
+        mYtHack = new YTHacker(ytvid, null, listener);
         mYtHack.startAsync();
     }
 
@@ -1310,7 +1310,7 @@ UnexpectedExceptionHandler.Evidence {
     }
 
     private void
-    startVideo(final String videoId, final int volume, boolean recovery) {
+    startVideo(final String ytvid, final int volume, boolean recovery) {
         eAssert(0 <= volume && volume <= 100);
 
         // Reset flag regarding video size.
@@ -1363,8 +1363,7 @@ UnexpectedExceptionHandler.Evidence {
                 // Updating not only seldom fails, but not fatal.
                 // So, exception is ignored for this operation.
                 try {
-                    mDb.updateVideo(ColVideo.VIDEOID, videoId,
-                                    ColVideo.TIME_PLAYED, System.currentTimeMillis());
+                    mDb.updateVideoTimePlayed(ytvid, System.currentTimeMillis());
                 } catch (Exception ignored) { }
             }
         }).start();
@@ -1387,14 +1386,14 @@ UnexpectedExceptionHandler.Evidence {
         //
         // Above two reasons, caching is started as soon as video is started.
         prepareNext();
-        File cachedVid = getCachedVideo(videoId);
+        File cachedVid = getCachedVideo(ytvid);
         if (cachedVid.exists() && cachedVid.canRead())
             prepareCachedVideo(cachedVid);
         else {
             if (!Utils.isNetworkAvailable())
-                mStartVideoRecovery.executeRecoveryStart(new Video(videoId, "", "", volume, 0), 1000);
+                mStartVideoRecovery.executeRecoveryStart(new Video(ytvid, "", "", volume, 0), 1000);
             else
-                prepareVideoStreaming(videoId);
+                prepareVideoStreaming(ytvid);
         }
     }
 
@@ -2077,8 +2076,8 @@ UnexpectedExceptionHandler.Evidence {
     }
 
     public void
-    changeVideoVolume(final String title, final String videoId) {
-        mUi.changeVideoVolume(title, videoId);
+    changeVideoVolume(final String title, final String ytvid) {
+        mUi.changeVideoVolume(title, ytvid);
     }
 
     public boolean

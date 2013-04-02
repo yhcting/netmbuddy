@@ -39,7 +39,6 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import free.yhc.netmbuddy.db.ColPlaylist;
-import free.yhc.netmbuddy.db.ColVideo;
 import free.yhc.netmbuddy.db.DB;
 import free.yhc.netmbuddy.model.UnexpectedExceptionHandler;
 import free.yhc.netmbuddy.model.YTPlayer;
@@ -302,8 +301,7 @@ UnexpectedExceptionHandler.Evidence {
             @Override
             public void
             onOk(Dialog dialog, EditText edit) {
-                mDb.updateVideo(ColVideo.ID, id,
-                                ColVideo.TITLE, edit.getText().toString());
+                mDb.updateVideoTitle(id, edit.getText().toString());
                 getAdapter().reloadCursorAsync();
             }
         };

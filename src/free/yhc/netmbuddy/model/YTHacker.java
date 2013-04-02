@@ -404,17 +404,17 @@ public class YTHacker {
      * So, it is NOT 100% guaranteed that correct url is returned.
      * But, I'm strongly sure that return value is valid and correct based on my experience.
      * That's the reason why this function is member of 'YTHacker'(Not YTSearchHeler).
-     * @param videoId
+     * @param ytvid
      * @return
      */
     public static String
-    getYtVideoThumbnailUrl(String videoId) {
-        return "http://i.ytimg.com/vi/" + videoId + "/default.jpg";
+    getYtVideoThumbnailUrl(String ytvid) {
+        return "http://i.ytimg.com/vi/" + ytvid + "/default.jpg";
     }
 
     public static String
-    getYtVideoPageUrl(String videoId) {
-        return "http://" + getYtHost() + "/" + getYtUri(videoId);
+    getYtVideoPageUrl(String ytvid) {
+        return "http://" + getYtHost() + "/" + getYtUri(ytvid);
     }
 
     public static int
@@ -457,7 +457,7 @@ public class YTHacker {
     }
 
     public String
-    getYtVideoId() {
+    getYtvid() {
         return mYtvid;
     }
 

@@ -1253,8 +1253,7 @@ OnSharedPreferenceChangeListener {
                 // NOTE
                 // Should I consider about performance?
                 // Not yet. do something when performance is issued.
-                mDb.updateVideo(ColVideo.VIDEOID, ytvid,
-                                ColVideo.VOLUME, newVolume);
+                mDb.updateVideoVolume(ytvid, newVolume);
             }
         });
         aDiag.show();
