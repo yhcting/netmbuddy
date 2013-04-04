@@ -717,10 +717,10 @@ OnSharedPreferenceChangeListener {
                 onCancel(Dialog dialog) { }
             };
             UiUtils.buildConfirmDialog(mVActivity,
-                    R.string.delete,
-                    R.string.msg_delete_musics_completely,
-                    action)
-                .show();
+                                       R.string.delete,
+                                       R.string.msg_delete_musics_completely,
+                                       action)
+                   .show();
 
         } else {
             UiUtils.deleteVideos(mVActivity,
