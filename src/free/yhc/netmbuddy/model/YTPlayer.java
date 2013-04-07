@@ -221,16 +221,17 @@ UnexpectedExceptionHandler.Evidence {
         public final int    volume;
         public final int    playtime; // This is to workaround not-correct value returns from getDuration() function
                                       //   of youtube player (Seconds).
+        public final int    startpos; // Starting position(milliseconds) of this video.
         public Video(String aYtvid, String aTitle, String aAuthor,
-                     int aVolume, int aPlaytime) {
+                     int aVolume, int aPlaytime, int aStartpos) {
             ytvid = aYtvid;
             title = aTitle;
             author = aAuthor;
             playtime = aPlaytime;
             volume = aVolume;
+            startpos = aStartpos;
         }
     }
-
 
     private static class NrElem {
         public int      n;
@@ -1039,7 +1040,8 @@ UnexpectedExceptionHandler.Evidence {
                                     c.getString(coliTitle),
                                     c.getString(coliAuthor),
                                     c.getInt(coliVolume),
-                                    c.getInt(coliPlaytime));
+                                    c.getInt(coliPlaytime),
+                                    0);
             } while (c.moveToNext());
             Arrays.sort(vs, sVideoTitleComparator);
         } else {
@@ -1052,7 +1054,8 @@ UnexpectedExceptionHandler.Evidence {
                                                 c.getString(coliTitle),
                                                 c.getString(coliAuthor),
                                                 c.getInt(coliVolume),
-                                                c.getInt(coliPlaytime)));
+                                                c.getInt(coliPlaytime),
+                                                0));
             } while (c.moveToNext());
             Arrays.sort(nes, sNrElemComparator);
             for (i = 0; i < nes.length; i++)
@@ -1391,7 +1394,7 @@ UnexpectedExceptionHandler.Evidence {
             prepareCachedVideo(cachedVid);
         else {
             if (!Utils.isNetworkAvailable())
-                mStartVideoRecovery.executeRecoveryStart(new Video(ytvid, "", "", volume, 0), 1000);
+                mStartVideoRecovery.executeRecoveryStart(new Video(ytvid, "", "", volume, 0, 0), 1000);
             else
                 prepareVideoStreaming(ytvid);
         }
@@ -1626,7 +1629,8 @@ UnexpectedExceptionHandler.Evidence {
         if (haveStoredPlayerState()) {
             autoStart = !isStoredPlayerStatePaused();
             restorePlayerState();
-        }
+        } else if (mVlm.hasActiveVideo())
+            mpSeekTo(mVlm.getActiveVideo().startpos);
         clearStoredPlayerState();
 
         mpSetState(MPState.PREPARED);

@@ -811,7 +811,7 @@ public class UiUtils {
                 if (ytvid.equals(activeYtvid))
                     mp.playerSeekTo(bm.pos);
                 else
-                    showTextToast(activity, R.string.msg_fail_set_bookmark);
+                    showTextToast(activity, R.string.msg_fail_seek_to_bookmark);
                 diag.dismiss();
             }
         });

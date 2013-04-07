@@ -226,7 +226,8 @@ public class YTVideoSearchAdapter extends YTSearchAdapter {
                                   getItemTitle(pos),
                                   getItemAuthor(pos),
                                   getItemVolume(pos),
-                                  playtime);
+                                  playtime,
+                                  0);
     }
 
     public boolean

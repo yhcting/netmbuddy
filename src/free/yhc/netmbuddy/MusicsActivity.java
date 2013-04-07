@@ -325,6 +325,14 @@ UnexpectedExceptionHandler.Evidence {
     }
 
     private void
+    onContextMenuBookmarks(final long id, final int pos) {
+
+        UiUtils.showBookmarkDialog(this,
+                                   getAdapter().getMusicYtid(pos),
+                                   getAdapter().getMusicTitle(pos));
+    }
+
+    private void
     onContextMenuVideosOfThisAuthor(final long id, final int pos) {
         Intent i = new Intent(this, YTVideoSearchAuthorActivity.class);
         i.putExtra(YTSearchActivity.MAP_KEY_SEARCH_TEXT, getAdapter().getMusicAuthor(pos));
@@ -388,6 +396,10 @@ UnexpectedExceptionHandler.Evidence {
 
         case R.id.detail_info:
             onContextMenuDetailInfo(info.id, info.position);
+            return true;
+
+        case R.id.bookmarks:
+            onContextMenuBookmarks(info.id, info.position);
             return true;
 
         case R.id.videos_of_this_author:

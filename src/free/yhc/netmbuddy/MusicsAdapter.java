@@ -197,7 +197,8 @@ public class MusicsAdapter extends ResourceCursorAdapter {
                                   getMusicTitle(pos),
                                   getMusicAuthor(pos),
                                   getMusicVolume(pos),
-                                  getMusicPlaytime(pos));
+                                  getMusicPlaytime(pos),
+                                  0);
     }
 
     /**
