@@ -171,7 +171,7 @@
             android:name=".ImportShareContentActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
             android:theme="@android:style/Theme.Dialog"
-            android:exported="false"
+            android:exported="true"
             >
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -207,7 +207,7 @@
             android:name=".ImportShareFileActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
             android:theme="@android:style/Theme.Dialog"
-            android:exported="false"
+            android:exported="true"
             >
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
