@@ -77,6 +77,21 @@ public enum ColVideo implements DB.Col {
         RESERVED5       ("reserved5",       "integer",  "0",    ""),
         RESERVED6       ("reserved6",       "blob",     "\"\"", ""),
 
+        // --------------------------------------------------------------------
+        // newly added at DB version 3
+        // --------------------------------------------------------------------
+        // Reserved column is NOT used here...
+        // Because, it's very difficult to maintain DB itself.
+        // Adding column is not expensive operation.
+        // In consequence, "Adding reserved fields" was BIG MISTAKE :-(
+        //
+        // Delimiter between <time> and <bookmark name> : /
+        // Delimiter between bookmarks : @
+        // [ Format ]
+        // bookmark : <time(ms)>/<bookmark name>
+        // bookmarks : <bookmark>@<bookmark>@...
+        BOOKMARKS       ("bookmarks",       "text",     "\"\"", ""),
+
         ID              (BaseColumns._ID,   "integer",  null,   "primary key autoincrement");
 
         private final String _mName;
@@ -87,7 +102,8 @@ public enum ColVideo implements DB.Col {
         static ContentValues
         createContentValuesForInsert(String title, String videoId,
                                      int playtime, String author,
-                                     byte[] thumbnail, int volume) {
+                                     byte[] thumbnail, int volume,
+                                     String bookmarks) {
             eAssert(null != title && null != videoId);
             if (null == thumbnail)
                 thumbnail = new byte[0];
@@ -98,6 +114,7 @@ public enum ColVideo implements DB.Col {
             cvs.put(VIDEOID.getName(), videoId);
             cvs.put(PLAYTIME.getName(), playtime);
             cvs.put(THUMBNAIL.getName(), thumbnail);
+            cvs.put(BOOKMARKS.getName(), bookmarks);
 
             if (DB.INVALID_VOLUME == volume)
                 volume = Policy.DEFAULT_VIDEO_VOLUME;

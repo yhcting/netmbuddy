@@ -1840,17 +1840,6 @@ UnexpectedExceptionHandler.Evidence {
     }
 
     /**
-     *
-     * @param pos
-     *   milliseconds.
-     */
-    void
-    playerSeekTo(int pos) {
-        mpSeekTo(pos);
-    }
-
-
-    /**
      * Get duration(milliseconds) of current active video
      * @return
      */
@@ -2112,6 +2101,16 @@ UnexpectedExceptionHandler.Evidence {
         if (isVideoPlaying())
             return mpGetVolume();
         return DB.INVALID_VOLUME;
+    }
+
+    /**
+     *
+     * @param pos
+     *   milliseconds.
+     */
+    public void
+    playerSeekTo(int pos) {
+        mpSeekTo(pos);
     }
 
     public void

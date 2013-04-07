@@ -63,7 +63,8 @@ public class YTUtils {
                           String    title,
                           String    author,
                           int       playtime,
-                          int       volume) {
+                          int       volume,
+                          String    bookmarks) {
         // Loading thumbnail is done.
         YTSearchHelper.LoadThumbnailReturn tr = loadYtVideoThumbnail(ytvid);
         if (null == tr.bm)
@@ -75,7 +76,8 @@ public class YTUtils {
                                                     author,
                                                     playtime,
                                                     ImageUtils.compressBitmap(tr.bm),
-                                                    Policy.DEFAULT_VIDEO_VOLUME);
+                                                    Policy.DEFAULT_VIDEO_VOLUME,
+                                                    bookmarks);
         tr.bm.recycle();
 
         if (DB.Err.NO_ERR != err)
@@ -84,4 +86,13 @@ public class YTUtils {
         return true;
     }
 
+    public static boolean
+    insertVideoToPlaylist(long      plid,
+                          String    ytvid,
+                          String    title,
+                          String    author,
+                          int       playtime,
+                          int       volume) {
+        return insertVideoToPlaylist(plid, ytvid, title, author, playtime, volume, "");
+    }
 }

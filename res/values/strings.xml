@@ -40,6 +40,7 @@
     <string name="seconds">sec.</string>
     <string name="minutes">min.</string>
     <string name="unknown">Unknown</string>
+    <string name="bookmarks">Bookmarks</string>
 
     <string name="enter_keyword">Enter search keyword</string>
     <string name="new_search">New search</string>
@@ -86,6 +87,8 @@
     <string name="share_via_email">Share via Email</string>
     <string name="player_extra_control_title">For current playing music</string>
     <string name="not_played_yet">Not played yet</string>
+    <string name="set_bookmark">Set bookmark</string>
+    <string name="enter_bookmark_name">Enter bookmark name</string>
 
     <string name="share_pl_attachment">PlaylistShareData</string>
     <string name="share_pl_email_subject">NetMBuddy Playlist Share</string>
@@ -155,7 +158,11 @@ It may takes long time(up to several minutes) in case that:\n
     <string name="msg_fail_to_access_data">Fail to access data.</string>
     <string name="msg_confirm_import_share">Do you want to import this shared data?</string>
     <string name="msg_warn_background_not_allowed">It is NOT allowed running background. Note that moving background stops current task.</string>
-
+    <string name="msg_forbidden_characters">Following characters are not allowed.</string>
+    <string name="msg_fail_set_bookmark">Setting bookmark fails.</string>
+    <string name="msg_fail_seek_to_bookmark">Seeking to bookmark fails. Seeking to bookmark is only allowed for current playing music.</string>
+    <string name="msg_empty_bookmarks">There is no bookmark.</string>
+    
     <string name="err_no_err">Success.</string>
     <string name="err_unknown">Unknown error.</string>
     <string name="err_interrupted">Interrupted.</string>

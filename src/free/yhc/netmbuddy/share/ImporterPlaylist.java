@@ -91,6 +91,9 @@ class ImporterPlaylist implements ImporterI {
                 int volume = Policy.DEFAULT_VIDEO_VOLUME;
                 if (_mJov.has(Json.FVOLUME))
                     volume = _mJov.getInt(Json.FVOLUME);
+                String bookmarks = "";
+                if (_mJov.has(Json.FBOOKMARKS))
+                    bookmarks = _mJov.getString(Json.FBOOKMARKS);
 
                 // NOTE
                 // Getting thumbnail URL from youtube video id requires downloanding and parsing.
@@ -102,7 +105,8 @@ class ImporterPlaylist implements ImporterI {
                                                   title,
                                                   author,
                                                   playtm,
-                                                  volume))
+                                                  volume,
+                                                  bookmarks))
                     err = Err.NO_ERR;
             } catch (JSONException e) {
                 return Err.INVALID_SHARE;

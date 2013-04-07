@@ -40,38 +40,83 @@ class DBHistory {
         }
     }
 
+    // FieldNTypes
+    // To avoid creating duplicated object
+    // ----------------------------------------------------------------------------------------------------------------
+    // Version 1
+    // ----------------------------------------------------------------------------------------------------------------
+    private static FieldNType sFnT_idI =            new FieldNType("_id",             "integer");
+    private static FieldNType sFnTTitleT =          new FieldNType("title",           "text");
+    private static FieldNType sFnTDescriptionT =    new FieldNType("description",     "text");
+    private static FieldNType sFnTThumbnailB =      new FieldNType("thumbnail",       "blob");
+    private static FieldNType sFnTSizeI =           new FieldNType("size",            "integer");
+    private static FieldNType sFnTVideoidT =        new FieldNType("videoid",         "text");
+    private static FieldNType sFnTGenreT =          new FieldNType("genre",           "text");
+    private static FieldNType sFnTArtistT =         new FieldNType("artist",          "text");
+    private static FieldNType sFnTAlbumT =          new FieldNType("album",           "text");
+    private static FieldNType sFnTPlaytimeI =       new FieldNType("playtime",        "integer");
+    private static FieldNType sFnTVolumeI =         new FieldNType("volume",          "integer");
+    private static FieldNType sFnTRateI =           new FieldNType("rate",            "integer");
+    private static FieldNType sFnTTime_addI =       new FieldNType("time_add",        "integer");
+    private static FieldNType sFnTTime_playedI =    new FieldNType("time_played",     "integer");
+    private static FieldNType sFnTRefcountI =       new FieldNType("refcount",        "integer");
+
+    // ----------------------------------------------------------------------------------------------------------------
+    // Newly added at version 2
+    // ----------------------------------------------------------------------------------------------------------------
+    private static FieldNType sFnTThumbnail_vidT =  new FieldNType("thumbnail_vid",   "text");
+    private static FieldNType sFnTAuthorT =         new FieldNType("author",          "text");
+    private static FieldNType sFnTNrplayedI =       new FieldNType("nrplayed",        "integer");
+    private static FieldNType sFnTRelvideosfeedT =  new FieldNType("relvideosfeed",   "text");
+    // Adding reserved fields was my BIG MISTAKE :-(
+    private static FieldNType sFnTReserved0T =      new FieldNType("reserved0",       "text");
+    private static FieldNType sFnTReserved1T =      new FieldNType("reserved1",       "text");
+    private static FieldNType sFnTReserved2I =      new FieldNType("reserved2",       "integer");
+    private static FieldNType sFnTReserved2T =      new FieldNType("reserved2",       "text");
+    private static FieldNType sFnTReserved3I =      new FieldNType("reserved3",       "integer");
+    private static FieldNType sFnTReserved4B =      new FieldNType("reserved4",       "blob");
+    private static FieldNType sFnTReserved4I =      new FieldNType("reserved4",       "integer");
+    private static FieldNType sFnTReserved5I =      new FieldNType("reserved5",       "integer");
+    private static FieldNType sFnTReserved6B =      new FieldNType("reserved6",       "blob");
+
+    // ----------------------------------------------------------------------------------------------------------------
+    // Newly added at version 3
+    // ----------------------------------------------------------------------------------------------------------------
+    private static FieldNType sFnTBookmarksT =      new FieldNType("bookmarks",       "text");
+
+
     // [3Dim][2Dim][1Dim]
     // 1st dimension : FieldNType lists
-    // 2nd dimension : table type : Order should match sMandatoryTables.
+    // 2nd dimension : table type : Order should match sTables.
     // 3rd dimension : version of DB.
     static final FieldNType[][][] sFieldNType = {
         // DB version 1
         {
             // Playlist table
             {
-                new FieldNType("title",           "text"),
-                new FieldNType("description",     "text"),
-                new FieldNType("thumbnail",       "blob"),
-                new FieldNType("size",            "integer"),
-                new FieldNType("_id",             "integer"),
+                sFnTTitleT,
+                sFnTDescriptionT,
+                sFnTThumbnailB,
+                sFnTSizeI,
+                sFnT_idI,
             },
 
             // Video table
             {
-                new FieldNType("title",           "text"),
-                new FieldNType("description",     "text"),
-                new FieldNType("videoid",         "text"),
-                new FieldNType("genre",           "text"),
-                new FieldNType("artist",          "text"),
-                new FieldNType("album",           "text"),
-                new FieldNType("thumbnail",       "blob"),
-                new FieldNType("playtime",        "integer"),
-                new FieldNType("volume",          "integer"),
-                new FieldNType("rate",            "integer"),
-                new FieldNType("time_add",        "integer"),
-                new FieldNType("time_played",     "integer"),
-                new FieldNType("refcount",        "integer"),
-                new FieldNType("_id",             "integer"),
+                sFnTTitleT,
+                sFnTDescriptionT,
+                sFnTVideoidT,
+                sFnTGenreT,
+                sFnTArtistT,
+                sFnTAlbumT,
+                sFnTThumbnailB,
+                sFnTPlaytimeI,
+                sFnTVolumeI,
+                sFnTRateI,
+                sFnTTime_addI,
+                sFnTTime_playedI,
+                sFnTRefcountI,
+                sFnT_idI,
             }
         },
 
@@ -79,51 +124,99 @@ class DBHistory {
         {
             // Playlist table
             {
-                new FieldNType("title",           "text"),
-                new FieldNType("description",     "text"),
-                new FieldNType("thumbnail",       "blob"),
-                new FieldNType("size",            "integer"),
-                new FieldNType("_id",             "integer"),
+                sFnTTitleT,
+                sFnTDescriptionT,
+                sFnTThumbnailB,
+                sFnTSizeI,
+                sFnT_idI,
 
 
                 // Below fields are newly added.
-                new FieldNType("thumbnail_vid",   "text"),
-                new FieldNType("reserved0",       "text"),
-                new FieldNType("reserved1",       "text"),
-                new FieldNType("reserved2",       "integer"),
-                new FieldNType("reserved3",       "integer"),
-                new FieldNType("reserved4",       "blob"),
+                sFnTThumbnail_vidT,
+                sFnTReserved0T,
+                sFnTReserved1T,
+                sFnTReserved2I,
+                sFnTReserved3I,
+                sFnTReserved4B,
             },
 
             // Video table
             {
-                new FieldNType("title",           "text"),
-                new FieldNType("description",     "text"),
-                new FieldNType("videoid",         "text"),
-                new FieldNType("genre",           "text"),
-                new FieldNType("artist",          "text"),
-                new FieldNType("album",           "text"),
-                new FieldNType("thumbnail",       "blob"),
-                new FieldNType("playtime",        "integer"),
-                new FieldNType("volume",          "integer"),
-                new FieldNType("rate",            "integer"),
-                new FieldNType("time_add",        "integer"),
-                new FieldNType("time_played",     "integer"),
-                new FieldNType("refcount",        "integer"),
-                new FieldNType("_id",             "integer"),
-
+                sFnTTitleT,
+                sFnTDescriptionT,
+                sFnTVideoidT,
+                sFnTGenreT,
+                sFnTArtistT,
+                sFnTAlbumT,
+                sFnTThumbnailB,
+                sFnTPlaytimeI,
+                sFnTVolumeI,
+                sFnTRateI,
+                sFnTTime_addI,
+                sFnTTime_playedI,
+                sFnTRefcountI,
+                sFnT_idI,
 
                 // Below fields are newly added.
-                new FieldNType("author",          "text"),
-                new FieldNType("nrplayed",        "integer"),
-                new FieldNType("relvideosfeed",   "text"),
-                new FieldNType("reserved0",       "text"),
-                new FieldNType("reserved1",       "text"),
-                new FieldNType("reserved2",       "text"),
-                new FieldNType("reserved3",       "integer"),
-                new FieldNType("reserved4",       "integer"),
-                new FieldNType("reserved5",       "integer"),
-                new FieldNType("reserved6",       "blob"),
+                sFnTAuthorT,
+                sFnTNrplayedI,
+                sFnTRelvideosfeedT,
+                sFnTReserved0T,
+                sFnTReserved1T,
+                sFnTReserved2T,
+                sFnTReserved3I,
+                sFnTReserved4I,
+                sFnTReserved5I,
+                sFnTReserved6B,
+            }
+        },
+
+        // DB version 3
+        {
+            // Playlist table
+            {
+                sFnTTitleT,
+                sFnTDescriptionT,
+                sFnTThumbnailB,
+                sFnTSizeI,
+                sFnT_idI,
+                sFnTThumbnail_vidT,
+                sFnTReserved0T,
+                sFnTReserved1T,
+                sFnTReserved2I,
+                sFnTReserved3I,
+                sFnTReserved4B,
+            },
+
+            // Video table
+            {
+                sFnTTitleT,
+                sFnTDescriptionT,
+                sFnTVideoidT,
+                sFnTGenreT,
+                sFnTArtistT,
+                sFnTAlbumT,
+                sFnTThumbnailB,
+                sFnTPlaytimeI,
+                sFnTVolumeI,
+                sFnTRateI,
+                sFnTTime_addI,
+                sFnTTime_playedI,
+                sFnTRefcountI,
+                sFnT_idI,
+                sFnTAuthorT,
+                sFnTNrplayedI,
+                sFnTRelvideosfeedT,
+                sFnTReserved0T,
+                sFnTReserved1T,
+                sFnTReserved2T,
+                sFnTReserved3I,
+                sFnTReserved4I,
+                sFnTReserved5I,
+                sFnTReserved6B,
+
+                // Below field are newly added
+                sFnTBookmarksT,
             }
         }
     };

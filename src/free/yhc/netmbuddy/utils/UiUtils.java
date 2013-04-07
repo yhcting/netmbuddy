@@ -44,9 +44,11 @@ import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.ListView;
 import android.widget.Toast;
 import free.yhc.netmbuddy.DiagAsyncTask;
 import free.yhc.netmbuddy.Err;
@@ -54,6 +56,7 @@ import free.yhc.netmbuddy.R;
 import free.yhc.netmbuddy.db.ColPlaylist;
 import free.yhc.netmbuddy.db.ColVideo;
 import free.yhc.netmbuddy.db.DB;
+import free.yhc.netmbuddy.db.DB.Bookmark;
 import free.yhc.netmbuddy.model.YTHacker;
 import free.yhc.netmbuddy.model.YTPlayer;
 
@@ -228,14 +231,23 @@ public class UiUtils {
     buildOneLineEditTextDialog(final Context context,
                                final CharSequence title,
                                final CharSequence initText,
+                               final CharSequence hintText,
                                final EditTextAction action) {
         // Create "Enter Url" dialog
         View layout = inflateLayout(context, R.layout.edittext_dialog);
         final AlertDialog dialog = createEditTextDialog(context, layout, title);
         // Set action for dialog.
         final EditText edit = (EditText)layout.findViewById(R.id.edit);
-        edit.setText(initText);
-        edit.setSelection(initText.length());
+        if (null != initText
+            && initText.length() > 0) {
+            edit.setText(initText);
+            edit.setSelection(initText.length());
+        }
+
+        if (null != hintText
+            && hintText.length() > 0)
+            edit.setHint(hintText);
+
         edit.setOnKeyListener(new View.OnKeyListener() {
             @Override
             public boolean
@@ -277,26 +289,59 @@ public class UiUtils {
     }
 
     public static AlertDialog
-    buildOneLineEditTextDialog(Context context, CharSequence title, EditTextAction action) {
-        return buildOneLineEditTextDialog(context, title, "", action);
-    }
-
-    public static AlertDialog
-    buildOneLineEditTextDialog(Context context, int title, CharSequence initText, EditTextAction action) {
-        return buildOneLineEditTextDialog(context, context.getResources().getText(title), initText, action);
-    }
-
-    public static AlertDialog
-    buildOneLineEditTextDialog(Context context, int title, int initText, EditTextAction action) {
+    buildOneLineEditTextDialog(Context context,
+                               CharSequence title,
+                               EditTextAction action) {
         return buildOneLineEditTextDialog(context,
-                                          context.getResources().getText(title),
-                                          context.getResources().getText(initText),
+                                          title,
+                                          "",
+                                          "",
                                           action);
     }
 
     public static AlertDialog
-    buildOneLineEditTextDialog(Context context, int title, EditTextAction action) {
-        return buildOneLineEditTextDialog(context, context.getResources().getText(title), action);
+    buildOneLineEditTextDialog(Context context,
+                               int title,
+                               EditTextAction action) {
+        return buildOneLineEditTextDialog(context,
+                                          context.getResources().getText(title),
+                                          action);
+    }
+
+    public static AlertDialog
+    buildOneLineEditTextDialog(Context context,
+                               int title,
+                               CharSequence initText,
+                               EditTextAction action) {
+        return buildOneLineEditTextDialog(context,
+                                          context.getResources().getText(title),
+                                          initText,
+                                          "",
+                                          action);
+    }
+
+    public static AlertDialog
+    buildOneLineEditTextDialog(Context context,
+                               CharSequence title,
+                               int initText,
+                               EditTextAction action) {
+        return buildOneLineEditTextDialog(context,
+                                          title,
+                                          context.getResources().getText(initText),
+                                          "",
+                                          action);
+    }
+
+    public static AlertDialog
+    buildOneLineEditTextDialogWithHint(Context context,
+                                       CharSequence title,
+                                       int hintText,
+                                       EditTextAction action) {
+        return buildOneLineEditTextDialog(context,
+                                          title,
+                                          "",
+                                          context.getResources().getText(hintText),
+                                          action);
     }
 
     public static AlertDialog
@@ -722,4 +767,54 @@ public class UiUtils {
             .run();
     }
 
+    // ----------------------------------------------------------------------------------------------------------------
+    // For bookmark
+    // ----------------------------------------------------------------------------------------------------------------
+    public static void
+    showBookmarkDialog(final Activity activity, final String ytvid, String title) {
+        ListView lv = (ListView)UiUtils.inflateLayout(activity, R.layout.bookmark_dialog);
+        final DB db = DB.get();
+
+        DB.Bookmark[] bms = db.getBookmarks(ytvid);
+        if (0 == bms.length) {
+            showTextToast(activity, R.string.msg_empty_bookmarks);
+            return;
+        }
+
+        AlertDialog.Builder bldr = new AlertDialog.Builder(activity);
+        bldr.setTitle("[" + Utils.getResText(R.string.bookmarks) + "]\n" + title);
+        bldr.setView(lv);
+        final AlertDialog diag = bldr.create();
+
+        BookmarkListAdapter.OnItemAction action = new BookmarkListAdapter.OnItemAction() {
+            @Override
+            public void
+            onDelete(BookmarkListAdapter adapter, int pos, Bookmark bm) {
+                db.deleteBookmark(ytvid, bm.name, bm.pos);
+                adapter.removeItem(pos);
+                adapter.notifyDataSetChanged();
+                if (0 == adapter.getCount())
+                    diag.dismiss();
+            }
+        };
+        final BookmarkListAdapter adapter = new BookmarkListAdapter(activity,
+                                                                    bms,
+                                                                    action);
+        lv.setAdapter(adapter);
+        lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void
+            onItemClick(AdapterView<?> parent, View view, int pos, long id) {
+                DB.Bookmark bm = (DB.Bookmark)adapter.getItem(pos);
+                YTPlayer mp = YTPlayer.get();
+                String activeYtvid = mp.getActiveVideoYtId();
+                if (ytvid.equals(activeYtvid))
+                    mp.playerSeekTo(bm.pos);
+                else
+                    showTextToast(activity, R.string.msg_fail_set_bookmark);
+                diag.dismiss();
+            }
+        });
+        diag.show();
+    }
 }

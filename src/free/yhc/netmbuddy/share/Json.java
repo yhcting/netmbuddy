@@ -54,6 +54,7 @@ import free.yhc.netmbuddy.utils.Utils;
 //            title : title of the video (Exporter may change the video title.)
 //            playtime:
 //            volume: volume
+//            bookmarks : bookmarks
 //        }
 //        ...
 //    ]
@@ -76,6 +77,7 @@ class Json {
     static final String FAUTHOR     = "author";
     static final String FVOLUME     = "volume";
     static final String FPLAYTIME   = "playtime";
+    static final String FBOOKMARKS  = "bookmarks";
     static final String FTITLE      = "title";
     static final String FVIDEOS     = "videos";
 
@@ -114,13 +116,15 @@ class Json {
         final int COLI_AUTHOR   = 2;
         final int COLI_VOLUME   = 3;
         final int COLI_PLAYTIME = 4;
+        final int COLI_BOOKMARKS= 5;
         Cursor c = DB.get().queryVideo(vid,
                                        new ColVideo[] {
                 ColVideo.VIDEOID,
                 ColVideo.TITLE,
                 ColVideo.AUTHOR,
                 ColVideo.VOLUME,
-                ColVideo.PLAYTIME
+                ColVideo.PLAYTIME,
+                ColVideo.BOOKMARKS
         });
 
         if (!c.moveToFirst()) {
@@ -140,6 +144,7 @@ class Json {
                 jo.put(FAUTHOR,   c.getString(COLI_AUTHOR));
 
             jo.put(FPLAYTIME, c.getInt(COLI_PLAYTIME));
+            jo.put(FBOOKMARKS, c.getString(COLI_BOOKMARKS));
             int vol = c.getInt(COLI_VOLUME);
             if (Policy.DEFAULT_VIDEO_VOLUME != vol)
                 jo.put(FVOLUME,   vol);

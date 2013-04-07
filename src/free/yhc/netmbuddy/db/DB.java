@@ -44,9 +44,20 @@ UnexpectedExceptionHandler.Evidence {
     public static final long    INVALID_PLAYLIST_ID = -1;
     public static final int     INVALID_VOLUME      = -1;
 
+    public static final char    BOOKMARK_DELIMITER  = '@';
+
+    // ----------------------------------------------------------------------------------------------------------------
+    // Package Privates
+    // ----------------------------------------------------------------------------------------------------------------
+    // See ColVideo.java : BOOKMARKS field for details
+    static final char BOOKMARK_NAME_DELIMIETER = '/';
+
+    // ----------------------------------------------------------------------------------------------------------------
+    // Privates
+    // ----------------------------------------------------------------------------------------------------------------
     // ytmp : YouTubeMusicPlayer
     private static final String NAME            = "ytmp.db";
-    private static final int    VERSION         = 2;
+    private static final int    VERSION         = 3;
 
     private static final String TABLE_VIDEO             = "video";
     private static final String TABLE_PLAYLIST          = "playlist";
@@ -78,6 +89,21 @@ UnexpectedExceptionHandler.Evidence {
         String getType();
         String getConstraint();
         String getDefault();
+    }
+
+    public static class Bookmark {
+        public int      pos;  // ms
+        public String   name; // Bookmark name.
+        public Bookmark() { }
+        public Bookmark(String aName, int aPos) {
+            name = aName;
+            pos = aPos;
+        }
+
+        public boolean
+        equal(Bookmark bm) {
+            return name.equals(bm.name) && pos == bm.pos;
+        }
     }
 
     private class DBOpenHelper extends SQLiteOpenHelper {
@@ -402,7 +428,10 @@ UnexpectedExceptionHandler.Evidence {
     updatePlaylistSize(long plid, long size) {
         ContentValues cvs = new ContentValues();
         cvs.put(ColPlaylist.SIZE.getName(), size);
-        int r = mDb.update(TABLE_PLAYLIST, cvs, ColPlaylist.ID.getName() + " = " + plid, null);
+        int r = mDb.update(TABLE_PLAYLIST,
+                           cvs,
+                           ColPlaylist.ID.getName() + " = " + plid,
+                           null);
         if (r > 0)
             markBooleanWatcherChanged(mPlTblWM);
         return r;
@@ -441,10 +470,12 @@ UnexpectedExceptionHandler.Evidence {
     long
     insertVideo(String title, String url,
                 int playtime, String author,
-                byte[] thumbnail, int volume) {
+                byte[] thumbnail, int volume,
+                String bookmarks) {
         ContentValues cvs = ColVideo.createContentValuesForInsert(title, url,
                                                                   playtime, author,
-                                                                  thumbnail, volume);
+                                                                  thumbnail, volume,
+                                                                  bookmarks);
         return insertVideo(cvs);
     }
 
@@ -613,7 +644,9 @@ UnexpectedExceptionHandler.Evidence {
         int r = -1;
         mDb.beginTransaction();
         try {
-            r = mDb.delete(TABLE_PLAYLIST, ColPlaylist.ID.getName() + " = " + id, null);
+            r = mDb.delete(TABLE_PLAYLIST,
+                           ColPlaylist.ID.getName() + " = " + id,
+                           null);
             eAssert(0 == r || 1 == r);
             if (r > 0) {
                 Cursor c = mDb.query(getVideoRefTableName(id),
@@ -637,9 +670,9 @@ UnexpectedExceptionHandler.Evidence {
     public Cursor
     queryPlaylist(ColPlaylist[] cols) {
         return mDb.query(TABLE_PLAYLIST,
-                DBUtils.getColNames(cols),
-                null, null, null, null,
-                ColPlaylist.TITLE.getName());
+                         DBUtils.getColNames(cols),
+                         null, null, null, null,
+                         ColPlaylist.TITLE.getName());
     }
 
     /**
@@ -727,25 +760,35 @@ UnexpectedExceptionHandler.Evidence {
      * @param playtime
      * @param thumbnail
      * @param volume
+     * @param bookmarks
      * @return
      *   -1 for error (ex. already exist)
      */
     public Err
     insertVideoToPlaylist(long plid,
-                          String videoId, String title,
+                          String ytvid, String title,
                           String author, int playtime,
-                          byte[] thumbnail, int volume) {
-        Cursor c = queryVideos(new ColVideo[] { ColVideo.ID }, ColVideo.VIDEOID, videoId);
+                          byte[] thumbnail, int volume,
+                          String bookmarks) {
+        Cursor c = queryVideos(new ColVideo[] { ColVideo.ID }, ColVideo.VIDEOID, ytvid);
         eAssert(0 == c.getCount() || 1 == c.getCount());
         long vid;
         if (c.getCount() <= 0) {
             // This is new video
             c.close();
+
+            if (!DBUtils.isValidBookmarksString(bookmarks))
+                // Invalid bookmark string.
+                // This is definitely unexpected, but it's not fatal error.
+                // So, just ignore invalid bookmark!
+                bookmarks = "";
+
             mDb.beginTransaction();
             try {
-                vid = insertVideo(title, videoId,
+                vid = insertVideo(title, ytvid,
                                   playtime, author,
-                                  thumbnail, volume);
+                                  thumbnail, volume,
+                                  bookmarks);
                 if (vid < 0)
                     return Err.UNKNOWN;
 
@@ -769,6 +812,14 @@ UnexpectedExceptionHandler.Evidence {
         return Err.NO_ERR;
     }
 
+    public Err
+    insertVideoToPlaylist(long plid,
+                          String ytvid, String title,
+                          String author, int playtime,
+                          byte[] thumbnail, int volume) {
+        return insertVideoToPlaylist(plid, ytvid, title, author, playtime, thumbnail, volume, "");
+    }
+
     public int
     updateVideoTitle(long vid, String title) {
         eAssert(null != title
@@ -786,6 +837,53 @@ UnexpectedExceptionHandler.Evidence {
         return updateVideo(ColVideo.VIDEOID, ytvid, ColVideo.VOLUME, volume);
     }
 
+    // ----------------------------------------------------------------------
+    // For bookmarks
+    // ----------------------------------------------------------------------
+    /**
+     *
+     * @param vid
+     * @param name
+     * @param position
+     *   milliseconds.
+     * @return
+     */
+    public int
+    addBookmark(long vid, String name, int position) {
+        String bmsstr = (String)getVideoInfo(vid, ColVideo.BOOKMARKS);
+        bmsstr = DBUtils.addBookmark(bmsstr, new Bookmark(name, position));
+        return updateVideo(ColVideo.ID, vid, ColVideo.BOOKMARKS, bmsstr);
+    }
+
+    public int
+    deleteBookmark(long vid, String name, int position) {
+        String bmsstr = (String)getVideoInfo(vid, ColVideo.BOOKMARKS);
+        DBUtils.deleteBookmark(bmsstr, new Bookmark(name, position));
+        return updateVideo(ColVideo.ID, vid, ColVideo.BOOKMARKS, bmsstr);
+    }
+
+    public int
+    deleteBookmark(String ytvid, String name, int position) {
+        String bmsstr = (String)getVideoInfo(ytvid, ColVideo.BOOKMARKS);
+        bmsstr = DBUtils.deleteBookmark(bmsstr, new Bookmark(name, position));
+        return updateVideo(ColVideo.VIDEOID, ytvid, ColVideo.BOOKMARKS, bmsstr);
+    }
+
+    public Bookmark[]
+    getBookmarks(long vid) {
+        String bmsstr = (String)getVideoInfo(vid, ColVideo.BOOKMARKS);
+        return DBUtils.decodeBookmarks(bmsstr);
+    }
+
+    public Bookmark[]
+    getBookmarks(String ytvid) {
+        String bmsstr = (String)getVideoInfo(ytvid, ColVideo.BOOKMARKS);
+        return DBUtils.decodeBookmarks(bmsstr);
+    }
+
+    // ----------------------------------------------------------------------
+    //
+    // ----------------------------------------------------------------------
     /**
      * Delete video from given playlist.
      * @param plid
@@ -904,7 +1002,24 @@ UnexpectedExceptionHandler.Evidence {
     getVideoInfo(String ytvid, ColVideo col) {
         Cursor c = mDb.query(TABLE_VIDEO,
                              DBUtils.getColNames(new ColVideo[] { col }),
-                             ColVideo.VIDEOID + " = " + DatabaseUtils.sqlEscapeString(ytvid),
+                             ColVideo.VIDEOID.getName() + " = " + DatabaseUtils.sqlEscapeString(ytvid),
+                             null, null, null, null);
+        eAssert(0 == c.getCount() || 1 == c.getCount());
+        try {
+            if (c.moveToFirst())
+                return DBUtils.getCursorVal(c, col);
+            else
+                return null;
+        } finally {
+            c.close();
+        }
+    }
+
+    public Object
+    getVideoInfo(long vid, ColVideo col) {
+        Cursor c = mDb.query(TABLE_VIDEO,
+                             DBUtils.getColNames(new ColVideo[] { col }),
+                             ColVideo.ID.getName() + " = " + vid,
                              null, null, null, null);
         eAssert(0 == c.getCount() || 1 == c.getCount());
         try {
@@ -941,7 +1056,6 @@ UnexpectedExceptionHandler.Evidence {
 
         return Utils.convertArrayLongTolong(pls.toArray(new Long[0]));
     }
-
 
     // ----------------------------------------------------------------------
     //

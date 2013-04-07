@@ -39,6 +39,7 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
@@ -599,6 +600,51 @@ OnSharedPreferenceChangeListener {
     }
 
     private void
+    pvMoreControlSetBookmark(final long vid) {
+        final int posms = mMp.playerGetPosition();
+
+        if (0 == posms) {
+            UiUtils.showTextToast(mVActivity, R.string.msg_fail_set_bookmark);
+            return;
+        }
+
+        final String title = Utils.getResText(R.string.set_bookmark)
+                             + " : "
+                             + Utils.secsToMinSecText(posms / 1000)
+                             + Utils.getResText(R.string.seconds);
+
+        UiUtils.EditTextAction action = new UiUtils.EditTextAction() {
+            @Override
+            public void
+            prepare(Dialog dialog, EditText edit) { }
+
+            @Override
+            public void
+            onOk(Dialog dialog, EditText edit) {
+                String bmname = edit.getText().toString();
+                if (bmname.contains("" + DB.BOOKMARK_DELIMITER)) {
+                    String msg = Utils.getResText(R.string.msg_forbidden_characters) + "\n"
+                                 + "    " + DB.BOOKMARK_DELIMITER;
+                    UiUtils.showTextToast(mVActivity, msg);
+                    UiUtils.buildOneLineEditTextDialog(mVActivity,
+                                                       title,
+                                                       bmname,
+                                                       "",
+                                                       this)
+                           .show();
+                } else
+                    mDb.addBookmark(vid, bmname, posms);
+            }
+        };
+
+        UiUtils.buildOneLineEditTextDialogWithHint(mVActivity,
+                                                   title,
+                                                   R.string.enter_bookmark_name,
+                                                   action)
+               .show();
+    }
+
+    private void
     pvMoreControlAddToWithYtid(final UiUtils.OnPostExecuteListener listener,
                                final Object user,
                                final long plid,
@@ -738,6 +784,8 @@ OnSharedPreferenceChangeListener {
         final Long vid = (Long)mDb.getVideoInfo(video.ytvid, ColVideo.ID);
         if (null != vid)
             opts = new int[] { R.string.detail_info,
+                               R.string.set_bookmark,
+                               R.string.bookmarks,
                                R.string.add_to,
                                R.string.volume,
                                R.string.delete };
@@ -759,6 +807,14 @@ OnSharedPreferenceChangeListener {
                 switch (opts[item]) {
                 case R.string.detail_info:
                     pvMoreControlDetailInfo(vid);
+                    break;
+
+                case R.string.set_bookmark:
+                    pvMoreControlSetBookmark(vid);
+                    break;
+
+                case R.string.bookmarks:
+                    UiUtils.showBookmarkDialog(mVActivity, video.ytvid, video.title);
                     break;
 
                 case R.string.add_to:

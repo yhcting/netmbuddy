@@ -66,6 +66,11 @@ class DBUpgrader {
         db.execSQL(buildAddColumnSQL(DB.getVideoTableName(), ColVideo.RESERVED6));
     }
 
+    private static void
+    upgradeTo3(SQLiteDatabase db) {
+        db.execSQL(buildAddColumnSQL(DB.getVideoTableName(), ColVideo.BOOKMARKS));
+    }
+
     boolean
     upgrade() {
         boolean success = true;
@@ -76,6 +81,10 @@ class DBUpgrader {
                 switch (dbv) {
                 case 1:
                     upgradeTo2(mDb);
+                    break;
+
+                case 2:
+                    upgradeTo3(mDb);
                     break;
                 }
                 dbv++;
