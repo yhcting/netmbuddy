@@ -126,7 +126,7 @@ public class YTDownloader {
                 _mTmpF.delete();
 
             if (DBG) P.v("Start Download : " + arg.ytvid + " => " + arg.outf.getAbsolutePath());
-            YTHacker hack = new YTHacker(arg.ytvid);
+            YTHacker hack = new YTHacker(arg.ytvid, null, null);
             FileOutputStream fos = null;
             try {
                 YTHacker.Err hkerr = hack.start();

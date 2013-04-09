@@ -95,8 +95,14 @@ public class YTHacker {
     private final String        mYtvid;
     private final Object        mUser;
     private final YtHackListener mListener;
+    // NOTE
+    // mBgTask used as "private final" to avoid synchronizing issue.
+    // If not, 'mBgTask' should be initialized with 'null'.
+    // And, code for using 'mBgTask' always should be like this.
+    //     if (null != mBgTask)
+    //         mBgTask.xxxxx
+    private final AsyncTask<Void, Void, Err> mBgTask;
 
-    private AsyncTask<Void, Void, Err> mBgTask = null;
     private YtVideoHtmlResult   mYtr = null;
     private boolean             mCancelled = false;
 
@@ -335,18 +341,19 @@ public class YTHacker {
 
         NetLoader.HttpRespContent content;
         Err err = Err.NO_ERR;
+        YtVideoHtmlResult ytr = null;
         try {
             do {
                 // Read and parse html web page of video.
                 content = mLoader.getHttpContent(Uri.parse(getYtVideoPageUrl(mYtvid)), true);
                 eAssert(content.type.toLowerCase().startsWith("text/html"));
-                mYtr = parseYtVideoHtml(new BufferedReader(new InputStreamReader(content.stream)));
-                if (!verifyYtVideoHtmlResult(mYtr)) {
+                ytr = parseYtVideoHtml(new BufferedReader(new InputStreamReader(content.stream)));
+                if (!verifyYtVideoHtmlResult(ytr)) {
                     // this is invalid result value.
                     // Ignore this result.
                     // If not, this may cause mis-understanding that hacking is successful.
                     // Note that "hasHackedResult()" uses "null != mYtr".
-                    mYtr = null;
+                    ytr = null;
                     err = Err.PARSE_HTML;
                     break;
                 }
@@ -354,7 +361,7 @@ public class YTHacker {
                 // NOTE
                 // HACK youtube protocol!
                 // Do dummy 'GET' request with generate_204 url.
-                content = mLoader.getHttpContent(Uri.parse(mYtr.generate_204_url), false);
+                content = mLoader.getHttpContent(Uri.parse(ytr.generate_204_url), false);
                 if (HttpUtils.SC_NO_CONTENT != content.stcode) {
                     // This is unexpected! One of following reasons may lead to this state
                     // - Youtube server doing something bad.
@@ -362,7 +369,7 @@ public class YTHacker {
                     // - Something unexpected.
                     err = Err.PARSE_HTML;
                     // 'mYtr' is NOT available in this case!
-                    mYtr = null;
+                    ytr = null;
                     break;
                 }
                 // Now all are ready to download!
@@ -372,12 +379,11 @@ public class YTHacker {
         } catch (LocalException e) {
             err = e.error();
         }
-        if (Err.NO_ERR != err && null != mLoader)
+
+        if (Err.NO_ERR != err)
             mLoader.close();
 
-        if (null != mBgTask)
-            mBgTask = null;
-
+        mYtr = ytr;
         return err;
     }
 
@@ -432,11 +438,6 @@ public class YTHacker {
                 YTQUALITY_SCORE_MAXIMUM:
                 score;
     }
-    public YTHacker(String ytvid) {
-        mYtvid = ytvid;
-        mUser = null;
-        mListener = null;
-    }
 
     public YTHacker(String ytvid, Object user,
                     YtHackListener hackListener) {
@@ -444,6 +445,32 @@ public class YTHacker {
         mYtvid = ytvid;
         mUser = user;
         mListener = hackListener;
+        mBgTask = new AsyncTask<Void, Void, Err>() {
+            @Override
+            protected void
+            onPreExecute() {
+                preExecute();
+            }
+
+            @Override
+            protected Err
+            doInBackground(Void... dummy) {
+                return doMainWork();
+            }
+
+            @Override
+            protected void
+            onPostExecute(Err result) {
+                postExecute(result);
+            }
+
+            @Override
+            public void
+            onCancelled() {
+                if (null != mListener)
+                    mListener.onHackCancelled(YTHacker.this, mYtvid, mUser);
+            }
+        };
     }
 
     public NetLoader
@@ -513,32 +540,6 @@ public class YTHacker {
 
     public void
     startAsync() {
-        mBgTask = new AsyncTask<Void, Void, Err>() {
-            @Override
-            protected void
-            onPreExecute() {
-                preExecute();
-            }
-
-            @Override
-            protected Err
-            doInBackground(Void... dummy) {
-                return doMainWork();
-            }
-
-            @Override
-            protected void
-            onPostExecute(Err result) {
-                postExecute(result);
-            }
-
-            @Override
-            public void
-            onCancelled() {
-                if (null != mListener)
-                    mListener.onHackCancelled(YTHacker.this, mYtvid, mUser);
-            }
-        };
         mBgTask.execute();
     }
 
@@ -546,8 +547,6 @@ public class YTHacker {
     forceCancel() {
         mCancelled = true;
         mLoader.close();
-        if (null != mBgTask)
-            mBgTask.cancel(true);
-        mBgTask = null;
+        mBgTask.cancel(true);
     }
 }
