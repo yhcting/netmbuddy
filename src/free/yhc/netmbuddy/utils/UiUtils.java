@@ -671,14 +671,15 @@ public class UiUtils {
     showVideoDetailInfo(final Activity activity, final long vid) {
         DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
             final class VideoDetailInfo {
-                String      title           = "";
-                String      author          = "";
-                String      timeAdded       = "";
-                String      timeLastPlayed  = "";
-                String      volume          = "";
-                String      playTime        = "";
+                String          title           = "";
+                String          author          = "";
+                String          timeAdded       = "";
+                String          timeLastPlayed  = "";
+                String          volume          = "";
+                String          playTime        = "";
+                DB.Bookmark[]   bookmarks       = null;
                 // titles of playlists contain the video
-                String[]    pls             = new String[0];
+                String[]        pls             = new String[0];
             }
 
             private VideoDetailInfo _mVdi = new VideoDetailInfo();
@@ -701,8 +702,14 @@ public class UiUtils {
                              + playbackTm + "\n"
                              + volume + "\n"
                              + timeAdded + "\n"
-                             + timePlayed + "\n\n"
-                             + "[ " + Utils.getResText(R.string.playlist) + " ]\n";
+                             + timePlayed + "\n";
+                if (_mVdi.bookmarks.length > 0) {
+                    msg += "[ " + Utils.getResText(R.string.bookmarks) + " ]\n";
+                    for (DB.Bookmark bm : _mVdi.bookmarks)
+                        msg += "    <" + Utils.secsToMinSecText(bm.pos / 1000) + "> " + bm.name + "\n";
+                }
+
+                msg += "\n[ " + Utils.getResText(R.string.playlist) + " ]\n";
                 for (String title : _mVdi.pls)
                     msg += "* " + title + "\n";
 
@@ -730,7 +737,7 @@ public class UiUtils {
                         ColVideo.VOLUME,
                         ColVideo.PLAYTIME,
                         ColVideo.TIME_ADD,
-                        ColVideo.TIME_PLAYED
+                        ColVideo.TIME_PLAYED,
                 });
 
                 if (!c.moveToFirst()) {
@@ -748,8 +755,12 @@ public class UiUtils {
                     _mVdi.timeLastPlayed = Utils.getResText(R.string.not_played_yet);
                 else
                     _mVdi.timeLastPlayed =df.format(new Date(c.getLong(COLI_TIME_PLAYED)));
-
                 c.close();
+
+                _mVdi.bookmarks = db.getBookmarks(vid);
+                if (null == _mVdi.bookmarks)
+                    // Unexpected error is ignored.
+                    _mVdi.bookmarks = new DB.Bookmark[0];
 
                 long[] plids = db.getPlaylistsContainVideo(vid);
                 _mVdi.pls = new String[plids.length];
