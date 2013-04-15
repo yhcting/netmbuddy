@@ -1036,7 +1036,8 @@ OnSharedPreferenceChangeListener {
                 @Override
                 public void
                 onDrawerOpened() {
-                    if (!mMp.hasActiveVideo())
+                    if (!mMp.hasActiveVideo()
+                        || null == mPlayerLDrawer)
                         return;
 
                     ListView lv = (ListView)mPlayerLDrawer.findViewById(R.id.mplayer_list);
