@@ -217,7 +217,13 @@ public class NetLoader {
                         throw new LocalException(Err.HTTPGET, statusCode);
                     }
                     contentStream = httpEntity.getContent();
-                    contentType = httpResp.getFirstHeader("Content-Type").getValue().toLowerCase();
+                    try {
+                        contentType = httpResp.getFirstHeader("Content-Type").getValue().toLowerCase();
+                    } catch (NullPointerException e) {
+                        // Unexpected response data.
+                        if (DBG) P.v("NetLoader IOException : " + e.getMessage());
+                        throw new LocalException(Err.IO_NET);
+                    }
                 }
 
                 return new HttpRespContent(statusCode, contentStream, contentType);
