@@ -89,7 +89,7 @@ public class YTHacker {
     // So, this URL is a kind of special URL that creates 204 response
     //   and notify to server that preparing real-contents.
     private static final Pattern    sYtUrlGenerate204Pattern
-        = Pattern.compile(".*\"(http\\:.+\\/generate_204\\?[^\"]+)\".*");
+        = Pattern.compile(".*\"(http\\:.+\\/generate_204[^\"]*)\".*");
 
     private final NetLoader     mLoader = new NetLoader();;
     private final String        mYtvid;
@@ -300,7 +300,7 @@ public class YTHacker {
             if (null == line)
                 break;
 
-            if (line.contains("/generate_204?")) {
+            if (line.contains("/generate_204")) {
                 Matcher m = sYtUrlGenerate204Pattern.matcher(line);
                 if (m.matches()) {
                     line = m.group(1);
