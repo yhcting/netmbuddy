@@ -137,6 +137,11 @@ UnexpectedExceptionHandler.Evidence {
     }
 
     private void
+    onContextMenuSearchSimilarTitles(final int position) {
+        UiUtils.showSimilarTitlesDialog(getActivity(), getAdapter().getItemTitle(position));
+    }
+
+    private void
     checkDupAsync(Object tag, YTVideoFeed.Entry[] entries) {
         mDbHelper.close();
 
@@ -281,6 +286,10 @@ UnexpectedExceptionHandler.Evidence {
 
         case R.id.playlists_of_this_author:
             onContextMenuPlaylistsOfThisAuthor(info.position);
+            return true;
+
+        case R.id.search_similar_titles:
+            onContextMenuSearchSimilarTitles(info.position);
             return true;
         }
         return false;

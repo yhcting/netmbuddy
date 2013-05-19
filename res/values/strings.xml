@@ -18,6 +18,7 @@
     <string name="error">Error</string>
     <string name="buffering">Buffering</string>
     <string name="preparing">Preparing</string>
+    <string name="searching">Searching</string>
     <string name="keyword">Search word</string>
     <string name="author">Author</string>
     <string name="playlist">Playlist</string>
@@ -89,6 +90,7 @@
     <string name="not_played_yet">Not played yet</string>
     <string name="set_bookmark">Set bookmark</string>
     <string name="enter_bookmark_name">Enter bookmark name</string>
+    <string name="search_similar_titles">Search similar titles</string>
 
     <string name="share_pl_attachment">PlaylistShareData</string>
     <string name="share_pl_email_subject">NetMBuddy Playlist Share</string>
@@ -162,7 +164,8 @@ It may takes long time(up to several minutes) in case that:\n
     <string name="msg_fail_set_bookmark">Setting bookmark fails.</string>
     <string name="msg_fail_seek_to_bookmark">Seeking to bookmark fails. Seeking to bookmark is only allowed for current playing music.</string>
     <string name="msg_empty_bookmarks">There is no bookmark.</string>
-    
+    <string name="msg_no_similar_titles">There is no similar video title in local playlist.</string>
+
     <string name="err_no_err">Success.</string>
     <string name="err_unknown">Unknown error.</string>
     <string name="err_interrupted">Interrupted.</string>

@@ -346,6 +346,11 @@ UnexpectedExceptionHandler.Evidence {
         startActivity(i);
     }
 
+    private void
+    onContextMenuSearchSimilarTitles(final long id, final int pos) {
+        UiUtils.showSimilarTitlesDialog(this, getAdapter().getMusicTitle(pos));
+    }
+
     @Override
     public String
     dump(UnexpectedExceptionHandler.DumpLevel lvl) {
@@ -408,6 +413,10 @@ UnexpectedExceptionHandler.Evidence {
 
         case R.id.playlists_of_this_author:
             onContextMenuPlaylistsOfThisAuthor(info.id, info.position);
+            return true;
+
+        case R.id.search_similar_titles:
+            onContextMenuSearchSimilarTitles(info.id, info.position);
             return true;
         }
         eAssert(false);

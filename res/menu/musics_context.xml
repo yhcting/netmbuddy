@@ -13,6 +13,7 @@
     <item android:id="@+id/volume"                      android:title="@string/volume"></item>
     <item android:id="@+id/videos_of_this_author"       android:title="@string/videos_of_this_author"></item>
     <item android:id="@+id/playlists_of_this_author"    android:title="@string/playlists_of_this_author"></item>
+    <item android:id="@+id/search_similar_titles"       android:title="@string/search_similar_titles"></item>
     <item android:id="@+id/rename"                      android:title="@string/rename"></item>
     <item android:id="@+id/move_to"                     android:title="@string/move_to"></item>
     <item android:id="@+id/add_to"                      android:title="@string/add_to"></item>

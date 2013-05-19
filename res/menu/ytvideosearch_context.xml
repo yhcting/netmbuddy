@@ -4,6 +4,7 @@
     <item android:id="@+id/play_video"                  android:title="@string/play_video"></item>
     <item android:id="@+id/videos_of_this_author"       android:title="@string/videos_of_this_author"></item>
     <item android:id="@+id/playlists_of_this_author"    android:title="@string/playlists_of_this_author"></item>
+    <item android:id="@+id/search_similar_titles"       android:title="@string/search_similar_titles"></item>
     <item android:id="@+id/append_to_playq"             android:title="@string/append_to_playq"></item>
     <item android:id="@+id/add_to"                      android:title="@string/add_to"></item>
 </menu>

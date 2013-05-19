@@ -25,6 +25,7 @@ import static free.yhc.netmbuddy.utils.Utils.eAssert;
 import java.text.DateFormat;
 import java.util.Date;
 import java.util.LinkedList;
+import java.util.concurrent.atomic.AtomicReference;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -57,8 +58,10 @@ import free.yhc.netmbuddy.db.ColPlaylist;
 import free.yhc.netmbuddy.db.ColVideo;
 import free.yhc.netmbuddy.db.DB;
 import free.yhc.netmbuddy.db.DB.Bookmark;
+import free.yhc.netmbuddy.model.Policy;
 import free.yhc.netmbuddy.model.YTHacker;
 import free.yhc.netmbuddy.model.YTPlayer;
+import free.yhc.netmbuddy.scmp.SCmp;
 
 public class UiUtils {
     private static final boolean DBG = false;
@@ -827,5 +830,117 @@ public class UiUtils {
             }
         });
         diag.show();
+    }
+
+    // ----------------------------------------------------------------------------------------------------------------
+    // For searching similar titles
+    // ----------------------------------------------------------------------------------------------------------------
+    public static void
+    showSimilarTitlesDialog(final Activity activity, final String title) {
+        DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
+            private AtomicReference<Boolean>    mCancelled = new AtomicReference<Boolean>(false);
+            private LinkedList<Long>            mVids = new LinkedList<Long>();
+
+            @Override
+            public Err
+            doBackgroundWork(DiagAsyncTask task) {
+                float similarityThreshold = 0.5f;
+                SCmp scmp = new SCmp();
+                scmp.setCmpParameter(title, true, null);
+                Cursor c = null;
+                try {
+                    final int COLI_ID       = 0;
+                    final int COLI_TITLE    = 1;
+                    c = DB.get().queryVideos(new ColVideo[] { ColVideo.ID,
+                                                              ColVideo.TITLE },
+                                             null,
+                                             false);
+                    if (!c.moveToFirst())
+                        return Err.NO_ERR;
+
+                    int maxCnt = c.getCount();
+                    int cnt = 0;
+                    int prevPercent = 0;
+                    int curPercent = 0;
+
+                    task.publishProgress(0);
+                    do {
+                        if (DBG) {
+                            String title = c.getString(COLI_TITLE);
+                            P.v("Calculating similarity : " + title);
+                            float sim = scmp.similarity(title);
+                            P.v("    " + sim);
+                        }
+                        if (similarityThreshold < scmp.similarity(c.getString(COLI_TITLE))) {
+                            mVids.addLast(c.getLong(COLI_ID));
+                            if (mVids.size() >= Policy.MAX_SIMILAR_TITLES_RESULT)
+                                return Err.NO_ERR;
+                        }
+
+                        ++cnt;
+                        curPercent = cnt * 100 / maxCnt;
+                        if (curPercent > prevPercent) {
+                            task.publishProgress(curPercent);
+                            prevPercent = curPercent;
+                        }
+
+                        if (mCancelled.get())
+                            return Err.CANCELLED;
+                    } while (c.moveToNext());
+                } catch (Exception e) {
+                    e.printStackTrace();
+                } finally {
+                    if (null != c)
+                        c.close();
+                }
+                return Err.NO_ERR;
+
+            }
+
+            @Override
+            public void
+            onPreExecute(DiagAsyncTask task) {
+
+            }
+
+            @Override
+            public void
+            onPostExecute(DiagAsyncTask task, Err result) {
+                if (0 == mVids.size()) {
+                    UiUtils.showTextToast(activity, R.string.msg_no_similar_titles);
+                    return;
+                }
+
+                ListView lv = (ListView)UiUtils.inflateLayout(activity, R.layout.similar_title_dialog);
+                AlertDialog.Builder bldr = new AlertDialog.Builder(activity);
+                bldr.setTitle("[" + Utils.getResText(R.string.search_similar_titles) + "]\n" + title);
+                bldr.setView(lv);
+                final AlertDialog diag = bldr.create();
+                final SimilarTitlesListAdapter adapter
+                    = new SimilarTitlesListAdapter(activity,
+                                                   Utils.convertArrayLongTolong(mVids.toArray(new Long[0])));
+                lv.setAdapter(adapter);
+                diag.show();
+            }
+
+            @Override
+            public void
+            onCancel(DiagAsyncTask task) {
+                mCancelled.set(true);
+            }
+
+            @Override
+            public void
+            onCancelled(DiagAsyncTask task) {
+            }
+        };
+
+        new DiagAsyncTask(activity,
+                          worker,
+                          DiagAsyncTask.Style.PROGRESS,
+                          R.string.searching,
+                          true,
+                          false)
+            .run();
     }
 }
