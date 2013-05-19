@@ -780,6 +780,10 @@ OnSharedPreferenceChangeListener {
     private void
     pvOnMoreButtonClicked(View v) {
         final YTPlayer.Video video  = mMp.getActiveVideo();
+
+        if (null == video)
+            return; // This line can be reached because of race-condition...
+
         final int[] opts;
         final Long vid = (Long)mDb.getVideoInfo(video.ytvid, ColVideo.ID);
         if (null != vid)
