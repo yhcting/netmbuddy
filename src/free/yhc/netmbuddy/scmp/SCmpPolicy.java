@@ -26,8 +26,8 @@ public class SCmpPolicy {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(SCmpPolicy.class);
 
-    static final float DEF_ORDER_COEFF  = 4.0f;
-    static final float DEF_CONT_ADV     = 10.0f;
+    static final float DEF_ORDER_COEFF  = 3.0f;
+    static final float DEF_CONT_ADV     = 4.0f;
     // values whose similarity is smaller than "scmpThreshold", are ignored.
     // Larger value(close to 1.0f) leads to better performance.
     static final float DEF_SCMP_THRESHOLD   = 0.7f;

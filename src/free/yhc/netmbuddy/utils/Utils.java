@@ -122,6 +122,26 @@ public class Utils {
         }
     }
 
+    public static enum PrefTitleSimilarityThreshold {
+        VERYLOW (Policy.SIMILARITY_THRESHOLD_VERYLOW),
+        LOW     (Policy.SIMILARITY_THRESHOLD_LOW),
+        NORMAL  (Policy.SIMILARITY_THRESHOLD_NORMAL),
+        HIGH    (Policy.SIMILARITY_THRESHOLD_HIGH),
+        VERYHIGH(Policy.SIMILARITY_THRESHOLD_VERYHIGH);
+
+        private float v;
+        private
+        PrefTitleSimilarityThreshold(float aV) {
+            v = aV;
+        }
+
+        public float
+        getValue() {
+            return v;
+        }
+    }
+
+
     private static class TimeElem {
         public Object   v;
         public long     time;
@@ -458,6 +478,18 @@ public class Utils {
         }
         eAssert(false);
         return null;
+    }
+
+    public static float
+    getPrefTitleSimilarityThreshold() {
+        String v = getPreference(getResText(R.string.cstitle_similarity_threshold),
+                                 getResText(R.string.csNORMAL));
+        for (PrefTitleSimilarityThreshold q : PrefTitleSimilarityThreshold.values()) {
+            if (q.name().equals(v))
+                return q.getValue();
+        }
+        eAssert(false);
+        return Policy.SIMILARITY_THRESHOLD_NORMAL;
     }
 
     public static boolean

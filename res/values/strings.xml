@@ -27,11 +27,12 @@
     <string name="export">Export</string>
     <string name="import_">Import</string>
     <string name="merge">Merge</string>
+    <string name="verylow">Very low</string>
     <string name="low">Low</string>
-    <string name="midlow">Mid Low</string>
+    <string name="midlow">Mid low</string>
     <string name="normal">Normal</string>
     <string name="high">High</string>
-    <string name="veryhigh">Very High</string>
+    <string name="veryhigh">Very high</string>
     <string name="done">Done</string>
     <string name="autostop">Auto-stop</string>
     <string name="close">Close</string>
@@ -111,6 +112,9 @@
     <string name="pref_cat_report">Report</string>
     <string name="pref_err_report">Err report</string>
     <string name="pref_err_report_desc">Detail error information can be sent to developer.</string>
+    <string name="pref_cat_algorithm">Algorithm</string>
+    <string name="pref_title_similarity_threshold">Title similarity threshold</string>
+    <string name="pref_title_similarity_threshold_desc">Decides threshold of similar-title-searching. Higher value -> more strict but better performance.</string>
 
     <string name="guide_title_first_playlist">Making my first playlist.</string>
     <string name="guide_desc_first_playlist">Touching this icon to search Youbute with keywords\nThen, do long-touch one of list-item to make new playlist and add the item to the playlist.</string>

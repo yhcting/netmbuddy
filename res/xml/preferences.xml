@@ -44,6 +44,16 @@
             android:entryValues="@array/strarr_on_off_value"
             />
     </PreferenceCategory>
+    <PreferenceCategory android:title="@string/pref_cat_algorithm">
+        <ListPreference
+            android:title="@string/pref_title_similarity_threshold"
+            android:summary="@string/pref_title_similarity_threshold_desc"
+            android:key="@string/cstitle_similarity_threshold"
+            android:defaultValue="@string/csNORMAL"
+            android:entries="@array/strarr_pref_title_similarity_threshold_entry"
+            android:entryValues="@array/strarr_pref_title_similarity_threshold_value"
+            />
+    </PreferenceCategory>
     <PreferenceCategory android:title="@string/pref_cat_report">
         <ListPreference
             android:title="@string/pref_err_report"

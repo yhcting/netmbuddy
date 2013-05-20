@@ -109,7 +109,12 @@ public class Policy {
     // --------------------------------------------------------------------
     // Searching
     // --------------------------------------------------------------------
-    public static final int     MAX_SIMILAR_TITLES_RESULT   = 20;
+    public static final float   SIMILARITY_THRESHOLD_VERYLOW    = 0.007f;
+    public static final float   SIMILARITY_THRESHOLD_LOW        = 0.05f;
+    public static final float   SIMILARITY_THRESHOLD_NORMAL     = 0.1f;
+    public static final float   SIMILARITY_THRESHOLD_HIGH       = 0.4f;
+    public static final float   SIMILARITY_THRESHOLD_VERYHIGH   = 0.7f;
+    public static final int     MAX_SIMILAR_TITLES_RESULT   = 99999999; // actually no-limitation.
     // --------------------------------------------------------------------
     // Usage Report
     // --------------------------------------------------------------------

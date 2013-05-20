@@ -23,4 +23,18 @@
         <item>@string/csHIGH</item>
         <item>@string/csVERYHIGH</item>
     </string-array>
+    <string-array name="strarr_pref_title_similarity_threshold_entry">
+        <item>@string/verylow</item>
+        <item>@string/low</item>
+        <item>@string/normal</item>
+        <item>@string/high</item>
+        <item>@string/veryhigh</item>
+    </string-array>
+    <string-array name="strarr_pref_title_similarity_threshold_value">
+        <item>@string/csVERYLOW</item>
+        <item>@string/csLOW</item>
+        <item>@string/csNORMAL</item>
+        <item>@string/csHIGH</item>
+        <item>@string/csVERYHIGH</item>
+    </string-array>
 </resources>

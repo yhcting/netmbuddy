@@ -844,7 +844,7 @@ public class UiUtils {
             @Override
             public Err
             doBackgroundWork(DiagAsyncTask task) {
-                float similarityThreshold = 0.5f;
+                float similarityThreshold = Utils.getPrefTitleSimilarityThreshold();
                 SCmp scmp = new SCmp();
                 scmp.setCmpParameter(title, true, null);
                 Cursor c = null;
