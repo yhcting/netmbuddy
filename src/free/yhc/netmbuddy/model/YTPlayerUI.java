@@ -795,7 +795,6 @@ OnSharedPreferenceChangeListener {
                                R.string.delete };
         else
             opts = new int[] { R.string.add_to,
-                               R.string.delete,
                                R.string.volume };
 
         final CharSequence[] items = new CharSequence[opts.length];
