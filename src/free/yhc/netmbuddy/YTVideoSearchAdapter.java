@@ -28,7 +28,8 @@ import java.util.HashSet;
 
 import android.content.Context;
 import android.view.View;
-import android.widget.ImageView;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.TextView;
 import free.yhc.netmbuddy.db.DB;
 import free.yhc.netmbuddy.model.Policy;
@@ -49,18 +50,6 @@ public class YTVideoSearchAdapter extends YTSearchAdapter {
     private final HashMap<Integer, Long>    mCheckedMap = new HashMap<Integer, Long>();
 
     private CheckStateListener  mCheckListener = null;
-    private final View.OnClickListener mMarkOnClick = new View.OnClickListener() {
-        @Override
-        public void
-        onClick(View v) {
-            ImageView iv = (ImageView)v;
-            int pos = (Integer)iv.getTag(VTAGKEY_POS);
-            if (mCheckedMap.containsKey(pos))
-                setToUnchecked(pos);
-            else
-                setToChecked(pos);
-        }
-    };
 
     public interface CheckStateListener {
         /**
@@ -88,28 +77,8 @@ public class YTVideoSearchAdapter extends YTSearchAdapter {
     }
 
     private void
-    setToChecked(View v) {
-        ImageView iv = (ImageView)v.findViewById(R.id.checkbtn);
-        iv.setImageResource(R.drawable.btncheck_on);
-        // I'm not sure that below 'invalidate' really does any meaningful action.
-        // But, just in case...
-        iv.invalidate();
-
-    }
-
-    private void
-    setToUnchecked(View v) {
-        ImageView iv = (ImageView)v.findViewById(R.id.checkbtn);
-        iv.setImageResource(R.drawable.btncheck_off);
-        // I'm not sure that below 'invalidate' really does any meaningful action.
-        // But, just in case...
-        iv.invalidate();
-    }
-
-    private void
     setToChecked(int pos) {
         eAssert(Utils.isUiThread());
-        setToChecked(mItemViews[pos]);
         mCheckedMap.put(pos, System.currentTimeMillis());
         if (null != mCheckListener)
             mCheckListener.onStateChanged(mCheckedMap.size(), pos, true);
@@ -118,7 +87,6 @@ public class YTVideoSearchAdapter extends YTSearchAdapter {
     private void
     setToUnchecked(int pos) {
         eAssert(Utils.isUiThread());
-        setToUnchecked(mItemViews[pos]);
         mCheckedMap.remove(pos);
         if (null != mCheckListener)
             mCheckListener.onStateChanged(mCheckedMap.size(), pos, false);
@@ -129,8 +97,19 @@ public class YTVideoSearchAdapter extends YTSearchAdapter {
                          YTVideoFeed.Entry[] entries) {
         super(context, helper, R.layout.ytvideosearch_row, entries);
         for (int i = 0; i < mItemViews.length; i++) {
-            View v = mItemViews[i].findViewById(R.id.checkbtn);
-            v.setOnClickListener(mMarkOnClick);
+            CheckBox v = (CheckBox)mItemViews[i].findViewById(R.id.checkbtn);
+            v.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void
+                onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                    CheckBox cb = (CheckBox)buttonView;
+                    int pos = (Integer)cb.getTag(VTAGKEY_POS);
+                    if (isChecked)
+                        setToChecked(pos);
+                    else
+                        setToUnchecked(pos);
+                }
+            });
             v.setTag(VTAGKEY_POS, i);
         }
         // initial notification to callback.
@@ -284,7 +263,8 @@ public class YTVideoSearchAdapter extends YTSearchAdapter {
     cleanChecked() {
         mCheckedMap.clear();
         for (View v : mItemViews)
-            setToUnchecked(v);
+            ((CheckBox)v.findViewById(R.id.checkbtn)).setChecked(false);
+
         if (null != mCheckListener)
             mCheckListener.onStateChanged(0, -1, false);
     }

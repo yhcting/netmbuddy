@@ -27,6 +27,8 @@ import java.util.HashMap;
 import android.content.Context;
 import android.database.Cursor;
 import android.view.View;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.ResourceCursorAdapter;
 import android.widget.TextView;
@@ -67,18 +69,22 @@ public class MusicsAdapter extends ResourceCursorAdapter {
     private final HashMap<Integer, Long> mCheckedMap    = new HashMap<Integer, Long>();
     private final CheckStateListener  mCheckListener;
 
-    private final View.OnClickListener  mItemCheckOnClick = new View.OnClickListener() {
-        @Override
-        public void
-        onClick(View v) {
-            ImageView iv = (ImageView)v;
-            int pos = (Integer)iv.getTag(VTAGKEY_POS);
-            if (mCheckedMap.containsKey(pos))
-                setToUnchecked(pos, iv);
-            else
-                setToChecked(pos, iv);
-        }
-    };
+    private final CompoundButton.OnCheckedChangeListener mItemCheckOnCheckedChange
+        = new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void
+            onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                CheckBox cb = (CheckBox)buttonView;
+                int pos = (Integer)cb.getTag(VTAGKEY_POS);
+                if (isChecked) {
+                    mCheckedMap.put(pos, System.currentTimeMillis());
+                    mCheckListener.onStateChanged(mCheckedMap.size(), pos, true);
+                } else {
+                    mCheckedMap.remove(pos);
+                    mCheckListener.onStateChanged(mCheckedMap.size(), pos, false);
+                }
+            }
+        };
 
     public interface CheckStateListener {
         /**
@@ -100,25 +106,6 @@ public class MusicsAdapter extends ResourceCursorAdapter {
             plid = aPlid;
             extra = aExtra;
         }
-    }
-
-    private void
-    setToChecked(int pos, ImageView v) {
-        mCheckedMap.put(pos, System.currentTimeMillis());
-        v.setImageResource(R.drawable.btncheck_on);
-        // Sometimes check-box view is not updated as expected.
-        // I'm not sure this can be workaround... but, let's try.
-        v.invalidate();
-        mCheckListener.onStateChanged(mCheckedMap.size(), pos, true);
-    }
-
-    private void
-    setToUnchecked(int pos, ImageView v) {
-        mCheckedMap.remove(pos);
-        v.setImageResource(R.drawable.btncheck_off);
-        // See comments at 'MusicsActivity.setToChecked()' for details.
-        v.invalidate();
-        mCheckListener.onStateChanged(mCheckedMap.size(), pos, false);
     }
 
     private String
@@ -267,7 +254,7 @@ public class MusicsAdapter extends ResourceCursorAdapter {
     @Override
     public void
     bindView(View v, Context context, Cursor cur) {
-        ImageView checkv     = (ImageView)v.findViewById(R.id.checkbtn);
+        CheckBox  checkv     = (CheckBox)v.findViewById(R.id.checkbtn);
         ImageView thumbnailv = (ImageView)v.findViewById(R.id.thumbnail);
         TextView  titlev     = (TextView)v.findViewById(R.id.title);
         TextView  authorv    = (TextView)v.findViewById(R.id.author);
@@ -276,12 +263,12 @@ public class MusicsAdapter extends ResourceCursorAdapter {
 
         int pos = cur.getPosition();
         checkv.setTag(VTAGKEY_POS, pos);
-        checkv.setOnClickListener(mItemCheckOnClick);
+        checkv.setOnCheckedChangeListener(mItemCheckOnCheckedChange);
 
         if (mCheckedMap.containsKey(pos))
-            checkv.setImageResource(R.drawable.btncheck_on);
+            checkv.setChecked(true);
         else
-            checkv.setImageResource(R.drawable.btncheck_off);
+            checkv.setChecked(false);
 
         titlev.setText(cur.getString(COLI_TITLE));
         String author = cur.getString(COLI_AUTHOR);

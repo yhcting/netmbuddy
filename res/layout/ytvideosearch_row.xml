@@ -73,14 +73,11 @@
             android:singleLine="true"
             />
     </RelativeLayout>
-    <ImageView
+    <CheckBox
         android:id="@+id/checkbtn"
         android:layout_width="@dimen/thumbnail_height"
         android:layout_height="@dimen/thumbnail_height"
         android:layout_gravity="center_vertical"
-        android:gravity="center"
-        android:scaleType="fitCenter"
-        android:src="@drawable/btncheck_off"
-        android:clickable="true"
+        android:focusable="false"
         />
 </LinearLayout>
