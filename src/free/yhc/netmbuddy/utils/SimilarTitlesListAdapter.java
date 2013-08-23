@@ -25,6 +25,7 @@ import android.database.Cursor;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.TextView;
 import free.yhc.netmbuddy.R;
@@ -88,7 +89,7 @@ class SimilarTitlesListAdapter extends BaseAdapter {
         else
             v = UiUtils.inflateLayout(mContext, R.layout.similar_titles_row);
 
-        ImageView checkv     = (ImageView)v.findViewById(R.id.checkbtn);
+        CheckBox  checkv     = (CheckBox)v.findViewById(R.id.checkbtn);
         ImageView thumbnailv = (ImageView)v.findViewById(R.id.thumbnail);
         TextView  titlev     = (TextView)v.findViewById(R.id.title);
         TextView  authorv    = (TextView)v.findViewById(R.id.author);
