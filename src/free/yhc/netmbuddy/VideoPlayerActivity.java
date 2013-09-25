@@ -137,7 +137,7 @@ UnexpectedExceptionHandler.Evidence {
                         //   hiding navigation bar as soon as showing it (like above CASE).
                         //
                         // But, this is NOT critical. So, ignore it at this time.
-                        if (DBG) P.v("onSystemUiVisibilityChange : visibility(" + visibility + ")");
+                        if (DBG) P.v("visibility(" + visibility + ")");
                         if (0 != (diff & View.SYSTEM_UI_FLAG_HIDE_NAVIGATION)
                             && 0 == (visibility & View.SYSTEM_UI_FLAG_HIDE_NAVIGATION))
                             updateUserInterfaceVisibility(true);

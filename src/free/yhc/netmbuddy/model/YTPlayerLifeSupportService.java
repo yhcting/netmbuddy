@@ -36,7 +36,7 @@ UnexpectedExceptionHandler.Evidence {
 
     private static void
     start() {
-        if (DBG) P.v("start");
+        if (DBG) P.v("Enter");
         Intent i = new Intent(Utils.getAppContext(),
                               YTPlayerLifeSupportService.class);
         i.setAction(ACTION_START);
@@ -45,7 +45,7 @@ UnexpectedExceptionHandler.Evidence {
 
     private static void
     stop() {
-        if (DBG) P.v("stop");
+        if (DBG) P.v("Enter");
         Intent i = new Intent(Utils.getAppContext(),
                               YTPlayerLifeSupportService.class);
         Utils.getAppContext().stopService(i);
@@ -84,7 +84,7 @@ UnexpectedExceptionHandler.Evidence {
     @Override
     public void
     onCreate() {
-        if (DBG) P.v("onCreate");
+        if (DBG) P.v("Enter");
         super.onCreate();
         UnexpectedExceptionHandler.get().registerModule(this);
     }
@@ -109,7 +109,7 @@ UnexpectedExceptionHandler.Evidence {
     @Override
     public void
     onDestroy() {
-        if (DBG) P.v("onDestroy");
+        if (DBG) P.v("Enter");
         UnexpectedExceptionHandler.get().unregisterModule(this);
         super.onDestroy();
     }

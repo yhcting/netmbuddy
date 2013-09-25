@@ -246,8 +246,8 @@ public class Utils {
     }
 
     public static class Logger {
-        private final Class _mCls;
-        public Logger(Class cls) {
+        private final Class<?> _mCls;
+        public Logger(Class<?> cls) {
             _mCls = cls;
         }
         // For logging
@@ -260,9 +260,12 @@ public class Utils {
     }
 
     private static void
-    log(Class cls, LogLV lv, String msg) {
+    log(Class<?> cls, LogLV lv, String msg) {
         if (null == msg)
             return;
+
+        StackTraceElement ste = Thread.currentThread().getStackTrace()[5];
+        msg = ste.getClassName() + "/" + ste.getMethodName() + "(" + ste.getLineNumber() + ") : " + msg;
 
         if (!LOGF) {
             switch(lv) {

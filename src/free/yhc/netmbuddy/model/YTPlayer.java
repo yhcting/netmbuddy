@@ -269,7 +269,7 @@ UnexpectedExceptionHandler.Evidence {
 
             String exst = intent.getExtras().getString(TelephonyManager.EXTRA_STATE);
             if (null == exst) {
-                if (DBG) P.w("TelephonyMonitor Unexpected broadcast message");
+                if (DBG) P.w("Unexpected broadcast message");
                 return;
             }
 
@@ -280,7 +280,7 @@ UnexpectedExceptionHandler.Evidence {
                 if (!YTPlayer.get().ytpIsSuspended())
                     YTPlayer.get().ytpSuspendPlaying();
             } else {
-                if (DBG) P.w("TelephonyMonitor Unexpected extra state : " + exst);
+                if (DBG) P.w("Unexpected extra state : " + exst);
                 return; // ignore others.
             }
         }
@@ -1210,7 +1210,7 @@ UnexpectedExceptionHandler.Evidence {
 
     private void
     prepareVideoStreaming(final String ytvid) {
-        if (DBG) P.v("Prepare Video Streaming : " + ytvid);
+        if (DBG) P.v("ytid : " + ytvid);
 
         YTHacker hacker = RTState.get().getCachedYtHacker(ytvid);
         if (null != hacker
@@ -1289,7 +1289,7 @@ UnexpectedExceptionHandler.Evidence {
 
     private void
     prepareCachedVideo(File cachedVid) {
-        if (DBG) P.v("Prepare Cached video: " + cachedVid.getAbsolutePath());
+        if (DBG) P.v("video file path: " + cachedVid.getAbsolutePath());
         // We have cached one.
         // So play in local!
         try {

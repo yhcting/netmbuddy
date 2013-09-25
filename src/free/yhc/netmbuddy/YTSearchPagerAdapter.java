@@ -204,14 +204,14 @@ public class YTSearchPagerAdapter extends FragmentPagerAdapterEx {
     @Override
     public Object
     instantiateItem(ViewGroup container, int position) {
-        if (DBG) P.v("instantiateItem : " + position);
+        if (DBG) P.v("pos : " + position);
         return super.instantiateItem(container, position);
     }
 
     @Override
     public void
     destroyItem(ViewGroup container, int position, Object object) {
-        if (DBG) P.v("destroyItem : " + position);
+        if (DBG) P.v("pos : " + position);
         YTSearchFragment fragment = (YTSearchFragment)getFragmentManager()
                                         .findFragmentByTag(getFragmentName(position));
         super.destroyItem(container, position, object);

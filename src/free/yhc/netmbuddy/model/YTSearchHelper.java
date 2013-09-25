@@ -405,13 +405,13 @@ public class YTSearchHelper {
                 eAssert(false);
             }
         } catch (IOException e) {
-            if (DBG) P.w("YTSearchHelper.JobHandler : DOM IO error!");
+            if (DBG) P.w("DOM IO error!");
             return new SearchReturn(null, Err.IO_NET);
         } catch (SAXException e) {
-            if (DBG) P.w("YTSearchHelper.JobHandler : Parse unexpected format!");
+            if (DBG) P.w("Parse unexpected format!");
             return new SearchReturn(null, Err.FEED_FORMAT);
         } catch (ParserConfigurationException pe) {
-            if (DBG) P.w("YTSearchHelper.JobHandler : Parse cofiguration exception!");
+            if (DBG) P.w("Parse cofiguration exception!");
             return new SearchReturn(null, Err.UNKNOWN);
         } catch (NetLoader.LocalException e) {
             eAssert(NetLoader.Err.NO_ERR != e.error());

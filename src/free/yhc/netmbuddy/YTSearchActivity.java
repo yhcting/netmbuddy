@@ -37,7 +37,6 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import free.yhc.netmbuddy.model.Policy;
 import free.yhc.netmbuddy.model.SearchSuggestionProvider;
-import free.yhc.netmbuddy.model.UnexpectedExceptionHandler;
 import free.yhc.netmbuddy.model.YTPlayer;
 import free.yhc.netmbuddy.model.YTSearchHelper;
 import free.yhc.netmbuddy.utils.Utils;
@@ -74,7 +73,7 @@ public abstract class YTSearchActivity extends FragmentActivity {
         @Override
         public void
         onPageSelected(int arg0) {
-            if (DBG) P.v("OnPageViewChange : onPageSelected : " + arg0);
+            if (DBG) P.v("arg : " + arg0);
             adjustPageUserAction(getPagerAdapter().posToPage(arg0));
         }
 
@@ -87,7 +86,7 @@ public abstract class YTSearchActivity extends FragmentActivity {
         @Override
         public void
         onPageScrollStateChanged(int arg0) {
-            if (DBG) P.v("OnPageViewChange : onPageScrollStateChanged : " + arg0);
+            if (DBG) P.v("arg : " + arg0);
             YTSearchActivity.this.closeContextMenu();
         }
     }
