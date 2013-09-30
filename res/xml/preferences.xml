@@ -25,6 +25,14 @@
             android:entries="@array/strarr_pref_quality_entry"
             android:entryValues="@array/strarr_pref_quality_value"
             />
+        <ListPreference
+            android:title="@string/pref_use_wifi_only"
+            android:summary="@string/pref_use_wifi_only_desc"
+            android:key="@string/csuse_wifi_only"
+            android:defaultValue="@string/csoff"
+            android:entries="@array/strarr_on_off_entry"
+            android:entryValues="@array/strarr_on_off_value"
+            />
     </PreferenceCategory>
     <PreferenceCategory android:title="@string/pref_cat_ux">
         <ListPreference

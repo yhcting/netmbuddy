@@ -172,6 +172,9 @@ public class NetLoader {
             throw new LocalException(Err.UNKNOWN);
         }
 
+        if (!Utils.isNetworkAvailable())
+            throw new LocalException(Err.IO_NET);
+
         String uriString = uri.toString();
         if (source)
             uriString = uriString.replace(uri.getScheme() + "://" + uri.getHost(), "");

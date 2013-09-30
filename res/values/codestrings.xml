@@ -15,6 +15,7 @@ Usually, used for matching resource and code.
     <string name="csstop_on_back">stop_on_back</string>
     <string name="cserr_report">err_report</string>
     <string name="cstitle_similarity_threshold">title_similarity_threshold</string>
+    <string name="csuse_wifi_only">use_wifi_only</string>
     
     <string name="csVERYLOW">VERYLOW</string>
     <string name="csLOW">LOW</string>

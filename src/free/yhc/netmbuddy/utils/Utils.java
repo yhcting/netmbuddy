@@ -346,12 +346,17 @@ public class Utils {
      */
     public static boolean
     isNetworkAvailable() {
+
         ConnectivityManager cm = (ConnectivityManager)getAppContext().getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo wifiNi = cm.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
-        NetworkInfo mobileNi = cm.getNetworkInfo(ConnectivityManager.TYPE_MOBILE);
-        if ((null != wifiNi && wifiNi.isConnected())
-            || (null != mobileNi && mobileNi.isConnected()))
-            return true;
+        NetworkInfo ni;
+
+        if (isPrefUseWifiOnly())
+            ni = cm.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
+        else
+            ni = cm.getActiveNetworkInfo();
+
+        if (null != ni)
+            return ni.isConnectedOrConnecting();
         else
             return false;
     }
@@ -516,6 +521,12 @@ public class Utils {
         return v.equals(getResText(R.string.cson));
     }
 
+    private static boolean
+    isPrefUseWifiOnly() {
+        return sPrefs.getString(getResText(R.string.csuse_wifi_only),
+                                getResText(R.string.csoff))
+                     .equals(getResText(R.string.cson));
+    }
     // ------------------------------------------------------------------------
     //
     // Min Max
