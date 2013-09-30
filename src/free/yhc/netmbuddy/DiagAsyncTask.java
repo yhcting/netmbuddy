@@ -220,7 +220,10 @@ UnexpectedExceptionHandler.Evidence {
         if (null != mWorker)
             mWorker.onCancelled(this);
 
-        mDialog.dismiss();
+        // See comments in onPostRun
+        try {
+            mDialog.dismiss();
+        } catch (IllegalArgumentException ignored) { }
     }
 
     @Override
@@ -231,7 +234,12 @@ UnexpectedExceptionHandler.Evidence {
         if (!mUserCancelled && null != mWorker)
             mWorker.onPostExecute(this, result);
 
-        mDialog.dismiss();
+        // This may be called after context(ie. Activity) is destroyed.
+        // In this case, dialog is no more attached windowManager and exception is issued.
+        // we need to ignore this exception here with out concern.
+        try {
+            mDialog.dismiss();
+        } catch (IllegalArgumentException ignored) { }
     }
 
     @Override
