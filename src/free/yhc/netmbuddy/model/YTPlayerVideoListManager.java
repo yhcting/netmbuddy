@@ -31,42 +31,43 @@ class YTPlayerVideoListManager {
     private static final Utils.Logger P = new Utils.Logger(YTPlayerVideoListManager.class);
 
     // NOTE!
-    // _mVs is accessed on by UIThread.
+    // mVs is accessed on by UIThread.
     // So, synchronization is not required.
-    private YTPlayer.Video[]    _mVs = null; // video array
-    private int                 _mVi = -1; // video index
-    private OnListChangedListener   _mListener = null;
+    private final Object        mVsLock = new Object();
+    private YTPlayer.Video[]    mVs = null; // video array
+    private int                 mVi = -1;   // video index
+    private OnListChangedListener   mListener = null;
 
     interface OnListChangedListener {
         void onChanged(YTPlayerVideoListManager vm);
     }
 
     YTPlayerVideoListManager(OnListChangedListener listener) {
-        _mListener = listener;
+        mListener = listener;
     }
 
     void
     setOnListChangedListener(OnListChangedListener listener) {
         eAssert(Utils.isUiThread());
-        _mListener = listener;
+        mListener = listener;
     }
 
     void
     clearOnListChangedListener() {
         eAssert(Utils.isUiThread());
-        _mListener = null;
+        mListener = null;
     }
 
     void
     notifyToListChangedListener() {
-        if (null != _mListener)
-            _mListener.onChanged(this);
+        if (null != mListener)
+            mListener.onChanged(this);
     }
 
     int
     size() {
         eAssert(Utils.isUiThread());
-        return _mVs.length;
+        return mVs.length;
     }
 
     boolean
@@ -79,52 +80,52 @@ class YTPlayerVideoListManager {
     hasNextVideo() {
         eAssert(Utils.isUiThread());
         return hasActiveVideo()
-               && _mVi < (_mVs.length - 1);
+               && mVi < (mVs.length - 1);
     }
 
     boolean
     hasPrevVideo() {
         eAssert(Utils.isUiThread());
-        return hasActiveVideo() && 0 < _mVi;
+        return hasActiveVideo() && 0 < mVi;
     }
 
     boolean
     isValidVideoIndex(int i) {
-        return 0 <= i && i < _mVs.length;
+        return 0 <= i && i < mVs.length;
     }
 
     void
     reset() {
         eAssert(Utils.isUiThread());
-        _mVs = null;
-        _mVi = -1;
+        mVs = null;
+        mVi = -1;
         notifyToListChangedListener();
     }
 
     void
     setVideoList(YTPlayer.Video[] vs) {
         eAssert(Utils.isUiThread());
-        _mVs = vs;
-        if (null == _mVs || 0 >= _mVs.length)
+        mVs = vs;
+        if (null == mVs || 0 >= mVs.length)
             reset();
-        else if(_mVs.length > 0)
-            _mVi = 0;
+        else if(mVs.length > 0)
+            mVi = 0;
         notifyToListChangedListener();
     }
 
     YTPlayer.Video[]
     getVideoList() {
         eAssert(Utils.isUiThread());
-        return _mVs;
+        return mVs;
     }
 
     void
     appendVideo(YTPlayer.Video vids[]) {
         eAssert(Utils.isUiThread());
-        YTPlayer.Video[] newvs = new YTPlayer.Video[_mVs.length + vids.length];
-        System.arraycopy(_mVs, 0, newvs, 0, _mVs.length);
-        System.arraycopy(vids, 0, newvs, _mVs.length, vids.length);
-        _mVs = newvs;
+        YTPlayer.Video[] newvs = new YTPlayer.Video[mVs.length + vids.length];
+        System.arraycopy(mVs, 0, newvs, 0, mVs.length);
+        System.arraycopy(vids, 0, newvs, mVs.length, vids.length);
+        mVs = newvs;
         notifyToListChangedListener();
     }
 
@@ -132,31 +133,31 @@ class YTPlayerVideoListManager {
      *
      * @param index
      * @return
-     *   false if -1 == _mVi after removing. Otherwise true.
+     *   false if -1 == mVi after removing. Otherwise true.
      */
     void
     removeVideo(String ytvid) {
         eAssert(Utils.isUiThread());
-        if (null == _mVs)
+        if (null == mVs)
             return;
 
-        ArrayList<YTPlayer.Video> al = new ArrayList<YTPlayer.Video>(_mVs.length);
+        ArrayList<YTPlayer.Video> al = new ArrayList<YTPlayer.Video>(mVs.length);
         int adjust = 0;
-        for (int i = 0; i < _mVs.length; i++) {
-            if (!_mVs[i].ytvid.equals(ytvid))
-                al.add(_mVs[i]);
-            else if (i <= _mVi)
+        for (int i = 0; i < mVs.length; i++) {
+            if (!mVs[i].ytvid.equals(ytvid))
+                al.add(mVs[i]);
+            else if (i <= mVi)
                 adjust++;
         }
-        _mVs = al.toArray(new YTPlayer.Video[0]);
-        _mVi = _mVi - adjust;
-        eAssert(_mVi >= 0 || _mVi <= _mVs.length);
+        mVs = al.toArray(new YTPlayer.Video[0]);
+        mVi = mVi - adjust;
+        eAssert(mVi >= 0 || mVi <= mVs.length);
         notifyToListChangedListener();
     }
 
     int
     getActiveVideoIndex() {
-        return _mVi;
+        return mVi;
     }
 
     /**
@@ -167,9 +168,9 @@ class YTPlayerVideoListManager {
      */
     int
     findVideoExcept(int from, String ytvid) {
-        eAssert(from >= 0 && from <= _mVs.length);
-        for (int i = from; i < _mVs.length; i++) {
-            if (!ytvid.equals(_mVs[i].ytvid))
+        eAssert(from >= 0 && from <= mVs.length);
+        for (int i = from; i < mVs.length; i++) {
+            if (!ytvid.equals(mVs[i].ytvid))
                 return i;
         }
         return -1;
@@ -178,8 +179,8 @@ class YTPlayerVideoListManager {
     YTPlayer.Video
     getActiveVideo() {
         eAssert(Utils.isUiThread());
-        if (null != _mVs && 0 <= _mVi && _mVi < _mVs.length)
-            return _mVs[_mVi];
+        if (null != mVs && 0 <= mVi && mVi < mVs.length)
+            return mVs[mVi];
         return null;
     }
 
@@ -188,15 +189,15 @@ class YTPlayerVideoListManager {
         eAssert(Utils.isUiThread());
         if (!hasNextVideo())
             return null;
-        return _mVs[_mVi + 1];
+        return mVs[mVi + 1];
     }
 
     boolean
     moveTo(int index) {
         eAssert(Utils.isUiThread());
-        if (index < 0 || index >= _mVs.length)
+        if (index < 0 || index >= mVs.length)
             return false;
-        _mVi = index;
+        mVi = index;
         return true;
     }
 
@@ -209,12 +210,12 @@ class YTPlayerVideoListManager {
     boolean
     moveToNext() {
         eAssert(Utils.isUiThread());
-        return moveTo(_mVi + 1);
+        return moveTo(mVi + 1);
     }
 
     boolean
     moveToPrev() {
         eAssert(Utils.isUiThread());
-        return moveTo(_mVi - 1);
+        return moveTo(mVi - 1);
     }
 }

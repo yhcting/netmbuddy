@@ -92,6 +92,10 @@ UnexpectedExceptionHandler.Evidence {
 
     private void
     startVideos(YTPlayer.Video[] vs) {
+        if (!Utils.isNetworkAvailable()) {
+            UiUtils.showTextToast(this, Err.IO_NET.getMessage());
+            return;
+        }
         mMp.startVideos(vs);
     }
 

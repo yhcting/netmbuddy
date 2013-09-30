@@ -92,6 +92,10 @@
     <string name="set_bookmark">북마크 저장</string>
     <string name="enter_bookmark_name">북마크 이름 입력</string>
     <string name="search_similar_titles">유사 제목 검색</string>
+    <string name="tts_title_head_pre">다음 비디오는</string>
+    <string name="tts_title_head_post">입니다</string>
+    <string name="tts_title_tail_pre">지금까지</string>
+    <string name="tts_title_tail_post">였습니다</string>
 
     <string name="share_pl_attachment">재생목록공유</string>
     <string name="share_pl_email_subject">NetMBuddy 재생목록 공유</string>
@@ -106,6 +110,10 @@
     <string name="pref_quality_desc">음악 재생시 [일반]을 권장 합니다. 비디오에 따라 지원하지 않는 타입도 있습니다. 이 경우, 적절한 다른 타입이 선택됩니다.</string>
     <string name="pref_use_wifi_only">Wifi 모드</string>
     <string name="pref_use_wifi_only_desc">네트워크 접근시 Wifi만 사용합니다.</string>
+    <string name="pref_head_tts">재생 전 타이틀 읽어주기</string>
+    <string name="pref_head_tts_desc">비디오 재생 전 타이틀을 읽어줍니다.</string>
+    <string name="pref_tail_tts">재생 후 타이틀 읽어주기</string>
+    <string name="pref_tail_tts_desc">비디오 재생 후 타이틀을 읽어줍니다.</string>
     <string name="pref_cat_ux">사용자 경험</string>
     <string name="pref_lockscreen">잠금화면 플레이어</string>
     <string name="pref_lockscreen_desc">잠금화면 위에 플레이어 컨트롤을 위한 화면사용을 활성화 시킵니다.</string>
@@ -171,6 +179,7 @@
     <string name="msg_fail_seek_to_bookmark">북마크로 이동하는데 실패했습니다. 현재 재생 중인 음악에 대해서만 북마크로 이동이 가능합니다.</string>
     <string name="msg_empty_bookmarks">설정된 북마크가 존재하지 않습니다.</string>
     <string name="msg_no_similar_titles">장치 재생목록에 유사한 제목의 비디오가 존재하지 않습니다.</string>
+    <string name="msg_couldnt_use_title_tts">타이틀 읽어주기를 사용할 수 없습니다.</string>
 
     <string name="err_no_err">성공</string>
     <string name="err_unknown">알 수 없는 오류가 발생했습니다.</string>

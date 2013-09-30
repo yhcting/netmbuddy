@@ -29,7 +29,6 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.SearchManager;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.database.Cursor;
@@ -110,11 +109,18 @@ UnexpectedExceptionHandler.Evidence {
      */
     private void
     playMusics(Cursor c) {
+        if (!Utils.isNetworkAvailable()) {
+            UiUtils.showTextToast(this, Err.IO_NET.getMessage());
+            c.close();
+            return;
+        }
+
         if (!c.moveToFirst()) {
             UiUtils.showTextToast(this, R.string.msg_empty_playlist);
             c.close();
             return;
         }
+
         ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
         playerv.setVisibility(View.VISIBLE);
         mMp.startVideos(c,

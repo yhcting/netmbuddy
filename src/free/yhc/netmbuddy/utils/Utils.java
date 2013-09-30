@@ -527,6 +527,20 @@ public class Utils {
                                 getResText(R.string.csoff))
                      .equals(getResText(R.string.cson));
     }
+
+    public static boolean
+    isPrefHeadTTS() {
+        return sPrefs.getString(getResText(R.string.cshead_tts),
+                                getResText(R.string.csoff))
+                     .equals(getResText(R.string.cson));
+    }
+
+    public static boolean
+    isPrefTailTTS() {
+        return sPrefs.getString(getResText(R.string.cstail_tts),
+                                getResText(R.string.csoff))
+                     .equals(getResText(R.string.cson));
+    }
     // ------------------------------------------------------------------------
     //
     // Min Max

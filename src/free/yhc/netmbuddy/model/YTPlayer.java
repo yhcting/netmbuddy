@@ -26,6 +26,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Random;
@@ -35,6 +36,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
@@ -44,6 +46,8 @@ import android.net.wifi.WifiManager;
 import android.net.wifi.WifiManager.WifiLock;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
+import android.preference.PreferenceManager;
+import android.speech.tts.TextToSpeech;
 import android.telephony.TelephonyManager;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -68,6 +72,9 @@ MediaPlayer.OnVideoSizeChangedListener,
 MediaPlayer.OnSeekCompleteListener,
 // To support video
 SurfaceHolder.Callback,
+// To support title TTS
+TextToSpeech.OnInitListener,
+SharedPreferences.OnSharedPreferenceChangeListener,
 UnexpectedExceptionHandler.Evidence {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(YTPlayer.class);
@@ -137,6 +144,8 @@ UnexpectedExceptionHandler.Evidence {
     private NetLoader           mLoader     = null;
     // assign dummy instance to remove "if (null != mYtDnr)"
     private YTDownloader        mYtDnr      = new YTDownloader();
+    private TextToSpeech        mTts        = null;
+    private TTSState            mTtsState   = TTSState.NOTUSED;
 
     // ------------------------------------------------------------------------
     // Runtime Status
@@ -212,6 +221,12 @@ UnexpectedExceptionHandler.Evidence {
     private static enum YTPState {
         IDLE,
         SUSPENDED,
+    }
+
+    private static enum TTSState {
+        NOTUSED,
+        PREPARING,
+        READY,
     }
 
     public static class Video {
@@ -947,6 +962,117 @@ UnexpectedExceptionHandler.Evidence {
 
     // ========================================================================
     //
+    // TTS Control
+    //
+    // ========================================================================
+    private void
+    ttsSetState(TTSState newState) {
+        mTtsState = newState;
+    }
+
+    private TTSState
+    ttsGetState() {
+        return mTtsState;
+    }
+
+    private boolean
+    ttsIsReady() {
+        return TTSState.READY == ttsGetState();
+    }
+
+    private void
+    ttsOpen() {
+        if (TTSState.NOTUSED != ttsGetState()) {
+            if (DBG) P.i("TTS already opened");
+            return;
+        }
+        ttsSetState(TTSState.PREPARING);
+        mTts = new TextToSpeech(Utils.getAppContext(), this);
+    }
+
+    private void
+    ttsSpeak(final String text, final String ytvid, final Runnable followingAction) {
+        if (!ttsIsReady())
+            return;
+
+        mTts.setOnUtteranceCompletedListener(new TextToSpeech.OnUtteranceCompletedListener() {
+            @Override
+            public void
+            onUtteranceCompleted(final String utteranceId) {
+                Utils.getUiHandler().postDelayed(new Runnable() {
+                    @Override
+                    public void
+                    run() {
+                        Video v = mVlm.getActiveVideo();
+                        // NOTE : IMPORTANT
+                        // ttsSpeak->ytvid is NOT available here!
+                        // This is doublely - 2nd level - nested function.
+                        if (null != v
+                            && utteranceId.equals(v.ytvid))
+                            followingAction.run();
+                    }
+                },
+                Policy.YTPLAYER_TTS_SPARE_TIME);
+            }
+        });
+        try {
+            Thread.sleep(Policy.YTPLAYER_TTS_SPARE_TIME);
+        } catch (InterruptedException ignored) {}
+        HashMap<String, String> param = new HashMap<String, String>();
+        param.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, ytvid);
+        mTts.speak(text, TextToSpeech.QUEUE_FLUSH, param);
+    }
+
+    private void
+    ttsStop() {
+        if (TTSState.READY == ttsGetState()
+            && null != mTts)
+            mTts.stop();
+    }
+
+    private void
+    ttsClose() {
+        if (TTSState.NOTUSED == ttsGetState()) {
+            if (DBG) P.i("TTS already closed");
+            return;
+        }
+        ttsSetState(TTSState.NOTUSED);
+        mTts.shutdown();
+        mTts = null;
+    }
+
+    // Implements TextToSpeech.OnInitListener.
+    @Override
+    public void
+    onInit(int status) {
+        // status can be either TextToSpeech.SUCCESS or TextToSpeech.ERROR.
+        if (status == TextToSpeech.SUCCESS) {
+            // set to current locale.
+            int result = mTts.setLanguage(Utils.getAppContext().getResources().getConfiguration().locale);
+            if (result == TextToSpeech.LANG_MISSING_DATA ||
+                result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                // Language data is missing or the language is not supported.
+                if (DBG) P.w("Language is not available.");
+                // code to show toast here is... really acceptable in terms of software design?
+                //UiUtils.showTextToast(Utils.getAppContext(), R.string.msg_couldnt_use_title_tts);
+                ttsClose();
+            } else {
+                // The TTS engine has been successfully initialized.
+                // Allow the user to press the button for the app to speak again.
+                // Read to use TTS
+                ttsSetState(TTSState.READY);
+            }
+        } else {
+            // Initialization failed.
+            if (DBG) P.w("Could not initialize TextToSpeech.");
+            // code to show toast here is... really acceptable in terms of software design?
+            //UiUtils.showTextToast(Utils.getAppContext(), R.string.msg_couldnt_use_title_tts);
+            ttsClose();
+        }
+    }
+
+    // ========================================================================
+    //
     // General Control
     //
     // ========================================================================
@@ -1309,11 +1435,11 @@ UnexpectedExceptionHandler.Evidence {
     private void
     startVideo(Video v, boolean recovery) {
         if (null != v)
-            startVideo(v.ytvid, v.volume, recovery);
+            startVideo(v.ytvid, v.volume, v.title, recovery);
     }
 
     private void
-    startVideo(final String ytvid, final int volume, boolean recovery) {
+    startVideo(final String ytvid, final int volume, final String title, boolean recovery) {
         eAssert(0 <= volume && volume <= 100);
 
         // Reset flag regarding video size.
@@ -1389,15 +1515,30 @@ UnexpectedExceptionHandler.Evidence {
         //
         // Above two reasons, caching is started as soon as video is started.
         prepareNext();
-        File cachedVid = getCachedVideo(ytvid);
-        if (cachedVid.exists() && cachedVid.canRead())
-            prepareCachedVideo(cachedVid);
-        else {
-            if (!Utils.isNetworkAvailable())
-                mStartVideoRecovery.executeRecoveryStart(new Video(ytvid, "", "", volume, 0, 0), 1000);
-            else
-                prepareVideoStreaming(ytvid);
-        }
+
+        Runnable action = new Runnable() {
+            @Override
+            public void
+            run() {
+                File cachedVid = getCachedVideo(ytvid);
+                if (cachedVid.exists() && cachedVid.canRead())
+                    prepareCachedVideo(cachedVid);
+                else {
+                    if (!Utils.isNetworkAvailable())
+                        mStartVideoRecovery.executeRecoveryStart(new Video(ytvid, "", "", volume, 0, 0), 1000);
+                    else
+                        prepareVideoStreaming(ytvid);
+                }
+            }
+        };
+
+        if (Utils.isPrefHeadTTS()) {
+            String text = Utils.getResText(R.string.tts_title_head_pre) + " "
+                          + title + " "
+                          + Utils.getResText(R.string.tts_title_head_post);
+            ttsSpeak(text, ytvid, action);
+        } else
+            action.run();
     }
 
     private void
@@ -1439,6 +1580,7 @@ UnexpectedExceptionHandler.Evidence {
         if (null != mYtHack)
             mYtHack.forceCancel();
 
+        ttsStop();
         if (StopState.DONE == st
             && Utils.isPrefRepeat()) {
             if (mVlm.moveToFist()) {
@@ -1619,7 +1761,23 @@ UnexpectedExceptionHandler.Evidence {
     onCompletion(MediaPlayer mp) {
         if (DBG) P.v("MPlayer - onCompletion");
         mpSetState(MPState.PLAYBACK_COMPLETED);
-        startNext();
+        Runnable action = new Runnable() {
+            @Override
+            public void
+            run() {
+                startNext();
+            }
+        };
+
+        if (mVlm.hasActiveVideo()
+            && Utils.isPrefTailTTS()) {
+            Video v  = mVlm.getActiveVideo();
+            String text = Utils.getResText(R.string.tts_title_tail_pre) + " "
+                          + v.title + " "
+                          + Utils.getResText(R.string.tts_title_tail_post);
+            ttsSpeak(text, v.ytvid, action);
+        } else
+            action.run();
     }
 
     private void
@@ -1753,6 +1911,47 @@ UnexpectedExceptionHandler.Evidence {
         return false;
     }
 
+    // ============================================================================
+    //
+    // Override for "SharedPreferences"
+    //
+    // ============================================================================
+    @Override
+    public void
+    onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+        if (!(Utils.getResText(R.string.cshead_tts).equals(key)
+                || Utils.getResText(R.string.cstail_tts).equals(key)))
+            return; // don't care others
+
+        boolean bActionOn, bHeadOn, bTailOn;
+        bActionOn = Utils.getResText(R.string.cson)
+                        .equals(sharedPreferences.getString(key,
+                                                            Utils.getResText(R.string.csoff)));
+        bHeadOn = Utils.getResText(R.string.cson)
+                      .equals(sharedPreferences.getString(Utils.getResText(R.string.cshead_tts),
+                                                          Utils.getResText(R.string.csoff)));
+        bTailOn = Utils.getResText(R.string.cson)
+                      .equals(sharedPreferences.getString(Utils.getResText(R.string.cstail_tts),
+                                                          Utils.getResText(R.string.csoff)));
+
+        if (bActionOn) {
+            if(bHeadOn && bTailOn)
+                return; // one of TTS option is already 'on', nothing to do in this case.
+            else if (!bHeadOn && !bTailOn)
+                eAssert(false); // This SHOULD NOT be happen
+
+            // Open TTS
+            ttsOpen();
+        } else {
+            if (bHeadOn || bTailOn)
+                return; // one TTS option is still 'on', nothing to do in this case.
+            else if (bHeadOn && bTailOn)
+                eAssert(false); // This SHOULD NOT be happen
+
+            // Close TTS
+            ttsClose();
+        }
+    }
     // ============================================================================
     //
     // Package interfaces (Usually for YTPLayerUI)
@@ -1910,6 +2109,13 @@ UnexpectedExceptionHandler.Evidence {
                     iter.next().onChanged();
             }
         });
+
+        // Check TTS usage
+        if (Utils.isPrefHeadTTS() || Utils.isPrefTailTTS())
+            ttsOpen();
+
+        PreferenceManager.getDefaultSharedPreferences(Utils.getAppContext())
+                         .registerOnSharedPreferenceChangeListener(this);
     }
 
     @Override

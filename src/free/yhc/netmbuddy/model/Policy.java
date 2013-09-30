@@ -91,6 +91,9 @@ public class Policy {
     public static final long    YTPLAYER_CACHING_DELAY  = 10000; // 10 seconds.
     public static final long    YTPLAYER_DOUBLE_TOUCH_INTERVAL  = 500;
 
+    // Time before/after TTS start/end.
+    public static final long    YTPLAYER_TTS_SPARE_TIME = 300; // ms
+
     // --------------------------------------------------------------------
     // Network access
     // --------------------------------------------------------------------

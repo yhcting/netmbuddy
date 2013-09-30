@@ -188,6 +188,11 @@ UnexpectedExceptionHandler.Evidence {
     @Override
     protected void
     onListItemClick(View view, int position, long itemId) {
+        if (!Utils.isNetworkAvailable()) {
+            UiUtils.showTextToast(getActivity(), Err.IO_NET.getMessage());
+            return;
+        }
+
         YTPlayer.Video v = getAdapter().getYTPlayerVideo(position);
         mMp.startVideos(new YTPlayer.Video[] { v });
     }

@@ -92,6 +92,10 @@
     <string name="set_bookmark">Set bookmark</string>
     <string name="enter_bookmark_name">Enter bookmark name</string>
     <string name="search_similar_titles">Search similar titles</string>
+    <string name="tts_title_head_pre">Next video is</string>
+    <string name="tts_title_head_post"></string>
+    <string name="tts_title_tail_pre">Previous video was</string>
+    <string name="tts_title_tail_post"></string>
 
     <string name="share_pl_attachment">PlaylistShareData</string>
     <string name="share_pl_email_subject">NetMBuddy Playlist Share</string>
@@ -106,6 +110,10 @@
     <string name="pref_quality_desc">Normal is recommended for musics. Some videos doesn\'t support some of listed qualities and best-fit will be selected.</string>
     <string name="pref_use_wifi_only">Wifi only</string>
     <string name="pref_use_wifi_only_desc">Use wifi only as network access</string>
+    <string name="pref_head_tts">Title speech before video</string>
+    <string name="pref_head_tts_desc">Video title is read as speech before video playing.</string>
+    <string name="pref_tail_tts">Title speech after video</string>
+    <string name="pref_tail_tts_desc">Video title is read as speech after video playing.</string>
     <string name="pref_cat_ux">User experience</string>
     <string name="pref_lockscreen">Player on lockScreen</string>
     <string name="pref_lockscreen_desc">Enable screen for controlling player on lockscreen</string>
@@ -171,6 +179,7 @@ It may takes long time(up to several minutes) in case that:\n
     <string name="msg_fail_seek_to_bookmark">Seeking to bookmark fails. Seeking to bookmark is only allowed for current playing music.</string>
     <string name="msg_empty_bookmarks">There is no bookmark.</string>
     <string name="msg_no_similar_titles">There is no similar video title in local playlist.</string>
+    <string name="msg_couldnt_use_title_tts">Title TTS is not available.</string>
 
     <string name="err_no_err">Success.</string>
     <string name="err_unknown">Unknown error.</string>

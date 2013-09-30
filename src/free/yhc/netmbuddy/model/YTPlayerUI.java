@@ -286,6 +286,7 @@ OnSharedPreferenceChangeListener {
         case INITIALIZED:
         case PREPARED_AUDIO:
         case PREPARING:
+        case PLAYBACK_COMPLETED:
             ntype = NotiManager.NotiType.STOP;
             break;
 
@@ -462,6 +463,7 @@ OnSharedPreferenceChangeListener {
         case INITIALIZED:
         case PREPARED_AUDIO:
         case PREPARING:
+        case PLAYBACK_COMPLETED:
             pvEnableButton(playv, R.drawable.ic_media_stop);
             // Set next state be moved to on click as 'Tag'
             playv.setTag(PlayBtnState.STOP);

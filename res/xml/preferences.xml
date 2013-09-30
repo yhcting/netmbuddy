@@ -33,6 +33,22 @@
             android:entries="@array/strarr_on_off_entry"
             android:entryValues="@array/strarr_on_off_value"
             />
+        <ListPreference
+            android:title="@string/pref_head_tts"
+            android:summary="@string/pref_head_tts_desc"
+            android:key="@string/cshead_tts"
+            android:defaultValue="@string/csoff"
+            android:entries="@array/strarr_on_off_entry"
+            android:entryValues="@array/strarr_on_off_value"
+            />
+        <ListPreference
+            android:title="@string/pref_tail_tts"
+            android:summary="@string/pref_tail_tts_desc"
+            android:key="@string/cstail_tts"
+            android:defaultValue="@string/csoff"
+            android:entries="@array/strarr_on_off_entry"
+            android:entryValues="@array/strarr_on_off_value"
+            />
     </PreferenceCategory>
     <PreferenceCategory android:title="@string/pref_cat_ux">
         <ListPreference
