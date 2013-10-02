@@ -1475,6 +1475,9 @@ UnexpectedExceptionHandler.Evidence {
         } else
             mErrRetry = PLAYER_ERR_RETRY;
 
+        // Stop if tts is playing
+        if (null != mYtHack)
+            mYtHack.forceCancel();
         // Stop if player is already running.
         mpStop();
         mpRelease();
@@ -1579,8 +1582,8 @@ UnexpectedExceptionHandler.Evidence {
         if (DBG) P.v("YTPlayer stopPlay : " + st.name());
         if (null != mYtHack)
             mYtHack.forceCancel();
-
         ttsStop();
+
         if (StopState.DONE == st
             && Utils.isPrefRepeat()) {
             if (mVlm.moveToFist()) {
@@ -2039,6 +2042,8 @@ UnexpectedExceptionHandler.Evidence {
 
     void
     playerStop() {
+        if (null != mYtHack)
+            mYtHack.forceCancel();
         mpStop();
     }
 
