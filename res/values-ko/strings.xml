@@ -43,6 +43,9 @@
     <string name="minutes">분</string>
     <string name="unknown">미확인</string>
     <string name="bookmarks">북마크</string>
+    <string name="beginning">시작</string>
+    <string name="end">끝</string>
+    <string name="both">양쪽</string>
 
     <string name="enter_keyword">검색어 입력</string>
     <string name="new_search">새로 검색하기</string>
@@ -110,10 +113,8 @@
     <string name="pref_quality_desc">음악 재생시 [일반]을 권장 합니다. 비디오에 따라 지원하지 않는 타입도 있습니다. 이 경우, 적절한 다른 타입이 선택됩니다.</string>
     <string name="pref_use_wifi_only">Wifi 모드</string>
     <string name="pref_use_wifi_only_desc">네트워크 접근시 Wifi만 사용합니다.</string>
-    <string name="pref_head_tts">재생 전 타이틀 읽어주기</string>
-    <string name="pref_head_tts_desc">비디오 재생 전 타이틀을 읽어줍니다.</string>
-    <string name="pref_tail_tts">재생 후 타이틀 읽어주기</string>
-    <string name="pref_tail_tts_desc">비디오 재생 후 타이틀을 읽어줍니다.</string>
+    <string name="pref_title_tts">타이틀 읽어주기</string>
+    <string name="pref_title_tts_desc">비디오 재생 전/후 타이틀을 읽어줍니다.</string>
     <string name="pref_cat_ux">사용자 경험</string>
     <string name="pref_lockscreen">잠금화면 플레이어</string>
     <string name="pref_lockscreen_desc">잠금화면 위에 플레이어 컨트롤을 위한 화면사용을 활성화 시킵니다.</string>

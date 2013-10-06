@@ -43,6 +43,9 @@
     <string name="minutes">min.</string>
     <string name="unknown">Unknown</string>
     <string name="bookmarks">Bookmarks</string>
+    <string name="beginning">Beginning</string>
+    <string name="end">End</string>
+    <string name="both">Both</string>
 
     <string name="enter_keyword">Enter search keyword</string>
     <string name="new_search">New search</string>
@@ -110,10 +113,8 @@
     <string name="pref_quality_desc">Normal is recommended for musics. Some videos doesn\'t support some of listed qualities and best-fit will be selected.</string>
     <string name="pref_use_wifi_only">Wifi only</string>
     <string name="pref_use_wifi_only_desc">Use wifi only as network access</string>
-    <string name="pref_head_tts">Title speech before video</string>
-    <string name="pref_head_tts_desc">Video title is read as speech before video playing.</string>
-    <string name="pref_tail_tts">Title speech after video</string>
-    <string name="pref_tail_tts_desc">Video title is read as speech after video playing.</string>
+    <string name="pref_title_tts">Title to speech</string>
+    <string name="pref_title_tts_desc">Video title is read as speech before/after video playing.</string>
     <string name="pref_cat_ux">User experience</string>
     <string name="pref_lockscreen">Player on lockScreen</string>
     <string name="pref_lockscreen_desc">Enable screen for controlling player on lockscreen</string>

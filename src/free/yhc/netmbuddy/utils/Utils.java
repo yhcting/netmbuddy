@@ -68,6 +68,10 @@ public class Utils {
     private static final boolean LOGF   = false;
     private static final String  TAG    = "[YoutubeMusicPlayer]";
 
+    // Value SHOULD match xml preference value for title tts.
+    private static final int    TITLE_TTS_HEAD  = 0x02; // tts at the beginning
+    private static final int    TITLE_TTS_TAIL  = 0x01; // tts at the end
+
     // This is only for debugging.
     private static boolean  sInitialized = false;
 
@@ -140,7 +144,6 @@ public class Utils {
             return v;
         }
     }
-
 
     private static class TimeElem {
         public Object   v;
@@ -528,18 +531,28 @@ public class Utils {
                      .equals(getResText(R.string.cson));
     }
 
-    public static boolean
-    isPrefHeadTTS() {
-        return sPrefs.getString(getResText(R.string.cshead_tts),
-                                getResText(R.string.csoff))
-                     .equals(getResText(R.string.cson));
+    public static int
+    getPrefTtsValue() {
+        int value = 0;
+        try {
+            value = Integer.parseInt(sPrefs.getString(getResText(R.string.cstitle_tts), "0"));
+        } catch (NumberFormatException ignored) { }
+        return value;
     }
 
     public static boolean
-    isPrefTailTTS() {
-        return sPrefs.getString(getResText(R.string.cstail_tts),
-                                getResText(R.string.csoff))
-                     .equals(getResText(R.string.cson));
+    isPrefTtsEnabled() {
+        return 0 != getPrefTtsValue();
+    }
+
+    public static boolean
+    isPrefHeadTts() {
+        return (0 != (TITLE_TTS_HEAD & getPrefTtsValue()));
+    }
+
+    public static boolean
+    isPrefTailTts() {
+        return (0 != (TITLE_TTS_TAIL & getPrefTtsValue()));
     }
     // ------------------------------------------------------------------------
     //

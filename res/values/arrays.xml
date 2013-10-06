@@ -37,4 +37,16 @@
         <item>@string/csHIGH</item>
         <item>@string/csVERYHIGH</item>
     </string-array>
+    <string-array name="strarr_pref_title_tts_entry">
+        <item>@string/off</item>
+        <item>@string/beginning</item>
+        <item>@string/end</item>
+        <item>@string/both</item>
+    </string-array>
+    <string-array name="strarr_pref_title_tts_value">
+        <item>0</item>
+        <item>2</item>
+        <item>1</item>
+        <item>3</item>
+    </string-array>
 </resources>

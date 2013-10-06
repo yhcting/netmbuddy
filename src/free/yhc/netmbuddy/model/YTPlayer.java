@@ -1535,7 +1535,7 @@ UnexpectedExceptionHandler.Evidence {
             }
         };
 
-        if (Utils.isPrefHeadTTS()) {
+        if (Utils.isPrefHeadTts()) {
             String text = Utils.getResText(R.string.tts_title_head_pre) + " "
                           + title + " "
                           + Utils.getResText(R.string.tts_title_head_post);
@@ -1773,7 +1773,7 @@ UnexpectedExceptionHandler.Evidence {
         };
 
         if (mVlm.hasActiveVideo()
-            && Utils.isPrefTailTTS()) {
+            && Utils.isPrefTailTts()) {
             Video v  = mVlm.getActiveVideo();
             String text = Utils.getResText(R.string.tts_title_tail_pre) + " "
                           + v.title + " "
@@ -1922,38 +1922,13 @@ UnexpectedExceptionHandler.Evidence {
     @Override
     public void
     onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-        if (!(Utils.getResText(R.string.cshead_tts).equals(key)
-                || Utils.getResText(R.string.cstail_tts).equals(key)))
+        if (!Utils.getResText(R.string.cstitle_tts).equals(key))
             return; // don't care others
 
-        boolean bActionOn, bHeadOn, bTailOn;
-        bActionOn = Utils.getResText(R.string.cson)
-                        .equals(sharedPreferences.getString(key,
-                                                            Utils.getResText(R.string.csoff)));
-        bHeadOn = Utils.getResText(R.string.cson)
-                      .equals(sharedPreferences.getString(Utils.getResText(R.string.cshead_tts),
-                                                          Utils.getResText(R.string.csoff)));
-        bTailOn = Utils.getResText(R.string.cson)
-                      .equals(sharedPreferences.getString(Utils.getResText(R.string.cstail_tts),
-                                                          Utils.getResText(R.string.csoff)));
-
-        if (bActionOn) {
-            if(bHeadOn && bTailOn)
-                return; // one of TTS option is already 'on', nothing to do in this case.
-            else if (!bHeadOn && !bTailOn)
-                eAssert(false); // This SHOULD NOT be happen
-
-            // Open TTS
+        if (Utils.isPrefTtsEnabled())
             ttsOpen();
-        } else {
-            if (bHeadOn || bTailOn)
-                return; // one TTS option is still 'on', nothing to do in this case.
-            else if (bHeadOn && bTailOn)
-                eAssert(false); // This SHOULD NOT be happen
-
-            // Close TTS
+        else
             ttsClose();
-        }
     }
     // ============================================================================
     //
@@ -2116,7 +2091,7 @@ UnexpectedExceptionHandler.Evidence {
         });
 
         // Check TTS usage
-        if (Utils.isPrefHeadTTS() || Utils.isPrefTailTTS())
+        if (Utils.isPrefTtsEnabled())
             ttsOpen();
 
         PreferenceManager.getDefaultSharedPreferences(Utils.getAppContext())
