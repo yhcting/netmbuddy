@@ -1,7 +1,7 @@
-/*****************************************************************************
- *    Copyright (C) 2012, 2013 Younghyung Cho. <yhcting77@gmail.com>
+/******************************************************************************
+ *    Copyright (C) 2012, 2013, 2014 Younghyung Cho. <yhcting77@gmail.com>
  *
- *    This file is part of YTMPlayer.
+ *    This file is part of NetMBuddy.
  *
  *    This program is free software: you can redistribute it and/or modify
  *    it under the terms of the GNU Lesser General Public License as
@@ -15,7 +15,7 @@
  *    (<http://www.gnu.org/licenses/lgpl.html>) for more details.
  *
  *    You should have received a copy of the GNU General Public License
- *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *    along with this program.	If not, see <http://www.gnu.org/licenses/>.
  *****************************************************************************/
 
 /*****************************************************************************
