@@ -98,6 +98,12 @@ public class Utils {
         "yyyy-MM-d'T'HH:mm:ss'Z'",
     };
 
+    public static enum PrefLevel {
+        LOW,
+        NORMAL,
+        HIGH
+    }
+
     public static enum PrefQuality {
         LOW     (R.string.low),
         MIDLOW  (R.string.midlow),
@@ -513,6 +519,23 @@ public class Utils {
         }
         eAssert(false);
         return Policy.SIMILARITY_THRESHOLD_NORMAL;
+    }
+
+    public static PrefLevel
+    getPrefMemConsumption() {
+        // See preference.xml for meaning of each number value.
+        String lv = sPrefs.getString(getResString(R.string.csmem_consumption),
+                getResString(R.string.csNORMAL));
+        if (getResString(R.string.csLOW).equals(lv))
+            return PrefLevel.LOW;
+        else if (getResString(R.string.csNORMAL).equals(lv))
+            return PrefLevel.NORMAL;
+        else if (getResString(R.string.csHIGH).equals(lv))
+            return PrefLevel.HIGH;
+        else {
+            eAssert(false);
+            return PrefLevel.NORMAL;
+        }
     }
 
     public static boolean

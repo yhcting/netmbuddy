@@ -123,4 +123,8 @@ public class Policy {
     // --------------------------------------------------------------------
     public static final String REPORT_RECEIVER          = "yhcting77@gmail.com";
     public static final String TIME_STAMP_FILE_SUFFIX   = "____tmstamp___";
+
+    // --------------------------------------------------------------------
+    // Values dependent on Preference.
+    // --------------------------------------------------------------------
 }

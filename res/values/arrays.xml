@@ -8,6 +8,17 @@
         <item>@string/cson</item>
         <item>@string/csoff</item>
     </string-array>
+    <string-array name="pref_3level_entry">
+        <item>@string/high</item>
+        <item>@string/normal</item>
+        <item>@string/low</item>
+    </string-array>
+    <!-- Value should match Utils.PrefQuality enum name -->
+    <string-array name="pref_3level_value">
+        <item>@string/csHIGH</item>
+        <item>@string/csNORMAL</item>
+        <item>@string/csLOW</item>
+    </string-array>
     <string-array name="strarr_pref_quality_entry">
         <item>@string/low</item>
         <item>@string/midlow</item>

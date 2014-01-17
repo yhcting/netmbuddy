@@ -17,6 +17,7 @@ Usually, used for matching resource and code.
     <string name="cstitle_similarity_threshold">title_similarity_threshold</string>
     <string name="csuse_wifi_only">use_wifi_only</string>
     <string name="cstitle_tts">title_tts</string>
+    <string name="csmem_consumption">mem_consumption</string>
 
     <string name="csVERYLOW">VERYLOW</string>
     <string name="csLOW">LOW</string>

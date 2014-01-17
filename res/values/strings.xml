@@ -104,6 +104,9 @@
     <string name="share_pl_email_subject">NetMBuddy Playlist Share</string>
     <string name="share_pl_email_text">Please open attachement with NetMBuddy to import shared playlist.</string>
 
+    <string name="pref_cat_tuning">App. tuning</string>
+    <string name="pref_mem_consumption">Memory consumption</string>
+    <string name="pref_mem_consumption_desc">Set to \'high\' for faster but high memory usage.</string>
     <string name="pref_cat_operation">Playing music</string>
     <string name="pref_shuffle">Shuffle</string>
     <string name="pref_shuffle_desc">Play musics in random order.</string>

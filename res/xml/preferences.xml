@@ -1,5 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+    <PreferenceCategory android:title="@string/pref_cat_tuning">
+        <ListPreference
+            android:title="@string/pref_mem_consumption"
+            android:summary="@string/pref_mem_consumption_desc"
+            android:key="@string/csmem_consumption"
+            android:defaultValue="@string/csNORMAL"
+            android:entries="@array/pref_3level_entry"
+            android:entryValues="@array/pref_3level_value"
+            />
+    </PreferenceCategory>
     <PreferenceCategory android:title="@string/pref_cat_operation">
         <CheckBoxPreference
             android:title="@string/pref_shuffle"

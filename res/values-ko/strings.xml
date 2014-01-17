@@ -104,6 +104,9 @@
     <string name="share_pl_email_subject">NetMBuddy 재생목록 공유</string>
     <string name="share_pl_email_text">첨부파일을 NetMBuddy로 열어서, 공유된 재생목록을 가져올 수 있습니다.</string>
 
+    <string name="pref_cat_tuning">앱 튜닝</string>
+    <string name="pref_mem_consumption">메모리 소비량</string>
+    <string name="pref_mem_consumption_desc">\'높음\'으로 설정시, 많은 메모리를 사용하는 대신 수행속도가 향상됩니다.</string>
     <string name="pref_cat_operation">재생 방식 설정</string>
     <string name="pref_shuffle">임의 순서로 재생</string>
     <string name="pref_shuffle_desc">음악 재생시 재생되는 곡의 순서가 무작위로 됩니다.</string>
