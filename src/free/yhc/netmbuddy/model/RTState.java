@@ -91,7 +91,7 @@ UnexpectedExceptionHandler.Evidence {
     }
 
     public void
-    setOverridingPreference(String key, Object owner, String value) {
+    setOverridingPreference(String key, Object owner, Object value) {
         mOverridingPref.put(key, new MapValue(owner, value));
     }
 
@@ -104,10 +104,10 @@ UnexpectedExceptionHandler.Evidence {
         return true;
     }
 
-    public String
+    public Object
     getOverridingPreference(String key) {
         MapValue v = mOverridingPref.get(key);
-        return null == v? null: (String)v.value;
+        return null == v? null: v.value;
     }
 
     /**

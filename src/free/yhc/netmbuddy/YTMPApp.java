@@ -21,7 +21,13 @@
 package free.yhc.netmbuddy;
 
 import android.app.Application;
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.Configuration;
+import android.content.res.Resources;
+import android.preference.PreferenceManager;
 import free.yhc.netmbuddy.db.DB;
 import free.yhc.netmbuddy.model.NotiManager;
 import free.yhc.netmbuddy.model.RTState;
@@ -34,6 +40,68 @@ public class YTMPApp extends Application {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(YTMPApp.class);
 
+    private static String PREF_KEY_APP_VERSION = "app_version";
+
+    // ========================================================================
+    //
+    // App version upgrade handling
+    //
+    // ========================================================================
+    private void
+    convertOnOffPreferenceToBoolean(SharedPreferences prefs,
+                                    SharedPreferences.Editor prefEd,
+                                    Resources res,
+                                    int keyId) {
+        String onoff = prefs.getString(res.getString(keyId), null);
+        if (null != onoff) {
+            if (res.getString(R.string.cson).equals(onoff))
+                prefEd.putBoolean(res.getString(keyId), true);
+            else
+                prefEd.putBoolean(res.getString(keyId), false);
+        }
+    }
+
+    // Following preference is changed from list preference to checkbox preference.
+    private void
+    onUpgradeTo31(Context context) {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+        SharedPreferences.Editor prefEd = prefs.edit();
+        Resources res = context.getResources();
+        convertOnOffPreferenceToBoolean(prefs, prefEd, res, R.string.csshuffle);
+        convertOnOffPreferenceToBoolean(prefs, prefEd, res, R.string.csrepeat);
+        convertOnOffPreferenceToBoolean(prefs, prefEd, res, R.string.csuse_wifi_only);
+        convertOnOffPreferenceToBoolean(prefs, prefEd, res, R.string.csstop_on_back);
+        convertOnOffPreferenceToBoolean(prefs, prefEd, res, R.string.cslockscreen);
+        convertOnOffPreferenceToBoolean(prefs, prefEd, res, R.string.cserr_report);
+        prefEd.apply();
+    }
+
+    private void
+    onAppUpgrade(Context context, int from, int to) {
+        if (from < 31)
+            onUpgradeTo31(context);
+    }
+
+    private void
+    checkAppUpgrade(Context context) {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+        int prevVer = prefs.getInt(PREF_KEY_APP_VERSION, -1);
+        try {
+            PackageInfo pi = context.getPackageManager().getPackageInfo(context.getPackageName(), -1);
+            if (pi.versionCode > prevVer) {
+                onAppUpgrade(context, prevVer, pi.versionCode);
+                SharedPreferences.Editor prefEd = prefs.edit();
+                prefEd.putInt(PREF_KEY_APP_VERSION, pi.versionCode);
+                prefEd.apply();
+            }
+        } catch (NameNotFoundException ignore) { }
+    }
+
+    // ========================================================================
+    //
+    //
+    //
+    // ========================================================================
     @Override
     public void
     onConfigurationChanged(Configuration newConfig) {
@@ -44,7 +112,10 @@ public class YTMPApp extends Application {
     public void
     onCreate() {
         super.onCreate();
-        Utils.init(getApplicationContext());
+        Context context = getApplicationContext();
+        checkAppUpgrade(context);
+
+        Utils.init(context);
 
         // register default customized uncaught exception handler for error collecting.
         Thread.setDefaultUncaughtExceptionHandler(UnexpectedExceptionHandler.get());

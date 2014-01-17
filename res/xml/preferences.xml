@@ -1,21 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
     <PreferenceCategory android:title="@string/pref_cat_operation">
-        <ListPreference
+        <CheckBoxPreference
             android:title="@string/pref_shuffle"
             android:summary="@string/pref_shuffle_desc"
             android:key="@string/csshuffle"
-            android:defaultValue="@string/csoff"
-            android:entries="@array/strarr_on_off_entry"
-            android:entryValues="@array/strarr_on_off_value"
+            android:defaultValue="false"
             />
-        <ListPreference
+        <CheckBoxPreference
             android:title="@string/pref_repeat"
             android:summary="@string/pref_repeat_desc"
             android:key="@string/csrepeat"
-            android:defaultValue="@string/csoff"
-            android:entries="@array/strarr_on_off_entry"
-            android:entryValues="@array/strarr_on_off_value"
+            android:defaultValue="false"
             />
         <ListPreference
             android:title="@string/pref_quality"
@@ -25,13 +21,11 @@
             android:entries="@array/strarr_pref_quality_entry"
             android:entryValues="@array/strarr_pref_quality_value"
             />
-        <ListPreference
+        <CheckBoxPreference
             android:title="@string/pref_use_wifi_only"
             android:summary="@string/pref_use_wifi_only_desc"
             android:key="@string/csuse_wifi_only"
-            android:defaultValue="@string/csoff"
-            android:entries="@array/strarr_on_off_entry"
-            android:entryValues="@array/strarr_on_off_value"
+            android:defaultValue="false"
             />
         <ListPreference
             android:title="@string/pref_title_tts"
@@ -43,21 +37,17 @@
             />
     </PreferenceCategory>
     <PreferenceCategory android:title="@string/pref_cat_ux">
-        <ListPreference
+        <CheckBoxPreference
             android:title="@string/pref_stop_on_back"
             android:summary="@string/pref_stop_on_back_desc"
             android:key="@string/csstop_on_back"
-            android:defaultValue="@string/cson"
-            android:entries="@array/strarr_on_off_entry"
-            android:entryValues="@array/strarr_on_off_value"
+            android:defaultValue="true"
             />
-        <ListPreference
+        <CheckBoxPreference
             android:title="@string/pref_lockscreen"
             android:summary="@string/pref_lockscreen_desc"
             android:key="@string/cslockscreen"
-            android:defaultValue="@string/csoff"
-            android:entries="@array/strarr_on_off_entry"
-            android:entryValues="@array/strarr_on_off_value"
+            android:defaultValue="false"
             />
     </PreferenceCategory>
     <PreferenceCategory android:title="@string/pref_cat_algorithm">
@@ -71,13 +61,11 @@
             />
     </PreferenceCategory>
     <PreferenceCategory android:title="@string/pref_cat_report">
-        <ListPreference
+        <CheckBoxPreference
             android:title="@string/pref_err_report"
             android:summary="@string/pref_err_report_desc"
             android:key="@string/cserr_report"
-            android:defaultValue="@string/cson"
-            android:entries="@array/strarr_on_off_entry"
-            android:entryValues="@array/strarr_on_off_value"
+            android:defaultValue="true"
             />
     </PreferenceCategory>
 </PreferenceScreen>

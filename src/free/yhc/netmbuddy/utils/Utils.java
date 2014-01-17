@@ -453,10 +453,26 @@ public class Utils {
     //
     // ------------------------------------------------------------------------
     private static String
-    getPreference(String key, String defvalue) {
-        String value = RTState.get().getOverridingPreference(key);
+    getStringPreference(String key, String defvalue) {
+        String value = (String)RTState.get().getOverridingPreference(key);
         if (null == value)
-            value =  sPrefs.getString(key, defvalue);
+            value = sPrefs.getString(key, defvalue);
+        return value;
+    }
+
+    private static int
+    getIntPreference(String key, int defvalue) {
+        Integer value = (Integer)RTState.get().getOverridingPreference(key);
+        if (null == value)
+            value = sPrefs.getInt(key, defvalue);
+        return value;
+    }
+
+    private static boolean
+    getBooleanPreference(String key, boolean defvalue) {
+        Boolean value = (Boolean)RTState.get().getOverridingPreference(key);
+        if (null == value)
+            value = sPrefs.getBoolean(key, defvalue);
         return value;
     }
 
@@ -467,22 +483,18 @@ public class Utils {
 
     public static boolean
     isPrefSuffle() {
-        String v = getPreference(getResString(R.string.csshuffle),
-                                 getResString(R.string.csoff));
-        return v.equals(getResString(R.string.cson));
+        return getBooleanPreference(getResString(R.string.csshuffle), false);
     }
 
     public static boolean
     isPrefRepeat() {
-        String v = getPreference(getResString(R.string.csrepeat),
-                                 getResString(R.string.csoff));
-        return v.equals(getResString(R.string.cson));
+        return getBooleanPreference(getResString(R.string.csrepeat), false);
     }
 
     public static PrefQuality
     getPrefQuality() {
-        String v = getPreference(getResString(R.string.csquality),
-                                 getResString(R.string.csNORMAL));
+        String v = getStringPreference(getResString(R.string.csquality),
+                                       getResString(R.string.csNORMAL));
         for (PrefQuality q : PrefQuality.values()) {
             if (q.name().equals(v))
                 return q;
@@ -493,8 +505,8 @@ public class Utils {
 
     public static float
     getPrefTitleSimilarityThreshold() {
-        String v = getPreference(getResString(R.string.cstitle_similarity_threshold),
-                                 getResString(R.string.csNORMAL));
+        String v = getStringPreference(getResString(R.string.cstitle_similarity_threshold),
+                                       getResString(R.string.csNORMAL));
         for (PrefTitleSimilarityThreshold q : PrefTitleSimilarityThreshold.values()) {
             if (q.name().equals(v))
                 return q.getValue();
@@ -505,23 +517,17 @@ public class Utils {
 
     public static boolean
     isPrefLockScreen() {
-        String v = getPreference(getResString(R.string.cslockscreen),
-                                            getResString(R.string.csoff));
-        return v.equals(getResString(R.string.cson));
+        return getBooleanPreference(getResString(R.string.cslockscreen), false);
     }
 
     public static boolean
     isPrefStopOnBack() {
-        String v = getPreference(getResString(R.string.csstop_on_back),
-                                            getResString(R.string.cson));
-        return v.equals(getResString(R.string.cson));
+        return getBooleanPreference(getResString(R.string.csstop_on_back), true);
     }
 
     public static boolean
     isPrefErrReport() {
-        String v = getPreference(getResString(R.string.cserr_report),
-                                            getResString(R.string.cson));
-        return v.equals(getResString(R.string.cson));
+        return getBooleanPreference(getResString(R.string.cserr_report), true);
     }
 
     private static boolean
