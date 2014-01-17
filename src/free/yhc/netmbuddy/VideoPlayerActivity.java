@@ -306,7 +306,7 @@ UnexpectedExceptionHandler.Evidence {
     doChangeVideoQuality(Utils.PrefQuality quality) {
         SharedPreferences.Editor prefEdit = PreferenceManager.getDefaultSharedPreferences(getApplicationContext())
                                                              .edit();
-        prefEdit.putString(Utils.getResText(R.string.csquality), quality.name());
+        prefEdit.putString(Utils.getResString(R.string.csquality), quality.name());
         prefEdit.commit();
 
         // Show toast to bottom of screen

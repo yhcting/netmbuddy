@@ -217,11 +217,11 @@ UnexpectedExceptionHandler.Evidence {
             getReportText(Err result) {
                 CharSequence title = "";
                 if (Err.NO_ERR != result)
-                    title = Utils.getResText(result.getMessage());
+                    title = Utils.getResString(result.getMessage());
 
                 return title + "\n"
-                       + "  " + Utils.getResText(R.string.done) + " : " + mtpr.nrDone.get() + "\n"
-                       + "  " + Utils.getResText(R.string.error) + " : " + mtpr.nrIgnored.get();
+                       + "  " + Utils.getResString(R.string.done) + " : " + mtpr.nrDone.get() + "\n"
+                       + "  " + Utils.getResString(R.string.error) + " : " + mtpr.nrIgnored.get();
             }
 
             private void

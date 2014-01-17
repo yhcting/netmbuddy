@@ -94,7 +94,7 @@ class ExporterPlaylist implements ExporterI {
 
         String shareName = "";
         try {
-            shareName = FileUtils.pathNameEscapeString(Utils.getResText(R.string.playlist)
+            shareName = FileUtils.pathNameEscapeString(Utils.getResString(R.string.playlist)
                                                        + "_"
                                                        + jsonPl.getString(Json.FTITLE)
                                                        + "."

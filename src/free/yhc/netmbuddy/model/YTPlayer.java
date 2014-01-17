@@ -1318,7 +1318,7 @@ UnexpectedExceptionHandler.Evidence {
         if (null == ytv) {
             // Video format is not supported...
             // Just skip it with toast!
-            mUi.notifyToUser(Utils.getResText(R.string.err_ytnot_supported_vidformat));
+            mUi.notifyToUser(Utils.getResString(R.string.err_ytnot_supported_vidformat));
             startNext();
             return;
         }
@@ -1388,7 +1388,7 @@ UnexpectedExceptionHandler.Evidence {
                     default:
                         // NOTE : Dirty!!!
                         // But, extremely exceptional case that model referencing UI code
-                        mUi.notifyToUser(Utils.getResText(
+                        mUi.notifyToUser(Utils.getResString(
                                 free.yhc.netmbuddy.Err.map(result).getMessage()));
                         startNext(); // Move to next video.
                     }
@@ -1536,9 +1536,9 @@ UnexpectedExceptionHandler.Evidence {
         };
 
         if (Utils.isPrefHeadTts()) {
-            String text = Utils.getResText(R.string.tts_title_head_pre) + " "
+            String text = Utils.getResString(R.string.tts_title_head_pre) + " "
                           + title + " "
-                          + Utils.getResText(R.string.tts_title_head_post);
+                          + Utils.getResString(R.string.tts_title_head_post);
             ttsSpeak(text, ytvid, action);
         } else
             action.run();
@@ -1775,9 +1775,9 @@ UnexpectedExceptionHandler.Evidence {
         if (mVlm.hasActiveVideo()
             && Utils.isPrefTailTts()) {
             Video v  = mVlm.getActiveVideo();
-            String text = Utils.getResText(R.string.tts_title_tail_pre) + " "
+            String text = Utils.getResString(R.string.tts_title_tail_pre) + " "
                           + v.title + " "
-                          + Utils.getResText(R.string.tts_title_tail_post);
+                          + Utils.getResString(R.string.tts_title_tail_post);
             ttsSpeak(text, v.ytvid, action);
         } else
             action.run();
@@ -1922,7 +1922,7 @@ UnexpectedExceptionHandler.Evidence {
     @Override
     public void
     onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-        if (!Utils.getResText(R.string.cstitle_tts).equals(key))
+        if (!Utils.getResString(R.string.cstitle_tts).equals(key))
             return; // don't care others
 
         if (Utils.isPrefTtsEnabled())

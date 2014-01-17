@@ -303,7 +303,7 @@ class DBManager {
             String plTitle = excPl.getString(plColiTitle);
             while (db.containsPlaylist(plTitle)) {
                 i++;
-                plTitle = excPl.getString(plColiTitle)+ "_" + Utils.getResText(R.string.merge) + i;
+                plTitle = excPl.getString(plColiTitle)+ "_" + Utils.getResString(R.string.merge) + i;
             }
 
             // Playlist title is chosen.

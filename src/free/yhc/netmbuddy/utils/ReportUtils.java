@@ -37,7 +37,7 @@ public class ReportUtils {
 
     private static String
     getSubjectPrefix() {
-        return "[ " + Utils.getResText(R.string.app_name) + " ] ";
+        return "[ " + Utils.getResString(R.string.app_name) + " ] ";
     }
 
     private static void

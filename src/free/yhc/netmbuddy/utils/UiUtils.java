@@ -689,17 +689,17 @@ public class UiUtils {
             @Override
             public void
             onPostExecute(DiagAsyncTask task, Err result) {
-                String author = Utils.getResText(R.string.author) + " : ";
+                String author = Utils.getResString(R.string.author) + " : ";
                 if (Utils.isValidValue(_mVdi.author))
                     author +=  _mVdi.author;
                 else
-                    author += Utils.getResText(R.string.unknown);
+                    author += Utils.getResString(R.string.unknown);
 
-                String playbackTm = Utils.getResText(R.string.playback_time) + " : " + _mVdi.playTime
-                                        + Utils.getResText(R.string.seconds);
-                String volume = Utils.getResText(R.string.volume) + " : " + _mVdi.volume + " / 100";
-                String timeAdded = Utils.getResText(R.string.time_added) + " : " + _mVdi.timeAdded;
-                String timePlayed = Utils.getResText(R.string.time_last_played) + " : " + _mVdi.timeLastPlayed;
+                String playbackTm = Utils.getResString(R.string.playback_time) + " : " + _mVdi.playTime
+                                        + Utils.getResString(R.string.seconds);
+                String volume = Utils.getResString(R.string.volume) + " : " + _mVdi.volume + " / 100";
+                String timeAdded = Utils.getResString(R.string.time_added) + " : " + _mVdi.timeAdded;
+                String timePlayed = Utils.getResString(R.string.time_last_played) + " : " + _mVdi.timeLastPlayed;
                 String msg = _mVdi.title + "\n\n"
                              + author + "\n"
                              + playbackTm + "\n"
@@ -707,18 +707,18 @@ public class UiUtils {
                              + timeAdded + "\n"
                              + timePlayed + "\n";
                 if (_mVdi.bookmarks.length > 0) {
-                    msg += "[ " + Utils.getResText(R.string.bookmarks) + " ]\n";
+                    msg += "[ " + Utils.getResString(R.string.bookmarks) + " ]\n";
                     for (DB.Bookmark bm : _mVdi.bookmarks)
                         msg += "    <" + Utils.secsToMinSecText(bm.pos / 1000) + "> " + bm.name + "\n";
                 }
 
-                msg += "\n[ " + Utils.getResText(R.string.playlist) + " ]\n";
+                msg += "\n[ " + Utils.getResString(R.string.playlist) + " ]\n";
                 for (String title : _mVdi.pls)
                     msg += "* " + title + "\n";
 
                 UiUtils.createAlertDialog(activity,
                                           0,
-                                          Utils.getResText(R.string.detail_info),
+                                          Utils.getResString(R.string.detail_info),
                                           msg)
                        .show();
             }
@@ -755,7 +755,7 @@ public class UiUtils {
                 _mVdi.timeAdded = df.format(new Date(c.getLong(COLI_TIME_ADD)));
                 long tm = c.getLong(COLI_TIME_PLAYED);
                 if (0 == tm)
-                    _mVdi.timeLastPlayed = Utils.getResText(R.string.not_played_yet);
+                    _mVdi.timeLastPlayed = Utils.getResString(R.string.not_played_yet);
                 else
                     _mVdi.timeLastPlayed =df.format(new Date(c.getLong(COLI_TIME_PLAYED)));
                 c.close();
@@ -796,7 +796,7 @@ public class UiUtils {
         }
 
         AlertDialog.Builder bldr = new AlertDialog.Builder(activity);
-        bldr.setTitle("[" + Utils.getResText(R.string.bookmarks) + "]\n" + title);
+        bldr.setTitle("[" + Utils.getResString(R.string.bookmarks) + "]\n" + title);
         bldr.setView(lv);
         final AlertDialog diag = bldr.create();
 
@@ -913,7 +913,7 @@ public class UiUtils {
 
                 ListView lv = (ListView)UiUtils.inflateLayout(activity, R.layout.similar_title_dialog);
                 AlertDialog.Builder bldr = new AlertDialog.Builder(activity);
-                bldr.setTitle("[" + Utils.getResText(R.string.search_similar_titles) + "]\n" + title);
+                bldr.setTitle("[" + Utils.getResString(R.string.search_similar_titles) + "]\n" + title);
                 bldr.setView(lv);
                 final AlertDialog diag = bldr.create();
                 final SimilarTitlesListAdapter adapter

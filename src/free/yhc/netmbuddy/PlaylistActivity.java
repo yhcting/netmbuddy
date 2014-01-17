@@ -185,9 +185,9 @@ UnexpectedExceptionHandler.Evidence {
             @Override
             public void
             onPostExecute(DiagAsyncTask task, Err result) {
-                String msg  = Utils.getResText(R.string.done) + " : " + _mSCnt + "\n"
-                              + Utils.getResText(R.string.duplication) + " : " + _mDupCnt + "\n"
-                              + Utils.getResText(R.string.error) + " : " + _mFCnt;
+                String msg  = Utils.getResString(R.string.done) + " : " + _mSCnt + "\n"
+                              + Utils.getResString(R.string.duplication) + " : " + _mDupCnt + "\n"
+                              + Utils.getResString(R.string.error) + " : " + _mFCnt;
                 UiUtils.showTextToast(PlaylistActivity.this, msg);
                 getAdapter().reloadCursorAsync();
             }
@@ -776,7 +776,7 @@ UnexpectedExceptionHandler.Evidence {
 
         final File fTmp;
         try {
-            fTmp = File.createTempFile(Utils.getResText(R.string.share_pl_attachment),
+            fTmp = File.createTempFile(Utils.getResString(R.string.share_pl_attachment),
                                        "." + Policy.SHARE_FILE_EXTENTION,
                                        new File(Policy.APPDATA_TMPDIR));
         } catch (IOException e) {
@@ -798,8 +798,8 @@ UnexpectedExceptionHandler.Evidence {
                 String plTitle = (String)DB.get().getPlaylistInfo(info.id, ColPlaylist.TITLE);
                 Utils.sendMail(PlaylistActivity.this,
                                null,
-                               Utils.getResText(R.string.share_pl_email_subject) + ":" + plTitle,
-                               Utils.getResText(R.string.share_pl_email_text),
+                               Utils.getResString(R.string.share_pl_email_subject) + ":" + plTitle,
+                               Utils.getResString(R.string.share_pl_email_text),
                                fTmp);
             }
 

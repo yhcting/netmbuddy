@@ -226,7 +226,7 @@ public class NotiManager {
          */
         Notification n = new Notification(ntype.getIcon(), null, System.currentTimeMillis());
         n.setLatestEventInfo(Utils.getAppContext(),
-                             Utils.getResText(R.string.app_name),
+                             Utils.getResString(R.string.app_name),
                              videoTitle,
                              piContent);
         n.deleteIntent = piDelete;

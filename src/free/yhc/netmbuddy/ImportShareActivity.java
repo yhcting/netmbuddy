@@ -107,19 +107,19 @@ UnexpectedExceptionHandler.Evidence {
                 if (DBG) P.e("Unexpected Error (returned result is null!)\n"
                         + "   recovered");
 
-            CharSequence title = " [ " + Utils.getResText(R.string.app_name) + " ]\n"
-                                 + Utils.getResText(R.string.import_) + " : "
-                                     + Utils.getResText(cancelled?
+            CharSequence title = " [ " + Utils.getResString(R.string.app_name) + " ]\n"
+                                 + Utils.getResString(R.string.import_) + " : "
+                                     + Utils.getResString(cancelled?
                                                         R.string.cancelled:
                                                         R.string.done)
                                      + "\n"
                                  + r.message;
             if (Share.Err.NO_ERR != r.err)
-                title = title + "\n" + Utils.getResText(Err.map(r.err).getMessage());
+                title = title + "\n" + Utils.getResString(Err.map(r.err).getMessage());
 
             return title + "\n"
-                   + "  " + Utils.getResText(R.string.done) + " : " + success + "\n"
-                   + "  " + Utils.getResText(R.string.error) + " : " + fail;
+                   + "  " + Utils.getResString(R.string.done) + " : " + success + "\n"
+                   + "  " + Utils.getResString(R.string.error) + " : " + fail;
         }
 
         private void

@@ -308,8 +308,8 @@ public class Utils {
     }
 
     public static String
-    getResText(int id) {
-        return (String)getResources().getText(id);
+    getResString(int id) {
+        return getResources().getString(id);
     }
 
     public static Handler
@@ -467,22 +467,22 @@ public class Utils {
 
     public static boolean
     isPrefSuffle() {
-        String v = getPreference(getResText(R.string.csshuffle),
-                                 getResText(R.string.csoff));
-        return v.equals(getResText(R.string.cson));
+        String v = getPreference(getResString(R.string.csshuffle),
+                                 getResString(R.string.csoff));
+        return v.equals(getResString(R.string.cson));
     }
 
     public static boolean
     isPrefRepeat() {
-        String v = getPreference(getResText(R.string.csrepeat),
-                                 getResText(R.string.csoff));
-        return v.equals(getResText(R.string.cson));
+        String v = getPreference(getResString(R.string.csrepeat),
+                                 getResString(R.string.csoff));
+        return v.equals(getResString(R.string.cson));
     }
 
     public static PrefQuality
     getPrefQuality() {
-        String v = getPreference(getResText(R.string.csquality),
-                                 getResText(R.string.csNORMAL));
+        String v = getPreference(getResString(R.string.csquality),
+                                 getResString(R.string.csNORMAL));
         for (PrefQuality q : PrefQuality.values()) {
             if (q.name().equals(v))
                 return q;
@@ -493,8 +493,8 @@ public class Utils {
 
     public static float
     getPrefTitleSimilarityThreshold() {
-        String v = getPreference(getResText(R.string.cstitle_similarity_threshold),
-                                 getResText(R.string.csNORMAL));
+        String v = getPreference(getResString(R.string.cstitle_similarity_threshold),
+                                 getResString(R.string.csNORMAL));
         for (PrefTitleSimilarityThreshold q : PrefTitleSimilarityThreshold.values()) {
             if (q.name().equals(v))
                 return q.getValue();
@@ -505,37 +505,37 @@ public class Utils {
 
     public static boolean
     isPrefLockScreen() {
-        String v = getPreference(getResText(R.string.cslockscreen),
-                                            getResText(R.string.csoff));
-        return v.equals(getResText(R.string.cson));
+        String v = getPreference(getResString(R.string.cslockscreen),
+                                            getResString(R.string.csoff));
+        return v.equals(getResString(R.string.cson));
     }
 
     public static boolean
     isPrefStopOnBack() {
-        String v = getPreference(getResText(R.string.csstop_on_back),
-                                            getResText(R.string.cson));
-        return v.equals(getResText(R.string.cson));
+        String v = getPreference(getResString(R.string.csstop_on_back),
+                                            getResString(R.string.cson));
+        return v.equals(getResString(R.string.cson));
     }
 
     public static boolean
     isPrefErrReport() {
-        String v = getPreference(getResText(R.string.cserr_report),
-                                            getResText(R.string.cson));
-        return v.equals(getResText(R.string.cson));
+        String v = getPreference(getResString(R.string.cserr_report),
+                                            getResString(R.string.cson));
+        return v.equals(getResString(R.string.cson));
     }
 
     private static boolean
     isPrefUseWifiOnly() {
-        return sPrefs.getString(getResText(R.string.csuse_wifi_only),
-                                getResText(R.string.csoff))
-                     .equals(getResText(R.string.cson));
+        return sPrefs.getString(getResString(R.string.csuse_wifi_only),
+                                getResString(R.string.csoff))
+                     .equals(getResString(R.string.cson));
     }
 
     public static int
     getPrefTtsValue() {
         int value = 0;
         try {
-            value = Integer.parseInt(sPrefs.getString(getResText(R.string.cstitle_tts), "0"));
+            value = Integer.parseInt(sPrefs.getString(getResString(R.string.cstitle_tts), "0"));
         } catch (NumberFormatException ignored) { }
         return value;
     }

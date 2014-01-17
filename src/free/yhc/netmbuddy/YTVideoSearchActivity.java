@@ -71,7 +71,7 @@ public abstract class YTVideoSearchActivity extends YTSearchActivity {
 
         final String[] userMenu = new String[menuTextIds.length];
         for (int i = 0; i < menuTextIds.length; i++)
-            userMenu[i] = Utils.getResText(menuTextIds[i]);
+            userMenu[i] = Utils.getResString(menuTextIds[i]);
 
         UiUtils.OnPlaylistSelected action = new UiUtils.OnPlaylistSelected() {
             @Override

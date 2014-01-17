@@ -610,10 +610,10 @@ OnSharedPreferenceChangeListener {
             return;
         }
 
-        final String title = Utils.getResText(R.string.set_bookmark)
+        final String title = Utils.getResString(R.string.set_bookmark)
                              + " : "
                              + Utils.secsToMinSecText(posms / 1000)
-                             + Utils.getResText(R.string.seconds);
+                             + Utils.getResString(R.string.seconds);
 
         UiUtils.EditTextAction action = new UiUtils.EditTextAction() {
             @Override
@@ -625,7 +625,7 @@ OnSharedPreferenceChangeListener {
             onOk(Dialog dialog, EditText edit) {
                 String bmname = edit.getText().toString();
                 if (bmname.contains("" + DB.BOOKMARK_DELIMITER)) {
-                    String msg = Utils.getResText(R.string.msg_forbidden_characters) + "\n"
+                    String msg = Utils.getResString(R.string.msg_forbidden_characters) + "\n"
                                  + "    " + DB.BOOKMARK_DELIMITER;
                     UiUtils.showTextToast(mVActivity, msg);
                     UiUtils.buildOneLineEditTextDialog(mVActivity,
@@ -682,7 +682,7 @@ OnSharedPreferenceChangeListener {
         new DiagAsyncTask(mVActivity,
                           worker,
                           DiagAsyncTask.Style.SPIN,
-                          Utils.getResText(R.string.adding),
+                          Utils.getResString(R.string.adding),
                           true)
             .run();
     }
@@ -801,7 +801,7 @@ OnSharedPreferenceChangeListener {
 
         final CharSequence[] items = new CharSequence[opts.length];
         for (int i = 0; i < opts.length; i++)
-            items[i] = Utils.getResText(opts[i]);
+            items[i] = Utils.getResString(opts[i]);
 
         AlertDialog.Builder builder = new AlertDialog.Builder(mVActivity);
         builder.setTitle(R.string.player_extra_control_title);
@@ -915,9 +915,9 @@ OnSharedPreferenceChangeListener {
     private void
     pvSetupStatusBar(ViewGroup playerv) {
         updateStatusAutoStopSet(mMp.isAutoStopSet(), mMp.getAutoStopTime());
-        onSharedPreferenceChanged(Utils.getSharedPreference(), Utils.getResText(R.string.csquality));
-        onSharedPreferenceChanged(Utils.getSharedPreference(), Utils.getResText(R.string.csrepeat));
-        onSharedPreferenceChanged(Utils.getSharedPreference(), Utils.getResText(R.string.csshuffle));
+        onSharedPreferenceChanged(Utils.getSharedPreference(), Utils.getResString(R.string.csquality));
+        onSharedPreferenceChanged(Utils.getSharedPreference(), Utils.getResString(R.string.csrepeat));
+        onSharedPreferenceChanged(Utils.getSharedPreference(), Utils.getResString(R.string.csshuffle));
     }
 
     private void
@@ -1077,11 +1077,11 @@ OnSharedPreferenceChangeListener {
     @Override
     public void
     onSharedPreferenceChanged(SharedPreferences prefs, String key) {
-        if (key.equals(Utils.getResText(R.string.csshuffle))) {
+        if (key.equals(Utils.getResString(R.string.csshuffle))) {
             updateStatusShuffle(Utils.isPrefSuffle());
-        } else if (key.equals(Utils.getResText(R.string.csrepeat))) {
+        } else if (key.equals(Utils.getResString(R.string.csrepeat))) {
             updateStatusRepeat(Utils.isPrefRepeat());
-        } else if (key.equals(Utils.getResText(R.string.csquality))) {
+        } else if (key.equals(Utils.getResString(R.string.csquality))) {
             updateStatusQuality(Utils.getPrefQuality());
         }
     }
@@ -1103,7 +1103,7 @@ OnSharedPreferenceChangeListener {
             long tmLeft = timeMillis - System.currentTimeMillis();
             if (tmLeft < 0)
                 tmLeft = 0;
-            String tmText = Utils.millisToHourMinText(tmLeft) + Utils.getResText(R.string.minutes);
+            String tmText = Utils.millisToHourMinText(tmLeft) + Utils.getResString(R.string.minutes);
             iv.setImageResource(R.drawable.status_autostop_on);
             tv.setVisibility(View.VISIBLE);
             tv.setText(tmText);
