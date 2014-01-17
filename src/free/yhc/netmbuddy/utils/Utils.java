@@ -555,9 +555,7 @@ public class Utils {
 
     private static boolean
     isPrefUseWifiOnly() {
-        return sPrefs.getString(getResString(R.string.csuse_wifi_only),
-                                getResString(R.string.csoff))
-                     .equals(getResString(R.string.cson));
+        return getBooleanPreference(getResString(R.string.csuse_wifi_only), true);
     }
 
     public static int
