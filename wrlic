@@ -1,3 +1,54 @@
+#!/usr/bin/perl
+
+#
+# License header writer
+#
+
+use warnings;
+use strict;
+
+use constant {
+    TRUE    => 1,
+    FALSE   => 0,
+};
+
+
+open(FI, "<$ARGV[0]") or die$!;
+my @d = <FI>;
+close(FI);
+
+if ($d[0] =~ /^\/\*+$/
+    && $d[1] =~ /\s*\*\s*Copyright/) {
+    @d = remove_license_header(@d);
+}
+@d = add_license_header(@d);
+
+open(FO, ">$ARGV[0]") or die$!;
+print FO @d;
+close(FO);
+
+#foreach (@d) {
+#    print $_;
+#}
+
+sub remove_license_header {
+    my @newd = ();
+    my $header = TRUE;
+    foreach (@d) {
+	if (TRUE == $header && /\s*\*+\/$/) {
+	    $header = FALSE;
+	    next;
+	}
+	if (FALSE == $header) {
+	    push @newd, $_;
+	}
+    }
+    return @newd;
+}
+
+
+sub add_license_header {
+    my $license = <<'__LICENSE__';
 /******************************************************************************
  * Copyright (C) 2012, 2013, 2014
  * Younghyung Cho. <yhcting77@gmail.com>
@@ -33,9 +84,8 @@
  * are those of the authors and should not be interpreted as representing
  * official policies, either expressed or implied, of the FreeBSD Project.
  *****************************************************************************/
-
-package free.yhc.netmbuddy.scmp;
-
-interface SCElemI {
-    float similarity(SCElemI e);
+__LICENSE__
+    my @ret = @_;
+    unshift @ret, $license;
+    return @ret;
 }
