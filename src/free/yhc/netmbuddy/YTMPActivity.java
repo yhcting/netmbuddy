@@ -72,8 +72,9 @@ public class YTMPActivity extends Activity {
         String recivedText = intent.getData().toString();
         
         // Filter the received text to match a valid search term:
-        // "youtube" + multiple chars(.+) + "v=" + multiple words(\\w+)
-        Pattern p = Pattern.compile("youtube.+v=\\w+");
+        // youtube.+v=  ---> "youtube" + one or more chars + "v="
+        // [^&|\n]+     ---> one or more chars + "&" or end of line
+        Pattern p = Pattern.compile("youtube.+v=[^&|\n]+");
         Matcher m = p.matcher(recivedText);
     	String path = "";
         if(m.find())
