@@ -95,7 +95,7 @@ public class YTHacker {
     private static final int    YTSTREAMTAG_FLV_240p    = 5;
 
     private static final Pattern    sYtUrlStreamMapPattern
-        = Pattern.compile(".*\"url_encoded_fmt_stream_map\": \"([^\"]+)\".*");
+        = Pattern.compile(".*\"url_encoded_fmt_stream_map\":\\s*\"([^\"]+)\".*");
 
     // [ Small talk... ]
     // Why "generate_204"?
@@ -105,7 +105,7 @@ public class YTHacker {
     // So, this URL is a kind of special URL that creates 204 response
     //   and notify to server that preparing real-contents.
     private static final Pattern    sYtUrlGenerate204Pattern
-        = Pattern.compile(".*\"(http\\:.+\\/generate_204[^\"]*)\".*");
+        = Pattern.compile(".*\"(http(s)?\\:.+\\/generate_204[^\"]*)\".*");
 
     private final NetLoader     mLoader = new NetLoader();;
     private final String        mYtvid;
@@ -223,13 +223,9 @@ public class YTHacker {
                     ve.tag = e.substring("itag=".length());
                 else if (e.startsWith("url="))
                     ve.url = e.substring("url=".length());
-                else if (e.startsWith("type=")) {
-                    String type = e.substring("type=".length());
-                    int idx = type.indexOf(';');
-                    if (idx >= 0)
-                        type = type.substring(0, idx);
-                    ve.type = type;
-                } else if (e.startsWith("quality="))
+                else if (e.startsWith("type="))
+                    ve.type = e.substring("type=".length());
+                else if (e.startsWith("quality="))
                     ve.quality = e.substring("quality=".length());
                 else if (e.startsWith("sig="))
                     sig = e.substring("sig=".length());
