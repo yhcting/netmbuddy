@@ -42,6 +42,10 @@ import android.content.res.Configuration;
 import android.os.Bundle;
 import free.yhc.netmbuddy.utils.Utils;
 
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 public class YTMPActivity extends Activity {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(YTMPActivity.class);
@@ -53,7 +57,32 @@ public class YTMPActivity extends Activity {
 
         Intent i = new Intent(this, PlaylistActivity.class);
         startActivity(i);
+
+        Intent intent = getIntent();
+        String action = intent.getAction();
+
+        if (Intent.ACTION_VIEW.equals(action))
+        	handleSendText(intent);
+        	
         finish();
+    }
+    
+    private void
+    handleSendText(Intent intent) {
+        String recivedText = intent.getData().toString();
+        
+        // Filter the received text to match a valid search term:
+        // youtube.+v=  ---> "youtube" + one or more chars + "v="
+        // [^&|\n]+     ---> one or more chars + "&" or end of line
+        Pattern p = Pattern.compile("youtube.+v=[^&|\n]+");
+        Matcher m = p.matcher(recivedText);
+    	String path = "";
+        if(m.find())
+        	path = m.group();
+        
+        Intent i = new Intent(this, YTVideoSearchKeywordActivity.class);
+        i.putExtra(YTSearchActivity.MAP_KEY_SEARCH_TEXT, path);
+        startActivity(i);
     }
 
     @Override
