@@ -696,6 +696,7 @@ public class UiUtils {
                 String          timeLastPlayed  = "";
                 String          volume          = "";
                 String          playTime        = "";
+                String          ytvid           = "";
                 DB.Bookmark[]   bookmarks       = null;
                 // titles of playlists contain the video
                 String[]        pls             = new String[0];
@@ -716,7 +717,9 @@ public class UiUtils {
                 String volume = Utils.getResString(R.string.volume) + " : " + _mVdi.volume + " / 100";
                 String timeAdded = Utils.getResString(R.string.time_added) + " : " + _mVdi.timeAdded;
                 String timePlayed = Utils.getResString(R.string.time_last_played) + " : " + _mVdi.timeLastPlayed;
-                String msg = _mVdi.title + "\n\n"
+                String ytvid = Utils.getResString(R.string.youtube_id) + " : " + _mVdi.ytvid;
+                String msg =_mVdi.title + "\n\n"
+                             + ytvid + "\n"
                              + author + "\n"
                              + playbackTm + "\n"
                              + volume + "\n"
@@ -748,6 +751,7 @@ public class UiUtils {
                 final int COLI_PLAYTIME     = 3;
                 final int COLI_TIME_ADD     = 4;
                 final int COLI_TIME_PLAYED  = 5;
+                final int COLI_VIDEOID      = 6;
                 DateFormat df = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM);
                 DB db = DB.get();
                 Cursor c = db.queryVideo(vid, new ColVideo[] {
@@ -757,6 +761,7 @@ public class UiUtils {
                         ColVideo.PLAYTIME,
                         ColVideo.TIME_ADD,
                         ColVideo.TIME_PLAYED,
+                        ColVideo.VIDEOID,
                 });
 
                 if (!c.moveToFirst()) {
@@ -769,6 +774,7 @@ public class UiUtils {
                 _mVdi.volume = "" + c.getInt(COLI_VOLUME);
                 _mVdi.playTime = Utils.secsToMinSecText(c.getInt(COLI_PLAYTIME));
                 _mVdi.timeAdded = df.format(new Date(c.getLong(COLI_TIME_ADD)));
+                _mVdi.ytvid = c.getString(COLI_VIDEOID);
                 long tm = c.getLong(COLI_TIME_PLAYED);
                 if (0 == tm)
                     _mVdi.timeLastPlayed = Utils.getResString(R.string.not_played_yet);

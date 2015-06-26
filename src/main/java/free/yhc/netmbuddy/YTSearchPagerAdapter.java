@@ -80,6 +80,7 @@ public class YTSearchPagerAdapter extends FragmentPagerAdapterEx {
         mTotalResults = totalResults;
         int lastPage = getLastPage(totalResults);
         mNrPages = lastPage;
+        notifyDataSetChanged();
         //notifyDataSetChanged();
         Utils.getUiHandler().post(new Runnable() {
             @Override

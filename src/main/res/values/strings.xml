@@ -46,6 +46,7 @@
     <string name="beginning">Beginning</string>
     <string name="end">End</string>
     <string name="both">Both</string>
+    <string name="youtube_id">Youtube Id</string>
 
     <string name="enter_keyword">Enter search keyword</string>
     <string name="new_search">New search</string>
@@ -206,7 +207,7 @@ It may takes long time(up to several minutes) in case that:\n
 Error getting video from Youtube.\n
 This can be caused by one of below reasons.\n
   - Temporal error.\n
-  - Video is not available(ex. country constraints).\n
+  - Video is not available(ex. copyright infringement).\n
   - Old NetMBuddy version.
     </string>
     <string name="err_ytnot_supported_vidformat">Not supported video format.</string>

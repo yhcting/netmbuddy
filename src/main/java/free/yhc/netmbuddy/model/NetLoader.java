@@ -42,6 +42,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.UnknownHostException;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
@@ -64,7 +65,7 @@ public class NetLoader {
     private static final Utils.Logger P = new Utils.Logger(NetLoader.class);
 
     private boolean         mUserClose  = false;
-    private HttpClient      mHttpClient = null;
+    private final AtomicReference<HttpClient> mHttpClient = new AtomicReference<>(null);
 
     public static enum Err {
         NO_ERR,
@@ -144,10 +145,10 @@ public class NetLoader {
     public NetLoader
     open(String proxy) {
         mUserClose = false;
-        eAssert(null == mHttpClient);
+        eAssert(null == mHttpClient.get());
         if (null == proxy)
             proxy = "";
-        mHttpClient = newHttpClient(proxy);
+        mHttpClient.set(newHttpClient(proxy));
         return this;
     }
 
@@ -157,15 +158,34 @@ public class NetLoader {
         // Kind of hack!
         // There is no fast-way to cancel running-java thread.
         // So, make input-stream closed by force to stop loading/DOM-parsing etc.
-        if (null != mHttpClient)
-            mHttpClient.getConnectionManager().shutdown();
-        mHttpClient = null;
+        //
+        // Note that doing main work usually done on background because it may take long.
+        // But, 'close' is usually triggered at UI thread because, closing network operation is
+        //   usually expected to be done synchronously.
+        // Meanwhile, Android doesn't allow doing network operation at UI thread because of response
+        //   time issue.
+        // So, below dirty-hack is used here.
+        final HttpClient client = mHttpClient.get();
+        mHttpClient.set(null);
+        if (null != client) {
+            if (Utils.isUiThread()) {
+                new Thread(new Runnable() {
+                    @Override
+                    public void
+                    run() {
+                        client.getConnectionManager().shutdown();
+                    }
+                }).start();
+
+            } else
+                client.getConnectionManager().shutdown();
+        }
     }
 
     public void
     readHttpData(OutputStream outs, Uri uri)
             throws LocalException {
-        eAssert(null != mHttpClient);
+        eAssert(null != mHttpClient.get());
         // Proxy is not supported yet.
         HttpRespContent content = getHttpContent(uri, false);
         // 256K is experimental value small enough to contains most feed text.
@@ -183,7 +203,7 @@ public class NetLoader {
     public HttpRespContent
     getHttpContent(Uri uri, boolean source)
             throws LocalException  {
-        if (null == mHttpClient) {
+        if (null == mHttpClient.get()) {
             if (DBG) P.v("NetLoader Fail to get HttpClient");
             throw new LocalException(Err.UNKNOWN);
         }
@@ -204,8 +224,7 @@ public class NetLoader {
                 if (DBG) P.v("executing request: " + httpGet.getRequestLine().toString());
                 //logI("uri: " + httpGet.getURI().toString());
                 //logI("target: " + httpTarget.getHostName());
-
-                HttpResponse httpResp = mHttpClient.execute(httpTarget, httpGet);
+                HttpResponse httpResp = mHttpClient.get().execute(httpTarget, httpGet);
                 if (DBG) P.v("NetLoader HTTP response status line : " + httpResp.getStatusLine().toString());
 
                 // TODO
@@ -271,7 +290,7 @@ public class NetLoader {
             } catch (IOException e) {
                 if (DBG) P.v("NetLoader IOException : " + e.getMessage());
                 throw new LocalException(Err.IO_NET);
-            } catch (IllegalStateException e) {
+            } catch (Exception e) {
                 if (DBG) P.v("NetLoader IllegalStateException : " + e.getMessage());
                 throw new LocalException(Err.UNKNOWN);
             }
