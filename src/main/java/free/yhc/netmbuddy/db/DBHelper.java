@@ -41,7 +41,7 @@ import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
 import android.os.Process;
-import free.yhc.netmbuddy.model.YTVideoFeed;
+import free.yhc.netmbuddy.core.YTVideoFeed;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class DBHelper {

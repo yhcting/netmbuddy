@@ -39,7 +39,7 @@
 // For future use.
 //
 
-package free.yhc.netmbuddy.model;
+package free.yhc.netmbuddy.core;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;

@@ -46,10 +46,10 @@ import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
-import free.yhc.netmbuddy.model.NotiManager;
-import free.yhc.netmbuddy.model.UnexpectedExceptionHandler;
-import free.yhc.netmbuddy.model.YTPlayer;
-import free.yhc.netmbuddy.model.YTPlayer.StopState;
+import free.yhc.netmbuddy.core.NotiManager;
+import free.yhc.netmbuddy.core.UnexpectedExceptionHandler;
+import free.yhc.netmbuddy.core.YTPlayer;
+import free.yhc.netmbuddy.core.YTPlayer.StopState;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class LockScreenActivity extends Activity implements

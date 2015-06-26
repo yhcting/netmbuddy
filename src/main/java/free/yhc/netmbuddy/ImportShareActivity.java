@@ -55,7 +55,7 @@ import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.net.Uri;
 import android.os.Bundle;
-import free.yhc.netmbuddy.model.UnexpectedExceptionHandler;
+import free.yhc.netmbuddy.core.UnexpectedExceptionHandler;
 import free.yhc.netmbuddy.share.Share;
 import free.yhc.netmbuddy.utils.UiUtils;
 import free.yhc.netmbuddy.utils.Utils;

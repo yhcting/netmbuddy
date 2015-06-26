@@ -50,7 +50,7 @@ import android.widget.ResourceCursorAdapter;
 import android.widget.TextView;
 import free.yhc.netmbuddy.db.ColVideo;
 import free.yhc.netmbuddy.db.DB;
-import free.yhc.netmbuddy.model.YTPlayer;
+import free.yhc.netmbuddy.core.YTPlayer;
 import free.yhc.netmbuddy.utils.UiUtils;
 import free.yhc.netmbuddy.utils.Utils;
 

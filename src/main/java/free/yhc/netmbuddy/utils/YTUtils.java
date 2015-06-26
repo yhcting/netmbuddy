@@ -38,10 +38,10 @@ package free.yhc.netmbuddy.utils;
 
 import free.yhc.netmbuddy.R;
 import free.yhc.netmbuddy.db.DB;
-import free.yhc.netmbuddy.model.Policy;
-import free.yhc.netmbuddy.model.YTConstants;
-import free.yhc.netmbuddy.model.YTHacker;
-import free.yhc.netmbuddy.model.YTSearchHelper;
+import free.yhc.netmbuddy.core.Policy;
+import free.yhc.netmbuddy.core.YTConstants;
+import free.yhc.netmbuddy.core.YTHacker;
+import free.yhc.netmbuddy.core.YTSearchHelper;
 
 public class YTUtils {
     private static final boolean DBG = false;

@@ -34,7 +34,7 @@
  * official policies, either expressed or implied, of the FreeBSD Project.
  *****************************************************************************/
 
-package free.yhc.netmbuddy.model;
+package free.yhc.netmbuddy.core;
 
 import java.util.LinkedList;
 
@@ -44,6 +44,12 @@ import org.w3c.dom.Node;
 
 import android.net.Uri;
 import free.yhc.netmbuddy.utils.Utils;
+
+// This class is deprecated.
+// This is used to support deprecated API-v2.
+// And it is NOT USED anymore.
+// It is left only for history.
+
 
 //<entry gd:etag='W/&quot;DkYEQ347eCp7I2A9WhJbEU8.&quot;'>
 //  <id>tag:youtube.com,2008:user:hanitv:playlist:PLxrXSNAnHXeL1puk5TwZnVzU9c-8WTWVQ</id>

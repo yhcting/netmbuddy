@@ -34,7 +34,7 @@
  * official policies, either expressed or implied, of the FreeBSD Project.
  *****************************************************************************/
 
-package free.yhc.netmbuddy.model;
+package free.yhc.netmbuddy.core;
 
 import static free.yhc.netmbuddy.utils.Utils.eAssert;
 
@@ -67,8 +67,8 @@ import free.yhc.netmbuddy.Err;
 import free.yhc.netmbuddy.R;
 import free.yhc.netmbuddy.db.ColVideo;
 import free.yhc.netmbuddy.db.DB;
-import free.yhc.netmbuddy.model.YTPlayer.DBUpdateType;
-import free.yhc.netmbuddy.model.YTPlayer.Video;
+import free.yhc.netmbuddy.core.YTPlayer.DBUpdateType;
+import free.yhc.netmbuddy.core.YTPlayer.Video;
 import free.yhc.netmbuddy.utils.UiUtils;
 import free.yhc.netmbuddy.utils.Utils;
 import free.yhc.netmbuddy.utils.YTUtils;

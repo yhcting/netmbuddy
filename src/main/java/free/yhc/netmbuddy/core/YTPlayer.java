@@ -34,7 +34,7 @@
  * official policies, either expressed or implied, of the FreeBSD Project.
  *****************************************************************************/
 
-package free.yhc.netmbuddy.model;
+package free.yhc.netmbuddy.core;
 
 import static free.yhc.netmbuddy.utils.Utils.eAssert;
 
@@ -73,8 +73,8 @@ import free.yhc.netmbuddy.R;
 import free.yhc.netmbuddy.VideoPlayerActivity;
 import free.yhc.netmbuddy.db.ColVideo;
 import free.yhc.netmbuddy.db.DB;
-import free.yhc.netmbuddy.model.YTDownloader.DnArg;
-import free.yhc.netmbuddy.model.YTDownloader.DownloadDoneReceiver;
+import free.yhc.netmbuddy.core.YTDownloader.DnArg;
+import free.yhc.netmbuddy.core.YTDownloader.DownloadDoneReceiver;
 import free.yhc.netmbuddy.utils.FileUtils;
 import free.yhc.netmbuddy.utils.Utils;
 

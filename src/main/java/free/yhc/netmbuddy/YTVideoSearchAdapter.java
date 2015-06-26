@@ -48,11 +48,11 @@ import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.TextView;
 import free.yhc.netmbuddy.db.DB;
-import free.yhc.netmbuddy.model.Policy;
-import free.yhc.netmbuddy.model.YTFeed;
-import free.yhc.netmbuddy.model.YTPlayer;
-import free.yhc.netmbuddy.model.YTSearchHelper;
-import free.yhc.netmbuddy.model.YTVideoFeed;
+import free.yhc.netmbuddy.core.Policy;
+import free.yhc.netmbuddy.core.YTFeed;
+import free.yhc.netmbuddy.core.YTPlayer;
+import free.yhc.netmbuddy.core.YTSearchHelper;
+import free.yhc.netmbuddy.core.YTVideoFeed;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class YTVideoSearchAdapter extends YTSearchAdapter {

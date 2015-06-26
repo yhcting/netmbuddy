@@ -54,7 +54,7 @@
  *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *****************************************************************************/
 
-package free.yhc.netmbuddy.model;
+package free.yhc.netmbuddy.core;
 
 import java.util.concurrent.atomic.AtomicInteger;
 

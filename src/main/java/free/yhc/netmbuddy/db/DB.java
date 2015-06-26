@@ -49,7 +49,7 @@ import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-import free.yhc.netmbuddy.model.UnexpectedExceptionHandler;
+import free.yhc.netmbuddy.core.UnexpectedExceptionHandler;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class DB implements

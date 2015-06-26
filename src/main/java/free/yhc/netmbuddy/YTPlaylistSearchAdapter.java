@@ -40,9 +40,9 @@ import static free.yhc.netmbuddy.utils.Utils.eAssert;
 import android.content.Context;
 import android.view.View;
 import android.widget.TextView;
-import free.yhc.netmbuddy.model.YTFeed;
-import free.yhc.netmbuddy.model.YTPlaylistFeed;
-import free.yhc.netmbuddy.model.YTSearchHelper;
+import free.yhc.netmbuddy.core.YTFeed;
+import free.yhc.netmbuddy.core.YTPlaylistFeed;
+import free.yhc.netmbuddy.core.YTSearchHelper;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class YTPlaylistSearchAdapter extends YTSearchAdapter {

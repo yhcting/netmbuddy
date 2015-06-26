@@ -51,9 +51,9 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
-import free.yhc.netmbuddy.model.Policy;
-import free.yhc.netmbuddy.model.YTFeed;
-import free.yhc.netmbuddy.model.YTSearchHelper;
+import free.yhc.netmbuddy.core.Policy;
+import free.yhc.netmbuddy.core.YTFeed;
+import free.yhc.netmbuddy.core.YTSearchHelper;
 import free.yhc.netmbuddy.utils.Utils;
 
 public abstract class YTSearchFragment extends Fragment implements

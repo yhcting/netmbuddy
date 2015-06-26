@@ -45,11 +45,11 @@ import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.preference.PreferenceManager;
 import free.yhc.netmbuddy.db.DB;
-import free.yhc.netmbuddy.model.NotiManager;
-import free.yhc.netmbuddy.model.RTState;
-import free.yhc.netmbuddy.model.UnexpectedExceptionHandler;
-import free.yhc.netmbuddy.model.YTPlayer;
-import free.yhc.netmbuddy.model.YTPlayerLifeSupportService;
+import free.yhc.netmbuddy.core.NotiManager;
+import free.yhc.netmbuddy.core.RTState;
+import free.yhc.netmbuddy.core.UnexpectedExceptionHandler;
+import free.yhc.netmbuddy.core.YTPlayer;
+import free.yhc.netmbuddy.core.YTPlayerLifeSupportService;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class YTMPApp extends Application {

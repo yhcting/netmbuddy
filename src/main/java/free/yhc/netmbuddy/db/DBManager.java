@@ -54,7 +54,7 @@ import android.database.sqlite.SQLiteException;
 import free.yhc.netmbuddy.R;
 import free.yhc.netmbuddy.db.DB.Err;
 import free.yhc.netmbuddy.db.DBHistory.FieldNType;
-import free.yhc.netmbuddy.model.Policy;
+import free.yhc.netmbuddy.core.Policy;
 import free.yhc.netmbuddy.utils.Utils;
 
 class DBManager {

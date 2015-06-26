@@ -4,3 +4,4 @@
 * Find similar video at Youtube (To find simlar video that can replace unavailable video.)
   : comparing title and thumbnail. (How can we tell similarity of thumbnail on Android platform)
 * Replace old unavailable video with new video.
+* Proceed to Youtube Data API v3...

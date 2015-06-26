@@ -43,8 +43,8 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.view.KeyEvent;
 import android.view.View;
-import free.yhc.netmbuddy.model.BGTask;
-import free.yhc.netmbuddy.model.UnexpectedExceptionHandler;
+import free.yhc.netmbuddy.core.BGTask;
+import free.yhc.netmbuddy.core.UnexpectedExceptionHandler;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class DiagAsyncTask extends BGTask<Err> implements

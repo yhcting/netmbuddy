@@ -34,7 +34,7 @@
  * official policies, either expressed or implied, of the FreeBSD Project.
  *****************************************************************************/
 
-package free.yhc.netmbuddy.model;
+package free.yhc.netmbuddy.core;
 
 import static free.yhc.netmbuddy.utils.Utils.eAssert;
 
@@ -47,6 +47,11 @@ import org.w3c.dom.Node;
 import android.net.Uri;
 import free.yhc.netmbuddy.utils.Utils;
 
+
+// This class is deprecated.
+// This is used to support deprecated API-v2.
+// And it is NOT USED anymore.
+// It is left only for history.
 public class YTVideoFeed extends YTFeed {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(YTVideoFeed.class);

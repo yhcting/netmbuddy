@@ -37,8 +37,8 @@
 package free.yhc.netmbuddy;
 
 import android.os.Bundle;
-import free.yhc.netmbuddy.model.UnexpectedExceptionHandler;
-import free.yhc.netmbuddy.model.YTSearchHelper;
+import free.yhc.netmbuddy.core.UnexpectedExceptionHandler;
+import free.yhc.netmbuddy.core.YTSearchHelper;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class YTVideoSearchPlaylistActivity extends YTVideoSearchActivity implements

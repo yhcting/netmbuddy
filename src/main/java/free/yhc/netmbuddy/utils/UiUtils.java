@@ -74,9 +74,9 @@ import free.yhc.netmbuddy.db.ColPlaylist;
 import free.yhc.netmbuddy.db.ColVideo;
 import free.yhc.netmbuddy.db.DB;
 import free.yhc.netmbuddy.db.DB.Bookmark;
-import free.yhc.netmbuddy.model.Policy;
-import free.yhc.netmbuddy.model.YTHacker;
-import free.yhc.netmbuddy.model.YTPlayer;
+import free.yhc.netmbuddy.core.Policy;
+import free.yhc.netmbuddy.core.YTHacker;
+import free.yhc.netmbuddy.core.YTPlayer;
 import free.yhc.netmbuddy.scmp.SCmp;
 
 public class UiUtils {

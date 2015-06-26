@@ -34,13 +34,17 @@
  * official policies, either expressed or implied, of the FreeBSD Project.
  *****************************************************************************/
 
-package free.yhc.netmbuddy.model;
+package free.yhc.netmbuddy.core;
 
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
 import free.yhc.netmbuddy.utils.Utils;
 
+// This class is deprecated.
+// This is used to support deprecated API-v2.
+// And it is NOT USED anymore.
+// It is left only for history.
 public abstract class YTFeed {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(YTFeed.class);

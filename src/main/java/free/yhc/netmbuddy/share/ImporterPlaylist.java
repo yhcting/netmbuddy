@@ -44,9 +44,9 @@ import org.json.JSONObject;
 
 import free.yhc.netmbuddy.db.ColPlaylist;
 import free.yhc.netmbuddy.db.DB;
-import free.yhc.netmbuddy.model.MultiThreadRunner;
-import free.yhc.netmbuddy.model.Policy;
-import free.yhc.netmbuddy.model.YTSearchHelper;
+import free.yhc.netmbuddy.core.MultiThreadRunner;
+import free.yhc.netmbuddy.core.Policy;
+import free.yhc.netmbuddy.core.YTSearchHelper;
 import free.yhc.netmbuddy.share.Share.Err;
 import free.yhc.netmbuddy.share.Share.ImportPrepareResult;
 import free.yhc.netmbuddy.share.Share.ImportResult;

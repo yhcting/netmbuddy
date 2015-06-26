@@ -73,8 +73,8 @@ import android.util.Log;
 import android.view.Window;
 import free.yhc.netmbuddy.R;
 import free.yhc.netmbuddy.YTMPActivity;
-import free.yhc.netmbuddy.model.Policy;
-import free.yhc.netmbuddy.model.RTState;
+import free.yhc.netmbuddy.core.Policy;
+import free.yhc.netmbuddy.core.RTState;
 
 public class Utils {
     private static final boolean DBG = false;

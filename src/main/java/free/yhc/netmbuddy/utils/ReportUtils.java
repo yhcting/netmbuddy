@@ -43,7 +43,7 @@ import java.io.IOException;
 
 import android.content.Context;
 import free.yhc.netmbuddy.R;
-import free.yhc.netmbuddy.model.Policy;
+import free.yhc.netmbuddy.core.Policy;
 
 public class ReportUtils {
     private static final boolean DBG = false;

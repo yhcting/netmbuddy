@@ -37,8 +37,8 @@
 package free.yhc.netmbuddy;
 
 import free.yhc.netmbuddy.db.DB;
-import free.yhc.netmbuddy.model.YTHacker;
-import free.yhc.netmbuddy.model.YTSearchHelper;
+import free.yhc.netmbuddy.core.YTHacker;
+import free.yhc.netmbuddy.core.YTSearchHelper;
 import free.yhc.netmbuddy.share.Share;
 
 public enum Err {

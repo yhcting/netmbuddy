@@ -46,7 +46,7 @@ import android.database.Cursor;
 import free.yhc.netmbuddy.db.ColPlaylist;
 import free.yhc.netmbuddy.db.ColVideo;
 import free.yhc.netmbuddy.db.DB;
-import free.yhc.netmbuddy.model.Policy;
+import free.yhc.netmbuddy.core.Policy;
 import free.yhc.netmbuddy.utils.Utils;
 
 //============================================================================

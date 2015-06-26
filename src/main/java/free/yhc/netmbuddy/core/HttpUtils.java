@@ -33,10 +33,30 @@
  * are those of the authors and should not be interpreted as representing
  * official policies, either expressed or implied, of the FreeBSD Project.
  *****************************************************************************/
-package free.yhc.netmbuddy.model;
 
-public class YTConstants {
-    // See Youtube API Document
-    public static final int MAX_RESULTS_PER_PAGE            = 50;
-    public static final int MAX_AVAILABLE_RESULTS_FOR_QUERY = 1000;
+package free.yhc.netmbuddy.core;
+
+import free.yhc.netmbuddy.utils.Utils;
+
+public class HttpUtils {
+    private static final boolean DBG = false;
+    private static final Utils.Logger P = new Utils.Logger(HttpUtils.class);
+
+    // Statuc Codes
+    // ============
+    // Informational    : 1xx
+
+    // Successful       : 2xx
+    public static final int SC_OK           = 200;
+    public static final int SC_NO_CONTENT   = 204;
+
+    // Redirection      : 3xx
+    public static final int SC_FOUND        = 302;
+
+    // Client Error     : 4xx
+    public static final int SC_BAD_REQUEST  = 400;
+    public static final int SC_NOT_FOUND    = 404;
+
+    // Server Error     : 5xx
+
 }

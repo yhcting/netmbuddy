@@ -40,7 +40,7 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
-import free.yhc.netmbuddy.model.UnexpectedExceptionHandler;
+import free.yhc.netmbuddy.core.UnexpectedExceptionHandler;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class YTMPPreferenceActivity extends PreferenceActivity implements

@@ -34,13 +34,13 @@
  * official policies, either expressed or implied, of the FreeBSD Project.
  *****************************************************************************/
 
-package free.yhc.netmbuddy.model;
+package free.yhc.netmbuddy.core;
 
 import android.app.Notification;
 import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
-import free.yhc.netmbuddy.model.YTPlayer.StopState;
+import free.yhc.netmbuddy.core.YTPlayer.StopState;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class YTPlayerLifeSupportService extends Service implements

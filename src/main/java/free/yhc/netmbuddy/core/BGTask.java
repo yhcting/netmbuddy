@@ -59,7 +59,7 @@
 //   ----------------------------------------------
 //
 
-package free.yhc.netmbuddy.model;
+package free.yhc.netmbuddy.core;
 
 import java.util.concurrent.atomic.AtomicReference;
 

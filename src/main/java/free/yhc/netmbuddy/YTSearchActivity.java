@@ -51,10 +51,10 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import free.yhc.netmbuddy.model.Policy;
-import free.yhc.netmbuddy.model.SearchSuggestionProvider;
-import free.yhc.netmbuddy.model.YTPlayer;
-import free.yhc.netmbuddy.model.YTSearchHelper;
+import free.yhc.netmbuddy.core.Policy;
+import free.yhc.netmbuddy.core.SearchSuggestionProvider;
+import free.yhc.netmbuddy.core.YTPlayer;
+import free.yhc.netmbuddy.core.YTSearchHelper;
 import free.yhc.netmbuddy.utils.Utils;
 
 public abstract class YTSearchActivity extends FragmentActivity {

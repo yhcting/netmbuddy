@@ -42,7 +42,7 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.os.Bundle;
-import free.yhc.netmbuddy.model.UnexpectedExceptionHandler;
+import free.yhc.netmbuddy.core.UnexpectedExceptionHandler;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class ImportShareFileActivity extends Activity implements

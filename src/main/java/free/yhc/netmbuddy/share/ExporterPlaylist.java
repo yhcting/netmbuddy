@@ -50,7 +50,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import free.yhc.netmbuddy.R;
-import free.yhc.netmbuddy.model.Policy;
+import free.yhc.netmbuddy.core.Policy;
 import free.yhc.netmbuddy.share.Share.Err;
 import free.yhc.netmbuddy.share.Share.ExporterI;
 import free.yhc.netmbuddy.share.Share.Type;

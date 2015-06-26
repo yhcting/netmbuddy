@@ -227,25 +227,25 @@
                 <data android:pathPattern=".*\\..*\\..*\\..*\\.netmbuddy"/>
             </intent-filter>
         </activity>
-        <service android:name=".model.YTPlayerLifeSupportService"
+        <service android:name=".core.YTPlayerLifeSupportService"
                  android:exported="false"
                  />
         <receiver
-            android:name=".model.YTPlayer$TelephonyMonitor"
+            android:name=".core.YTPlayer$TelephonyMonitor"
             >
             <intent-filter>
                 <action android:name="android.intent.action.PHONE_STATE" />
             </intent-filter>
         </receiver>
         <receiver
-            android:name=".model.YTPlayer$NetworkMonitor"
+            android:name=".core.YTPlayer$NetworkMonitor"
             >
             <intent-filter>
                 <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
             </intent-filter>
         </receiver>
         <receiver
-            android:name=".model.NotiManager$NotiIntentReceiver"
+            android:name=".core.NotiManager$NotiIntentReceiver"
             >
             <intent-filter>
                 <action android:name="ytmplayer.intent.action.NOTIFICATION_DELETE" />
@@ -254,7 +254,7 @@
             </intent-filter>
         </receiver>
         <provider
-            android:name=".model.SearchSuggestionProvider"
+            android:name=".core.SearchSuggestionProvider"
             android:authorities="free.yhc.netmbuddy"
             />
     </application>

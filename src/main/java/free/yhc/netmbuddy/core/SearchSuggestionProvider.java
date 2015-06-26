@@ -34,29 +34,38 @@
  * official policies, either expressed or implied, of the FreeBSD Project.
  *****************************************************************************/
 
-package free.yhc.netmbuddy.model;
+package free.yhc.netmbuddy.core;
 
+import android.content.SearchRecentSuggestionsProvider;
+import android.provider.SearchRecentSuggestions;
 import free.yhc.netmbuddy.utils.Utils;
 
-public class HttpUtils {
+public class SearchSuggestionProvider extends SearchRecentSuggestionsProvider {
     private static final boolean DBG = false;
-    private static final Utils.Logger P = new Utils.Logger(HttpUtils.class);
+    private static final Utils.Logger P = new Utils.Logger(SearchSuggestionProvider.class);
 
-    // Statuc Codes
-    // ============
-    // Informational    : 1xx
+    private final static String AUTHORITY   = "free.yhc.netmbuddy";
+    private final static int    MODE        = DATABASE_MODE_QUERIES;
 
-    // Successful       : 2xx
-    public static final int SC_OK           = 200;
-    public static final int SC_NO_CONTENT   = 204;
+    public SearchSuggestionProvider() {
+        setupSuggestions(AUTHORITY, MODE);
+    }
 
-    // Redirection      : 3xx
-    public static final int SC_FOUND        = 302;
+    public static void
+    saveRecentQuery(String query) {
+        SearchRecentSuggestions suggestions
+            = new SearchRecentSuggestions(Utils.getAppContext(),
+                                          AUTHORITY,
+                                          MODE);
+        suggestions.saveRecentQuery(query, null);
+    }
 
-    // Client Error     : 4xx
-    public static final int SC_BAD_REQUEST  = 400;
-    public static final int SC_NOT_FOUND    = 404;
-
-    // Server Error     : 5xx
-
+    public static void
+    clearHistory() {
+        SearchRecentSuggestions suggestions
+            = new SearchRecentSuggestions(Utils.getAppContext(),
+                                          AUTHORITY,
+                                          MODE);
+        suggestions.clearHistory();
+    }
 }

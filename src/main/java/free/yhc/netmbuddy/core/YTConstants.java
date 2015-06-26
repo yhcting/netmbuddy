@@ -33,39 +33,12 @@
  * are those of the authors and should not be interpreted as representing
  * official policies, either expressed or implied, of the FreeBSD Project.
  *****************************************************************************/
+package free.yhc.netmbuddy.core;
 
-package free.yhc.netmbuddy.model;
+public class YTConstants {
+    // See Youtube API Document
+    public static final int MAX_RESULTS_PER_PAGE            = 50;
+    public static final int MAX_AVAILABLE_RESULTS_FOR_QUERY = 1000;
 
-import android.content.SearchRecentSuggestionsProvider;
-import android.provider.SearchRecentSuggestions;
-import free.yhc.netmbuddy.utils.Utils;
-
-public class SearchSuggestionProvider extends SearchRecentSuggestionsProvider {
-    private static final boolean DBG = false;
-    private static final Utils.Logger P = new Utils.Logger(SearchSuggestionProvider.class);
-
-    private final static String AUTHORITY   = "free.yhc.netmbuddy";
-    private final static int    MODE        = DATABASE_MODE_QUERIES;
-
-    public SearchSuggestionProvider() {
-        setupSuggestions(AUTHORITY, MODE);
-    }
-
-    public static void
-    saveRecentQuery(String query) {
-        SearchRecentSuggestions suggestions
-            = new SearchRecentSuggestions(Utils.getAppContext(),
-                                          AUTHORITY,
-                                          MODE);
-        suggestions.saveRecentQuery(query, null);
-    }
-
-    public static void
-    clearHistory() {
-        SearchRecentSuggestions suggestions
-            = new SearchRecentSuggestions(Utils.getAppContext(),
-                                          AUTHORITY,
-                                          MODE);
-        suggestions.clearHistory();
-    }
+    // See Youtube API Document
 }

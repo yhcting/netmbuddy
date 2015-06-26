@@ -49,11 +49,11 @@ import android.view.ViewGroup;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 import free.yhc.netmbuddy.db.DB;
 import free.yhc.netmbuddy.db.DBHelper;
-import free.yhc.netmbuddy.model.UnexpectedExceptionHandler;
-import free.yhc.netmbuddy.model.YTFeed;
-import free.yhc.netmbuddy.model.YTPlayer;
-import free.yhc.netmbuddy.model.YTSearchHelper;
-import free.yhc.netmbuddy.model.YTVideoFeed;
+import free.yhc.netmbuddy.core.UnexpectedExceptionHandler;
+import free.yhc.netmbuddy.core.YTFeed;
+import free.yhc.netmbuddy.core.YTPlayer;
+import free.yhc.netmbuddy.core.YTSearchHelper;
+import free.yhc.netmbuddy.core.YTVideoFeed;
 import free.yhc.netmbuddy.utils.UiUtils;
 import free.yhc.netmbuddy.utils.Utils;
 

@@ -39,7 +39,7 @@ package free.yhc.netmbuddy.db;
 import static free.yhc.netmbuddy.utils.Utils.eAssert;
 import android.content.ContentValues;
 import android.provider.BaseColumns;
-import free.yhc.netmbuddy.model.Policy;
+import free.yhc.netmbuddy.core.Policy;
 
 public enum ColVideo implements DB.Col {
         // --------------------------------------------------------------------

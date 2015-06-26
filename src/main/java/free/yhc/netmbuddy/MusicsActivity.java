@@ -56,8 +56,8 @@ import android.widget.ListView;
 import android.widget.TextView;
 import free.yhc.netmbuddy.db.ColPlaylist;
 import free.yhc.netmbuddy.db.DB;
-import free.yhc.netmbuddy.model.UnexpectedExceptionHandler;
-import free.yhc.netmbuddy.model.YTPlayer;
+import free.yhc.netmbuddy.core.UnexpectedExceptionHandler;
+import free.yhc.netmbuddy.core.YTPlayer;
 import free.yhc.netmbuddy.utils.UiUtils;
 import free.yhc.netmbuddy.utils.Utils;
 
