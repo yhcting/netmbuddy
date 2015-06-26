@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014
+ * Copyright (C) 2012, 2013, 2014, 2015
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -54,17 +54,17 @@ import free.yhc.netmbuddy.core.YTDataHelper;
 import free.yhc.netmbuddy.core.YTDataAdapter;
 import free.yhc.netmbuddy.utils.Utils;
 
-public class YTVideoSearchAdapter extends YTSearchAdapter {
+public class YTVideoSearchAdapter extends YTSearchAdapter<YTDataAdapter.Video> {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(YTVideoSearchAdapter.class);
 
     // Check Button Tag Key
-    private static final int VTAGKEY_POS        = R.drawable.btncheck_on;
+    private static final int VTAGKEY_POS = R.drawable.btncheck_on;
 
-    private final HashSet<Integer>          mDupSet     = new HashSet<Integer>();
-    private final HashMap<Integer, Long>    mCheckedMap = new HashMap<Integer, Long>();
+    private final HashSet<Integer> mDupSet = new HashSet<>();
+    private final HashMap<Integer, Long> mCheckedMap = new HashMap<>();
 
-    private CheckStateListener  mCheckListener = null;
+    private CheckStateListener mCheckListener = null;
 
     public interface CheckStateListener {
         /**
@@ -77,6 +77,17 @@ public class YTVideoSearchAdapter extends YTSearchAdapter {
          *   new check state after changing.
          */
         void onStateChanged(int nrChecked, int pos, boolean checked);
+    }
+
+    /**
+     * verify whether given video data is valid or not.
+     */
+    private static boolean
+    verifyVideo(YTDataAdapter.Video v) {
+        return (null != v
+        && null != v.id
+        && null != v.title
+        && null != v.thumbnailUrl);
     }
 
     private void
@@ -108,9 +119,8 @@ public class YTVideoSearchAdapter extends YTSearchAdapter {
     }
 
     YTVideoSearchAdapter(Context context,
-                         YTDataHelper helper,
                          YTDataAdapter.Video[] vids) {
-        super(context, helper, R.layout.ytvideosearch_row, vids);
+        super(context, R.layout.ytvideosearch_row, vids);
         for (int i = 0; i < mItemViews.length; i++) {
             CheckBox v = (CheckBox)mItemViews[i].findViewById(R.id.checkbtn);
             v.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -130,6 +140,12 @@ public class YTVideoSearchAdapter extends YTSearchAdapter {
         // initial notification to callback.
         if (null != mCheckListener)
             mCheckListener.onStateChanged(0, -1, false);
+    }
+
+    @Override
+    protected String
+    getThumnailUrl(YTDataAdapter.Video vid) {
+        return vid.thumbnailUrl;
     }
 
     @Override
@@ -163,22 +179,22 @@ public class YTVideoSearchAdapter extends YTSearchAdapter {
 
     public String
     getItemTitle(int pos) {
-        return mVideos[pos].title;
+        return mItems[pos].title;
     }
 
     public String
     getItemVideoId(int pos) {
-        return mVideos[pos].id;
+        return mItems[pos].id;
     }
 
     public String
     getItemPlaytime(int pos) {
-        return Utils.secsToMinSecText((int)mVideos[pos].playTimeSec);
+        return Utils.secsToMinSecText((int)mItems[pos].playTimeSec);
     }
 
     public String
     getItemThumbnailUrl(int pos) {
-        return mVideos[pos].thumbnailUrl;
+        return mItems[pos].thumbnailUrl;
     }
 
     public String
@@ -274,5 +290,11 @@ public class YTVideoSearchAdapter extends YTSearchAdapter {
 
         if (null != mCheckListener)
             mCheckListener.onStateChanged(0, -1, false);
+    }
+
+    public void
+    cleanup() {
+        mCheckListener = null;
+        super.cleanup();
     }
 }

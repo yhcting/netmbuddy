@@ -45,14 +45,19 @@ import free.yhc.netmbuddy.core.YTDataAdapter;
 import free.yhc.netmbuddy.core.YTDataHelper;
 import free.yhc.netmbuddy.utils.Utils;
 
-public class YTPlaylistSearchAdapter extends YTSearchAdapter {
+public class YTPlaylistSearchAdapter extends YTSearchAdapter<YTDataAdapter.Video> {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(YTPlaylistSearchAdapter.class);
 
     YTPlaylistSearchAdapter(Context context,
-                            YTDataHelper helper,
                             YTDataAdapter.Video[] vids) {
-        super(context, helper, R.layout.ytplaylistsearch_row, vids);
+        super(context, R.layout.ytplaylistsearch_row, vids);
+    }
+
+    @Override
+    protected String
+    getThumnailUrl(YTDataAdapter.Video vid) {
+        return vid.thumbnailUrl;
     }
 
     @Override
@@ -60,20 +65,19 @@ public class YTPlaylistSearchAdapter extends YTSearchAdapter {
     setItemView(int position, View v, YTDataAdapter.Video vid) {
         eAssert(null != v);
 
-        if (!verifyVideo(vid))
-            v.setVisibility(View.INVISIBLE);
-
+        /*
         TextView titlev = (TextView)v.findViewById(R.id.title);
         TextView summaryv = (TextView)v.findViewById(R.id.summary);
         titlev.setText(vid.title);
         summaryv.setText("");
 
         setViewValid(v);
+        */
     }
 
     public String
     getItemTitle(int pos) {
-        return mVideos[pos].title;
+        return mItems[pos].title;
     }
 
     public String

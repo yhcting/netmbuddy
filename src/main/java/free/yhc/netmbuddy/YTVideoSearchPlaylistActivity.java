@@ -47,15 +47,9 @@ UnexpectedExceptionHandler.Evidence {
     private static final Utils.Logger P = new Utils.Logger(YTVideoSearchPlaylistActivity.class);
 
     @Override
-    protected YTDataAdapter.VideoListReq.Type
+    protected YTDataAdapter.ReqType
     getSearchType() {
-        return YTDataAdapter.VideoListReq.Type.PLAYLIST;
-    }
-
-    @Override
-    protected String
-    getTitlePrefix() {
-        return (String)getResources().getText(R.string.playlist);
+        return YTDataAdapter.ReqType.VID_PLAYLIST;
     }
 
     @Override
@@ -69,8 +63,7 @@ UnexpectedExceptionHandler.Evidence {
     onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         UnexpectedExceptionHandler.get().registerModule(this);
-        onCreateInternal(getIntent().getStringExtra(MAP_KEY_SEARCH_TEXT),
-                         getIntent().getStringExtra(MAP_KEY_SEARCH_TITLE));
+        onCreateInternal(getIntent().getStringExtra(KEY_TEXT));
     }
 
     @Override

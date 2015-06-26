@@ -38,6 +38,7 @@ package free.yhc.netmbuddy.core;
 
 import android.os.Environment;
 import free.yhc.netmbuddy.utils.Utils;
+import free.yhc.netmbuddy.ytapiv3.YTApiFacade;
 
 public class Policy {
     private static final boolean DBG = false;
@@ -63,7 +64,7 @@ public class Policy {
     // Youtube
     // --------------------------------------------------------------------
     public static final int     DEFAULT_VIDEO_VOLUME    = 50;
-    public static final int     YTSEARCH_MAX_RESULTS    = 20; // 1 ~ 50
+    public static final int     YTSEARCH_MAX_RESULTS    = YTApiFacade.MAX_RESULTS_PER_PAGE; // 1 ~ 50
     // Using ViewPager requires # of threads twice of this value.
     public static final int     YTSEARCH_NR_PAGE_INDEX_BUTTONS     = 10;
 
@@ -134,7 +135,7 @@ public class Policy {
     // --------------------------------------------------------------------
     // Usage Report
     // --------------------------------------------------------------------
-    public static final String REPORT_RECEIVER          = "yhcting77@gmail.com";
+    public static final String REPORT_RECEIVER          = "yhcting77dev@gmail.com";
     public static final String TIME_STAMP_FILE_SUFFIX   = "____tmstamp___";
 
     // --------------------------------------------------------------------

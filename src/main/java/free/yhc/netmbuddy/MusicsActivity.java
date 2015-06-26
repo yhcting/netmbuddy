@@ -355,14 +355,14 @@ UnexpectedExceptionHandler.Evidence {
     private void
     onContextMenuVideosOfThisAuthor(final long id, final int pos) {
         Intent i = new Intent(this, YTVideoSearchAuthorActivity.class);
-        i.putExtra(YTSearchActivity.MAP_KEY_SEARCH_TEXT, getAdapter().getMusicAuthor(pos));
+        i.putExtra(YTSearchActivity.KEY_TEXT, getAdapter().getMusicAuthor(pos));
         startActivity(i);
     }
 
     private void
     onContextMenuPlaylistsOfThisAuthor(final long id, final int pos) {
         Intent i = new Intent(this, YTPlaylistSearchActivity.class);
-        i.putExtra(YTSearchActivity.MAP_KEY_SEARCH_TEXT, getAdapter().getMusicAuthor(pos));
+        i.putExtra(YTSearchActivity.KEY_TEXT, getAdapter().getMusicAuthor(pos));
         startActivity(i);
     }
 

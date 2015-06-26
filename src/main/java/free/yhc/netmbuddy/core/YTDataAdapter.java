@@ -49,6 +49,13 @@ public class YTDataAdapter {
         UNKNOWN
     }
 
+    public enum ReqType {
+        VID_KEYWORD,
+        VID_AUTHOR,
+        VID_PLAYLIST
+    }
+
+
     public static class YTApiException extends java.lang.Exception {
         static final long serialVersionUID = 0; // to make compiler be happy
 
@@ -75,10 +82,10 @@ public class YTDataAdapter {
     // =======================================================================
     public static class PageInfo {
         public int    totalResults = -1;
-        public Object nextPageToken = null;
-        public Object prevPageToken = null;
+        public String nextPageToken = null;
+        public String prevPageToken = null;
         public PageInfo() { }
-        public PageInfo(int totalResults, Object nextPageToken, Object prevPageToken) {
+        public PageInfo(int totalResults, String nextPageToken, String prevPageToken) {
             this.totalResults = totalResults;
             this.nextPageToken = nextPageToken;
             this.prevPageToken = prevPageToken;
@@ -110,17 +117,12 @@ public class YTDataAdapter {
      * Data to request video search
      */
     public static class VideoListReq {
-        public enum Type {
-            KEYWORD,
-            AUTHOR,
-            PLAYLIST
-        }
-        public Type type        = null;
-        public String hint      = null;
-        public Object pageToken = null;
-        public int pageSize     = -1; // # of max items in one page.
+        public ReqType type = null;
+        public String hint = null;
+        public String pageToken = null;
+        public int pageSize = -1; // # of max items in one page.
         public VideoListReq() { }
-        public VideoListReq(Type type, String hint, Object pageToken, int pageSize) {
+        public VideoListReq(ReqType type, String hint, String pageToken, int pageSize) {
             this.type = type;
             this.hint = hint;
             this.pageToken = pageToken;

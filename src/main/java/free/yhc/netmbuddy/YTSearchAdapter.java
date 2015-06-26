@@ -49,7 +49,7 @@ import free.yhc.netmbuddy.core.YTDataHelper;
 import free.yhc.netmbuddy.utils.UiUtils;
 import free.yhc.netmbuddy.utils.Utils;
 
-public abstract class YTSearchAdapter extends BaseAdapter implements
+public abstract class YTSearchAdapter<T> extends BaseAdapter implements
 YTDataHelper.ThumbnailRespReceiver {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(YTSearchAdapter.class);
@@ -60,57 +60,54 @@ YTDataHelper.ThumbnailRespReceiver {
     protected final Context mCxt;
     // View holder for each item
     protected View[] mItemViews;
-    protected YTDataAdapter.Video[] mVideos;
+    protected T[] mItems;
 
     private Bitmap[] mThumbnails;
     private YTDataHelper mHelper;
 
-    /**
-     * verify whether given video data is valid or not.
-     */
-    protected static boolean
-    verifyVideo(YTDataAdapter.Video v) {
-        return (null != v
-                && null != v.id
-                && null != v.title
-                && null != v.thumbnailUrl);
-    }
-
-
     YTSearchAdapter(Context context,
-                    YTDataHelper helper,
                     int rowLayout,
-                    YTDataAdapter.Video[] videos) {
+                    T[] items) {
         super();
         mCxt = context;
-        mHelper = helper;
 
-        mVideos = videos;
-        mItemViews = new View[mVideos.length];
-        mThumbnails = new Bitmap[mVideos.length];
-
-        mHelper.setThumbnailRespRecevier(this);
-        for (int i = 0; i < mItemViews.length; i++) {
+        mItems = items;
+        mItemViews = new View[mItems.length];
+        for (int i = 0; i < mItemViews.length; i++)
             mItemViews[i] = UiUtils.inflateLayout(Utils.getAppContext(), rowLayout);
+
+        mThumbnails = new Bitmap[mItems.length];
+        mHelper = new YTDataHelper();
+        mHelper.setThumbnailRespRecevier(this);
+        mHelper.open();
+        for (int i = 0; i < mItemViews.length; i++) {
             // NOTE!
             // IMPORTANT! : DO NOT put R.drawable.ic_unknown_image at layout!
             // Because of 'memory optimization' for thumbnail bitmap,
             //   putting drawable at Layout may lead to "Exception : try to used recycled bitmap ...".
             // See comments at UiUtils.setThumbnailImageView() for details.
             // Initialize thumbnail to ic_unknown_image
+            mThumbnails[i] = null;
+            if (null == getThumnailUrl(mItems[i]))
+                continue;
+
             UiUtils.setThumbnailImageView((ImageView) mItemViews[i].findViewById(R.id.thumbnail), null);
             setViewInvalid(mItemViews[i]);
             final YTDataHelper.ThumbnailReq req
                 = new YTDataHelper.ThumbnailReq(i,
-                                                mVideos[i].thumbnailUrl,
+                                                getThumnailUrl(mItems[i]),
                                                 mCxt.getResources().getDimensionPixelSize(R.dimen.thumbnail_width),
                                                 mCxt.getResources().getDimensionPixelSize(R.dimen.thumbnail_height));
-            mThumbnails[i] = null;
-            if (null != mHelper)
-                mHelper.requestThumbnailAsync(req);
+            mHelper.requestThumbnailAsync(req);
         }
+
     }
 
+    protected abstract String
+    getThumnailUrl(T item);
+
+    protected abstract void
+    setItemView(int position, View v, T item);
 
     protected int
     pos2index(int pos) {
@@ -137,9 +134,6 @@ YTDataHelper.ThumbnailRespReceiver {
         return (Boolean)mItemViews[pos].getTag(VTAGKEY_VALID);
     }
 
-    protected abstract void
-    setItemView(int position, View v, YTDataAdapter.Video vid);
-
     /**
      * This should be called when adapter is no more used.
      * Adapter caching each music icons.
@@ -155,28 +149,29 @@ YTDataHelper.ThumbnailRespReceiver {
                 mThumbnails[i] = null;
             }
         }
-
+        if (null != mHelper)
+            mHelper.close(true);
         mHelper = null;
     }
 
-    public YTDataAdapter.Video[]
-    getVideos() {
-        return mVideos;
+    public T[]
+    getItems() {
+        return mItems;
     }
 
     public Bitmap
     getItemThumbnail(int pos) {
-        return mThumbnails[pos];
+        if (0 <= pos
+            && mThumbnails.length > pos)
+            return mThumbnails[pos];
+        return null;
     }
-
 
     @Override
     public void
     onResponse(YTDataHelper helper, YTDataHelper.ThumbnailReq req, YTDataHelper.ThumbnailResp resp) {
-        if (null == mHelper || mHelper != helper) {
-            helper.close(true);
+        if (mHelper != helper)
             return; // invalid callback.
-        }
 
         if (YTDataAdapter.Err.NO_ERR != resp.err) {
             ; // TODO set to something else...
@@ -194,13 +189,13 @@ YTDataHelper.ThumbnailRespReceiver {
     @Override
     public int
     getCount() {
-        return mVideos.length;
+        return mItems.length;
     }
 
     @Override
     public Object
     getItem(int position) {
-        return mVideos[position];
+        return mItems[position];
     }
 
     @Override
@@ -217,8 +212,8 @@ YTDataHelper.ThumbnailRespReceiver {
         if (isViewValid(position))
             return v;
 
-        YTDataAdapter.Video vid = mVideos[position];
-        setItemView(position, v, vid);
+        T item = mItems[position];
+        setItemView(position, v, item);
         return v;
     }
 }

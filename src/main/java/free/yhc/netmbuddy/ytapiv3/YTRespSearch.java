@@ -10,13 +10,17 @@ import java.io.ByteArrayInputStream;
 import free.yhc.netmbuddy.core.YTDataAdapter;
 import free.yhc.netmbuddy.utils.Utils;
 
+import static free.yhc.netmbuddy.utils.Utils.eAssert;
+
 public class YTRespSearch extends YTResp {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(YTRespSearch.class);
 
     static String
     getRequestUrl(String query, String pageToken, int maxResults) {
-        pageToken = (pageToken == null || pageToken.isEmpty())? "": "&pageToken=" + Uri.encode(pageToken, null);
+        eAssert(null != pageToken);
+        if (!pageToken.isEmpty())
+            pageToken = "&pageToken=" + Uri.encode(pageToken, null);
         return "https://www.googleapis.com/youtube/v3/search"
                 + "?key=" + Uri.encode(YTApiFacade.API_KEY)
                 + "&part=id,snippet"

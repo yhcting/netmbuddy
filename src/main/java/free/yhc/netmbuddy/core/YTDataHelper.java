@@ -323,7 +323,7 @@ public class YTDataHelper {
         throws YTDataAdapter.YTApiException {
         //YTFeed.Result r = null;
         switch (req.type) {
-            case KEYWORD:
+            case VID_KEYWORD:
                 return YTApiFacade.requestVideoList(req);
 
             /*

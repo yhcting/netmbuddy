@@ -46,8 +46,10 @@
     <string name="beginning">시작</string>
     <string name="end">끝</string>
     <string name="both">양쪽</string>
-    <string name="youtube_id">유투브 Id</string>
+    <string name="next">다음</string>
+    <string name="prev">이전</string>
 
+    <string name="youtube_id">유투브 Id</string>
     <string name="enter_keyword">검색어 입력</string>
     <string name="new_search">새로 검색하기</string>
     <string name="detail_list">상세 목록 보기</string>

@@ -19,6 +19,8 @@ public class YTApiFacade {
     public static final int MAX_AVAILABLE_RESULTS_FOR_QUERY = 1000000;
 
     // Application specific
+    // This is NetMBuddy default(temporal) key.
+    // Please use your own "CHROME APP" Youtube api key (NOT Android App API key!)
     static final String API_KEY = "AIzaSyD2upYAFQK4WhZ_FjoeJpCsiKgRoN3OKq4";
     // UA String matching above API_KEY
     static final String API_KEY_UASTRING
@@ -56,14 +58,14 @@ public class YTApiFacade {
     public static YTDataAdapter.VideoListResp
     requestVideoList(YTDataAdapter.VideoListReq req) throws YTDataAdapter.YTApiException {
         switch (req.type) {
-        case KEYWORD:
+        case VID_KEYWORD:
             /* TODO pageToken should be handled correctly.
             eAssert(req.pageSize <= MAX_RESULTS_PER_PAGE
                     && req.pageToken instanceof String);
             */
             byte[] data = null;
             try {
-                data = loadUrl(YTRespSearch.getRequestUrl(req.hint, null/*(String)req.pageToken*/, req.pageSize));
+                data = loadUrl(YTRespSearch.getRequestUrl(req.hint, req.pageToken, req.pageSize));
             } catch (NetLoader.LocalException e) {
                 throw new YTDataAdapter.YTApiException(YTDataAdapter.Err.IO_NET);
             }

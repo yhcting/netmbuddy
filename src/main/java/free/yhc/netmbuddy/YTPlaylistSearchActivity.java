@@ -41,6 +41,7 @@ import android.view.View;
 import android.widget.TextView;
 import free.yhc.netmbuddy.core.UnexpectedExceptionHandler;
 import free.yhc.netmbuddy.core.YTDataAdapter;
+import free.yhc.netmbuddy.core.YTDataHelper;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class YTPlaylistSearchActivity extends YTSearchActivity implements
@@ -49,30 +50,32 @@ UnexpectedExceptionHandler.Evidence {
     private static final Utils.Logger P = new Utils.Logger(YTPlaylistSearchActivity.class);
 
     @Override
+    protected void
+    onListItemClick(View view, int position, long itemId) {
+
+    }
+
+    @Override
     public String
     dump(UnexpectedExceptionHandler.DumpLevel lvl) {
         return this.getClass().getName();
     }
 
     @Override
-    protected YTDataAdapter.VideoListReq.Type
+    protected YTDataAdapter.ReqType
     getSearchType() {
-        return YTDataAdapter.VideoListReq.Type.AUTHOR; // TODO Not implemented yet for PL_USER
-    }
-
-    @Override
-    protected Class<? extends YTSearchFragment>
-    getFragmentClass() {
-        return YTPlaylistSearchFragment.class;
+        return null; // NOT Implemented yet.
     }
 
     @Override
     protected void
-    onSearchMetaInformationReady(String text, String title, int totalResults) {
-        String titleText = text + getResources().getText(R.string.user_playlist_title_suffix);
-        ((TextView)findViewById(R.id.title)).setText(titleText);
+    onSearchResponse(YTDataHelper helper,
+                     YTDataHelper.VideoListReq req,
+                     YTDataHelper.VideoListResp resp) {
+
     }
 
+/*
     @Override
     public void
     onCreate(Bundle savedInstanceState) {
@@ -91,7 +94,7 @@ UnexpectedExceptionHandler.Evidence {
 
         String stext = getIntent().getStringExtra(MAP_KEY_SEARCH_TEXT);
         if (null != stext)
-            startNewSearch(stext, stext);
+            startNewSearch(stext);
         else
             doNewSearch();
     }
@@ -102,4 +105,5 @@ UnexpectedExceptionHandler.Evidence {
         UnexpectedExceptionHandler.get().unregisterModule(this);
         super.onDestroy();
     }
+*/
 }

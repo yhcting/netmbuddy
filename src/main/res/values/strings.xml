@@ -46,8 +46,10 @@
     <string name="beginning">Beginning</string>
     <string name="end">End</string>
     <string name="both">Both</string>
-    <string name="youtube_id">Youtube Id</string>
+    <string name="next">Next</string>
+    <string name="prev">Prev</string>
 
+    <string name="youtube_id">Youtube Id</string>
     <string name="enter_keyword">Enter search keyword</string>
     <string name="new_search">New search</string>
     <string name="detail_list">Detail list</string>

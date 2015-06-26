@@ -81,7 +81,7 @@ public class YTMPActivity extends Activity {
         	path = m.group();
         
         Intent i = new Intent(this, YTVideoSearchKeywordActivity.class);
-        i.putExtra(YTSearchActivity.MAP_KEY_SEARCH_TEXT, path);
+        i.putExtra(YTSearchActivity.KEY_TEXT, path);
         startActivity(i);
     }
 

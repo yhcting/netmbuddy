@@ -246,7 +246,7 @@ public class Utils {
     // Fundamentals
     //
     // ========================================================================
-    private static enum LogLV{
+    private enum LogLV{
         V ("[V]", 6),
         D ("[D]", 5),
         I ("[I]", 4),

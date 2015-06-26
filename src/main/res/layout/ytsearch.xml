@@ -58,24 +58,35 @@
                 android:visibility="gone"
                 />
         </LinearLayout>
-        <HorizontalScrollView
-            android:id="@+id/indexbar"
-            android:layout_width="fill_parent"
+        <LinearLayout
+            android:id="@+id/navibar"
+            android:layout_width="match_parent"
             android:layout_height="@dimen/toolbtn_height"
+            android:layout_marginLeft="5dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_gravity="center_vertical"
             android:layout_alignParentRight="true"
             android:layout_toRightOf="@id/toolbar"
-            android:fillViewport="true"
             >
-            <LinearLayout
-                android:id="@+id/indexgroup"
-                android:layout_width="wrap_content"
+            <ImageView
+                android:id="@+id/navi_prev"
+                android:layout_width="@dimen/toolbtn_width"
                 android:layout_height="match_parent"
-                android:gravity="center_vertical"
-                android:layout_gravity="center_vertical"
-                android:orientation="horizontal"
-                >
-            </LinearLayout>
-        </HorizontalScrollView>
+                android:src="@drawable/ic_prev"
+                />
+            <TextView
+                android:id="@+id/navi_current"
+                android:layout_width="@dimen/toolbtn_width"
+                android:layout_height="match_parent"
+                />
+            <ImageView
+                android:id="@+id/navi_next"
+                android:layout_width="@dimen/toolbtn_width"
+                android:layout_height="match_parent"
+                android:src="@drawable/ic_next"
+                />
+        </LinearLayout>
     </RelativeLayout>
     <LinearLayout
         android:id="@+id/player"
@@ -86,15 +97,37 @@
         >
         <include layout="@layout/mplayer" />
     </LinearLayout>
-    <android.support.v4.view.ViewPager
-        android:id="@+id/pager"
+    <FrameLayout
+        android:id="@+id/content"
         android:layout_width="match_parent"
-        android:layout_height="fill_parent"
+        android:layout_height="match_parent"
         android:layout_below="@id/topbar"
         android:layout_above="@id/player"
-        />
+        >
+        <TextView
+            android:id="@+id/content_txt"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="invisible"
+            />
+        <ImageView
+            android:id="@+id/content_loading"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:src="@drawable/spinner_large"
+            android:visibility="invisible"
+            />
+        <ListView
+            android:id="@+id/content_list"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="invisible"
+            />
+    </FrameLayout>
     <LinearLayout
-        android:id="@+id/list_drawer"
+        android:id="@+id/drawer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_above="@id/player"

@@ -47,21 +47,15 @@ UnexpectedExceptionHandler.Evidence {
     private static final Utils.Logger P = new Utils.Logger(YTVideoSearchKeywordActivity.class);
 
     @Override
-    protected YTDataAdapter.VideoListReq.Type
-    getSearchType() {
-        return YTDataAdapter.VideoListReq.Type.KEYWORD;
-    }
-
-    @Override
     protected int
     getToolButtonSearchIcon() {
         return R.drawable.ic_ytsearch;
     }
 
     @Override
-    protected String
-    getTitlePrefix() {
-        return (String)getResources().getText(R.string.keyword);
+    protected YTDataAdapter.ReqType
+    getSearchType() {
+        return YTDataAdapter.ReqType.VID_KEYWORD;
     }
 
     @Override
@@ -75,8 +69,8 @@ UnexpectedExceptionHandler.Evidence {
     onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         UnexpectedExceptionHandler.get().registerModule(this);
-        String text = getIntent().getStringExtra(MAP_KEY_SEARCH_TEXT);
-        onCreateInternal(text, text);
+        String text = getIntent().getStringExtra(KEY_TEXT);
+        onCreateInternal(text);
     }
 
     @Override
