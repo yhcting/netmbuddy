@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014
+ * Copyright (C) 2012, 2013, 2014. 2015
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -40,7 +40,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
 import free.yhc.netmbuddy.core.UnexpectedExceptionHandler;
-import free.yhc.netmbuddy.core.YTSearchHelper;
+import free.yhc.netmbuddy.core.YTDataAdapter;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class YTPlaylistSearchActivity extends YTSearchActivity implements
@@ -55,9 +55,9 @@ UnexpectedExceptionHandler.Evidence {
     }
 
     @Override
-    protected YTSearchHelper.SearchType
+    protected YTDataAdapter.VideoListReq.Type
     getSearchType() {
-        return YTSearchHelper.SearchType.PL_USER;
+        return YTDataAdapter.VideoListReq.Type.AUTHOR; // TODO Not implemented yet for PL_USER
     }
 
     @Override

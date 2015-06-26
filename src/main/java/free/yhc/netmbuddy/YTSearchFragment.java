@@ -52,12 +52,12 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import free.yhc.netmbuddy.core.Policy;
-import free.yhc.netmbuddy.core.YTFeed;
-import free.yhc.netmbuddy.core.YTSearchHelper;
+import free.yhc.netmbuddy.core.YTDataHelper;
+import free.yhc.netmbuddy.core.YTDataAdapter;
 import free.yhc.netmbuddy.utils.Utils;
 
 public abstract class YTSearchFragment extends Fragment implements
-YTSearchHelper.SearchDoneReceiver {
+YTDataHelper.VideoListRespReceiver {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(YTSearchFragment.class);
 
@@ -72,53 +72,47 @@ YTSearchHelper.SearchDoneReceiver {
     private static final String KEY_PRIMARY = "YTSearchFragment:primary";
 
 
-    protected YTSearchHelper    mSearchHelper;
-    protected ListView          mListv  = null;
-    protected ViewGroup         mRootv  = null;
+    protected YTDataHelper mSearchHelper;
+    protected ListView mListv  = null;
+    protected ViewGroup mRootv  = null;
 
     private boolean mSearchDoneResponseRequired = false;
     private boolean mPrimary = false;
-    private YTSearchHelper.SearchType   mType;
+    private YTDataAdapter.VideoListReq.Type mType;
     // TODO
     // refactoing is required for below two variable... is it really required?
-    private String                      mText;
-    private String                      mTitle;
-    private int                         mPage = INVALID_PAGE;
+    private String mText;
+    private String mTitle;
+    private Object mPageToken = null;
+    private int mPage = INVALID_PAGE;
 
     private YTSearchActivity
     getMyActivity() {
         return (YTSearchActivity)super.getActivity();
     }
 
-    private int
-    getStarti(int pageNum) {
-        int starti = (pageNum - 1) * NR_ENTRY_PER_PAGE + 1;
-        return starti < 1? 1: starti;
-    }
     /**
      *
-     * @param pagei
-     *   1-based page number
      */
     private void
-    loadPage(YTSearchHelper.SearchType type, String text, String title, int pageNumber) {
+    loadPage(YTDataAdapter.VideoListReq.Type type, String text, String title, int pageNum, Object pageToken) {
         // close helper to cancel all existing work.
         mSearchHelper.close(true);
 
         // Create new helper instance to know owner instance at callback from helper.
-        mSearchHelper = new YTSearchHelper();
-        mSearchHelper.setSearchDoneRecevier(this);
+        mSearchHelper = new YTDataHelper();
+        mSearchHelper.setVideoListRespRecevier(this);
         // open again to support new search.
         mSearchHelper.open();
-        YTSearchHelper.SearchArg arg
-            = new YTSearchHelper.SearchArg(pageNumber,
-                                           type,
-                                           text,
-                                           title,
-                                           getStarti(pageNumber),
-                                           NR_ENTRY_PER_PAGE);
-        YTSearchHelper.Err err = mSearchHelper.searchAsync(arg);
-        if (YTSearchHelper.Err.NO_ERR == err)
+        YTDataAdapter.VideoListReq ytreq
+            = new YTDataAdapter.VideoListReq(type,
+                                             text,
+                                             pageToken,
+                                             NR_ENTRY_PER_PAGE);
+        YTDataHelper.VideoListReq req
+            = new YTDataHelper.VideoListReq(pageNum, ytreq);
+        YTDataAdapter.Err err = mSearchHelper.requestVideoListAsync(req);
+        if (YTDataAdapter.Err.NO_ERR == err)
             showLoadingLookAndFeel();
         else
             showErrorMessage(Err.map(err).getMessage());
@@ -133,12 +127,12 @@ YTSearchHelper.SearchDoneReceiver {
     abstract protected void
     onListItemClick(View view, int position, long itemId);
 
-    protected final YTSearchHelper.SearchType
+    protected final YTDataAdapter.VideoListReq.Type
     getType() {
         return mType;
     }
 
-    private final YTSearchAdapter
+    private YTSearchAdapter
     getAdapter() {
         if (null != mListv)
             return (YTSearchAdapter)mListv.getAdapter();
@@ -188,17 +182,11 @@ YTSearchHelper.SearchDoneReceiver {
     }
 
     /**
-     *
-     * @param helper
-     * @param arg
-     * @param result
-     * @param err
      * @return
      *   false : there is error in search, otherwise true.
      */
     protected boolean
-    handleSearchResult(YTSearchHelper helper, YTSearchHelper.SearchArg arg,
-                       YTFeed.Result result, YTSearchHelper.Err err) {
+    handleSearchResult(YTDataHelper helper, YTDataHelper.VideoListReq req, YTDataHelper.VideoListResp resp) {
         if (null == mSearchHelper
             || mSearchHelper != helper
             || null == getActivity())
@@ -207,29 +195,23 @@ YTSearchHelper.SearchDoneReceiver {
         Err r = Err.NO_ERR;
         int totalResults = 0;
         do {
-            if (YTSearchHelper.Err.NO_ERR != err) {
-                r = Err.map(err);
+            if (YTDataAdapter.Err.NO_ERR != resp.err) {
+                r = Err.map(resp.err);
                 break;
             }
 
-            int curPage = (Integer)arg.tag;
+            int curPage = (Integer)req.opaque;
 
-            if (result.entries.length <= 0
+            if (resp.yt.vids.length <= 0
                 && 1 == curPage) {
                 r = Err.NO_MATCH;
                 break;
             }
-
-            try {
-                totalResults = Integer.parseInt(result.header.totalResults);
-            } catch (NumberFormatException e) {
-                r = Err.YTSEARCH;
-                break;
-            }
+            totalResults = resp.yt.page.totalResults;
         } while (false);
 
         if (mSearchDoneResponseRequired)
-            getMyActivity().onFragmentSearchDone(this, r, totalResults);
+            getMyActivity().onFragmentSearchDone(this, r, resp.yt.page);
 
         if (Err.NO_ERR != r) {
             stopLoadingLookAndFeel();
@@ -274,11 +256,12 @@ YTSearchHelper.SearchDoneReceiver {
     }
 
     public final void
-    setAttributes(YTSearchHelper.SearchType type, String text, String title, int page) {
+    setAttributes(YTDataAdapter.VideoListReq.Type type, String text, String title, int page, Object pageToken) {
         mType = type;
         mText = text;
         mTitle = title;
         mPage = page;
+        mPageToken = pageToken;
     }
 
     public final void
@@ -288,7 +271,7 @@ YTSearchHelper.SearchDoneReceiver {
 
     public void
     reloadPage() {
-        loadPage(mType, mText, mTitle, mPage);
+        loadPage(mType, mText, mTitle, mPage, mPageToken);
     }
 
     public void
@@ -318,7 +301,7 @@ YTSearchHelper.SearchDoneReceiver {
         mSearchDoneResponseRequired = data.getBoolean(KEY_SEARCH_DONE_RESPONSE, mSearchDoneResponseRequired);
         String tmp = data.getString(KEY_TYPE);
         if (null != tmp)
-            mType = YTSearchHelper.SearchType.valueOf(tmp);
+            mType = YTDataAdapter.VideoListReq.Type.valueOf(tmp);
         tmp = data.getString(KEY_TEXT);
         if (null != tmp)
             mText = tmp;
@@ -340,7 +323,7 @@ YTSearchHelper.SearchDoneReceiver {
     onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         restoreInstanceState(savedInstanceState);
-        mSearchHelper = new YTSearchHelper(); // initialization.
+        mSearchHelper = new YTDataHelper(); // initialization.
     }
 
     @Override
@@ -365,7 +348,7 @@ YTSearchHelper.SearchDoneReceiver {
     public void
     onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        loadPage(mType, mText, mTitle, mPage);
+        loadPage(mType, mText, mTitle, mPage, mPageToken);
     }
 
     @Override

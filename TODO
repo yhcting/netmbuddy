@@ -5,3 +5,4 @@
   : comparing title and thumbnail. (How can we tell similarity of thumbnail on Android platform)
 * Replace old unavailable video with new video.
 * Proceed to Youtube Data API v3...
+* Improvement : How about using 'ETag'

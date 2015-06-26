@@ -41,7 +41,8 @@ import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
 import android.os.Process;
-import free.yhc.netmbuddy.core.YTVideoFeed;
+
+import free.yhc.netmbuddy.core.YTDataAdapter;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class DBHelper {
@@ -59,16 +60,16 @@ public class DBHelper {
                           boolean[] results, Err err);
     }
 
-    public static enum Err {
+    public enum Err {
         NO_ERR
     }
 
     public static class CheckDupArg {
-        public final Object                 tag;
-        public final YTVideoFeed.Entry[]    ents;
-        public CheckDupArg(Object aTag, YTVideoFeed.Entry[] aEnts) {
-            tag = aTag;
-            ents = aEnts;
+        public final Object tag;
+        public final YTDataAdapter.Video[] vids;
+        public CheckDupArg(Object tag, YTDataAdapter.Video[] vids) {
+            this.tag = tag;
+            this.vids = vids;
         }
     }
 
@@ -96,12 +97,12 @@ public class DBHelper {
         }
 
         private boolean[]
-        checkDup(YTVideoFeed.Entry[] entries) {
+        checkDup(YTDataAdapter.Video[] vids) {
             // TODO
             // Should I check "entries[i].available" flag???
-            boolean[] r = new boolean[entries.length];
+            boolean[] r = new boolean[vids.length];
             for (int i = 0; i < r.length; i++)
-                r[i] = DB.get().containsVideo(entries[i].media.videoId);
+                r[i] = DB.get().containsVideo(vids[i].id);
             return r;
         }
 
@@ -121,7 +122,7 @@ public class DBHelper {
 
         private void
         handleCheckDup(CheckDupArg arg) {
-            sendCheckDupDone(arg, checkDup(arg.ents), Err.NO_ERR);
+            sendCheckDupDone(arg, checkDup(arg.vids), Err.NO_ERR);
         }
 
         void

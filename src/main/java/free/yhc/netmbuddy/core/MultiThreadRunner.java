@@ -345,6 +345,11 @@ public class MultiThreadRunner {
 
     public void
     appendJob(Job<?> job) {
+        appendJob(job, false);
+    }
+
+    public void
+    appendJob(Job<?> job, boolean toFirst) {
         job.setOwner(mOwner);
         job.setProgListener(new OnProgressListener() {
             @Override
@@ -359,8 +364,12 @@ public class MultiThreadRunner {
         synchronized (mQLock) {
             if (mRunQ.size() < mMaxConcur)
                 runJobLocked(job);
-            else
-                mReadyQ.addLast(job);
+            else {
+                if (toFirst)
+                    mReadyQ.addFirst(job);
+                else
+                    mReadyQ.addLast(job);
+            }
         }
     }
 

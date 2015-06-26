@@ -41,9 +41,10 @@ import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
+
+import free.yhc.netmbuddy.core.YTDataAdapter;
 import free.yhc.netmbuddy.db.DB;
 import free.yhc.netmbuddy.core.YTPlayer;
-import free.yhc.netmbuddy.core.YTVideoFeed;
 import free.yhc.netmbuddy.utils.ImageUtils;
 import free.yhc.netmbuddy.utils.UiUtils;
 import free.yhc.netmbuddy.utils.Utils;
@@ -283,19 +284,13 @@ public abstract class YTVideoSearchActivity extends YTSearchActivity {
             return R.string.msg_no_thumbnail;
         }
 
-        final YTVideoFeed.Entry entry = (YTVideoFeed.Entry)adapter.getItem(pos);
+        final YTDataAdapter.Video vid = (YTDataAdapter.Video)adapter.getItem(pos);
         int playtm = 0;
-        try {
-             playtm = Integer.parseInt(entry.media.playTime);
-        } catch (NumberFormatException ex) {
-            return R.string.msg_unknown_format;
-        }
-
         DB.Err err = mDb.insertVideoToPlaylist(plid,
-                                               entry.media.videoId,
-                                               entry.media.title,
-                                               entry.author.name,
-                                               playtm,
+                                               vid.id,
+                                               vid.title,
+                                               "", // TODO author name is NOT implemented yet.
+                                               (int)vid.playTimeSec,
                                                ImageUtils.compressBitmap(bm),
                                                volume);
         if (DB.Err.NO_ERR != err) {

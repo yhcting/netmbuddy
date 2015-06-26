@@ -158,7 +158,7 @@ public class YTDownloader {
                 }
 
                 NetLoader.HttpRespContent content = _mLoader.getHttpContent(Uri.parse(vid.url), false);
-                if (HttpUtils.SC_NO_CONTENT == content.stcode) {
+                if (HttpUtils.SC_OK != content.stcode) {
                     sendResult(arg, Err.IO_NET);
                     return;
                 }

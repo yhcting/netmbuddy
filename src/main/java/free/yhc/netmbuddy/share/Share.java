@@ -72,7 +72,7 @@ public class Share {
         Err                 execute();
     }
 
-    public static enum Err {
+    public enum Err {
         NO_ERR,
         IO_FILE,
         PARAMETER,

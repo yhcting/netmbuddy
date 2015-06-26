@@ -38,7 +38,8 @@ package free.yhc.netmbuddy;
 
 import android.os.Bundle;
 import free.yhc.netmbuddy.core.UnexpectedExceptionHandler;
-import free.yhc.netmbuddy.core.YTSearchHelper;
+import free.yhc.netmbuddy.core.YTDataHelper;
+import free.yhc.netmbuddy.core.YTDataAdapter;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class YTVideoSearchAuthorActivity extends YTVideoSearchActivity implements
@@ -47,9 +48,9 @@ UnexpectedExceptionHandler.Evidence {
     private static final Utils.Logger P = new Utils.Logger(YTVideoSearchAuthorActivity.class);
 
     @Override
-    protected YTSearchHelper.SearchType
+    protected YTDataAdapter.VideoListReq.Type
     getSearchType() {
-        return YTSearchHelper.SearchType.VID_AUTHOR;
+        return YTDataAdapter.VideoListReq.Type.AUTHOR;
     }
 
     @Override

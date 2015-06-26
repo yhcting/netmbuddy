@@ -43,40 +43,53 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
-import free.yhc.netmbuddy.core.YTFeed;
-import free.yhc.netmbuddy.core.YTSearchHelper;
+
+import free.yhc.netmbuddy.core.YTDataAdapter;
+import free.yhc.netmbuddy.core.YTDataHelper;
 import free.yhc.netmbuddy.utils.UiUtils;
 import free.yhc.netmbuddy.utils.Utils;
 
 public abstract class YTSearchAdapter extends BaseAdapter implements
-YTSearchHelper.LoadThumbnailDoneReceiver {
+YTDataHelper.ThumbnailRespReceiver {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(YTSearchAdapter.class);
 
     // So, assign one of them as view tag's key value.
-    protected static final int VTAGKEY_VALID      = R.id.content;
+    protected static final int VTAGKEY_VALID = R.id.content;
 
-    protected final Context         mCxt;
+    protected final Context mCxt;
     // View holder for each item
-    protected View[]                mItemViews;
-    protected YTFeed.Entry[]        mEntries;
+    protected View[] mItemViews;
+    protected YTDataAdapter.Video[] mVideos;
 
-    private Bitmap[]                mThumbnails;
-    private YTSearchHelper          mHelper;
+    private Bitmap[] mThumbnails;
+    private YTDataHelper mHelper;
+
+    /**
+     * verify whether given video data is valid or not.
+     */
+    protected static boolean
+    verifyVideo(YTDataAdapter.Video v) {
+        return (null != v
+                && null != v.id
+                && null != v.title
+                && null != v.thumbnailUrl);
+    }
+
 
     YTSearchAdapter(Context context,
-                    YTSearchHelper helper,
+                    YTDataHelper helper,
                     int rowLayout,
-                    YTFeed.Entry[] entries) {
+                    YTDataAdapter.Video[] videos) {
         super();
         mCxt = context;
         mHelper = helper;
 
-        mEntries = entries;
-        mItemViews = new View[mEntries.length];
-        mThumbnails = new Bitmap[mEntries.length];
+        mVideos = videos;
+        mItemViews = new View[mVideos.length];
+        mThumbnails = new Bitmap[mVideos.length];
 
-        mHelper.setLoadThumbnailDoneRecevier(this);
+        mHelper.setThumbnailRespRecevier(this);
         for (int i = 0; i < mItemViews.length; i++) {
             mItemViews[i] = UiUtils.inflateLayout(Utils.getAppContext(), rowLayout);
             // NOTE!
@@ -85,16 +98,16 @@ YTSearchHelper.LoadThumbnailDoneReceiver {
             //   putting drawable at Layout may lead to "Exception : try to used recycled bitmap ...".
             // See comments at UiUtils.setThumbnailImageView() for details.
             // Initialize thumbnail to ic_unknown_image
-            UiUtils.setThumbnailImageView((ImageView)mItemViews[i].findViewById(R.id.thumbnail), null);
+            UiUtils.setThumbnailImageView((ImageView) mItemViews[i].findViewById(R.id.thumbnail), null);
             setViewInvalid(mItemViews[i]);
-            final YTSearchHelper.LoadThumbnailArg arg
-                = new YTSearchHelper.LoadThumbnailArg(i,
-                                                      mEntries[i].media.thumbnailUrl,
-                                                      mCxt.getResources().getDimensionPixelSize(R.dimen.thumbnail_width),
-                                                      mCxt.getResources().getDimensionPixelSize(R.dimen.thumbnail_height));
+            final YTDataHelper.ThumbnailReq req
+                = new YTDataHelper.ThumbnailReq(i,
+                                                mVideos[i].thumbnailUrl,
+                                                mCxt.getResources().getDimensionPixelSize(R.dimen.thumbnail_width),
+                                                mCxt.getResources().getDimensionPixelSize(R.dimen.thumbnail_height));
             mThumbnails[i] = null;
             if (null != mHelper)
-                mHelper.loadThumbnailAsync(arg);
+                mHelper.requestThumbnailAsync(req);
         }
     }
 
@@ -125,7 +138,7 @@ YTSearchHelper.LoadThumbnailDoneReceiver {
     }
 
     protected abstract void
-    setItemView(int position, View v, YTFeed.Entry e);
+    setItemView(int position, View v, YTDataAdapter.Video vid);
 
     /**
      * This should be called when adapter is no more used.
@@ -146,9 +159,9 @@ YTSearchHelper.LoadThumbnailDoneReceiver {
         mHelper = null;
     }
 
-    public YTFeed.Entry[]
-    getEntries() {
-        return mEntries;
+    public YTDataAdapter.Video[]
+    getVideos() {
+        return mVideos;
     }
 
     public Bitmap
@@ -159,22 +172,21 @@ YTSearchHelper.LoadThumbnailDoneReceiver {
 
     @Override
     public void
-    loadThumbnailDone(YTSearchHelper helper, YTSearchHelper.LoadThumbnailArg arg,
-                      Bitmap bm, YTSearchHelper.Err err) {
+    onResponse(YTDataHelper helper, YTDataHelper.ThumbnailReq req, YTDataHelper.ThumbnailResp resp) {
         if (null == mHelper || mHelper != helper) {
             helper.close(true);
             return; // invalid callback.
         }
 
-        if (YTSearchHelper.Err.NO_ERR != err) {
+        if (YTDataAdapter.Err.NO_ERR != resp.err) {
             ; // TODO set to something else...
         } else {
             // View is NOT reused here.
             // So, I don't need to worry about issues comes from reusing view in the list.
-            int i = (Integer)arg.tag;
+            int i = (Integer)resp.opaque;
             ImageView iv = (ImageView)mItemViews[i].findViewById(R.id.thumbnail);
-            mThumbnails[i] = bm;
-            iv.setImageBitmap(bm);
+            mThumbnails[i] = resp.bm;
+            iv.setImageBitmap(resp.bm);
         }
     }
 
@@ -182,13 +194,13 @@ YTSearchHelper.LoadThumbnailDoneReceiver {
     @Override
     public int
     getCount() {
-        return mEntries.length;
+        return mVideos.length;
     }
 
     @Override
     public Object
     getItem(int position) {
-        return mEntries[position];
+        return mVideos[position];
     }
 
     @Override
@@ -205,8 +217,8 @@ YTSearchHelper.LoadThumbnailDoneReceiver {
         if (isViewValid(position))
             return v;
 
-        YTFeed.Entry e = mEntries[position];
-        setItemView(position, v, e);
+        YTDataAdapter.Video vid = mVideos[position];
+        setItemView(position, v, vid);
         return v;
     }
 }

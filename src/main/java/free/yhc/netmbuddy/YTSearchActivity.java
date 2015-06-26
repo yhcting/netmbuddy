@@ -53,8 +53,8 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import free.yhc.netmbuddy.core.Policy;
 import free.yhc.netmbuddy.core.SearchSuggestionProvider;
+import free.yhc.netmbuddy.core.YTDataAdapter;
 import free.yhc.netmbuddy.core.YTPlayer;
-import free.yhc.netmbuddy.core.YTSearchHelper;
 import free.yhc.netmbuddy.utils.Utils;
 
 public abstract class YTSearchActivity extends FragmentActivity {
@@ -76,12 +76,14 @@ public abstract class YTSearchActivity extends FragmentActivity {
         @Override
         public void
         onClick(View v) {
+            /* NOT IMPLEMENTED YET.
             int page = (Integer)v.getTag();
             if (getPagerAdapter().getPrimaryPage() != page)
                 mPager.setCurrentItem(getPagerAdapter().pageToPos(page));
             else
                 // reload
                 getPagerAdapter().getPrimaryFragment().reloadPage();
+            */
         }
     };
 
@@ -185,7 +187,7 @@ public abstract class YTSearchActivity extends FragmentActivity {
     //
     //
     // ========================================================================
-    protected abstract YTSearchHelper.SearchType
+    protected abstract YTDataAdapter.VideoListReq.Type
     getSearchType();
 
     protected abstract Class<? extends YTSearchFragment>
@@ -266,9 +268,9 @@ public abstract class YTSearchActivity extends FragmentActivity {
     public void
     onFragmentSearchDone(YTSearchFragment fragment,
                          Err result,
-                         int totalResults) {
+                         YTDataAdapter.PageInfo page) {
         if (null != getPagerAdapter())
-            getPagerAdapter().onFragmentSearchDone(fragment, result, totalResults);
+            getPagerAdapter().onFragmentSearchDone(fragment, result, page);
     }
 
 

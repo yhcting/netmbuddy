@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014
+ * Copyright (C) 2012, 2013, 2014, 2015
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -40,9 +40,11 @@ import static free.yhc.netmbuddy.utils.Utils.eAssert;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
+import android.util.SparseArray;
 import android.view.ViewGroup;
 import free.yhc.netmbuddy.core.Policy;
-import free.yhc.netmbuddy.core.YTSearchHelper;
+import free.yhc.netmbuddy.core.YTDataAdapter;
+import free.yhc.netmbuddy.core.YTDataHelper;
 import free.yhc.netmbuddy.utils.Utils;
 import free.yhc.netmbuddy.utils.YTUtils;
 
@@ -50,17 +52,20 @@ public class YTSearchPagerAdapter extends FragmentPagerAdapterEx {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(YTSearchPagerAdapter.class);
 
+    private static final YTDataAdapter.PageInfo sEmptyPage
+        = new YTDataAdapter.PageInfo(0, null, null);
     private final Class<? extends YTSearchFragment> mFragmentClass;
-    private final YTSearchHelper.SearchType mSearchType;
-    private final String                    mSearchText;
-    private final String                    mSearchTitle;
+    private final YTDataAdapter.VideoListReq.Type mSearchType;
+    private final String mSearchText;
+    private final String mSearchTitle;
+    private final SparseArray mPageTokens;
 
-    private boolean mInitialized    = false;
-    private int     mTotalResults   = -1;
-    private int     mNrPages        = 1; // at least one page is required even if it's empty.
-    private OnInitializedListener    mOnInitializedListener = null;
+    private boolean mInitialized = false;
+    private int mTotalResults = -1;
+    private int mNrPages = 1; // at least one page is required even if it's empty.
+    private OnInitializedListener mOnInitializedListener = null;
 
-    private int     mPrimaryPos     = -1;
+    private int mPrimaryPos = -1;
 
 
     interface OnInitializedListener {
@@ -75,10 +80,10 @@ public class YTSearchPagerAdapter extends FragmentPagerAdapterEx {
     }
 
     private void
-    initialize(int totalResults) {
+    initialize(YTDataAdapter.PageInfo page) {
         mInitialized = true;
-        mTotalResults = totalResults;
-        int lastPage = getLastPage(totalResults);
+        mTotalResults = page.totalResults;
+        int lastPage = getLastPage(page.totalResults);
         mNrPages = lastPage;
         notifyDataSetChanged();
         //notifyDataSetChanged();
@@ -94,7 +99,7 @@ public class YTSearchPagerAdapter extends FragmentPagerAdapterEx {
 
     public YTSearchPagerAdapter(FragmentManager fm,
                                 Class<? extends YTSearchFragment> fragmentClass,
-                                YTSearchHelper.SearchType searchType,
+                                YTDataAdapter.VideoListReq.Type searchType,
                                 String searchText,
                                 String searchTitle) {
         super(fm);
@@ -102,6 +107,9 @@ public class YTSearchPagerAdapter extends FragmentPagerAdapterEx {
         mSearchType = searchType;
         mSearchText = searchText;
         mSearchTitle = searchTitle;
+        mPageTokens = new SparseArray();
+        mPageTokens.put(1, null); // page token for the first page is always null(unknown).
+
     }
 
     public int
@@ -142,18 +150,24 @@ public class YTSearchPagerAdapter extends FragmentPagerAdapterEx {
 
     public void
     onFragmentSearchDone(YTSearchFragment fragment,
-                      Err result,
-                      int totalResults) {
+                         Err result,
+                         YTDataAdapter.PageInfo page) {
+        int pageNum = fragment.getPage();
+        eAssert(pageNum > 0);
+        mPageTokens.put(pageNum + 1, page.nextPageToken);
+        mPageTokens.put(pageNum - 1, page.prevPageToken);
+
         if (mInitialized
-            || 1 != fragment.getPage())
+            || 1 != pageNum)
             return;
 
-        if (Err.NO_MATCH == result)
-            totalResults = 0;
+        if (Err.NO_MATCH == result) {
+            page = sEmptyPage;
+        }
         else if (Err.NO_ERR != result)
             return; // nothing to do.
 
-        initialize(totalResults);
+        initialize(page);
     }
 
     @Override
@@ -188,8 +202,16 @@ public class YTSearchPagerAdapter extends FragmentPagerAdapterEx {
             return null;
         }
 
+        // TODO pageToken is NOT implemented yet.
         // page : 1 based index / position : 0 based index.
-        fragment.setAttributes(mSearchType, mSearchText, mSearchTitle, position + 1);
+        int pageNum = posToPage(position);
+        eAssert(1 == pageNum
+                || null != mPageTokens.get(pageNum));
+        fragment.setAttributes(mSearchType,
+                               mSearchText,
+                               mSearchTitle,
+                               pageNum,
+                               mPageTokens.get(pageNum));
         if (0 == position
             && !mInitialized)
             // if this is first page of search.

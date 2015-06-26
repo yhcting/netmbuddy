@@ -58,6 +58,9 @@ public class YTHacker {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(YTHacker.class);
 
+    public static final String HTTP_UASTRING
+        = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/535.19 (KHTML, like Gecko) Ubuntu/12.04 Chromium/18.0.1025.168 Chrome/18.0.1025.168 Safari/535.19";
+
     public static final int     YTQUALITY_SCORE_MAXIMUM     = 100;
     public static final int     YTQUALITY_SCORE_HIGHEST     = 100;
     public static final int     YTQUALITY_SCORE_HIGH        = 80;
@@ -123,12 +126,12 @@ public class YTHacker {
     private boolean             mCancelled = false;
 
     public interface YtHackListener {
-        public void onPreHack(YTHacker ythack, String ytvid, Object user);
-        public void onHackCancelled(YTHacker ythack, String ytvid, Object user);
-        public void onPostHack(YTHacker ythack, Err result, NetLoader loader, String ytvid, Object user);
+        void onPreHack(YTHacker ythack, String ytvid, Object user);
+        void onHackCancelled(YTHacker ythack, String ytvid, Object user);
+        void onPostHack(YTHacker ythack, Err result, NetLoader loader, String ytvid, Object user);
     }
 
-    public static enum Err {
+    public enum Err {
         NO_ERR,
         IO_NET,
         NETWORK_UNAVAILABLE,
@@ -341,7 +344,7 @@ public class YTHacker {
 
     private void
     preExecute() {
-        mLoader.open();
+        mLoader.open(HTTP_UASTRING);
         if (null != mListener)
             mListener.onPreHack(this, mYtvid, mUser);
     }
@@ -358,6 +361,10 @@ public class YTHacker {
             do {
                 // Read and parse html web page of video.
                 content = mLoader.getHttpContent(Uri.parse(getYtVideoPageUrl(mYtvid)), true);
+                if (HttpUtils.SC_OK != content.stcode) {
+                    err = Err.IO_NET;
+                    break;
+                }
                 eAssert(content.type.toLowerCase().startsWith("text/html"));
                 ytr = parseYtVideoHtml(new BufferedReader(new InputStreamReader(content.stream)));
                 if (!verifyYtVideoHtmlResult(ytr)) {
@@ -375,11 +382,14 @@ public class YTHacker {
                 // Do dummy 'GET' request with generate_204 url.
                 content = mLoader.getHttpContent(Uri.parse(ytr.generate_204_url), false);
                 if (HttpUtils.SC_NO_CONTENT != content.stcode) {
-                    // This is unexpected! One of following reasons may lead to this state
-                    // - Youtube server doing something bad.
-                    // - Youtube's video request protocol is changed.
-                    // - Something unexpected.
-                    err = Err.PARSE_HTML;
+                    if (HttpUtils.SC_OK == content.stcode)
+                        // This is unexpected! One of following reasons may lead to this state
+                        // - Youtube server doing something bad.
+                        // - Youtube's video request protocol is changed.
+                        // - Something unexpected.
+                        err = Err.PARSE_HTML;
+                    else
+                        err = Err.IO_NET;
                     // 'mYtr' is NOT available in this case!
                     ytr = null;
                     break;

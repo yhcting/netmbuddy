@@ -49,10 +49,9 @@ import android.widget.CompoundButton;
 import android.widget.TextView;
 import free.yhc.netmbuddy.db.DB;
 import free.yhc.netmbuddy.core.Policy;
-import free.yhc.netmbuddy.core.YTFeed;
 import free.yhc.netmbuddy.core.YTPlayer;
-import free.yhc.netmbuddy.core.YTSearchHelper;
-import free.yhc.netmbuddy.core.YTVideoFeed;
+import free.yhc.netmbuddy.core.YTDataHelper;
+import free.yhc.netmbuddy.core.YTDataAdapter;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class YTVideoSearchAdapter extends YTSearchAdapter {
@@ -109,9 +108,9 @@ public class YTVideoSearchAdapter extends YTSearchAdapter {
     }
 
     YTVideoSearchAdapter(Context context,
-                         YTSearchHelper helper,
-                         YTVideoFeed.Entry[] entries) {
-        super(context, helper, R.layout.ytvideosearch_row, entries);
+                         YTDataHelper helper,
+                         YTDataAdapter.Video[] vids) {
+        super(context, helper, R.layout.ytvideosearch_row, vids);
         for (int i = 0; i < mItemViews.length; i++) {
             CheckBox v = (CheckBox)mItemViews[i].findViewById(R.id.checkbtn);
             v.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -135,32 +134,24 @@ public class YTVideoSearchAdapter extends YTSearchAdapter {
 
     @Override
     protected void
-    setItemView(int position, View v, YTFeed.Entry arge) {
+    setItemView(int position, View v, YTDataAdapter.Video vid) {
         eAssert(null != v);
 
-        if (!arge.available)
+        if (!verifyVideo(vid))
             v.setVisibility(View.INVISIBLE);
 
-        YTVideoFeed.Entry e = (YTVideoFeed.Entry)arge;
-
         TextView titlev = (TextView)v.findViewById(R.id.title);
-        titlev.setText(arge.media.title);
+        titlev.setText(vid.title);
 
         String playtmtext = "?";
-        try {
-            playtmtext = Utils.secsToMinSecText(Integer.parseInt(e.media.playTime));
-        } catch (NumberFormatException ex) { }
+        playtmtext = Utils.secsToMinSecText((int)vid.playTimeSec);
         ((TextView)v.findViewById(R.id.playtime)).setText(playtmtext);
 
         String dateText;
-        dateText = e.media.uploadedTime;
-        Date date = Utils.parseDateString(dateText);
-
-        if (null != date)
-            dateText = android.text.format.DateFormat.getDateFormat(mCxt).format(date);
+        dateText = android.text.format.DateFormat.getDateFormat(mCxt).format(vid.uploadedTime);
 
         ((TextView)v.findViewById(R.id.uploadedtime)).setText("< " + dateText + " >");
-        ((TextView)v.findViewById(R.id.author)).setText(e.author.name);
+        ((TextView)v.findViewById(R.id.author)).setText(""); // TODO Not implemented yet.
 
         if (mDupSet.contains(position))
             setToDup(v);
@@ -172,27 +163,27 @@ public class YTVideoSearchAdapter extends YTSearchAdapter {
 
     public String
     getItemTitle(int pos) {
-        return mEntries[pos].media.title;
+        return mVideos[pos].title;
     }
 
     public String
     getItemVideoId(int pos) {
-        return mEntries[pos].media.videoId;
+        return mVideos[pos].id;
     }
 
     public String
     getItemPlaytime(int pos) {
-        return mEntries[pos].media.playTime;
+        return Utils.secsToMinSecText((int)mVideos[pos].playTimeSec);
     }
 
     public String
     getItemThumbnailUrl(int pos) {
-        return mEntries[pos].media.thumbnailUrl;
+        return mVideos[pos].thumbnailUrl;
     }
 
     public String
     getItemAuthor(int pos) {
-        return ((YTVideoFeed.Entry[])mEntries)[pos].author.name;
+        return ""; // TODO Not implemented yet.
     }
 
     public int

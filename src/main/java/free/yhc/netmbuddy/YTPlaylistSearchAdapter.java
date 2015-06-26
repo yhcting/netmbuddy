@@ -40,9 +40,9 @@ import static free.yhc.netmbuddy.utils.Utils.eAssert;
 import android.content.Context;
 import android.view.View;
 import android.widget.TextView;
-import free.yhc.netmbuddy.core.YTFeed;
-import free.yhc.netmbuddy.core.YTPlaylistFeed;
-import free.yhc.netmbuddy.core.YTSearchHelper;
+
+import free.yhc.netmbuddy.core.YTDataAdapter;
+import free.yhc.netmbuddy.core.YTDataHelper;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class YTPlaylistSearchAdapter extends YTSearchAdapter {
@@ -50,41 +50,39 @@ public class YTPlaylistSearchAdapter extends YTSearchAdapter {
     private static final Utils.Logger P = new Utils.Logger(YTPlaylistSearchAdapter.class);
 
     YTPlaylistSearchAdapter(Context context,
-                            YTSearchHelper helper,
-                            YTPlaylistFeed.Entry[] entries) {
-        super(context, helper, R.layout.ytplaylistsearch_row, entries);
+                            YTDataHelper helper,
+                            YTDataAdapter.Video[] vids) {
+        super(context, helper, R.layout.ytplaylistsearch_row, vids);
     }
 
     @Override
     protected void
-    setItemView(int position, View v, YTFeed.Entry arge) {
+    setItemView(int position, View v, YTDataAdapter.Video vid) {
         eAssert(null != v);
 
-        if (!arge.available)
+        if (!verifyVideo(vid))
             v.setVisibility(View.INVISIBLE);
-
-        YTPlaylistFeed.Entry e = (YTPlaylistFeed.Entry)arge;
 
         TextView titlev = (TextView)v.findViewById(R.id.title);
         TextView summaryv = (TextView)v.findViewById(R.id.summary);
-        titlev.setText(e.title);
-        summaryv.setText(e.summary);
+        titlev.setText(vid.title);
+        summaryv.setText("");
 
         setViewValid(v);
     }
 
     public String
     getItemTitle(int pos) {
-        return ((YTPlaylistFeed.Entry[])mEntries)[pos].title;
+        return mVideos[pos].title;
     }
 
     public String
     getItemSummary(int pos) {
-        return ((YTPlaylistFeed.Entry[])mEntries)[pos].summary;
+        return "";
     }
 
     public String
     getItemPlaylistId(int pos) {
-        return ((YTPlaylistFeed.Entry[])mEntries)[pos].playlistId;
+        return ""; // TODO: Not Implemented yet.
     }
 }

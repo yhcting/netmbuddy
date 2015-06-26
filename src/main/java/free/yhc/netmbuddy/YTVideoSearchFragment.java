@@ -47,18 +47,18 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView.AdapterContextMenuInfo;
+
+import free.yhc.netmbuddy.core.YTDataAdapter;
+import free.yhc.netmbuddy.core.YTDataHelper;
 import free.yhc.netmbuddy.db.DB;
 import free.yhc.netmbuddy.db.DBHelper;
 import free.yhc.netmbuddy.core.UnexpectedExceptionHandler;
-import free.yhc.netmbuddy.core.YTFeed;
 import free.yhc.netmbuddy.core.YTPlayer;
-import free.yhc.netmbuddy.core.YTSearchHelper;
-import free.yhc.netmbuddy.core.YTVideoFeed;
 import free.yhc.netmbuddy.utils.UiUtils;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class YTVideoSearchFragment extends YTSearchFragment implements
-YTSearchHelper.SearchDoneReceiver,
+YTDataHelper.VideoListRespReceiver,
 DBHelper.CheckDupDoneReceiver,
 UnexpectedExceptionHandler.Evidence {
     private static final boolean DBG = false;
@@ -81,7 +81,7 @@ UnexpectedExceptionHandler.Evidence {
                 showLoadingLookAndFeel();
                 YTVideoSearchAdapter adapter = getAdapter();
                 if (null != adapter)
-                    checkDupAsync(null, (YTVideoFeed.Entry[])adapter.getEntries());
+                    checkDupAsync(null, (YTDataAdapter.Video[])adapter.getVideos());
             }
             // others are ignored.
         }
@@ -158,24 +158,24 @@ UnexpectedExceptionHandler.Evidence {
     }
 
     private void
-    checkDupAsync(Object tag, YTVideoFeed.Entry[] entries) {
+    checkDupAsync(Object tag, YTDataAdapter.Video[] vids) {
         mDbHelper.close();
 
         // Create new instance whenever it used to know owner of each callback.
         mDbHelper = new DBHelper();
         mDbHelper.setCheckDupDoneReceiver(this);
         mDbHelper.open();
-        mDbHelper.checkDupAsync(new DBHelper.CheckDupArg(tag, entries));
+        mDbHelper.checkDupAsync(new DBHelper.CheckDupArg(tag, vids));
     }
 
     private void
     checkDupDoneNewEntries(DBHelper.CheckDupArg arg, boolean[] results) {
-        YTSearchHelper.SearchArg sarg = (YTSearchHelper.SearchArg)arg.tag;
+        YTDataHelper.VideoListReq req = (YTDataHelper.VideoListReq)arg.tag;
 
         // helper's event receiver is changed to adapter in adapter's constructor.
         YTVideoSearchAdapter adapter = new YTVideoSearchAdapter(getMyActivity(),
                                                                 mSearchHelper,
-                                                                arg.ents);
+                                                                arg.vids);
         // First request is done!
         // Now we know total Results.
         // Let's build adapter and enable list.
@@ -232,11 +232,10 @@ UnexpectedExceptionHandler.Evidence {
 
     @Override
     public void
-    searchDone(YTSearchHelper helper, YTSearchHelper.SearchArg arg,
-               YTFeed.Result result, YTSearchHelper.Err err) {
-        if (!handleSearchResult(helper, arg, result, err))
+    onResponse(YTDataHelper helper, YTDataHelper.VideoListReq req, YTDataHelper.VideoListResp resp) {
+        if (!handleSearchResult(helper, req, resp))
             return; // There is an error in search
-        checkDupAsync(arg, (YTVideoFeed.Entry[])result.entries);
+        checkDupAsync(req, (YTDataAdapter.Video[])resp.yt.vids);
     }
 
     @Override
@@ -253,13 +252,13 @@ UnexpectedExceptionHandler.Evidence {
         stopLoadingLookAndFeel();
 
         if (DBHelper.Err.NO_ERR != err
-            || results.length != arg.ents.length) {
+            || results.length != arg.vids.length) {
             showErrorMessage(R.string.err_db_unknown);
             return;
         }
 
         if (null != getAdapter()
-            && arg.ents == getAdapter().getEntries())
+            && arg.vids == getAdapter().getVideos())
             // Entry is same with current adapter.
             // That means 'dup. checking is done for exsiting entries"
             applyDupCheckResults(getAdapter(), results);
@@ -323,7 +322,7 @@ UnexpectedExceptionHandler.Evidence {
         MenuInflater inflater = getActivity().getMenuInflater();
         inflater.inflate(R.menu.ytvideosearch_context, menu);
         // AdapterContextMenuInfo mInfo = (AdapterContextMenuInfo)menuInfo;
-        boolean visible = (YTSearchHelper.SearchType.VID_AUTHOR == getType())? false: true;
+        boolean visible = (YTDataAdapter.VideoListReq.Type.AUTHOR == getType())? false: true;
         menu.findItem(R.id.videos_of_this_author).setVisible(visible);
     }
 
@@ -375,7 +374,7 @@ UnexpectedExceptionHandler.Evidence {
             if (mDb.isVideoTableUpdated(this)
                 && null != getAdapter()) {
                 showLoadingLookAndFeel();
-                checkDupAsync(null, (YTVideoFeed.Entry[])getAdapter().getEntries());
+                checkDupAsync(null, getAdapter().getVideos());
             }
             mDb.unregisterToVideoTableWatcher(this);
         }

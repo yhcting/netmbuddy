@@ -191,6 +191,7 @@ It may takes long time(up to several minutes) in case that:\n
     <string name="err_interrupted">Interrupted.</string>
     <string name="err_cancelled">Cancelled.</string>
     <string name="err_bad_request">Bad request.</string>
+    <string name="err_http_response">Http response error.</string>
     <string name="err_io_net">Error in accessing network.</string>
     <string name="err_io_file">Error in accessing local file.</string>
     <string name="err_io_unknown">Error in IO operation - network or file etc.</string>
@@ -203,6 +204,7 @@ It may takes long time(up to several minutes) in case that:\n
     <string name="err_no_match">No matching result.</string>
     <string name="err_ytsearch">Fail in searching Youtube.</string>
     <string name="err_ytprotocol">Error in communication with Youtube.</string>
+    <string name="err_not_implemented">Not implemented yet.</string>
     <string name="err_ytparsehtml">
 Error getting video from Youtube.\n
 This can be caused by one of below reasons.\n

@@ -37,11 +37,12 @@
 package free.yhc.netmbuddy.utils;
 
 import free.yhc.netmbuddy.R;
+import free.yhc.netmbuddy.core.YTDataAdapter;
+import free.yhc.netmbuddy.core.YTDataHelper;
 import free.yhc.netmbuddy.db.DB;
 import free.yhc.netmbuddy.core.Policy;
-import free.yhc.netmbuddy.core.YTConstants;
+import free.yhc.netmbuddy.ytapiv3.YTApiFacade;
 import free.yhc.netmbuddy.core.YTHacker;
-import free.yhc.netmbuddy.core.YTSearchHelper;
 
 public class YTUtils {
     private static final boolean DBG = false;
@@ -54,20 +55,21 @@ public class YTUtils {
 
     public static int
     getAvailableTotalResults(int totalResults) {
-        return totalResults < YTConstants.MAX_AVAILABLE_RESULTS_FOR_QUERY?
+        return totalResults < YTApiFacade.MAX_AVAILABLE_RESULTS_FOR_QUERY?
                totalResults:
-               YTConstants.MAX_AVAILABLE_RESULTS_FOR_QUERY;
+               YTApiFacade.MAX_AVAILABLE_RESULTS_FOR_QUERY;
     }
 
-    public static YTSearchHelper.LoadThumbnailReturn
-    loadYtVideoThumbnail(String ytvid) {
+    public static YTDataHelper.ThumbnailResp
+    loadYtVideoThumbnail(String ytvid)
+        throws YTDataAdapter.YTApiException {
         String thumbnailUrl = YTHacker.getYtVideoThumbnailUrl(ytvid);
-        YTSearchHelper.LoadThumbnailArg targ = new YTSearchHelper.LoadThumbnailArg(
+        YTDataHelper.ThumbnailReq req = new YTDataHelper.ThumbnailReq(
                 null,
                 thumbnailUrl,
                 Utils.getAppContext().getResources().getDimensionPixelSize(R.dimen.thumbnail_width),
                 Utils.getAppContext().getResources().getDimensionPixelSize(R.dimen.thumbnail_height));
-        return YTSearchHelper.loadThumbnail(targ);
+        return YTDataHelper.requestThumbnail(req);
     }
 
     /**
@@ -82,10 +84,14 @@ public class YTUtils {
                           int       volume,
                           String    bookmarks) {
         // Loading thumbnail is done.
-        YTSearchHelper.LoadThumbnailReturn tr = loadYtVideoThumbnail(ytvid);
-        if (null == tr.bm)
+        YTDataHelper.ThumbnailResp tr;
+        try {
+            tr = loadYtVideoThumbnail(ytvid);
+            if (null == tr.bm)
+                return false;
+        } catch (YTDataAdapter.YTApiException e) {
             return false;
-
+        }
         DB.Err err = DB.get().insertVideoToPlaylist(plid,
                                                     ytvid,
                                                     title,

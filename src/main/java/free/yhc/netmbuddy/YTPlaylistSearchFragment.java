@@ -59,11 +59,8 @@ import free.yhc.netmbuddy.core.MultiThreadRunner;
 import free.yhc.netmbuddy.core.MultiThreadRunner.Job;
 import free.yhc.netmbuddy.core.Policy;
 import free.yhc.netmbuddy.core.UnexpectedExceptionHandler;
-import free.yhc.netmbuddy.core.YTConstants;
-import free.yhc.netmbuddy.core.YTFeed;
-import free.yhc.netmbuddy.core.YTPlaylistFeed;
-import free.yhc.netmbuddy.core.YTSearchHelper;
-import free.yhc.netmbuddy.core.YTVideoFeed;
+import free.yhc.netmbuddy.core.YTDataAdapter;
+import free.yhc.netmbuddy.core.YTDataHelper;
 import free.yhc.netmbuddy.utils.UiUtils;
 import free.yhc.netmbuddy.utils.Utils;
 import free.yhc.netmbuddy.utils.YTUtils;
@@ -99,19 +96,12 @@ UnexpectedExceptionHandler.Evidence {
     }
 
     private boolean
-    insertVideoToPlaylist(long plid, YTVideoFeed.Entry e) {
-        int playtm = 0;
-        try {
-             playtm = Integer.parseInt(e.media.playTime);
-        } catch (NumberFormatException ex) {
-            return false;
-        }
-
+    insertVideoToPlaylist(long plid, YTDataAdapter.Video vid) {
         return YTUtils.insertVideoToPlaylist(plid,
-                                             e.media.videoId,
-                                             e.media.title,
-                                             e.author.name,
-                                             playtm,
+                                             vid.id,
+                                             vid.title,
+                                             "", // Author name field is NOT considered yet.
+                                            (int)vid.playTimeSec,
                                              Policy.DEFAULT_VIDEO_VOLUME);
     }
 
@@ -122,14 +112,14 @@ UnexpectedExceptionHandler.Evidence {
                                  final String ytplid,
                                  final ProgressListener progl)
         throws InterruptedException {
+        /*
         DB db = DB.get();
-        YTSearchHelper.SearchArg sarg = new YTSearchHelper.SearchArg(
-                null,
-                YTSearchHelper.SearchType.VID_PLAYLIST,
-                ytplid,
-                "",
-                1,
-                YTConstants.MAX_RESULTS_PER_PAGE);
+        YTDataAdapter.VideoListReq ytreq
+            = new YTDataAdapter.VideoListReq(YTDataAdapter.VideoListReq.Type.PLAYLIST,
+                                             ytplid,
+                                             null,
+                                             YTConstants.MAX_RESULTS_PER_PAGE);
+        YTDataHelper.VideoListReq req= new YTDataHelper.VideoListReq(null, ytreq);
         YTSearchHelper.SearchReturn sr;
         int maxPage = -1;
         int curPage = 1;
@@ -219,6 +209,8 @@ UnexpectedExceptionHandler.Evidence {
         mtrunner.waitAllDone();
         progl.onProgress(100);
         return err;
+        */
+        return Err.NOT_IMPLEMENTED;
     }
 
     private void
@@ -337,16 +329,15 @@ UnexpectedExceptionHandler.Evidence {
 
     @Override
     public void
-    searchDone(YTSearchHelper helper, YTSearchHelper.SearchArg arg,
-               YTFeed.Result result, YTSearchHelper.Err err) {
-        if (!handleSearchResult(helper, arg, result, err))
+    onResponse(YTDataHelper helper, YTDataHelper.VideoListReq req, YTDataHelper.VideoListResp resp) {
+        if (!handleSearchResult(helper, req, resp))
             return; // There is an error in search
 
         stopLoadingLookAndFeel();
         // helper's event receiver is changed to adapter in adapter's constructor.
         YTPlaylistSearchAdapter adapter = new YTPlaylistSearchAdapter(getActivity(),
                                                                       mSearchHelper,
-                                                                      (YTPlaylistFeed.Entry[])result.entries);
+                                                                      resp.yt.vids);
         YTPlaylistSearchAdapter oldAdapter = getAdapter();
         mListv.setAdapter(adapter);
         // Cleanup before as soon as possible to secure memories.

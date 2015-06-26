@@ -619,7 +619,6 @@ UnexpectedExceptionHandler.Evidence {
     /**
      *
      * @param title
-     * @param desc
      * @return
      */
     public long
@@ -770,13 +769,6 @@ UnexpectedExceptionHandler.Evidence {
      * checking for duplication and inserting to DB is not an atomic operation in this function.
      * @param plid
      *   Playlist DB id
-     * @param title
-     * @param desc
-     * @param url
-     * @param playtime
-     * @param thumbnail
-     * @param volume
-     * @param bookmarks
      * @return
      *   -1 for error (ex. already exist)
      */

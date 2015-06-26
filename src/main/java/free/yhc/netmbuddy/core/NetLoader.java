@@ -38,8 +38,10 @@ package free.yhc.netmbuddy.core;
 
 import static free.yhc.netmbuddy.utils.Utils.eAssert;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.UnknownHostException;
 import java.util.concurrent.atomic.AtomicReference;
@@ -52,6 +54,10 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.params.ClientPNames;
 import org.apache.http.client.params.CookiePolicy;
+import org.apache.http.conn.scheme.PlainSocketFactory;
+import org.apache.http.conn.scheme.Scheme;
+import org.apache.http.conn.scheme.SchemeRegistry;
+import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
@@ -61,13 +67,13 @@ import android.net.Uri;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class NetLoader {
-    private static final boolean DBG = false;
+    private static final boolean DBG = true;
     private static final Utils.Logger P = new Utils.Logger(NetLoader.class);
 
-    private boolean         mUserClose  = false;
+    private boolean mUserClose  = false;
     private final AtomicReference<HttpClient> mHttpClient = new AtomicReference<>(null);
 
-    public static enum Err {
+    public enum Err {
         NO_ERR,
         IO_NET,
         HTTPGET,
@@ -112,25 +118,21 @@ public class NetLoader {
         }
     }
 
-    private boolean
-    isValidProxyAddr(String proxy) {
-        return null != proxy && !proxy.isEmpty();
-    }
-
     private HttpClient
-    newHttpClient(String proxyAddr) {
-        if (isValidProxyAddr(proxyAddr)) {
-            // TODO
-            // Not supported yet.
-            eAssert(false);
-            return null;
-        }
+    newHttpClient(String proxyHost, int port, String uastring) {
+        // TODO Proxy is NOT supported yet. These are ignored.
         HttpClient hc = new DefaultHttpClient();
         HttpParams params = hc.getParams();
         HttpConnectionParams.setConnectionTimeout(params, Policy.NETWORK_CONN_TIMEOUT);
         HttpConnectionParams.setSoTimeout(params, Policy.NETWORK_CONN_TIMEOUT);
-        HttpProtocolParams.setUserAgent(hc.getParams(), Policy.HTTP_UASTRING);
+        if (null != uastring)
+            HttpProtocolParams.setUserAgent(hc.getParams(), uastring);
         params.setParameter(ClientPNames.COOKIE_POLICY, CookiePolicy.RFC_2109);
+
+        // Set scheme registry
+        SchemeRegistry registry = hc.getConnectionManager().getSchemeRegistry();
+        registry.register(new Scheme("http", PlainSocketFactory.getSocketFactory(), 80));
+        registry.register(new Scheme("https", SSLSocketFactory.getSocketFactory(), 443));
         return hc;
     }
 
@@ -139,16 +141,19 @@ public class NetLoader {
 
     public NetLoader
     open() {
-        return open(null);
+        return open(null, -1, null);
     }
 
     public NetLoader
-    open(String proxy) {
+    open(String uastring) {
+        return open(null, -1, uastring);
+    }
+
+    public NetLoader
+    open(String proxyHost, int port, String uastring) {
         mUserClose = false;
         eAssert(null == mHttpClient.get());
-        if (null == proxy)
-            proxy = "";
-        mHttpClient.set(newHttpClient(proxy));
+        mHttpClient.set(newHttpClient(proxyHost, port, uastring));
         return this;
     }
 
@@ -184,10 +189,14 @@ public class NetLoader {
 
     public void
     readHttpData(OutputStream outs, Uri uri)
-            throws LocalException {
+        throws LocalException {
         eAssert(null != mHttpClient.get());
         // Proxy is not supported yet.
         HttpRespContent content = getHttpContent(uri, false);
+        if (HttpUtils.SC_NO_CONTENT == content.stcode)
+            return;
+        else if (HttpUtils.SC_OK != content.stcode)
+            throw new LocalException(Err.IO_NET, content);
         // 256K is experimental value small enough to contains most feed text.
         byte[] rbuf = new byte[256 * 1024];
         int bytes;
@@ -196,13 +205,13 @@ public class NetLoader {
                 outs.write(rbuf, 0, bytes);
             content.stream.close();
         } catch (IOException e) {
-            throw new LocalException(Err.IO_NET);
+            throw new LocalException(Err.IO_NET, content);
         }
     }
 
     public HttpRespContent
     getHttpContent(Uri uri, boolean source)
-            throws LocalException  {
+        throws LocalException  {
         if (null == mHttpClient.get()) {
             if (DBG) P.v("NetLoader Fail to get HttpClient");
             throw new LocalException(Err.UNKNOWN);
@@ -219,29 +228,13 @@ public class NetLoader {
         while (0 < retry--) {
             try {
                 HttpGet httpGet = new HttpGet(uriString);
-                HttpHost httpTarget = new HttpHost(uri.getHost());
-
                 if (DBG) P.v("executing request: " + httpGet.getRequestLine().toString());
                 //logI("uri: " + httpGet.getURI().toString());
                 //logI("target: " + httpTarget.getHostName());
-                HttpResponse httpResp = mHttpClient.get().execute(httpTarget, httpGet);
+                HttpResponse httpResp = mHttpClient.get().execute(httpGet);
                 if (DBG) P.v("NetLoader HTTP response status line : " + httpResp.getStatusLine().toString());
 
-                // TODO
-                // Need more case-handling-code.
-                // Ex. Redirection etc.
                 int statusCode = httpResp.getStatusLine().getStatusCode();
-                switch (statusCode) {
-                case HttpUtils.SC_OK:
-                case HttpUtils.SC_NO_CONTENT:
-                    ;// expected response. let's move forward
-                    break;
-
-                default:
-                    // Unexpected response
-                    if (DBG) P.w("Unexpected Response  status code : " + httpResp.getStatusLine().getStatusCode());
-                    throw new LocalException(Err.HTTPGET, statusCode);
-                }
 
                 InputStream contentStream = null;
                 String      contentType = null;
@@ -261,6 +254,26 @@ public class NetLoader {
                         // Unexpected response data.
                         if (DBG) P.v("NetLoader IOException : " + e.getMessage());
                         throw new LocalException(Err.IO_NET);
+                    }
+                }
+
+                switch (statusCode) {
+                case HttpUtils.SC_OK:
+                case HttpUtils.SC_NO_CONTENT:
+                    ;// expected response. let's move forward
+                    break;
+
+                default:
+                    // Unexpected response
+                    if (DBG) {
+                        final BufferedReader reader = new BufferedReader(new InputStreamReader(contentStream));
+                        String line = null;
+                        while ((line = reader.readLine()) != null) {
+                            P.w(line);
+                        }
+                        reader.close();
+                        P.w("Unexpected Response  status code : " + httpResp.getStatusLine().getStatusCode());
+
                     }
                 }
 

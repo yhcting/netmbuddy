@@ -42,11 +42,12 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import free.yhc.netmbuddy.core.YTDataAdapter;
+import free.yhc.netmbuddy.core.YTDataHelper;
 import free.yhc.netmbuddy.db.ColPlaylist;
 import free.yhc.netmbuddy.db.DB;
 import free.yhc.netmbuddy.core.MultiThreadRunner;
 import free.yhc.netmbuddy.core.Policy;
-import free.yhc.netmbuddy.core.YTSearchHelper;
 import free.yhc.netmbuddy.share.Share.Err;
 import free.yhc.netmbuddy.share.Share.ImportPrepareResult;
 import free.yhc.netmbuddy.share.Share.ImportResult;
@@ -209,17 +210,19 @@ class ImporterPlaylist implements ImporterI {
                     if (!Utils.isValidValue(thumbnailYtvid))
                         return Err.NO_ERR; // ignore for invalid thumbnail ytvid.
 
-                    YTSearchHelper.LoadThumbnailReturn ltr
-                        = YTUtils.loadYtVideoThumbnail(thumbnailYtvid);
-                    if (YTSearchHelper.Err.NO_ERR == ltr.err) {
-                        byte[] data = ImageUtils.compressBitmap(ltr.bm);
-                        db.updatePlaylist(plid,
-                                          new ColPlaylist[] { ColPlaylist.THUMBNAIL,
-                                                              ColPlaylist.THUMBNAIL_YTVID },
-                                          new Object[] { data,
-                                                         thumbnailYtvid });
-                        ltr.bm.recycle();
+                    YTDataHelper.ThumbnailResp ltr = null;
+                    try {
+                        ltr = YTUtils.loadYtVideoThumbnail(thumbnailYtvid);
+                    } catch (YTDataAdapter.YTApiException ignored) {
+                        return Err.NO_ERR;
                     }
+                    byte[] data = ImageUtils.compressBitmap(ltr.bm);
+                    db.updatePlaylist(plid,
+                                      new ColPlaylist[] { ColPlaylist.THUMBNAIL,
+                                                          ColPlaylist.THUMBNAIL_YTVID },
+                                      new Object[] { data,
+                                                     thumbnailYtvid });
+                    ltr.bm.recycle();
                     // Ignore if fail to load thumbnail - it's very minor for usecase.
                     return Err.NO_ERR;
                 }

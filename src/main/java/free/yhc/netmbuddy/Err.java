@@ -38,7 +38,7 @@ package free.yhc.netmbuddy;
 
 import free.yhc.netmbuddy.db.DB;
 import free.yhc.netmbuddy.core.YTHacker;
-import free.yhc.netmbuddy.core.YTSearchHelper;
+import free.yhc.netmbuddy.core.YTDataAdapter;
 import free.yhc.netmbuddy.share.Share;
 
 public enum Err {
@@ -47,6 +47,7 @@ public enum Err {
     INTERRUPTED                 (R.string.err_interrupted),
     CANCELLED                   (R.string.err_cancelled),
     BAD_REQUEST                 (R.string.err_bad_request),
+    HTTP_RESP                   (R.string.err_http_response),
     MULTITHREADING              (R.string.err_unknown),
     NETWORK_UNAVAILABLE         (R.string.err_network_unavailable),
     INVALID_DATA                (R.string.err_invalid_data),
@@ -68,6 +69,7 @@ public enum Err {
     YTPARSEHTML                 (R.string.err_ytparsehtml),
     YTNOT_SUPPORTED_VIDFORMAT   (R.string.err_ytnot_supported_vidformat),
     YTINVALID_PARAM             (R.string.err_ytinvalid_param),
+    NOT_IMPLEMENTED             (R.string.err_not_implemented),
     END_OF_DATA                 (R.string.err_end_of_data);
 
     private final int mMsg;
@@ -122,7 +124,7 @@ public enum Err {
     }
 
     public static Err
-    map(YTSearchHelper.Err err) {
+    map(YTDataAdapter.Err err) {
         switch (err) {
         case NO_ERR:
             return NO_ERR;
@@ -139,10 +141,10 @@ public enum Err {
         case NETWORK_UNAVAILABLE:
             return Err.NETWORK_UNAVAILABLE;
 
-        case PARAMETER:
+        case INVALID_PARAM:
             return Err.YTINVALID_PARAM;
 
-        case FEED_FORMAT:
+        case BAD_RESPONSE:
             return PARSER_UNKNOWN;
 
         default:
