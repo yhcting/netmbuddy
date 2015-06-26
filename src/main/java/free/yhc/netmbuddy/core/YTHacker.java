@@ -360,7 +360,7 @@ public class YTHacker {
         try {
             do {
                 // Read and parse html web page of video.
-                content = mLoader.getHttpContent(Uri.parse(getYtVideoPageUrl(mYtvid)), true);
+                content = mLoader.getHttpContent(Uri.parse(getYtVideoPageUrl(mYtvid)));
                 if (HttpUtils.SC_OK != content.stcode) {
                     err = Err.IO_NET;
                     break;
@@ -380,7 +380,7 @@ public class YTHacker {
                 // NOTE
                 // HACK youtube protocol!
                 // Do dummy 'GET' request with generate_204 url.
-                content = mLoader.getHttpContent(Uri.parse(ytr.generate_204_url), false);
+                content = mLoader.getHttpContent(Uri.parse(ytr.generate_204_url));
                 if (HttpUtils.SC_NO_CONTENT != content.stcode) {
                     if (HttpUtils.SC_OK == content.stcode)
                         // This is unexpected! One of following reasons may lead to this state

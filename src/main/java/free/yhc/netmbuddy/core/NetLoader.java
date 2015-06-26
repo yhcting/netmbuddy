@@ -192,7 +192,7 @@ public class NetLoader {
         throws LocalException {
         eAssert(null != mHttpClient.get());
         // Proxy is not supported yet.
-        HttpRespContent content = getHttpContent(uri, false);
+        HttpRespContent content = getHttpContent(uri);
         if (HttpUtils.SC_NO_CONTENT == content.stcode)
             return;
         else if (HttpUtils.SC_OK != content.stcode)
@@ -210,7 +210,7 @@ public class NetLoader {
     }
 
     public HttpRespContent
-    getHttpContent(Uri uri, boolean source)
+    getHttpContent(Uri uri)
         throws LocalException  {
         if (null == mHttpClient.get()) {
             if (DBG) P.v("NetLoader Fail to get HttpClient");
@@ -220,14 +220,10 @@ public class NetLoader {
         if (!Utils.isNetworkAvailable())
             throw new LocalException(Err.IO_NET);
 
-        String uriString = uri.toString();
-        if (source)
-            uriString = uriString.replace(uri.getScheme() + "://" + uri.getHost(), "");
-
         int retry = Policy.NETOWRK_CONN_RETRY;
         while (0 < retry--) {
             try {
-                HttpGet httpGet = new HttpGet(uriString);
+                HttpGet httpGet = new HttpGet(uri.toString());
                 if (DBG) P.v("executing request: " + httpGet.getRequestLine().toString());
                 //logI("uri: " + httpGet.getURI().toString());
                 //logI("target: " + httpTarget.getHostName());
@@ -283,7 +279,7 @@ public class NetLoader {
                 throw new LocalException(Err.UNKNOWN);
             } catch (IllegalArgumentException e) {
                 if (DBG) P.v("Illegal Argument Exception : " + e.getMessage() + "\n"
-                     + "URI : " + uriString);
+                     + "URI : " + uri.toString());
                 throw new LocalException(Err.IO_NET);
             } catch (UnknownHostException e) {
                 if (DBG) P.v("NetLoader UnknownHostException : Maybe timeout?" + e.getMessage());
