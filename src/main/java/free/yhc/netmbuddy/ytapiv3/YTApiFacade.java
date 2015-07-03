@@ -1,3 +1,39 @@
+/******************************************************************************
+ * Copyright (C) 2015
+ * Younghyung Cho. <yhcting77@gmail.com>
+ * All rights reserved.
+ *
+ * This file is part of NetMBuddy
+ *
+ * This program is licensed under the FreeBSD license
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * The views and conclusions contained in the software and documentation
+ * are those of the authors and should not be interpreted as representing
+ * official policies, either expressed or implied, of the FreeBSD Project.
+ *****************************************************************************/
+
 package free.yhc.netmbuddy.ytapiv3;
 
 import android.net.Uri;
@@ -45,7 +81,6 @@ public class YTApiFacade {
         return data;
     }
 
-
     // =======================================================================
     //
     // Facade APIs
@@ -59,18 +94,23 @@ public class YTApiFacade {
     requestVideoList(YTDataAdapter.VideoListReq req) throws YTDataAdapter.YTApiException {
         switch (req.type) {
         case VID_KEYWORD:
-            /* TODO pageToken should be handled correctly.
-            eAssert(req.pageSize <= MAX_RESULTS_PER_PAGE
-                    && req.pageToken instanceof String);
-            */
             byte[] data = null;
             try {
                 data = loadUrl(YTRespSearch.getRequestUrl(req.hint, req.pageToken, req.pageSize));
             } catch (NetLoader.LocalException e) {
                 throw new YTDataAdapter.YTApiException(YTDataAdapter.Err.IO_NET);
             }
-            YTDataAdapter.VideoListResp resp = YTRespSearch.parse(data);
-            return resp;
+            YTResp.SearchListResponse slresp = YTRespSearch.parse(data);
+            String[] ytvids = new String[slresp.items.length];
+            for (int i = 0; i < ytvids.length; i++)
+                ytvids[i] = slresp.items[i].id.videoId;
+            try {
+                data = loadUrl(YTRespVideos.getRequestUrl(ytvids));
+            } catch (NetLoader.LocalException e) {
+                throw new YTDataAdapter.YTApiException(YTDataAdapter.Err.IO_NET);
+            }
+            YTResp.VideoListResponse vlresp = YTRespVideos.parse(data);
+            return vlresp.makeAdapterData();
         }
         eAssert(false);
         return null;

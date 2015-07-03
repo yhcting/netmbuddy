@@ -1,3 +1,39 @@
+/******************************************************************************
+ * Copyright (C) 2015
+ * Younghyung Cho. <yhcting77@gmail.com>
+ * All rights reserved.
+ *
+ * This file is part of NetMBuddy
+ *
+ * This program is licensed under the FreeBSD license
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * The views and conclusions contained in the software and documentation
+ * are those of the authors and should not be interpreted as representing
+ * official policies, either expressed or implied, of the FreeBSD Project.
+ *****************************************************************************/
+
 package free.yhc.netmbuddy.ytapiv3;
 
 import org.json.JSONArray;
@@ -17,6 +53,8 @@ import free.yhc.netmbuddy.utils.Utils;
 class YTResp {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(YTResp.class);
+
+    static final SimpleDateFormat SDF = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss.SSS'Z'");
 
     // =======================================================================
     //
@@ -571,19 +609,24 @@ class YTResp {
         makeAdapterData() {
             YTDataAdapter.Video v = new YTDataAdapter.Video();
             v.id = id;
-            v.title = snippet.title;
-            v.thumbnailUrl = snippet.thumbnails.default_.url;
-            try {
-                v.uploadedTime = new SimpleDateFormat("YYYY-MM-DDThh:mm:ss.sZ").parse(snippet.publishedAt);
-            } catch (ParseException ignore) { }
-            v.playTimeSec = parseYTDuration(contentDetails.duration);
+            if (null != snippet) {
+                v.title = snippet.title;
+                if (null != snippet.thumbnails
+                    && null != snippet.thumbnails.default_) {
+                    v.thumbnailUrl = snippet.thumbnails.default_.url;
+                }
+                try {
+                    v.uploadedTime = SDF.parse(snippet.publishedAt);
+                } catch (ParseException ignore) { }
+            }
+            if (null != contentDetails)
+                v.playTimeSec = parseYTDuration(contentDetails.duration);
             return v;
         }
     }
 
     static class SearchRes extends JSONModel {
         static final String KIND = "youtube#searchResult";
-        static final SimpleDateFormat SDF = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss.SSS'Z'");
         String kind = null;
         String etag = null;
         Id id = null;
@@ -637,9 +680,9 @@ class YTResp {
         YTDataAdapter.VideoListResp
         makeAdapterData() {
             YTDataAdapter.VideoListResp r = new YTDataAdapter.VideoListResp();
+            r.page = new YTDataAdapter.PageInfo();
             if (null != pageInfo)
-                r.page = new YTDataAdapter.PageInfo();
-            r.page.totalResults = pageInfo.totalResults;
+                r.page.totalResults = pageInfo.totalResults;
             r.page.nextPageToken = nextPageToken;
             r.page.prevPageToken = prevPageToken;
             r.vids = new YTDataAdapter.Video[items.length];
@@ -649,6 +692,43 @@ class YTResp {
         }
     }
 
+    static class VideoListResponse extends JSONModel {
+        static final String KIND = "youtube#videoListResponse";
+        String kind = null;
+        String etag = null;
+        String nextPageToken = null;
+        String prevPageToken = null;
+        PageInfo pageInfo = null;
+        VideoRes[] items = null;
+
+        @Override
+        void
+        set(JSONObject jo) {
+            kind = getJString(jo, "kind");
+            etag = getJString(jo, "etag");
+            nextPageToken = getJString(jo, "nextPageToken");
+            prevPageToken = getJString(jo, "prevPageToken");
+            pageInfo = getJObject(jo, "pageInfo", PageInfo.class);
+            items = getJObjects(jo, "items", VideoRes.class);
+        }
+
+        /**
+         * Generate corresponding data structure of facade client side.
+         */
+        YTDataAdapter.VideoListResp
+        makeAdapterData() {
+            YTDataAdapter.VideoListResp r = new YTDataAdapter.VideoListResp();
+            r.page = new YTDataAdapter.PageInfo();
+            if (null != pageInfo)
+                r.page.totalResults = pageInfo.totalResults;
+            r.page.nextPageToken = nextPageToken;
+            r.page.prevPageToken = prevPageToken;
+            r.vids = new YTDataAdapter.Video[items.length];
+            for (int i = 0; i < r.vids.length; i++)
+                r.vids[i] = items[i].makeAdapterData();
+            return r;
+        }
+    }
 
     // =======================================================================
     //

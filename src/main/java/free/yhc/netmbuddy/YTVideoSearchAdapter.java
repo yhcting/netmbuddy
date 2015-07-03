@@ -167,7 +167,9 @@ public class YTVideoSearchAdapter extends YTSearchAdapter<YTDataAdapter.Video> {
         dateText = android.text.format.DateFormat.getDateFormat(mCxt).format(vid.uploadedTime);
 
         ((TextView)v.findViewById(R.id.uploadedtime)).setText("< " + dateText + " >");
-        ((TextView)v.findViewById(R.id.author)).setText(""); // TODO Not implemented yet.
+        // author is not available anymore at Youtube Data APIv3
+        ((TextView)v.findViewById(R.id.author)).setText("");
+
 
         if (mDupSet.contains(position))
             setToDup(v);

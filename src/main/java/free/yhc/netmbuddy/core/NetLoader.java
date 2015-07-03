@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014
+ * Copyright (C) 2012, 2013, 2014, 2015
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -67,7 +67,7 @@ import android.net.Uri;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class NetLoader {
-    private static final boolean DBG = true;
+    private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(NetLoader.class);
 
     private boolean mUserClose  = false;
@@ -263,7 +263,7 @@ public class NetLoader {
                     // Unexpected response
                     if (DBG) {
                         final BufferedReader reader = new BufferedReader(new InputStreamReader(contentStream));
-                        String line = null;
+                        String line;
                         while ((line = reader.readLine()) != null) {
                             P.w(line);
                         }

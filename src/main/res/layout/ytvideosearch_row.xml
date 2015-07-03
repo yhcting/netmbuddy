@@ -59,7 +59,9 @@
             android:textColor="@color/desc_text_color"
             android:singleLine="true"
             />
+        <!-- author is NOT returned anymore by search api at APIv3 : set as GONE -->
         <TextView
+            android:visibility="gone"
             android:id="@+id/author"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
