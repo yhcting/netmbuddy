@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014
+ * Copyright (C) 2012, 2013, 2014, 2015
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -64,7 +64,7 @@ public class Policy {
     // Youtube
     // --------------------------------------------------------------------
     public static final int     DEFAULT_VIDEO_VOLUME    = 50;
-    public static final int     YTSEARCH_MAX_RESULTS    = YTApiFacade.MAX_RESULTS_PER_PAGE; // 1 ~ 50
+    public static final int     YTSEARCH_MAX_RESULTS    = 20; //YTApiFacade.MAX_RESULTS_PER_PAGE; // 1 ~ 50
     // Using ViewPager requires # of threads twice of this value.
     public static final int     YTSEARCH_NR_PAGE_INDEX_BUTTONS     = 10;
 

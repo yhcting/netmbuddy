@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014
+ * Copyright (C) 2012, 2013, 2014, 2015
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -43,6 +43,7 @@ import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.view.ContextMenu;
 import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.TextView;
@@ -63,11 +64,11 @@ UnexpectedExceptionHandler.Evidence {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(YTVideoSearchActivity.class);
 
-    private final DB        mDb = DB.get();
-    private final YTPlayer  mMp = YTPlayer.get();
+    private final DB mDb = DB.get();
+    private final YTPlayer mMp = YTPlayer.get();
 
     private View.OnClickListener mToolBtnSearchAction;
-    private DBHelper        mDbHelper;
+    private DBHelper mDbHelper;
 
     private YTVideoSearchAdapter.CheckStateListener mAdapterCheckListener
         = new YTVideoSearchAdapter.CheckStateListener() {
@@ -346,7 +347,6 @@ UnexpectedExceptionHandler.Evidence {
             doNewSearch();
     }
 
-
     /**
      * Override it to enabel tool button for search.
      * @return
@@ -354,56 +354,6 @@ UnexpectedExceptionHandler.Evidence {
     protected int
     getToolButtonSearchIcon() {
         return 0;
-    }
-
-    // ========================================================================
-    //
-    //
-    //
-    // ========================================================================
-    @Override
-    protected void
-    onListItemClick(View view, int position, long itemId) {
-        if (!Utils.isNetworkAvailable()) {
-            UiUtils.showTextToast(this, Err.IO_NET.getMessage());
-            return;
-        }
-
-        YTPlayer.Video v = getAdapter().getYTPlayerVideo(position);
-        mMp.startVideos(new YTPlayer.Video[] { v });
-    }
-
-    @Override
-    protected void
-    onSearchResponse(YTDataHelper helper,
-                     YTDataHelper.VideoListReq req,
-                     YTDataHelper.VideoListResp resp) {
-        checkDupAsync(req, (YTDataAdapter.Video[])resp.yt.vids);
-    }
-
-    @Override
-    public void
-    checkDupDone(DBHelper helper, DBHelper.CheckDupArg arg,
-                 boolean[] results, DBHelper.Err err) {
-        if (helper != mDbHelper) {
-            helper.close(); // this is dangling helper
-            return; // invalid callback.
-        }
-
-        if (DBHelper.Err.NO_ERR != err
-            || results.length != arg.vids.length) {
-            enableContentText(R.string.err_db_unknown);
-            return;
-        }
-
-        enableContentList();
-        if (null != getAdapter()
-            && arg.vids == getAdapter().getItems())
-            // Entry is same with current adapter.
-            // That means 'dup. checking is done for exsiting entries"
-            applyDupCheckResults(getAdapter(), results);
-        else
-            checkDupDoneNewEntries(arg, results);
     }
 
     public YTVideoSearchAdapter.CheckStateListener
@@ -437,7 +387,6 @@ UnexpectedExceptionHandler.Evidence {
         }
 
         final YTDataAdapter.Video vid = (YTDataAdapter.Video)adapter.getItem(pos);
-        int playtm = 0;
         DB.Err err = mDb.insertVideoToPlaylist(plid,
                                                vid.id,
                                                vid.title,
@@ -469,6 +418,56 @@ UnexpectedExceptionHandler.Evidence {
     //
     // ========================================================================
     @Override
+    protected void
+    onListItemClick(View view, int position, long itemId) {
+        if (!Utils.isNetworkAvailable()) {
+            UiUtils.showTextToast(this, Err.IO_NET.getMessage());
+            return;
+        }
+
+        YTPlayer.Video v = getAdapter().getYTPlayerVideo(position);
+        mMp.startVideos(new YTPlayer.Video[] { v });
+    }
+
+    @Override
+    protected void
+    onSearchResponse(YTDataHelper helper,
+                     YTDataHelper.VideoListReq req,
+                     YTDataHelper.VideoListResp resp) {
+        checkDupAsync(req, resp.yt.vids);
+    }
+
+    @Override
+    public void
+    checkDupDone(DBHelper helper, DBHelper.CheckDupArg arg,
+                 boolean[] results, DBHelper.Err err) {
+        if (helper != mDbHelper) {
+            helper.close(); // this is dangling helper
+            return; // invalid callback.
+        }
+
+        if (DBHelper.Err.NO_ERR != err
+        || results.length != arg.vids.length) {
+            enableContentText(R.string.err_db_unknown);
+            return;
+        }
+
+        enableContentList();
+        if (null != getAdapter()
+        && arg.vids == getAdapter().getItems())
+            // Entry is same with current adapter.
+            // That means 'dup. checking is done for exsiting entries"
+            applyDupCheckResults(getAdapter(), results);
+        else
+            checkDupDoneNewEntries(arg, results);
+    }
+
+    // ========================================================================
+    //
+    //
+    //
+    // ========================================================================
+    @Override
     public void
     onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
         super.onCreateContextMenu(menu, v, menuInfo);
@@ -479,6 +478,38 @@ UnexpectedExceptionHandler.Evidence {
         boolean visible = !getAdapter().getItemAuthor(mInfo.position).isEmpty();
         menu.findItem(R.id.videos_of_this_author).setVisible(visible);
         menu.findItem(R.id.playlists_of_this_author).setVisible(visible);
+    }
+
+    @Override
+    public boolean
+    onContextItemSelected(MenuItem mItem) {
+        AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo)mItem.getMenuInfo();
+        switch (mItem.getItemId()) {
+            case R.id.add_to:
+                onContextMenuAddTo(info.position);
+                return true;
+
+            case R.id.append_to_playq:
+                onContextMenuAppendToPlayQ(info.position);
+                return true;
+
+            case R.id.play_video:
+                onContextMenuPlayVideo(info.position);
+                return true;
+
+            case R.id.videos_of_this_author:
+                onContextMenuVideosOfThisAuthor(info.position);
+                return true;
+
+            case R.id.playlists_of_this_author:
+                onContextMenuPlaylistsOfThisAuthor(info.position);
+                return true;
+
+            case R.id.search_similar_titles:
+                onContextMenuSearchSimilarTitles(info.position);
+                return true;
+        }
+        return false;
     }
 
     @Override
