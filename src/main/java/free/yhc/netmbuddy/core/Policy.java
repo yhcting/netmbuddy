@@ -44,32 +44,32 @@ public class Policy {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(Policy.class);
 
-    public static final String  APPBASENAME = "netmbuddy";
-    public static final String  EXTSTORAGE_DIR = Environment.getExternalStorageDirectory().getPath() + "/";
-    public static final String  APPDATA_DIR = EXTSTORAGE_DIR + APPBASENAME + "/";
-    public static final String  APPDATA_TMPDIR = APPDATA_DIR + "tmp/";
-    public static final String  APPDATA_LOGDIR = APPDATA_DIR + "logs/";
-    public static final String  APPDATA_CACHEDIR = APPDATA_DIR + "cache/";
+    public static final String APPBASENAME = "netmbuddy";
+    public static final String EXTSTORAGE_DIR = Environment.getExternalStorageDirectory().getPath() + "/";
+    public static final String APPDATA_DIR = EXTSTORAGE_DIR + APPBASENAME + "/";
+    public static final String APPDATA_TMPDIR = APPDATA_DIR + "tmp/";
+    public static final String APPDATA_LOGDIR = APPDATA_DIR + "logs/";
+    public static final String APPDATA_CACHEDIR = APPDATA_DIR + "cache/";
     // Downloaded video directory
-    public static final String  APPDATA_VIDDIR = APPDATA_DIR + "videos/";
-    public static final String  APPDATA_ERRLOG = APPDATA_LOGDIR + "last_error";
-    public static final String  EXTERNAL_DBFILE = APPDATA_DIR + APPBASENAME + ".db";
+    public static final String APPDATA_VIDDIR = APPDATA_DIR + "videos/";
+    public static final String APPDATA_ERRLOG = APPDATA_LOGDIR + "last_error";
+    public static final String EXTERNAL_DBFILE = APPDATA_DIR + APPBASENAME + ".db";
 
     // --------------------------------------------------------------------
     // Share
     // --------------------------------------------------------------------
-    public static final String  SHARE_FILE_EXTENTION = APPBASENAME;
+    public static final String SHARE_FILE_EXTENTION = APPBASENAME;
 
     // --------------------------------------------------------------------
     // Youtube
     // --------------------------------------------------------------------
-    public static final int     DEFAULT_VIDEO_VOLUME = 50;
-    public static final int     YTSEARCH_MAX_RESULTS = 20; //YTApiFacade.MAX_RESULTS_PER_PAGE; // 1 ~ 50
+    public static final int DEFAULT_VIDEO_VOLUME = 50;
+    public static final int YTSEARCH_MAX_RESULTS = 20; //YTApiFacade.MAX_RESULTS_PER_PAGE; // 1 ~ 50
 
     // Performance for loading thumbnail
-    public static final int     YTSEARCH_LOAD_THUMBNAIL_INTERVAL = 100; // 100ms
-    public static final int     YTSEARCH_MAX_LOAD_THUMBNAIL_THREAD = 4;
-    public static final int     YTIMPORT_MAX_LOAD_THUMBNAIL_THREAD = 10;
+    public static final int YTSEARCH_LOAD_THUMBNAIL_INTERVAL = 100; // 100ms
+    public static final int YTSEARCH_MAX_LOAD_THUMBNAIL_THREAD = 4;
+    public static final int YTIMPORT_MAX_LOAD_THUMBNAIL_THREAD = 10;
 
     // --------------------------------------------------------------------
     // Youtube Hack
@@ -79,13 +79,13 @@ public class Policy {
     // The problem is, there is no way to know exact expire time even if there is 'expire' token is html source.
     // (It's totally dependent on server-side-implementation.)
     // So, this is just experimental value!
-    public static final int     YTHACK_REUSE_TIMEOUT = 5 * 60 * 1000; // 5 minutes
-    public static final int     YTHACK_CACHE_SIZE = 10; // large enough to hit cache for current active video.
+    public static final int YTHACK_REUSE_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+    public static final int YTHACK_CACHE_SIZE = 10; // large enough to hit cache for current active video.
 
     // --------------------------------------------------------------------
     // Youtube Player
     // --------------------------------------------------------------------
-    public static final int     YTPLAYER_RETRY_ON_ERROR = 3;
+    public static final int YTPLAYER_RETRY_ON_ERROR = 3;
 
     // NOTE
     // Below is now DEPRECATED comments.
@@ -103,19 +103,19 @@ public class Policy {
     // NOTE
     // At the beginning of streaming, device is very busy.
     // So, caching need to be started with delay.
-    public static final long    YTPLAYER_CACHING_DELAY = 10000; // 10 seconds.
-    public static final long    YTPLAYER_DOUBLE_TOUCH_INTERVAL = 500;
+    public static final long YTPLAYER_CACHING_DELAY = 10000; // 10 seconds.
+    public static final long YTPLAYER_DOUBLE_TOUCH_INTERVAL = 500;
 
     // Time before/after TTS start/end.
-    public static final long    YTPLAYER_TTS_SPARE_TIME = 300; // ms
+    public static final long YTPLAYER_TTS_MARGIN_TIME = 300; // ms
 
     // --------------------------------------------------------------------
     // Network access
     // --------------------------------------------------------------------
     // Too long : user waits too long time to get feedback.
     // Too short : fails on bad network condition.
-    public static final int     NETWORK_CONN_TIMEOUT = 5000;
-    public static final int     NETOWRK_CONN_RETRY = 3;
+    public static final int NETWORK_CONN_TIMEOUT = 5000;
+    public static final int NETOWRK_CONN_RETRY = 3;
 
     // --------------------------------------------------------------------
     // Video Player
@@ -124,17 +124,17 @@ public class Policy {
     // --------------------------------------------------------------------
     // Searching
     // --------------------------------------------------------------------
-    public static final float   SIMILARITY_THRESHOLD_VERYLOW = 0.007f;
-    public static final float   SIMILARITY_THRESHOLD_LOW = 0.05f;
-    public static final float   SIMILARITY_THRESHOLD_NORMAL = 0.1f;
-    public static final float   SIMILARITY_THRESHOLD_HIGH = 0.4f;
-    public static final float   SIMILARITY_THRESHOLD_VERYHIGH = 0.7f;
-    public static final int     MAX_SIMILAR_TITLES_RESULT = 99999999; // actually no-limitation.
+    public static final float SIMILARITY_THRESHOLD_VERYLOW = 0.007f;
+    public static final float SIMILARITY_THRESHOLD_LOW = 0.05f;
+    public static final float SIMILARITY_THRESHOLD_NORMAL = 0.1f;
+    public static final float SIMILARITY_THRESHOLD_HIGH = 0.4f;
+    public static final float SIMILARITY_THRESHOLD_VERYHIGH = 0.7f;
+    public static final int MAX_SIMILAR_TITLES_RESULT = 99999999; // actually no-limitation.
     // --------------------------------------------------------------------
     // Usage Report
     // --------------------------------------------------------------------
-    public static final String REPORT_RECEIVER          = "yhcting77dev@gmail.com";
-    public static final String TIME_STAMP_FILE_SUFFIX   = "____tmstamp___";
+    public static final String REPORT_RECEIVER = "yhcting77dev@gmail.com";
+    public static final String TIME_STAMP_FILE_SUFFIX = "____tmstamp___";
 
     // --------------------------------------------------------------------
     // Values dependent on Preference.

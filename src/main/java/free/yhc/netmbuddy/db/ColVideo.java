@@ -40,6 +40,7 @@ import static free.yhc.netmbuddy.utils.Utils.eAssert;
 import android.content.ContentValues;
 import android.provider.BaseColumns;
 import free.yhc.netmbuddy.core.Policy;
+import free.yhc.netmbuddy.utils.Utils;
 
 public enum ColVideo implements DB.Col {
         // --------------------------------------------------------------------
@@ -60,16 +61,8 @@ public enum ColVideo implements DB.Col {
         //   plays with loud sound but others are not.
         // To tune this variance between videos this field is required.
         VOLUME          ("volume",          "integer",  null,   "not null"),
-        RATE            ("rate",            "integer",  null,   "not null"), // my rate of this Video - Not used yet
         TIME_ADD        ("time_add",        "integer",  null,   "not null"), // time video is added to DB.
         TIME_PLAYED     ("time_played",     "integer",  null,   "not_null"), // time last played
-
-        // --------------------------------------------------------------------
-        // Video information - Not used yet (reserved for future use)
-        // --------------------------------------------------------------------
-        GENRE           ("genre",           "text",     null,   "not null"), // Not used yet
-        ARTIST          ("artist",          "text",     null,   "not null"), // Not used yet
-        ALBUM           ("album",           "text",     null,   "not null"), // Not used yet
 
         // --------------------------------------------------------------------
         // Internal use for DB management
@@ -79,34 +72,29 @@ public enum ColVideo implements DB.Col {
         // --------------------------------------------------------------------
         // newly added at DB version 2
         // --------------------------------------------------------------------
-        AUTHOR          ("author",          "text",     "\"\"", ""), // YTFeed.Author.name
         // Belows are not used yet.
         NRPLAYED        ("nrplayed",        "integer",  "0",    ""), // # of played
-        REL_VIDEOS_FEED ("relvideosfeed",   "text",     "\"\"", ""), // feeds for relative videos.
-        // Reserved fields for future use
-        // ENUM name can be changed without affecting DB
-        RESERVED0       ("reserved0",       "text",     "\"\"", ""),
-        RESERVED1       ("reserved1",       "text",     "\"\"", ""),
-        RESERVED2       ("reserved2",       "text",     "\"\"", ""),
-        RESERVED3       ("reserved3",       "integer",  "0",    ""),
-        RESERVED4       ("reserved4",       "integer",  "0",    ""),
-        RESERVED5       ("reserved5",       "integer",  "0",    ""),
-        RESERVED6       ("reserved6",       "blob",     "\"\"", ""),
 
         // --------------------------------------------------------------------
         // newly added at DB version 3
         // --------------------------------------------------------------------
-        // Reserved column is NOT used here...
-        // Because, it's very difficult to maintain DB itself.
-        // Adding column is not expensive operation.
-        // In consequence, "Adding reserved fields" was BIG MISTAKE :-(
-        //
         // Delimiter between <time> and <bookmark name> : /
         // Delimiter between bookmarks : @
         // [ Format ]
         // bookmark : <time(ms)>/<bookmark name>
         // bookmarks : <bookmark>@<bookmark>@...
         BOOKMARKS       ("bookmarks",       "text",     "\"\"", ""),
+
+        // --------------------------------------------------------------------
+        // Changes at DB version 4
+        // --------------------------------------------------------------------
+        // [ Removed ]
+        // author, relvideosfeed, reservedN (See DBUpgrader)
+        //
+        // [ Added ]
+        // channelId, channelTitle
+        CHANNELID       ("channelid",       "text",     "\"\"", ""),
+        CHANNELTITLE    ("channeltitle",    "text",     "\"\"", ""),
 
         ID              (BaseColumns._ID,   "integer",  null,   "primary key autoincrement");
 
@@ -116,42 +104,47 @@ public enum ColVideo implements DB.Col {
         private final String _mDefault;
 
         static ContentValues
-        createContentValuesForInsert(String title, String videoId,
-                                     int playtime, String author,
-                                     byte[] thumbnail, int volume,
-                                     String bookmarks) {
-            eAssert(null != title && null != videoId);
+        createContentValuesForInsert(DMVideo v) {
+            eAssert(Utils.isValidValue(v.ytvid)
+                    && Utils.isValidValue(v.title));
+            byte[] thumbnail = v.thumbnail;
             if (null == thumbnail)
                 thumbnail = new byte[0];
-
-            ContentValues cvs = new ContentValues();
-            cvs.put(TITLE.getName(), title);
-            cvs.put(DESCRIPTION.getName(), ""); // not used yet.
-            cvs.put(VIDEOID.getName(), videoId);
-            cvs.put(PLAYTIME.getName(), playtime);
-            cvs.put(THUMBNAIL.getName(), thumbnail);
-            cvs.put(BOOKMARKS.getName(), bookmarks);
-
+            int volume = v.volume;
             if (DB.INVALID_VOLUME == volume)
                 volume = Policy.DEFAULT_VIDEO_VOLUME;
+
+            // Invalid bookmark string.
+            // This is definitely unexpected, but it's not fatal error.
+            // So, just ignore invalid bookmark!
+            String bookmarks = v.bookmarks;
+            if (!DBUtils.isValidBookmarksString(v.bookmarks))
+                bookmarks = "";
+
+            ContentValues cvs = new ContentValues();
+            cvs.put(TITLE.getName(), v.title);
+            cvs.put(DESCRIPTION.getName(), ""); // not used yet.
+            cvs.put(VIDEOID.getName(), v.ytvid);
+            cvs.put(PLAYTIME.getName(), v.playtime);
+
+            // non-core data
+            cvs.put(THUMBNAIL.getName(), thumbnail);
+            cvs.put(BOOKMARKS.getName(), bookmarks);
             cvs.put(VOLUME.getName(), volume);
 
-            cvs.put(RATE.getName(), 0);
+            // Additional info.
             cvs.put(TIME_ADD.getName(), System.currentTimeMillis());
             // Set to oldest value when first added because it is never played yet.
             cvs.put(TIME_PLAYED.getName(), 0);
 
-            cvs.put(GENRE.getName(), "");  // not used yet.
-            cvs.put(ARTIST.getName(), ""); // not used yet.
-            cvs.put(ALBUM.getName(), "");  // not used yet.
-
             cvs.put(REFCOUNT.getName(), 0);
 
             // --------------------------------------------------------------------
-            // newly added at DB version 2 (Those have default values.);
+            // newly added at DB version 4 (Those have default values.);
             // So, we don't need to describe values explicitly here.
             // --------------------------------------------------------------------
-            cvs.put(AUTHOR.getName(), author);
+            cvs.put(CHANNELID.getName(), v.channelId);
+            cvs.put(CHANNELTITLE.getName(), v.channelTitle);
 
             return cvs;
         }

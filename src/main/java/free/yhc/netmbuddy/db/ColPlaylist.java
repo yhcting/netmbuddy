@@ -54,13 +54,13 @@ public enum ColPlaylist implements DB.Col {
     // --------------------------------------------------------------------
     // Youtube video id for thumbnail.
     THUMBNAIL_YTVID ("thumbnail_vid",   "text",     "\"\"", ""),
-    // Reserved fields for future use
-    // ENUM name can be changed without affecting DB
-    RESERVED0       ("reserved0",       "text",     "\"\"", ""),
-    RESERVED1       ("reserved1",       "text",     "\"\"", ""),
-    RESERVED2       ("reserved2",       "integer",  "0",    ""),
-    RESERVED3       ("reserved3",       "integer",  "0",    ""),
-    RESERVED4       ("reserved4",       "blob",     "\"\"", ""),
+
+    // --------------------------------------------------------------------
+    // Changes at DB version 4
+    // --------------------------------------------------------------------
+    // [ Removed ]
+    // reservedN (See DBUpgrader)
+    //
 
 
     ID              (BaseColumns._ID,   "integer",  null,   "primary key autoincrement");

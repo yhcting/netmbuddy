@@ -51,6 +51,8 @@ import android.widget.TextView;
 import free.yhc.netmbuddy.db.ColVideo;
 import free.yhc.netmbuddy.db.DB;
 import free.yhc.netmbuddy.core.YTPlayer;
+import free.yhc.netmbuddy.db.DBUtils;
+import free.yhc.netmbuddy.db.DMVideo;
 import free.yhc.netmbuddy.utils.UiUtils;
 import free.yhc.netmbuddy.utils.Utils;
 
@@ -60,30 +62,23 @@ public class MusicsAdapter extends ResourceCursorAdapter {
 
     private static final int LAYOUT = R.layout.musics_row;
 
-    // Below value SHOULD match queries of 'createCursor()'
-    private static final int COLI_ID            = 0;
-    private static final int COLI_VIDEOID       = 1;
-    private static final int COLI_TITLE         = 2;
-    private static final int COLI_AUTHOR        = 3;
-    private static final int COLI_VOLUME        = 4;
-    private static final int COLI_PLAYTIME      = 5;
-
     // Check Button Tag Key
-    private static final int VTAGKEY_POS        = R.drawable.btncheck_on;
+    private static final int VTAGKEY_POS = R.drawable.btncheck_on;
 
     private static final ColVideo[] sQueryCols
         = new ColVideo[] { ColVideo.ID,
                            ColVideo.VIDEOID,
                            ColVideo.TITLE,
-                           ColVideo.AUTHOR,
+                           ColVideo.CHANNELID,
+                           ColVideo.CHANNELTITLE,
                            ColVideo.VOLUME,
                            ColVideo.PLAYTIME,
                            };
 
-    private final Context       mContext;
-    private final CursorArg     mCurArg;
-    private final HashMap<Integer, Long> mCheckedMap    = new HashMap<Integer, Long>();
-    private final CheckStateListener  mCheckListener;
+    private final Context mContext;
+    private final CursorArg mCurArg;
+    private final HashMap<Integer, Long> mCheckedMap = new HashMap<>();
+    private final CheckStateListener mCheckListener;
 
     private final CompoundButton.OnCheckedChangeListener mItemCheckOnCheckedChange
         = new CompoundButton.OnCheckedChangeListener() {
@@ -105,12 +100,9 @@ public class MusicsAdapter extends ResourceCursorAdapter {
     public interface CheckStateListener {
         /**
          *
-         * @param nrChecked
-         *   total number of check item of this adapter.
-         * @param pos
-         *   item position that check state is changed on.
-         * @param checked
-         *   new check state after changing.
+         * @param nrChecked total number of check item of this adapter.
+         * @param pos item position that check state is changed on.
+         * @param checked new check state after changing.
          */
         void onStateChanged(int nrChecked, int pos, boolean checked);
     }
@@ -124,37 +116,36 @@ public class MusicsAdapter extends ResourceCursorAdapter {
         }
     }
 
-    private String
-    getCursorInfoString(int pos, int colIndex) {
+    private Object
+    getCursorInfo(int pos, ColVideo col) {
         Cursor c = getCursor();
         if (!c.moveToPosition(pos))
             eAssert(false);
-        return c.getString(colIndex);
+        return DBUtils.getCursorVal(c, col);
     }
-
-    private int
-    getCursorInfoInt(int pos, int colIndex) {
-        Cursor c = getCursor();
-        if (!c.moveToPosition(pos))
-            eAssert(false);
-        return c.getInt(colIndex);
-    }
-
 
     private Cursor
     createCursor() {
+        // NOTE: To reduce cursor's window size, thumbnail is excluded from main adapter cursor.
         if (UiUtils.PLID_RECENT_PLAYED == mCurArg.plid)
-            return DB.get().queryVideos(sQueryCols, ColVideo.TIME_PLAYED, false);
+            return DB.get().queryVideos(DMVideo.sDBProjectionWithoutThumbnail,
+                                        ColVideo.TIME_PLAYED,
+                                        false);
         else if (UiUtils.PLID_SEARCHED == mCurArg.plid)
-            return DB.get().queryVideosSearchTitle(sQueryCols, mCurArg.extra.split("\\s"));
+            return DB.get().queryVideosSearchTitle(DMVideo.sDBProjectionWithoutThumbnail,
+                                                   mCurArg.extra.split("\\s"));
         else
-            return DB.get().queryVideos(mCurArg.plid, sQueryCols, ColVideo.TITLE, true);
+            return DB.get().queryVideos(mCurArg.plid,
+                                        DMVideo.sDBProjectionWithoutThumbnail,
+                                        ColVideo.TITLE,
+                                        true);
     }
 
     public MusicsAdapter(Context context,
                          CursorArg arg,
                          CheckStateListener listener) {
-        super(context, LAYOUT, null);
+        // TODO Should we use 'auto-requery' here?
+        super(context, LAYOUT, null, true);
         eAssert(null != arg);
         mContext = context;
         mCurArg = arg;
@@ -163,44 +154,45 @@ public class MusicsAdapter extends ResourceCursorAdapter {
 
     public String
     getMusicYtid(int pos) {
-        return getCursorInfoString(pos, COLI_VIDEOID);
+        return (String)getCursorInfo(pos, ColVideo.VIDEOID);
     }
 
     public String
     getMusicTitle(int pos) {
-        return getCursorInfoString(pos, COLI_TITLE);
-    }
-
-    public String
-    getMusicAuthor(int pos) {
-        return getCursorInfoString(pos, COLI_AUTHOR);
+        return (String)getCursorInfo(pos, ColVideo.TITLE);
     }
 
     public byte[]
     getMusicThumbnail(int pos) {
-        Cursor c = getCursor();
-        if (!c.moveToPosition(pos))
-            eAssert(false);
-        return (byte[])DB.get().getVideoInfo(c.getString(COLI_VIDEOID), ColVideo.THUMBNAIL);
+        long id = (Long)getCursorInfo(pos, ColVideo.ID);
+        return (byte[])DB.get().getVideoInfo(id, ColVideo.THUMBNAIL);
     }
 
     public int
     getMusicVolume(int pos) {
-        return getCursorInfoInt(pos, COLI_VOLUME);
+        return (Integer)getCursorInfo(pos, ColVideo.VOLUME);
     }
 
     public int
     getMusicPlaytime(int pos) {
-        return getCursorInfoInt(pos, COLI_PLAYTIME);
+        return (Integer)getCursorInfo(pos, ColVideo.PLAYTIME);
+    }
+
+    public String
+    getMusicChannel(int pos) {
+        return (String)getCursorInfo(pos, ColVideo.CHANNELTITLE);
+    }
+
+    public String
+    getMusicChannelId(int pos) {
+        return (String)getCursorInfo(pos, ColVideo.CHANNELID);
     }
 
     public YTPlayer.Video
     getYTPlayerVideo(int pos) {
         return new YTPlayer.Video(getMusicYtid(pos),
                                   getMusicTitle(pos),
-                                  getMusicAuthor(pos),
                                   getMusicVolume(pos),
-                                  getMusicPlaytime(pos),
                                   0);
     }
 
@@ -270,12 +262,12 @@ public class MusicsAdapter extends ResourceCursorAdapter {
     @Override
     public void
     bindView(View v, Context context, Cursor cur) {
-        CheckBox  checkv     = (CheckBox)v.findViewById(R.id.checkbtn);
+        CheckBox  checkv = (CheckBox)v.findViewById(R.id.checkbtn);
         ImageView thumbnailv = (ImageView)v.findViewById(R.id.thumbnail);
-        TextView  titlev     = (TextView)v.findViewById(R.id.title);
-        TextView  authorv    = (TextView)v.findViewById(R.id.author);
-        TextView  playtmv    = (TextView)v.findViewById(R.id.playtime);
-        TextView  uploadtmv  = (TextView)v.findViewById(R.id.uploadedtime);
+        TextView  titlev = (TextView)v.findViewById(R.id.title);
+        TextView  channelv = (TextView)v.findViewById(R.id.channel);
+        TextView  playtmv = (TextView)v.findViewById(R.id.playtime);
+        TextView  uploadtmv = (TextView)v.findViewById(R.id.uploadedtime);
 
         int pos = cur.getPosition();
         checkv.setTag(VTAGKEY_POS, pos);
@@ -286,16 +278,19 @@ public class MusicsAdapter extends ResourceCursorAdapter {
         else
             checkv.setChecked(false);
 
-        titlev.setText(cur.getString(COLI_TITLE));
-        String author = cur.getString(COLI_AUTHOR);
-        if (Utils.isValidValue(author)) {
-            authorv.setVisibility(View.VISIBLE);
-            authorv.setText(author);
+        titlev.setText((String)DBUtils.getCursorVal(cur, ColVideo.TITLE));
+        String channel = (String)DBUtils.getCursorVal(cur, ColVideo.CHANNELTITLE);
+        if (Utils.isValidValue(channel)) {
+            channelv.setVisibility(View.VISIBLE);
+            channelv.setText(channel);
         } else
-            authorv.setVisibility(View.GONE);
+            channelv.setVisibility(View.GONE);
         uploadtmv.setVisibility(View.GONE);
-        playtmv.setText(Utils.secsToMinSecText(cur.getInt(COLI_PLAYTIME)));
-        byte[] thumbnailData = (byte[])DB.get().getVideoInfo(cur.getString(COLI_VIDEOID), ColVideo.THUMBNAIL);
+        playtmv.setText(Utils.secsToMinSecText((Integer)DBUtils.getCursorVal(cur, ColVideo.PLAYTIME)));
+        // TODO How about caching thumbnails???
+        // NOTE: Load thumbnail separately from main adapter cursor
+        byte[] thumbnailData = (byte[])DB.get().getVideoInfo((Long)DBUtils.getCursorVal(cur, ColVideo.ID),
+                                                             ColVideo.THUMBNAIL);
         UiUtils.setThumbnailImageView(thumbnailv, thumbnailData);
     }
 }

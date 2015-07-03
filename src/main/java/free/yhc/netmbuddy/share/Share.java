@@ -36,10 +36,15 @@
 
 package free.yhc.netmbuddy.share;
 
+import android.support.annotation.NonNull;
+
+import org.json.JSONObject;
+
 import java.io.File;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.ZipInputStream;
 
+import free.yhc.netmbuddy.utils.JsonUtils;
 import free.yhc.netmbuddy.utils.Utils;
 
 // ============================================================================
@@ -51,30 +56,30 @@ public class Share {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(Share.class);
 
-    public static interface OnProgressListener {
+    public interface OnProgressListener {
         void onProgress(float prog);
     }
 
-    public static interface ImporterI {
+    public interface ImporterI {
         ImportPrepareResult prepare();
         /**
          * Synchronous call.
-         * @param arg
-         *   user argument. It depends on share type.
+         * @param arg user argument. It depends on share type.
          * @param listener
          * @return
          */
-        ImportResult        execute(Object arg, OnProgressListener listener);
-        void                cancel();
+        ImportResult execute(Object arg, OnProgressListener listener);
+        void cancel();
     }
 
-    public static interface ExporterI {
-        Err                 execute();
+    public interface ExporterI {
+        Err execute();
     }
 
     public enum Err {
         NO_ERR,
         IO_FILE,
+        IO_NET,
         PARAMETER,
         INTERRUPTED,
         INVALID_SHARE,
@@ -86,7 +91,7 @@ public class Share {
     public static class LocalException extends java.lang.Exception {
         static final long serialVersionUID = 0; // to make compiler be happy
 
-        private final Err   _mErr;
+        private final Err _mErr;
 
         public LocalException(Err err) {
             _mErr = err;
@@ -99,62 +104,39 @@ public class Share {
     }
 
     // Sharing type
-    public static enum Type {
-        PLAYLIST (1);
-
-        private final int _mVersion;
-        Type(int version) {
-            _mVersion = version;
-        }
-
-        int
-        getVersion() {
-            return _mVersion;
-        }
+    public enum Type {
+        PLAYLIST
     }
 
     public static class ImportPrepareResult {
-        public Err      err     = Err.UNKNOWN;
-        public Type     type    = Type.PLAYLIST;       // type of importing data
+        public Err err = Err.UNKNOWN;
+        public Type type = Type.PLAYLIST; // type of importing data
         // title of this import.
         // Value has it's own meaning dependent on 'type'
-        public String   message = "";
+        public String message = "";
     }
 
     public static class ImportResult {
-        public Err              err     = Err.UNKNOWN;        // result of import
-        public String           message = "";
+        public Err err = Err.UNKNOWN; // result of import
+        public String message = "";
         // # of successfully imported
-        public AtomicInteger    success = new AtomicInteger(0);
+        public AtomicInteger success = new AtomicInteger(0);
         // # of fails to import.
-        public AtomicInteger    fail    = new AtomicInteger(0);
+        public AtomicInteger fail = new AtomicInteger(0);
     }
-
-    // ========================================================================
-    //
-    // Common Utilities
-    //
-    // ========================================================================
-
-
-
-    // ========================================================================
-    //
-    //
-    //
-    // ========================================================================
-
 
     // ========================================================================
     //
     // Interfaces
     //
     // ========================================================================
+    @NonNull
     public static ImporterI
     buildImporter(ZipInputStream zis) {
         return new Importer(zis);
     }
 
+    @NonNull
     public static ExporterI
     buildPlayerlistExporter(File file, long plid) {
         return new ExporterPlaylist(file, plid);

@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014
+ * Copyright (C) 2012, 2013, 2014, 2015
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -353,16 +353,9 @@ UnexpectedExceptionHandler.Evidence {
     }
 
     private void
-    onContextMenuVideosOfThisAuthor(final long id, final int pos) {
-        Intent i = new Intent(this, YTVideoSearchAuthorActivity.class);
-        i.putExtra(YTSearchActivity.KEY_TEXT, getAdapter().getMusicAuthor(pos));
-        startActivity(i);
-    }
-
-    private void
-    onContextMenuPlaylistsOfThisAuthor(final long id, final int pos) {
-        Intent i = new Intent(this, YTPlaylistSearchActivity.class);
-        i.putExtra(YTSearchActivity.KEY_TEXT, getAdapter().getMusicAuthor(pos));
+    onContextMenuVideosOfThisChannel(final long id, final int pos) {
+        Intent i = new Intent(this, YTVideoSearchChannelActivity.class);
+        i.putExtra(YTSearchActivity.KEY_TEXT, getAdapter().getMusicChannelId(pos));
         startActivity(i);
     }
 
@@ -427,12 +420,8 @@ UnexpectedExceptionHandler.Evidence {
             onContextMenuBookmarks(info.id, info.position);
             return true;
 
-        case R.id.videos_of_this_author:
-            onContextMenuVideosOfThisAuthor(info.id, info.position);
-            return true;
-
-        case R.id.playlists_of_this_author:
-            onContextMenuPlaylistsOfThisAuthor(info.id, info.position);
+        case R.id.videos_of_this_channel:
+            onContextMenuVideosOfThisChannel(info.id, info.position);
             return true;
 
         case R.id.search_similar_titles:
@@ -454,9 +443,8 @@ UnexpectedExceptionHandler.Evidence {
         boolean visible = UiUtils.isUserPlaylist(mPlid)? true: false;
         menu.findItem(R.id.plthumbnail).setVisible(visible);
 
-        visible = Utils.isValidValue(getAdapter().getMusicAuthor(mInfo.position));
-        menu.findItem(R.id.videos_of_this_author).setVisible(visible);
-        menu.findItem(R.id.playlists_of_this_author).setVisible(visible);
+        visible = Utils.isValidValue(getAdapter().getMusicChannel(mInfo.position));
+        menu.findItem(R.id.videos_of_this_channel).setVisible(visible);
     }
 
     @Override

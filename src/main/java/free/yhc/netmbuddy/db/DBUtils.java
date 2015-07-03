@@ -41,10 +41,13 @@ import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.provider.BaseColumns;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 import free.yhc.netmbuddy.db.DB.Col;
 import free.yhc.netmbuddy.utils.Utils;
 
-class DBUtils {
+public class DBUtils {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(DBUtils.class);
 
@@ -61,21 +64,30 @@ class DBUtils {
         return strs;
     }
 
+    static void
+    putCvsValue(ContentValues cvs, Col col, Object value) {
+        switch (col.getType()) {
+        case "text":
+            cvs.put(col.getName(), (String)value);
+            break;
+        case "integer":
+            cvs.put(col.getName(), (Integer)value);
+            break;
+        case "blob":
+            cvs.put(col.getName(), (byte[])value);
+            break;
+        default:
+            eAssert(false);
+        }
+    }
+
     static ContentValues
     copyContent(Cursor c, DB.Col[] cols) {
         ContentValues cvs = new ContentValues();
         for (Col col : cols) {
             if (BaseColumns._ID.equals(col.getName()))
                     continue; // ID SHOULD NOT be copied.
-
-            if ("text".equals(col.getType())) {
-                cvs.put(col.getName(), c.getString(c.getColumnIndex(col.getName())));
-            } else if ("integer".equals(col.getType())) {
-                cvs.put(col.getName(), c.getLong(c.getColumnIndex(col.getName())));
-            } else if ("blob".equals(col.getType())) {
-                cvs.put(col.getName(), c.getBlob(c.getColumnIndex(col.getName())));
-            } else
-                eAssert(false);
+            putCvsValue(cvs, col, c.getColumnIndex(col.getName()));
         }
         return cvs;
     }
@@ -104,11 +116,8 @@ class DBUtils {
 
     /**
      * Get SQL statement for creating table
-     * @param table
-     *   name of table
-     * @param cols
-     *   columns of table.
-     * @return
+     * @param table name of table
+     * @param cols columns of table.
      */
     static String
     buildTableSQL(String table, DB.Col[] cols) {
@@ -129,15 +138,9 @@ class DBUtils {
 
     /**
      * Build SQL from joining video and video-ref tables
-     * @param plid
-     * @param cols
-     * @param field
-     *   for "WHERE 'field' = 'value'"
-     * @param value
-     *   for "WHERE 'field' = 'value'"
-     * @param colOrderBy
-     * @param asc
-     * @return
+     * @param field for "WHERE 'field' = 'value'"
+     * @param value for "WHERE 'field' = 'value'"
+     * @param asc true for ascending order
      */
     static String
     buildQueryVideosSQL(long plid, ColVideo[] cols,
@@ -173,28 +176,26 @@ class DBUtils {
         return sql;
     }
 
-    static Object
-    getCursorVal(Cursor c, Col col) {
-        int i = c.getColumnIndex(col.getName());
-        if ("text".equals(col.getType()))
-            return c.getString(i);
-        else if ("integer".equals(col.getType()))
-            return c.getLong(i);
-        else if ("blob".equals(col.getType()))
-            return c.getBlob(i);
-        else
-            return null;
+    static String
+    buildCopyColumnsSQL(String dstTable, String srcTable, String[] cols) {
+        if (0 == cols.length)
+            return ";"; // nothing to do
+        String sql = "INSERT INTO " + dstTable + " SELECT ";
+        for (int i = 0; i < cols.length - 1; i++)
+            sql += cols[i] + ",";
+        sql += cols[cols.length - 1];
+        sql += " FROM " + srcTable + ";";
+        return sql;
     }
 
     // ----------------------------------------------------------------------------------------------------------------
     // For Bookmarks
     // ----------------------------------------------------------------------------------------------------------------
     /**
-     * @param bmstr
-     *   empty string is NOT allowed.
-     * @return
-     *   null for invalid bookmark string.
+     * @param bmstr empty string is NOT allowed.
+     * @return null for invalid bookmark string.
      */
+    @Nullable
     private static DB.Bookmark
     decodeBookmark(String bmstr) {
         int i = bmstr.indexOf(DB.BOOKMARK_NAME_DELIMIETER);
@@ -238,10 +239,9 @@ class DBUtils {
     }
     /**
      *
-     * @param bmsstr
-     * @return
-     *   null for invalid bookmarks string.
+     * @return null for invalid bookmarks string.
      */
+    @Nullable
     static DB.Bookmark[]
     decodeBookmarks(String bmsstr) {
         if (null == bmsstr)
@@ -282,9 +282,6 @@ class DBUtils {
     /**
      * Delete first matching bookmark.
      * If there is more than one bookmark matching, only first one is deleted.
-     * @param bmsstr
-     * @param bm
-     * @return
      */
     static String
     deleteBookmark(String bmsstr, DB.Bookmark bm) {
@@ -303,4 +300,26 @@ class DBUtils {
         }
         return encodeBookmarks(newBmarr);
     }
+
+    // ========================================================================
+    //
+    // public
+    //
+    // ========================================================================
+    @NonNull
+    public static Object
+    getCursorVal(Cursor c, Col col) {
+        int i = c.getColumnIndex(col.getName());
+        if ("text".equals(col.getType()))
+            return c.getString(i);
+        else if ("integer".equals(col.getType()))
+            return c.getLong(i);
+        else if ("blob".equals(col.getType()))
+            return c.getBlob(i);
+        else {
+            eAssert(false);
+            return null;
+        }
+    }
+
 }

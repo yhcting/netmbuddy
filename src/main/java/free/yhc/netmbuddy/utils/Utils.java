@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014
+ * Copyright (C) 2012, 2013, 2014, 2015
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -69,6 +69,8 @@ import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Handler;
 import android.preference.PreferenceManager;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.util.Log;
 import android.view.Window;
 import free.yhc.netmbuddy.R;
@@ -138,6 +140,7 @@ public class Utils {
             return text;
         }
 
+        @Nullable
         public static PrefQuality
         getMatchingQuality(int text) {
             for (PrefQuality q : PrefQuality.values()) {
@@ -148,7 +151,7 @@ public class Utils {
         }
     }
 
-    public static enum PrefTitleSimilarityThreshold {
+    public enum PrefTitleSimilarityThreshold {
         VERYLOW (Policy.SIMILARITY_THRESHOLD_VERYLOW),
         LOW     (Policy.SIMILARITY_THRESHOLD_LOW),
         NORMAL  (Policy.SIMILARITY_THRESHOLD_NORMAL),
@@ -396,7 +399,7 @@ public class Utils {
 
     public static boolean
     isAppForeground() {
-        return getCurrentTopActivity().startsWith(getAppContext().getPackageName()+".");
+        return getCurrentTopActivity().startsWith(getAppContext().getPackageName() + ".");
     }
 
     public static void
@@ -513,6 +516,7 @@ public class Utils {
         return getBooleanPreference(getResString(R.string.csrepeat), false);
     }
 
+    @NonNull
     public static PrefQuality
     getPrefQuality() {
         String v = getStringPreference(getResString(R.string.csquality),
@@ -752,11 +756,11 @@ public class Utils {
     }
 
     public static void
-    sendMail(Context    context,
-             String     receiver,
-             String     subject,
-             String     text,
-             File       attachment) {
+    sendMail(Context context,
+             String receiver,
+             String subject,
+             String text,
+             File attachment) {
         if (!Utils.isNetworkAvailable())
             return;
 
@@ -777,8 +781,6 @@ public class Utils {
 
     /**
      * Only available when status bar is showing.
-     * @param activity
-     * @return
      */
     public static int
     getStatusBarHeight(Activity activity) {
@@ -792,6 +794,7 @@ public class Utils {
         return rect.top;
     }
 
+    @NonNull
     public static Rect
     getVisibleFrame(Activity activity) {
         Rect rect= new Rect();

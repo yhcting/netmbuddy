@@ -395,7 +395,7 @@ UnexpectedExceptionHandler.Evidence {
     @Override
     public void
     onStateChanged(YTPlayer.MPState from, int fromFlag,
-                   YTPlayer.MPState to,   int toFlag) {
+                   YTPlayer.MPState to, int toFlag) {
         switch (to) {
         case IDLE:
             mVQuality = Utils.getPrefQuality();
@@ -409,8 +409,8 @@ UnexpectedExceptionHandler.Evidence {
         case PAUSED:
         case STOPPED:
         case ERROR:
-            if (mMp.isPlayerSeeking(toFlag)
-                || mMp.isPlayerBuffering(toFlag))
+            if (mMp.isPlayerSeeking()
+                || mMp.isPlayerBuffering())
                 showLoadingSpinProgress();
             else
                 hideLoadingSpinProgress();

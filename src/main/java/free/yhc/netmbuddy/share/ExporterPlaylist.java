@@ -36,6 +36,8 @@
 
 package free.yhc.netmbuddy.share;
 
+import android.database.Cursor;
+
 import static free.yhc.netmbuddy.utils.Utils.eAssert;
 
 import java.io.ByteArrayInputStream;
@@ -51,12 +53,23 @@ import org.json.JSONObject;
 
 import free.yhc.netmbuddy.R;
 import free.yhc.netmbuddy.core.Policy;
+import free.yhc.netmbuddy.db.ColPlaylist;
+import free.yhc.netmbuddy.db.ColVideo;
+import free.yhc.netmbuddy.db.DB;
 import free.yhc.netmbuddy.share.Share.Err;
 import free.yhc.netmbuddy.share.Share.ExporterI;
 import free.yhc.netmbuddy.share.Share.Type;
 import free.yhc.netmbuddy.utils.FileUtils;
 import free.yhc.netmbuddy.utils.Utils;
 
+// Format
+// JSON-ROOT
+//     - Json.FMETA <JSONObject>
+//         * meta fields
+//     - Json.FPLAYLIST <JSONObject>
+//         * Json.sPlaylistProjectionForShare fields
+//         * Json.FVIDEOS <JSONArray>
+//             + Json.sVideoProjectionForShare fields
 class ExporterPlaylist implements ExporterI {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(ExporterPlaylist.class);
@@ -93,32 +106,61 @@ class ExporterPlaylist implements ExporterI {
     @Override
     public Err
     execute() {
-        JSONObject jsonPl = Json.playlistToJson(_mPlid);
-        JSONObject jsonMeta = Json.createMetaJson(Type.PLAYLIST);
-        JSONObject jo = new JSONObject();
+        DB db = DB.get();
+        Cursor c = null;
 
-        if (null == jsonPl)
+        // Meta data
+        // -------------
+        DataModel.Meta dmmeta = new DataModel.Meta();
+        dmmeta.type = Type.PLAYLIST;
+
+        // Playlist data
+        // -------------
+        DataModel.Playlist dmpl = new DataModel.Playlist();
+        try {
+            c = db.queryPlaylist(DataModel.Playlist.sDBProjection);
+            if (!c.moveToFirst())
+                return Err.PARAMETER;
+            dmpl.set(c);
+        } finally {
+            c.close();
+        }
+
+        // Video data in this playlist
+        // ---------------------------
+        c = db.queryVideos(_mPlid,
+                           new ColVideo[] { ColVideo.ID },
+                           null,
+                           false);
+        if (!c.moveToFirst()) {
+            c.close();
             return Err.PARAMETER;
-
-        eAssert(null != jsonMeta);
-        try {
-            jo.put(Json.FMETA, jsonMeta);
-            jo.put(Json.FPLAYLIST, jsonPl);
-        } catch (JSONException e) {
-            return Err.UNKNOWN;
         }
 
-        String shareName = "";
-        try {
-            shareName = FileUtils.pathNameEscapeString(Utils.getResString(R.string.playlist)
-                                                       + "_"
-                                                       + jsonPl.getString(Json.FTITLE)
-                                                       + "."
-                                                       + Policy.SHARE_FILE_EXTENTION);
-        } catch (JSONException e) {
-            return Err.UNKNOWN;
-        }
+        DataModel.Video[] dmvs = new DataModel.Video[c.getCount()];
+        int i = 0;
+        do {
+            dmvs[i] = new DataModel.Video();
+            dmvs[i].set(c);
+        } while (c.moveToNext());
+        c.close();
 
+
+        DataModel.Root dr = new DataModel.Root();
+        dr.meta = dmmeta;
+        dr.pl = dmpl;
+        dr.pl.videos = dmvs;
+
+        JSONObject jo = dr.toJson();
+        if (null == jo)
+            return Err.UNKNOWN;
+
+        String shareName
+            = FileUtils.pathNameEscapeString(Utils.getResString(R.string.playlist)
+                                             + "_"
+                                             + dr.pl.title
+                                             + "."
+                                             + Policy.SHARE_FILE_EXTENTION);
         ZipOutputStream zos;
         try {
             zos = new ZipOutputStream(new FileOutputStream(_mFout));

@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014
+ * Copyright (C) 2012, 2013, 2014, 2015
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -36,13 +36,21 @@
 
 package free.yhc.netmbuddy.share;
 
+import android.support.annotation.Nullable;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.zip.ZipInputStream;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import free.yhc.netmbuddy.db.ColPlaylist;
+import free.yhc.netmbuddy.db.ColVideo;
+import free.yhc.netmbuddy.db.DB;
 import free.yhc.netmbuddy.share.Share.Err;
 import free.yhc.netmbuddy.share.Share.ImportPrepareResult;
 import free.yhc.netmbuddy.share.Share.ImportResult;
@@ -51,6 +59,7 @@ import free.yhc.netmbuddy.share.Share.LocalException;
 import free.yhc.netmbuddy.share.Share.OnProgressListener;
 import free.yhc.netmbuddy.share.Share.Type;
 import free.yhc.netmbuddy.utils.FileUtils;
+import free.yhc.netmbuddy.utils.JsonUtils;
 import free.yhc.netmbuddy.utils.Utils;
 
 // ============================================================================
@@ -68,6 +77,74 @@ class Importer implements ImporterI {
     // concrete importer instance (depends on share type)
     private ImporterI               mImporter = null;
 
+    // =======================================================================
+    //
+    // JSONObject upgrader.
+    //
+    // =======================================================================
+    private static JSONObject
+    upgradeTo2(JSONObject jo) {
+        // See DataModel.Video.sDBProjection
+        final String[][] video_v1Tov2 = {
+            { "ytid", ColVideo.VIDEOID.getName() },
+            { "volume", ColVideo.VOLUME.getName() },
+            { "bookmarks", ColVideo.VIDEOID.getName() },
+        };
+
+        // See DataModel.Playlist.sDBProjection
+        final String[][] pl_v1Tov2 = {
+            { "title", ColPlaylist.TITLE.getName() },
+            { "thumbnail_ytvid", ColPlaylist.THUMBNAIL_YTVID.getName() },
+        };
+
+        try {
+            JSONObject pl = jo.getJSONObject(DataModel.Root.FPLAYLIST);
+            JSONArray varr = pl.getJSONArray(DataModel.Playlist.FVIDEOS);
+            // upgrade to v2 format for videos
+            for (int i = 0; i < varr.length(); i++) {
+                JSONObject o = varr.getJSONObject(i);
+                // replace keys.
+                for (String[] m : video_v1Tov2)
+                    if (!JsonUtils.jReplaceKey(o, m[0], m[1]))
+                        return null; // something wrong during replacing key.
+            }
+
+            // upgrade to v2 format for playlists
+            for (String[] m : pl_v1Tov2) {
+                if (!JsonUtils.jReplaceKey(pl, m[0], m[1]))
+                    return null; // something wrong during replacing key.
+            }
+            return jo;
+        } catch (JSONException e) {
+            return null;
+        }
+    }
+
+    private static JSONObject
+    upgrade(JSONObject jo) {
+        int ov;
+        try {
+            JSONObject jometa = jo.getJSONObject(DataModel.Root.FMETA);
+            ov = jometa.getInt(DataModel.Meta.FVERSION); // object version
+        } catch (JSONException e) {
+            return null; // Invalid jason object
+        }
+
+        while (null != jo
+               && ov < DataModel.DATAMODEL_VERSION) {
+            switch (ov) {
+                case 1: jo = upgradeTo2(jo); break;
+            }
+            ov++;
+        }
+        return jo;
+    }
+
+    // =======================================================================
+    //
+    //
+    //
+    // =======================================================================
     Importer(ZipInputStream zis) {
         mZis = zis;
     }
@@ -81,24 +158,28 @@ class Importer implements ImporterI {
             FileUtils.unzip(baos, mZis);
             JSONObject rootJo = new JSONObject(baos.toString("UTF-8"));
             // ---------------------------------------------
-            // Handling Meta data
+            // Upgrade to current data format
             // ---------------------------------------------
-            JSONObject jo = rootJo.getJSONObject(Json.FMETA);
-            if (!Json.verify(jo))
+            rootJo = upgrade(rootJo);
+            if (null == rootJo)
                 throw new LocalException(Err.INVALID_SHARE);
 
-            Type type = Type.valueOf(jo.getString(Json.FTYPE));
-            switch (type) {
+            DataModel.Root dr = new DataModel.Root();
+            dr.set(rootJo);
+            if (!dr.verify())
+                throw new LocalException(Err.INVALID_SHARE);
+            // ---------------------------------------------
+            // Handling Meta data
+            // ---------------------------------------------
+            switch (dr.meta.type) {
             case PLAYLIST:
-                mImporter = new ImporterPlaylist(rootJo.getJSONObject(Json.FPLAYLIST));
+                mImporter = new ImporterPlaylist(dr.pl);
                 break;
+            default:
+                throw new LocalException(Err.INVALID_SHARE);
             }
             ipr = mImporter.prepare();
-        } catch (IllegalArgumentException e) {
-            ipr.err = Err.INVALID_SHARE;
-        } catch (JSONException e) {
-            ipr.err = Err.INVALID_SHARE;
-        } catch (IOException e) {
+        } catch (JSONException | IOException | IllegalArgumentException e) {
             ipr.err = Err.INVALID_SHARE;
         } catch (LocalException e) {
             ipr.err = e.error();

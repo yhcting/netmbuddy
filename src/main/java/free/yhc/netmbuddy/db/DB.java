@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014
+ * Copyright (C) 2012, 2013, 2014, 2015
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -33,10 +33,10 @@
  * are those of the authors and should not be interpreted as representing
  * official policies, either expressed or implied, of the FreeBSD Project.
  *****************************************************************************/
-
 package free.yhc.netmbuddy.db;
 
 import static free.yhc.netmbuddy.utils.Utils.eAssert;
+import static free.yhc.netmbuddy.utils.Utils.isValidValue;
 
 import java.io.File;
 import java.lang.reflect.Method;
@@ -49,7 +49,10 @@ import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.support.annotation.Nullable;
+
 import free.yhc.netmbuddy.core.UnexpectedExceptionHandler;
+import free.yhc.netmbuddy.core.YTDataAdapter;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class DB implements
@@ -57,10 +60,9 @@ UnexpectedExceptionHandler.Evidence {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(DB.class);
 
-    public static final long    INVALID_PLAYLIST_ID = -1;
-    public static final int     INVALID_VOLUME      = -1;
-
-    public static final char    BOOKMARK_DELIMITER  = '@';
+    public static final long INVALID_PLAYLIST_ID = -1;
+    public static final int INVALID_VOLUME = -1;
+    public static final char BOOKMARK_DELIMITER = '@';
 
     // ----------------------------------------------------------------------------------------------------------------
     // Package Privates
@@ -72,25 +74,25 @@ UnexpectedExceptionHandler.Evidence {
     // Privates
     // ----------------------------------------------------------------------------------------------------------------
     // ytmp : YouTubeMusicPlayer
-    private static final String NAME            = "ytmp.db";
-    private static final int    VERSION         = 3;
+    private static final String NAME = "ytmp.db";
+    private static final int VERSION = 4;
 
-    private static final String TABLE_VIDEO             = "video";
-    private static final String TABLE_PLAYLIST          = "playlist";
-    private static final String TABLE_VIDEOREF_PREFIX   = "videoref_";
+    private static final String TABLE_VIDEO = "video";
+    private static final String TABLE_PLAYLIST = "playlist";
+    private static final String TABLE_VIDEOREF_PREFIX = "videoref_";
 
     private static DB instance = null;
 
-    private DBOpenHelper        mDbOpenHelper = null;
-    private SQLiteDatabase      mDb = null;
+    private DBOpenHelper mDbOpenHelper = null;
+    private SQLiteDatabase mDb = null;
 
     // mPlTblWM : PLaylist TaBLe Watcher Map
     // Watcher for playlist table is changed
-    private final HashMap<Object, Boolean> mPlTblWM     = new HashMap<Object, Boolean>();
+    private final HashMap<Object, Boolean> mPlTblWM = new HashMap<>();
     // Video table Watcher Map
-    private final HashMap<Object, Boolean> mVidTblWM    = new HashMap<Object, Boolean>();
+    private final HashMap<Object, Boolean> mVidTblWM = new HashMap<>();
 
-    public static enum Err {
+    public enum Err {
         NO_ERR,
         VERSION_MISMATCH,
         IO_FILE,
@@ -108,8 +110,14 @@ UnexpectedExceptionHandler.Evidence {
     }
 
     public static class Bookmark {
-        public int      pos;  // ms
-        public String   name; // Bookmark name.
+        public int pos;  // ms
+        public String name; // Bookmark name.
+
+        public static Bookmark[]
+        decode(String bookmarkString) {
+            return DBUtils.decodeBookmarks(bookmarkString);
+        }
+
         public Bookmark() { }
         public Bookmark(String aName, int aPos) {
             name = aName;
@@ -180,8 +188,6 @@ UnexpectedExceptionHandler.Evidence {
         return TABLE_VIDEOREF_PREFIX + playlistId;
     }
 
-
-
     // ======================================================================
     //
     // Creation / Upgrade
@@ -220,6 +226,11 @@ UnexpectedExceptionHandler.Evidence {
     // Operations (Private)
     //
     // ======================================================================
+    private static boolean
+    isValidVideoData(DMVideo v) {
+         return (Utils.isValidValue(v.ytvid)
+                 && Utils.isValidValue(v.title));
+    }
 
     // ----------------------------------------------------------------------
     //
@@ -230,7 +241,7 @@ UnexpectedExceptionHandler.Evidence {
     markBooleanWatcherChanged(HashMap<Object, Boolean> hm) {
         synchronized (hm) {
             Iterator<Object> itr = hm.keySet().iterator();
-            while (itr.hasNext())
+             while (itr.hasNext())
                 hm.put(itr.next(), true);
         }
     }
@@ -286,16 +297,11 @@ UnexpectedExceptionHandler.Evidence {
 
     /**
      * Update video value
-     * @param where
-     *   field of where clause
-     * @param wherev
-     *   field value of where clause
-     * @param fields
-     *   fields to update
-     * @param vs
-     *   new field values
-     * @return
-     *   number of rows that are updated.
+     * @param where field of where clause
+     * @param wherev field value of where clause
+     * @param fields fields to update
+     * @param vs new field values
+     * @return number of rows that are updated.
      */
     private int
     updateVideo(ColVideo where, Object wherev,
@@ -322,16 +328,11 @@ UnexpectedExceptionHandler.Evidence {
 
     /**
      * Update video value
-     * @param where
-     *   field of where clause
-     * @param wherev
-     *   field value of where clause
-     * @param field
-     *   field to update
-     * @param v
-     *   new field value
-     * @return
-     *   number of rows that are updated.
+     * @param where field of where clause
+     * @param wherev field value of where clause
+     * @param field field to update
+     * @param v new field value
+     * @return number of rows that are updated.
      */
     private int
     updateVideo(ColVideo where, Object wherev,
@@ -394,10 +395,9 @@ UnexpectedExceptionHandler.Evidence {
 
     /**
      *
-     * @param plid
-     * @param vid
-     *   NOTE : This is video id (NOT video reference's id - primary key.
-     * @return
+     * @param plid Playlist DB id
+     * @param vid This is video id (NOT video reference's id - primary key.
+     * @return number of deleted item
      */
     private int
     deleteVideoRef(long plid, long vid) {
@@ -484,14 +484,10 @@ UnexpectedExceptionHandler.Evidence {
     }
 
     long
-    insertVideo(String title, String url,
-                int playtime, String author,
-                byte[] thumbnail, int volume,
-                String bookmarks) {
-        ContentValues cvs = ColVideo.createContentValuesForInsert(title, url,
-                                                                  playtime, author,
-                                                                  thumbnail, volume,
-                                                                  bookmarks);
+    insertVideo(DMVideo v) {
+        if (!isValidVideoData(v))
+            return -1;
+        ContentValues cvs = ColVideo.createContentValuesForInsert(v);
         return insertVideo(cvs);
     }
 
@@ -549,7 +545,7 @@ UnexpectedExceptionHandler.Evidence {
      *   All operations that might access DB, SHOULD BE STOPPED
      *     before importing DB.
      *   And that operation should be resumed after importing DB.
-     * @param exDbf
+     * @param exDbf external database file.
      */
 
     public Err
@@ -618,8 +614,8 @@ UnexpectedExceptionHandler.Evidence {
 
     /**
      *
-     * @param title
-     * @return
+     * @param title playlist title
+     * @return playlist DB id newly added.
      */
     public long
     insertPlaylist(String title) {
@@ -658,15 +654,16 @@ UnexpectedExceptionHandler.Evidence {
     deletePlaylist(long id) {
         int r = -1;
         mDb.beginTransaction();
+        Cursor c = null;
         try {
             r = mDb.delete(TABLE_PLAYLIST,
                            ColPlaylist.ID.getName() + " = " + id,
                            null);
             eAssert(0 == r || 1 == r);
             if (r > 0) {
-                Cursor c = mDb.query(getVideoRefTableName(id),
-                                     new String[] { ColVideoRef.VIDEOID.getName() },
-                                     null, null, null, null, null);
+                c = mDb.query(getVideoRefTableName(id),
+                              new String[] { ColVideoRef.VIDEOID.getName() },
+                              null, null, null, null, null);
                 if (c.moveToFirst()) {
                     do {
                         decVideoReference(c.getLong(0));
@@ -678,6 +675,8 @@ UnexpectedExceptionHandler.Evidence {
             mDb.setTransactionSuccessful();
         } finally {
             mDb.endTransaction();
+            if (null != c)
+                c.close();
         }
         return r;
     }
@@ -695,9 +694,9 @@ UnexpectedExceptionHandler.Evidence {
      *  - Long
      *  - String
      *  - byte[]
-     * @param plid
-     * @param col
-     * @return
+     * @param plid playlist DB id
+     * @param col column
+     * @return value of column
      */
     public Object
     getPlaylistInfo(long plid, ColPlaylist col) {
@@ -714,12 +713,10 @@ UnexpectedExceptionHandler.Evidence {
 
     /**
      * Any of playlists contain given video?
-     * @param ytvid
-     * @return
      */
     public boolean
     containsVideo(String ytvid) {
-        Cursor c = queryVideos(new ColVideo[] { ColVideo.ID }, ColVideo.VIDEOID, ytvid);
+        Cursor c = queryVideos(new ColVideo[]{ColVideo.ID}, ColVideo.VIDEOID, ytvid);
         boolean r = c.getCount() > 0;
         c.close();
         return r;
@@ -727,20 +724,17 @@ UnexpectedExceptionHandler.Evidence {
 
     /**
      * Does playlist contains given video?
-     * @param plid
-     * @param ytvid
-     * @return
      */
     public boolean
     containsVideo(long plid, String ytvid) {
         Cursor c = mDb.rawQuery(DBUtils.buildQueryVideosSQL(
-                                    plid,
-                                    new ColVideo[] { ColVideo.ID },
-                                    ColVideo.VIDEOID,
-                                    ytvid,
-                                    null,
-                                    true),
-                                null);
+        plid,
+        new ColVideo[]{ColVideo.ID},
+        ColVideo.VIDEOID,
+        ytvid,
+        null,
+        true),
+        null);
         boolean r = c.getCount() > 0;
         c.close();
         return r;
@@ -748,10 +742,9 @@ UnexpectedExceptionHandler.Evidence {
 
     /**
      * Insert video.
-     * @param plid
-     * @param vid
-     * @return
-     *   Err.DB_DUPLICATED if video is duplicated one.
+     * @param plid playlist DB id
+     * @param vid video DB id
+     * @return Err.DB_DUPLICATED if video is duplicated one.
      */
     public Err
     insertVideoToPlaylist(long plid, long vid) {
@@ -767,36 +760,22 @@ UnexpectedExceptionHandler.Evidence {
     /**
      * This is NOT THREAD SAFE
      * checking for duplication and inserting to DB is not an atomic operation in this function.
-     * @param plid
-     *   Playlist DB id
-     * @return
-     *   -1 for error (ex. already exist)
+     * @param plid Playlist DB id
      */
     public Err
-    insertVideoToPlaylist(long plid,
-                          String ytvid, String title,
-                          String author, int playtime,
-                          byte[] thumbnail, int volume,
-                          String bookmarks) {
-        Cursor c = queryVideos(new ColVideo[] { ColVideo.ID }, ColVideo.VIDEOID, ytvid);
+    insertVideoToPlaylist(long plid, DMVideo v) {
+        if (!isValidVideoData(v))
+            return Err.UNKNOWN;
+
+        Cursor c = queryVideos(new ColVideo[] { ColVideo.ID }, ColVideo.VIDEOID, v.ytvid);
         eAssert(0 == c.getCount() || 1 == c.getCount());
         long vid;
         if (c.getCount() <= 0) {
-            // This is new video
             c.close();
-
-            if (!DBUtils.isValidBookmarksString(bookmarks))
-                // Invalid bookmark string.
-                // This is definitely unexpected, but it's not fatal error.
-                // So, just ignore invalid bookmark!
-                bookmarks = "";
-
+            // This is new video
             mDb.beginTransaction();
             try {
-                vid = insertVideo(title, ytvid,
-                                  playtime, author,
-                                  thumbnail, volume,
-                                  bookmarks);
+                vid = insertVideo(v);
                 if (vid < 0)
                     return Err.UNKNOWN;
 
@@ -820,14 +799,6 @@ UnexpectedExceptionHandler.Evidence {
         return Err.NO_ERR;
     }
 
-    public Err
-    insertVideoToPlaylist(long plid,
-                          String ytvid, String title,
-                          String author, int playtime,
-                          byte[] thumbnail, int volume) {
-        return insertVideoToPlaylist(plid, ytvid, title, author, playtime, thumbnail, volume, "");
-    }
-
     public int
     updateVideoTitle(long vid, String title) {
         eAssert(null != title
@@ -849,12 +820,10 @@ UnexpectedExceptionHandler.Evidence {
     // For bookmarks
     // ----------------------------------------------------------------------
     /**
-     *
-     * @param vid
-     * @param name
-     * @param position
-     *   milliseconds.
-     * @return
+     * @param vid Video DB id
+     * @param name bookmark name
+     * @param position milliseconds.
+     * @return 1 for success otherwise unexpected error.
      */
     public int
     addBookmark(long vid, String name, int position) {
@@ -894,10 +863,9 @@ UnexpectedExceptionHandler.Evidence {
     // ----------------------------------------------------------------------
     /**
      * Delete video from given playlist.
-     * @param plid
-     * @param vid
-     *   NOTE : Video id (NOT Video reference id).
-     * @return
+     * @param plid playlist
+     * @param vid Video id (NOT Video reference id).
+     * @return number of deleted item
      */
     public int
     deleteVideoFrom(long plid, long vid) {
@@ -906,9 +874,9 @@ UnexpectedExceptionHandler.Evidence {
 
     /**
      * Delete video from all playlists except for given playlist.
-     * @param plid
-     * @param vid
-     * @return
+     * @param plid exceptional playlist
+     * @param vid video DB id.
+     * @return number of deleted item
      */
     public int
     deleteVideoExcept(long plid, long vid) {
@@ -931,8 +899,7 @@ UnexpectedExceptionHandler.Evidence {
 
     /**
      * Delete video from all playlists
-     * @param vid
-     * @return
+     * @return number of times deleted.
      */
     public int
     deleteVideoFromAll(long vid) {
@@ -949,9 +916,6 @@ UnexpectedExceptionHandler.Evidence {
     /**
      * Joined table is used.
      * So, DO NOT find column index with column name!
-     * @param plid
-     * @param cols
-     * @return
      */
     public Cursor
     queryVideos(long plid, ColVideo[] cols, ColVideo colOrderBy, boolean asc) {
@@ -965,11 +929,7 @@ UnexpectedExceptionHandler.Evidence {
     // That's the reason why 'LIKE' is used instead of FTS3/FTS4.
     // If performance is critical, using FTS3/FTS4 should be considered seriously.
     /**
-     *
-     * @param cols
-     * @param titleLikes
-     *   sub strings to search(Not token). So, search with 'ab' may find '123abcd'.
-     * @return
+     * @param titleLikes sub strings to search(Not token). So, search with 'ab' may find '123abcd'.
      */
     public Cursor
     queryVideosSearchTitle(ColVideo[] cols, String[] titleLikes) {
@@ -997,14 +957,25 @@ UnexpectedExceptionHandler.Evidence {
                          null, null, null, null);
     }
 
+    public DMVideo
+    getVideoInfo(long vid, ColVideo[] cols) {
+        Cursor c = mDb.query(TABLE_VIDEO,
+                             DBUtils.getColNames(cols),
+                             ColVideo.ID.getName() + " = " + vid,
+                             null, null, null, null);
+        if (!c.moveToFirst())
+            eAssert(false);
+        DMVideo v = new DMVideo();
+        v.setData(cols, c);
+        c.close();
+        return v;
+    }
+
     /**
      * Returned value can be type-casted to one of follows
      *  - Long
      *  - String
      *  - byte[]
-     * @param ytvid
-     * @param col
-     * @return
      */
     public Object
     getVideoInfo(String ytvid, ColVideo col) {
@@ -1042,9 +1013,7 @@ UnexpectedExceptionHandler.Evidence {
 
     /**
      * Get playlist's DB-ids which contains given video.
-     * @param vid
-     *   DB-id of video in Video Table(TABLE_VIDEO).
-     * @return
+     * @param vid DB-id of video in Video Table(TABLE_VIDEO).
      */
     public long[]
     getPlaylistsContainVideo(long vid) {
@@ -1073,8 +1042,7 @@ UnexpectedExceptionHandler.Evidence {
     /**
      * Playlist watcher is to tell whether playlist table is changed or not.
      * Not only inserting/deleting, but also updating values of fields.
-     * @param key
-     *   owner key of this wathcer.
+     * @param key owner key of this wathcer.
      */
     public void
     registerToPlaylistTableWatcher(Object key) {

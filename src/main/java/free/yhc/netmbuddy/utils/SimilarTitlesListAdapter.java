@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014
+ * Copyright (C) 2012, 2013, 2014, 2015
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -47,30 +47,18 @@ import android.widget.TextView;
 import free.yhc.netmbuddy.R;
 import free.yhc.netmbuddy.db.ColVideo;
 import free.yhc.netmbuddy.db.DB;
+import free.yhc.netmbuddy.db.DMVideo;
 
 class SimilarTitlesListAdapter extends BaseAdapter {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(SimilarTitlesListAdapter.class);
 
-    // Below value SHOULD match queries of 'createCursor()'
-    private static final int COLI_VIDEOID       = 0;
-    private static final int COLI_TITLE         = 1;
-    private static final int COLI_AUTHOR        = 2;
-    private static final int COLI_PLAYTIME      = 3;
-
-    private static final ColVideo[] sQueryCols
-        = new ColVideo[] { ColVideo.VIDEOID,
-                           ColVideo.TITLE,
-                           ColVideo.AUTHOR,
-                           ColVideo.PLAYTIME,
-                           };
-
     private final DB    mDb;
     private Context     mContext;
     private long[]      mVids;;
 
-    SimilarTitlesListAdapter(Context    context,
-                             long[]     vids) {
+    SimilarTitlesListAdapter(Context context,
+                             long[] vids) {
         super();
         mDb = DB.get();
         mContext = context;
@@ -105,31 +93,29 @@ class SimilarTitlesListAdapter extends BaseAdapter {
         else
             v = UiUtils.inflateLayout(mContext, R.layout.similar_titles_row);
 
-        CheckBox  checkv     = (CheckBox)v.findViewById(R.id.checkbtn);
+        CheckBox checkv = (CheckBox)v.findViewById(R.id.checkbtn);
         ImageView thumbnailv = (ImageView)v.findViewById(R.id.thumbnail);
-        TextView  titlev     = (TextView)v.findViewById(R.id.title);
-        TextView  authorv    = (TextView)v.findViewById(R.id.author);
-        TextView  playtmv    = (TextView)v.findViewById(R.id.playtime);
-        TextView  uploadtmv  = (TextView)v.findViewById(R.id.uploadedtime);
+        TextView titlev = (TextView)v.findViewById(R.id.title);
+        TextView channelv = (TextView)v.findViewById(R.id.channel);
+        TextView playtmv = (TextView)v.findViewById(R.id.playtime);
+        TextView uploadtmv = (TextView)v.findViewById(R.id.uploadedtime);
 
         checkv.setVisibility(View.GONE);
-        Cursor c = mDb.queryVideo(mVids[position], sQueryCols);
-        c.moveToFirst(); // this SHOULD always succeed.
-
-        titlev.setText(c.getString(COLI_TITLE));
-        String author = c.getString(COLI_AUTHOR);
-        if (Utils.isValidValue(author)) {
-            authorv.setVisibility(View.VISIBLE);
-            authorv.setText(author);
+        // TODO Caching video info is helpful to reduce IO bottleneck.
+        // NOTE: To reduce cursor's window size, thumbnail is excluded from main adapter cursor.
+        DMVideo dbv = mDb.getVideoInfo(mVids[position], DMVideo.sDBProjectionWithoutThumbnail);
+        titlev.setText(dbv.title);
+        if (Utils.isValidValue(dbv.channelTitle)) {
+            channelv.setVisibility(View.VISIBLE);
+            channelv.setText(dbv.channelTitle);
         } else
-            authorv.setVisibility(View.GONE);
+            channelv.setVisibility(View.GONE);
         uploadtmv.setVisibility(View.GONE);
-        playtmv.setText(Utils.secsToMinSecText(c.getInt(COLI_PLAYTIME)));
-        byte[] thumbnailData = (byte[])DB.get().getVideoInfo(c.getString(COLI_VIDEOID), ColVideo.THUMBNAIL);
+        playtmv.setText(Utils.secsToMinSecText(dbv.playtime));
+
+        // NOTE: Load thumbnail separately from main adapter cursor
+        byte[] thumbnailData = (byte[])DB.get().getVideoInfo(dbv.id, ColVideo.THUMBNAIL);
         UiUtils.setThumbnailImageView(thumbnailv, thumbnailData);
-
-        c.close();
-
         return v;
     }
 }

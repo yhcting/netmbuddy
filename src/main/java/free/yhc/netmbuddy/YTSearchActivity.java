@@ -238,8 +238,8 @@ YTDataHelper.VideoListRespReceiver {
         switch (reqType) {
         case VID_KEYWORD:
             return Utils.getResString(R.string.keyword);
-        case VID_AUTHOR:
-            return Utils.getResString(R.string.author);
+        case VID_CHANNEL:
+            return Utils.getResString(R.string.channel);
         case VID_PLAYLIST:
             return Utils.getResString(R.string.playlist);
         }

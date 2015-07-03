@@ -77,7 +77,7 @@
                 android:resource="@xml/searchable_keyword"/>
         </activity>
         <activity
-            android:name=".YTVideoSearchAuthorActivity"
+            android:name=".YTVideoSearchChannelActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
             android:theme="@android:style/Theme.NoTitleBar"
             android:launchMode="singleTop"
@@ -85,7 +85,7 @@
             >
             <meta-data
                 android:name="android.app.default_searchable"
-                android:value=".YTVideoSearchAuthorActivity" />
+                android:value=".YTVideoSearchChannelActivity" />
             <intent-filter>
                 <action android:name="android.intent.action.SEARCH" />
             </intent-filter>

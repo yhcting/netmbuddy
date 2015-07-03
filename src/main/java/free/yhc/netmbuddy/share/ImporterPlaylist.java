@@ -36,6 +36,11 @@
 
 package free.yhc.netmbuddy.share;
 
+import android.graphics.Bitmap;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
+import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.json.JSONArray;
@@ -45,9 +50,11 @@ import org.json.JSONObject;
 import free.yhc.netmbuddy.core.YTDataAdapter;
 import free.yhc.netmbuddy.core.YTDataHelper;
 import free.yhc.netmbuddy.db.ColPlaylist;
+import free.yhc.netmbuddy.db.ColVideo;
 import free.yhc.netmbuddy.db.DB;
 import free.yhc.netmbuddy.core.MultiThreadRunner;
 import free.yhc.netmbuddy.core.Policy;
+import free.yhc.netmbuddy.db.DMVideo;
 import free.yhc.netmbuddy.share.Share.Err;
 import free.yhc.netmbuddy.share.Share.ImportPrepareResult;
 import free.yhc.netmbuddy.share.Share.ImportResult;
@@ -63,23 +70,23 @@ class ImporterPlaylist implements ImporterI {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(ImporterPlaylist.class);
 
-    private final JSONObject            mJo;
-    private final MultiThreadRunner     mMtrunner;
+    private final DataModel.Playlist mPl;
+    private final MultiThreadRunner mMtrunner;
 
     static class ImportVideoJob extends MultiThreadRunner.Job<Err> {
-        private final long          _mPlid; // playlist id to import to
-        private final JSONObject    _mJov;  // Video JSON Object.
+        private final long _mPlid; // playlist id to import to
+        private final DataModel.Video _mV;  // Video JSON Object.
         private final AtomicInteger _mSuccess;
         private final AtomicInteger _mFail;
 
         ImportVideoJob(float progWeight,
-                       JSONObject jov,
+                       DataModel.Video video,
                        long plid,
                        AtomicInteger success,
                        AtomicInteger fail) {
             super(true, progWeight);
             _mPlid = plid;
-            _mJov = jov;
+            _mV = video;
             _mSuccess = success;
             _mFail = fail;
         }
@@ -87,46 +94,19 @@ class ImporterPlaylist implements ImporterI {
         @Override
         public Err
         doJob() {
-            Err err = Err.UNKNOWN;
+            Err err = Err.NO_ERR;
             try {
-                String title = _mJov.getString(Json.FTITLE);
-                String ytvid = _mJov.getString(Json.FYTID);
-                if (!YTUtils.verifyYoutubeVideoId(ytvid))
+                if (!YTUtils.verifyYoutubeVideoId(_mV.ytvid))
                     return Err.INVALID_SHARE;
 
-                // NOTE
-                // Values that may not be in shared data
-                //   - newly added field after Database version 1.
-                // Use default values for them.
-
-                // AUTHOR is newly added at Database version 2.
-                String author = "";
-                if (_mJov.has(Json.FAUTHOR))
-                    author = _mJov.getString(Json.FAUTHOR);
-
-                int playtm = _mJov.getInt(Json.FPLAYTIME);
-                int volume = Policy.DEFAULT_VIDEO_VOLUME;
-                if (_mJov.has(Json.FVOLUME))
-                    volume = _mJov.getInt(Json.FVOLUME);
-                String bookmarks = "";
-                if (_mJov.has(Json.FBOOKMARKS))
-                    bookmarks = _mJov.getString(Json.FBOOKMARKS);
-
-                // NOTE
-                // Getting thumbnail URL from youtube video id requires downloanding and parsing.
-                // It takes too much time.
-                // So, a kind of HACK is used to get thumbnail URL from youtube video id.
-                // see comments of 'YTHacker.getYtVideoThumbnailUrl()' for details.
-                if (YTUtils.insertVideoToPlaylist(_mPlid,
-                                                  ytvid,
-                                                  title,
-                                                  author,
-                                                  playtm,
-                                                  volume,
-                                                  bookmarks))
-                    err = Err.NO_ERR;
-            } catch (JSONException e) {
-                return Err.INVALID_SHARE;
+                DMVideo v = new DMVideo();
+                v.ytvid = _mV.ytvid;
+                if (!YTUtils.fillYtDataAndThumbnail(v))
+                    return Err.IO_NET;
+                v.setPreferenceData(_mV.volume, _mV.bookmarks);
+                v.setPreferenceDataIfNotSet(Policy.DEFAULT_VIDEO_VOLUME, "");
+                if (DB.Err.NO_ERR != DB.get().insertVideoToPlaylist(_mPlid, v))
+                    err = Err.DB_UNKNOWN;
             } finally {
                 if (Err.NO_ERR == err)
                     _mSuccess.incrementAndGet();
@@ -137,17 +117,20 @@ class ImporterPlaylist implements ImporterI {
         }
     }
 
+    // =======================================================================
+    //
+    //
+    //
+    // =======================================================================
     /**
      * Root of type dependent JSONObject
-     * @param jo
      */
-    ImporterPlaylist(JSONObject jo) {
-        mJo = jo;
-        mMtrunner =  new MultiThreadRunner(Utils.getUiHandler(),
-                                           Policy.YTIMPORT_MAX_LOAD_THUMBNAIL_THREAD);
+    ImporterPlaylist(DataModel.Playlist pl) {
+        mPl = pl;
+        mMtrunner = new MultiThreadRunner(Utils.getUiHandler(),
+                                          Policy.YTIMPORT_MAX_LOAD_THUMBNAIL_THREAD);
 
     }
-
     private static String
     getUniqueSharePlaylistTitle(String shareTitle) {
         DB db = DB.get();
@@ -162,12 +145,8 @@ class ImporterPlaylist implements ImporterI {
     prepare() {
         ImportPrepareResult r = new ImportPrepareResult();
         r.type = Type.PLAYLIST;
-        try {
-            r.message = mJo.getString(Json.FTITLE);
-            r.err = Err.NO_ERR;
-        } catch (JSONException e) {
-            r.err = Err.INVALID_SHARE;
-        }
+        r.message = mPl.title;
+        r.err = Err.NO_ERR;
         return r;
     }
 
@@ -184,54 +163,40 @@ class ImporterPlaylist implements ImporterI {
 
         try {
             final DB db = DB.get();
-            JSONArray jarr = mJo.getJSONArray(Json.FVIDEOS);
-
-            String title = getUniqueSharePlaylistTitle(mJo.getString(Json.FTITLE));
-
-            // THUMBNAIL_YTVID is newly added at Database version 2.
-            // So, we cannot sure that DB always has valid value for this field.
-            final String thumbnailYtvid;
-            if (mJo.has(Json.FTHUMBNAIL_YTVID))
-                thumbnailYtvid = mJo.getString(Json.FTHUMBNAIL_YTVID);
-            else
-                thumbnailYtvid = "";
-
+            String title = getUniqueSharePlaylistTitle(mPl.title);
             ir.message = title;
             final long plid = db.insertPlaylist(title);
             if (plid < 0)
                 throw new LocalException(Err.DB_UNKNOWN);
 
-            float jobWeight = 1.0f / (jarr.length() + 1); // + 1 for loading playlist thumbnail.
+            float jobWeight = 1.0f / (mPl.videos.length + 1); // + 1 for loading playlist thumbnail.
             // Append job to load/insert playlist thumbnail.
             mMtrunner.appendJob(new MultiThreadRunner.Job<Err>(true, jobWeight) {
                 @Override
                 public Err
                 doJob() {
-                    if (!Utils.isValidValue(thumbnailYtvid))
+                    if (!Utils.isValidValue(mPl.thumbnail_ytvid))
                         return Err.NO_ERR; // ignore for invalid thumbnail ytvid.
 
-                    YTDataHelper.ThumbnailResp ltr = null;
-                    try {
-                        ltr = YTUtils.loadYtVideoThumbnail(thumbnailYtvid);
-                    } catch (YTDataAdapter.YTApiException ignored) {
+                    Bitmap bm = YTUtils.getYtThumbnail(mPl.thumbnail_ytvid);
+                    if (null == bm)
                         return Err.NO_ERR;
-                    }
-                    byte[] data = ImageUtils.compressBitmap(ltr.bm);
+                    byte[] bmdata = ImageUtils.compressBitmap(bm);
                     db.updatePlaylist(plid,
                                       new ColPlaylist[] { ColPlaylist.THUMBNAIL,
                                                           ColPlaylist.THUMBNAIL_YTVID },
-                                      new Object[] { data,
-                                                     thumbnailYtvid });
-                    ltr.bm.recycle();
+                                      new Object[] { bmdata,
+                                                     mPl.thumbnail_ytvid });
+                    bm.recycle();
                     // Ignore if fail to load thumbnail - it's very minor for usecase.
                     return Err.NO_ERR;
                 }
             });
 
             // Append jobs to load/add videos
-            for (int i = 0; i < jarr.length(); i++) {
+            for (DataModel.Video v : mPl.videos) {
                 mMtrunner.appendJob(new ImportVideoJob(jobWeight,
-                                                       jarr.getJSONObject(i),
+                                                       v,
                                                        plid,
                                                        ir.success,
                                                        ir.fail));
@@ -240,8 +205,6 @@ class ImporterPlaylist implements ImporterI {
             mMtrunner.waitAllDone();
             ir.err = Err.NO_ERR;
         } catch (IllegalArgumentException e) {
-            ir.err = Err.INVALID_SHARE;
-        } catch (JSONException e) {
             ir.err = Err.INVALID_SHARE;
         } catch (InterruptedException e) {
             ir.err = Err.INTERRUPTED;
@@ -256,4 +219,6 @@ class ImporterPlaylist implements ImporterI {
     cancel() {
         mMtrunner.cancel();
     }
+
+
 }

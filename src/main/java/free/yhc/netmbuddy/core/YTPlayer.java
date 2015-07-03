@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014
+ * Copyright (C) 2012, 2013, 2014, 2015
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -64,6 +64,8 @@ import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.preference.PreferenceManager;
 import android.speech.tts.TextToSpeech;
+import android.speech.tts.UtteranceProgressListener;
+import android.support.annotation.NonNull;
 import android.telephony.TelephonyManager;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -75,6 +77,7 @@ import free.yhc.netmbuddy.db.ColVideo;
 import free.yhc.netmbuddy.db.DB;
 import free.yhc.netmbuddy.core.YTDownloader.DnArg;
 import free.yhc.netmbuddy.core.YTDownloader.DownloadDoneReceiver;
+import free.yhc.netmbuddy.db.DMVideo;
 import free.yhc.netmbuddy.utils.FileUtils;
 import free.yhc.netmbuddy.utils.Utils;
 
@@ -95,14 +98,22 @@ UnexpectedExceptionHandler.Evidence {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(YTPlayer.class);
 
+    public static final ColVideo[] sVideoProjectionToPlay
+        = new ColVideo[] { ColVideo.VIDEOID,
+                           ColVideo.TITLE,
+                           ColVideo.VOLUME };
+
+    private static final int COLI_VID_YTVID = 0;
+    private static final int COLI_VID_TITLE = 1;
+    private static final int COLI_VID_VOLUME = 2;
+
     // State Flags - Package private.
-    static final int    MPSTATE_FLAG_IDLE       = 0x0;
-    static final int    MPSTATE_FLAG_SEEKING    = 0x1;
-    static final int    MPSTATE_FLAG_BUFFERING  = 0x2;
+    static final int MPSTATE_FLAG_IDLE = 0x0;
+    static final int MPSTATE_FLAG_SEEKING = 0x1;
+    static final int MPSTATE_FLAG_BUFFERING = 0x2;
 
-
-    private static final String WLTAG               = "YTPlayer";
-    private static final int    PLAYER_ERR_RETRY    = Policy.YTPLAYER_RETRY_ON_ERROR;
+    private static final String WLTAG = "YTPlayer";
+    private static final int PLAYER_ERR_RETRY = Policy.YTPLAYER_RETRY_ON_ERROR;
 
     private static final Comparator<NrElem> sNrElemComparator = new Comparator<NrElem>() {
         @Override
@@ -121,60 +132,59 @@ UnexpectedExceptionHandler.Evidence {
         @Override
         public int
         compare(Video o1, Video o2) {
-            return o1.title.compareTo(o2.title);
+            return o1.v.title.compareTo(o2.v.title);
         }
     };
 
-    private static File     sCacheDir = new File(Policy.APPDATA_CACHEDIR);
-
+    private static File sCacheDir = new File(Policy.APPDATA_CACHEDIR);
     private static YTPlayer sInstance = null;
 
     // ------------------------------------------------------------------------
     //
     // ------------------------------------------------------------------------
-    private final DB                    mDb         = DB.get();
-    private final YTPlayerUI            mUi         = new YTPlayerUI(this); // for UI control
-    private final AutoStop              mAutoStop   = new AutoStop();
-    private final StartVideoRecovery    mStartVideoRecovery = new StartVideoRecovery();
-    private final YTPlayerVideoListManager  mVlm;
+    private final DB mDb = DB.get();
+    private final YTPlayerUI mUi = new YTPlayerUI(this); // for UI control
+    private final AutoStop mAutoStop = new AutoStop();
+    private final StartVideoRecovery mStartVideoRecovery = new StartVideoRecovery();
+    private final YTPlayerVideoListManager mVlm;
 
     // ------------------------------------------------------------------------
     //
     // ------------------------------------------------------------------------
 
-    private WakeLock            mWl         = null;
-    private WifiLock            mWfl        = null;
-    private MediaPlayer         mMp         = null;
+    private WakeLock mWl = null;
+    private WifiLock mWfl = null;
+    private MediaPlayer mMp = null;
     // Video Player Session Id.
     // Whenever new video - even if it is same video with previous one - is started,
     //   session id is increased.
-    private long                mMpSessId   = 0;
-    private MPState             mMpS        = MPState.INVALID; // state of mMp;
-    private int                 mMpSFlag    = MPSTATE_FLAG_IDLE;
-    private boolean             mMpSurfAttached = false;
-    private SurfaceHolder       mSurfHolder = null; // To support video
-    private boolean             mSurfReady  = false;
-    private boolean             mVSzReady   = false;
-    private int                 mMpVol      = Policy.DEFAULT_VIDEO_VOLUME; // Current volume of media player.
-    private YTHacker            mYtHack     = null;
-    private NetLoader           mLoader     = null;
+    private long mMpSessId = 0;
+    private MPState mMpS = MPState.INVALID; // state of mMp;
+    private int mMpSFlag = MPSTATE_FLAG_IDLE;
+    private boolean mMpSurfAttached = false;
+    private SurfaceHolder mSurfHolder = null; // To support video
+    private boolean mSurfReady = false;
+    private boolean mVSzReady = false;
+    private int mMpVol = Policy.DEFAULT_VIDEO_VOLUME; // Current volume of media player.
+    private YTHacker mYtHack = null;
+    private NetLoader mLoader = null;
     // assign dummy instance to remove "if (null != mYtDnr)"
-    private YTDownloader        mYtDnr      = new YTDownloader();
-    private TextToSpeech        mTts        = null;
-    private TTSState            mTtsState   = TTSState.NOTUSED;
+    private YTDownloader mYtDnr = new YTDownloader();
+    private TextToSpeech mTts = null;
+    private TTSState mTtsState = TTSState.NOTUSED;
 
     // ------------------------------------------------------------------------
     // Runtime Status
     // ------------------------------------------------------------------------
-    private int                     mErrRetry = PLAYER_ERR_RETRY;
-    private YTPState                mYtpS   = YTPState.IDLE;
-    private PlayerState             mStoredPState = null;
+    private int mErrRetry = PLAYER_ERR_RETRY;
+    private YTPState mYtpS = YTPState.IDLE;
+    private PlayerState mStoredPState = null;
 
     // ------------------------------------------------------------------------
     // Listeners
     // ------------------------------------------------------------------------
-    private KBLinkedList<VideosStateListener>   mVStateLsnrl = new KBLinkedList<VideosStateListener>();
-    private KBLinkedList<PlayerStateListener>   mPStateLsnrl = new KBLinkedList<PlayerStateListener>();
+    private KBLinkedList<VideosStateListener> mVStateLsnrl = new KBLinkedList<>();
+    private KBLinkedList<PlayerStateListener> mPStateLsnrl = new KBLinkedList<>();
 
     public interface VideosStateListener {
         /**
@@ -201,13 +211,12 @@ UnexpectedExceptionHandler.Evidence {
         /**
          * When DB is changed by YTPlayer.
          * So, other UI module may need to update look and feel accordingly.
-         * @param type
          */
         void onDbUpdated(DBUpdateType type);
     }
 
     // see "http://developer.android.com/reference/android/media/MediaPlayer.html"
-    public static enum MPState {
+    public enum MPState {
         INVALID,
         IDLE,
         INITIALIZED,
@@ -222,45 +231,42 @@ UnexpectedExceptionHandler.Evidence {
         ERROR
     }
 
-    public static enum StopState {
+    public enum StopState {
         DONE,
         FORCE_STOPPED,
         NETWORK_UNAVAILABLE,
         UNKNOWN_ERROR
     }
 
-    public static enum DBUpdateType {
+    public enum DBUpdateType {
         VOLUME,
         PLAYLIST,
     }
 
-    private static enum YTPState {
+    private enum YTPState {
         IDLE,
         SUSPENDED,
     }
 
-    private static enum TTSState {
+    private enum TTSState {
         NOTUSED,
         PREPARING,
         READY,
     }
 
     public static class Video {
-        public final String ytvid;
-        public final String title;
-        public final String author;
-        public final int    volume;
-        public final int    playtime; // This is to workaround not-correct value returns from getDuration() function
-                                      //   of youtube player (Seconds).
-        public final int    startpos; // Starting position(milliseconds) of this video.
-        public Video(String aYtvid, String aTitle, String aAuthor,
-                     int aVolume, int aPlaytime, int aStartpos) {
-            ytvid = aYtvid;
-            title = aTitle;
-            author = aAuthor;
-            playtime = aPlaytime;
-            volume = aVolume;
-            startpos = aStartpos;
+        public final DMVideo v;
+        public final int startpos; // Starting position(milliseconds) of this video.
+        public Video(String ytvid, String title, int volume, int startpos) {
+            v = new DMVideo();
+            v.ytvid = ytvid;
+            v.title = title;
+            v.volume = volume;
+            this.startpos = startpos;
+        }
+        public Video(DMVideo v, int startpos) {
+            this.v = v;
+            this.startpos = startpos;
         }
     }
 
@@ -312,7 +318,6 @@ UnexpectedExceptionHandler.Evidence {
                     YTPlayer.get().ytpSuspendPlaying();
             } else {
                 if (DBG) P.w("Unexpected extra state : " + exst);
-                return; // ignore others.
             }
         }
     }
@@ -593,8 +598,7 @@ UnexpectedExceptionHandler.Evidence {
             mpSetState(MPState.INITIALIZED);
             return;
 
-        default:
-            ; // ignored
+        default: // ignored
         }
 
         if (DBG) P.v("MP [" + mpGetState().name() + "] : setDataSource ignored : ");
@@ -612,8 +616,7 @@ UnexpectedExceptionHandler.Evidence {
             mMp.prepareAsync();
             return;
 
-        default:
-            ; // ignored
+        default: // ignored
         }
         if (DBG) P.v("MP [" + mpGetState().name() + "] : prepareAsync ignored : ");
     }
@@ -663,8 +666,7 @@ UnexpectedExceptionHandler.Evidence {
             mpSetState(MPState.IDLE);
             return;
 
-        default:
-            ; // ignored
+        default: // ignored
         }
         if (DBG) P.v("MP [" + mpGetState().name() + "] : reset ignored : ");
     }
@@ -706,8 +708,7 @@ UnexpectedExceptionHandler.Evidence {
             mMp.setVolume(volf, volf);
             return;
 
-        default:
-            ; // ignored
+        default: // ignored
         }
 
         if (DBG) P.v("MP [" + mpGetState().name() + "] : setVolume ignored : ");
@@ -721,8 +722,7 @@ UnexpectedExceptionHandler.Evidence {
             if (DBG) P.v("MP [" + mpGetState().name() + "] : mpGetVolume ignored : ");
             return Policy.DEFAULT_VIDEO_VOLUME;
 
-        default:
-            ; // ignored
+        default: // ignored
         }
         return mMpVol;
     }
@@ -745,8 +745,7 @@ UnexpectedExceptionHandler.Evidence {
         case PLAYBACK_COMPLETED:
             return mMp.getCurrentPosition();
 
-        default:
-            ; // ignored
+        default: // ignored
         }
         if (DBG) P.v("MP [" + mpGetState().name() + "] : getCurrentPosition ignored : ");
         return 0;
@@ -766,8 +765,7 @@ UnexpectedExceptionHandler.Evidence {
         case PLAYBACK_COMPLETED:
             return mMp.getDuration();
 
-        default:
-            ; // ignored
+        default: // ignored
         }
         if (DBG) P.v("MP [" + mpGetState().name() + "] : getDuration ignored : ");
         return 0;
@@ -789,8 +787,7 @@ UnexpectedExceptionHandler.Evidence {
         case PLAYBACK_COMPLETED:
             return mMp.getVideoWidth();
 
-        default:
-            ; // ignored
+        default: // ignored
         }
         if (DBG) P.v("MP [" + mpGetState().name() + "] : getVideoWidth ignored : ");
         return 0;
@@ -813,8 +810,7 @@ UnexpectedExceptionHandler.Evidence {
         case PLAYBACK_COMPLETED:
             return mMp.getVideoHeight();
 
-        default:
-            ; // ignored
+        default: // ignored
         }
         if (DBG) P.v("MP [" + mpGetState().name() + "] : getVideoHeight ignored : ");
         return 0;
@@ -828,10 +824,7 @@ UnexpectedExceptionHandler.Evidence {
 
     private boolean
     mpIsPlaying() {
-        if (null == mMp)
-            return false;
-
-        return mMp.isPlaying();
+        return null != mMp && mMp.isPlaying();
     }
 
     private void
@@ -847,8 +840,7 @@ UnexpectedExceptionHandler.Evidence {
             mpSetState(MPState.PAUSED);
             return;
 
-        default:
-            ; // ignored
+        default: // ignored
         }
         if (DBG) P.v("MP [" + mpGetState().name() + "] : pause ignored : ");
     }
@@ -869,8 +861,7 @@ UnexpectedExceptionHandler.Evidence {
             mMp.seekTo(pos);
             return;
 
-        default:
-            ; // ignored
+        default: // ignored
         }
         if (DBG) P.v("MP [" + mpGetState().name() + "] : seekTo ignored : ");
     }
@@ -893,8 +884,7 @@ UnexpectedExceptionHandler.Evidence {
             mpSetState(MPState.STARTED);
             return;
 
-        default:
-            ; // ignored
+        default: // ignored
         }
         if (DBG) P.v("MP [" + mpGetState().name() + "] : start ignored : ");
     }
@@ -917,8 +907,7 @@ UnexpectedExceptionHandler.Evidence {
             mpSetState(MPState.STOPPED);
             return;
 
-        default:
-            ; // ignored
+        default: // ignored
         }
         if (DBG) P.v("MP [" + mpGetState().name() + "] : stop ignored : ");
     }
@@ -1011,30 +1000,33 @@ UnexpectedExceptionHandler.Evidence {
         if (!ttsIsReady())
             return;
 
-        mTts.setOnUtteranceCompletedListener(new TextToSpeech.OnUtteranceCompletedListener() {
+        mTts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
             @Override
-            public void
-            onUtteranceCompleted(final String utteranceId) {
+            public void onStart(String utteranceId) { }
+            @Override
+            public void onError(String utteranceId) { }
+            @Override
+            public void onDone(final String utteranceId) {
                 Utils.getUiHandler().postDelayed(new Runnable() {
-                    @Override
-                    public void
-                    run() {
-                        Video v = mVlm.getActiveVideo();
-                        // NOTE : IMPORTANT
-                        // ttsSpeak->ytvid is NOT available here!
-                        // This is doublely - 2nd level - nested function.
-                        if (null != v
-                            && utteranceId.equals(v.ytvid))
-                            followingAction.run();
-                    }
+                     @Override
+                     public void
+                     run() {
+                         Video v = mVlm.getActiveVideo();
+                         // NOTE : IMPORTANT
+                         // ttsSpeak->ytvid is NOT available here!
+                         // This is doublely - 2nd level - nested function.
+                         if (null != v
+                         && utteranceId.equals(v.v.ytvid))
+                             followingAction.run();
+                     }
                 },
-                Policy.YTPLAYER_TTS_SPARE_TIME);
+                Policy.YTPLAYER_TTS_MARGIN_TIME);
             }
         });
         try {
-            Thread.sleep(Policy.YTPLAYER_TTS_SPARE_TIME);
+            Thread.sleep(Policy.YTPLAYER_TTS_MARGIN_TIME);
         } catch (InterruptedException ignored) {}
-        HashMap<String, String> param = new HashMap<String, String>();
+        HashMap<String, String> param = new HashMap<>();
         param.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, ytvid);
         mTts.speak(text, TextToSpeech.QUEUE_FLUSH, param);
     }
@@ -1114,8 +1106,7 @@ UnexpectedExceptionHandler.Evidence {
                 mLoader.close();
             break;
 
-        default:
-            ; // ignored
+        default: // ignored
         }
     }
 
@@ -1129,8 +1120,11 @@ UnexpectedExceptionHandler.Evidence {
 
     private int
     getVideoQualityScore() {
-        int qscore = mapPrefToQScore(Utils.getPrefQuality());
-        switch (Utils.getPrefQuality()) {
+        Utils.PrefQuality pq = Utils.getPrefQuality();
+        if (null == pq)
+            return YTHacker.getQScorePreferLow(mapPrefToQScore(Utils.PrefQuality.LOW));
+        int qscore = mapPrefToQScore(pq);
+        switch (pq) {
         case LOW:
         case MIDLOW:
             return YTHacker.getQScorePreferLow(qscore);
@@ -1152,6 +1146,7 @@ UnexpectedExceptionHandler.Evidence {
         return Policy.APPDATA_CACHEDIR + ytvid + "-" + quality.name() + ".mp4";
     }
 
+    @NonNull
     private static String
     getYtvidOfCachedFile(String path) {
         int idStartI = path.lastIndexOf('/') + 1;
@@ -1160,45 +1155,39 @@ UnexpectedExceptionHandler.Evidence {
         return path.substring(idStartI, idEndI);
     }
 
-    private static File
+    @NonNull
+    static File
     getCachedVideo(String ytvid) {
         return new File(getCachedVideoFilePath(ytvid, Utils.getPrefQuality()));
     }
 
+    /**
+     * Closing cursor is caller's responsibility.
+     * @param c Cursor that is created by using "sVideoProjectionToPlay"
+     *          Closing cursor is this function's responsibility.
+     */
     private Video[]
-    getVideos(Cursor c,
-              int coliYtvid, int coliTitle, int coliAuthor,
-              int coliVolume, int coliPlaytime,
-              boolean shuffle) {
+    getVideos(Cursor c, boolean shuffle) {
         if (!c.moveToFirst())
             return new Video[0];
 
         Video[] vs = new Video[c.getCount()];
-
         int i = 0;
-        if (!shuffle) {
-            do {
-                vs[i++] = new Video(c.getString(coliYtvid),
-                                    c.getString(coliTitle),
-                                    c.getString(coliAuthor),
-                                    c.getInt(coliVolume),
-                                    c.getInt(coliPlaytime),
-                                    0);
-            } while (c.moveToNext());
+        do {
+            vs[i++] = new Video(c.getString(COLI_VID_YTVID),
+                                c.getString(COLI_VID_TITLE),
+                                c.getInt(COLI_VID_VOLUME),
+                                0);
+        } while (c.moveToNext());
+
+        if (!shuffle)
             Arrays.sort(vs, sVideoTitleComparator);
-        } else {
+        else {
             // This is shuffled case!
             Random r = new Random(System.currentTimeMillis());
-            NrElem[] nes = new NrElem[c.getCount()];
-            do {
-                nes[i++] = new NrElem(r.nextInt(),
-                                      new Video(c.getString(coliYtvid),
-                                                c.getString(coliTitle),
-                                                c.getString(coliAuthor),
-                                                c.getInt(coliVolume),
-                                                c.getInt(coliPlaytime),
-                                                0));
-            } while (c.moveToNext());
+            NrElem[] nes = new NrElem[vs.length];
+            for (i = 0; i < nes.length; i++)
+                nes[i] = new NrElem(r.nextInt(), vs[i]);
             Arrays.sort(nes, sNrElemComparator);
             for (i = 0; i < nes.length; i++)
                 vs[i] = (Video)nes[i].tag;
@@ -1246,7 +1235,7 @@ UnexpectedExceptionHandler.Evidence {
         // to retry in case of YTHTTPGET.
         mYtDnr.setTag(Policy.NETOWRK_CONN_RETRY);
         mYtDnr.download(vid, getCachedVideo(vid), getVideoQualityScore(),
-                        Policy.YTPLAYER_CACHING_DELAY);
+        Policy.YTPLAYER_CACHING_DELAY);
     }
 
     private void
@@ -1272,17 +1261,17 @@ UnexpectedExceptionHandler.Evidence {
         if (!mVlm.hasActiveVideo())
             allClear = true;
 
-        HashSet<String> skipSet = new HashSet<String>();
+        HashSet<String> skipSet = new HashSet<>();
         // DO NOT delete cache directory itself!
         skipSet.add(sCacheDir.getAbsolutePath());
         if (!allClear) {
             // delete all cached videos except for
             //   current and next video.
             for (Utils.PrefQuality pq : Utils.PrefQuality.values()) {
-                skipSet.add(new File(getCachedVideoFilePath(mVlm.getActiveVideo().ytvid, pq)).getAbsolutePath());
+                skipSet.add(new File(getCachedVideoFilePath(mVlm.getActiveVideo().v.ytvid, pq)).getAbsolutePath());
                 Video nextVid = mVlm.getNextVideo();
                 if (null != nextVid)
-                    skipSet.add(new File(getCachedVideoFilePath(nextVid.ytvid, pq)).getAbsolutePath());
+                    skipSet.add(new File(getCachedVideoFilePath(nextVid.v.ytvid, pq)).getAbsolutePath());
             }
         }
         FileUtils.removeFileRecursive(sCacheDir, skipSet);
@@ -1295,7 +1284,7 @@ UnexpectedExceptionHandler.Evidence {
             return;
         }
 
-        cachingVideo(mVlm.getNextVideo().ytvid);
+        cachingVideo(mVlm.getNextVideo().v.ytvid);
     }
 
     private void
@@ -1304,6 +1293,7 @@ UnexpectedExceptionHandler.Evidence {
 
         Utils.getUiHandler().post(new Runnable() {
             private int retry = 20;
+
             @Override
             public void
             run() {
@@ -1311,13 +1301,14 @@ UnexpectedExceptionHandler.Evidence {
                     return; // ignore preparing for old media player.
 
                 if (retry < 0) {
-                    if (DBG) P.w("YTPlayer : video surface is never created! Preparing will be stopped.");
+                    if (DBG)
+                        P.w("YTPlayer : video surface is never created! Preparing will be stopped.");
                     mpStop();
                     return;
                 }
 
                 if (!isVideoMode()
-                    || isSurfaceReady()) {
+                || isSurfaceReady()) {
                     mpSetVideoSurface(mSurfHolder);
                     mpPrepareAsync();
                 } else {
@@ -1451,11 +1442,11 @@ UnexpectedExceptionHandler.Evidence {
     private void
     startVideo(Video v, boolean recovery) {
         if (null != v)
-            startVideo(v.ytvid, v.volume, v.title, recovery);
+            startVideo(v.v.ytvid, v.v.title, v.v.volume, recovery);
     }
 
     private void
-    startVideo(final String ytvid, final int volume, final String title, boolean recovery) {
+    startVideo(final String ytvid, final String title, final int volume, boolean recovery) {
         eAssert(0 <= volume && volume <= 100);
 
         // Reset flag regarding video size.
@@ -1476,8 +1467,8 @@ UnexpectedExceptionHandler.Evidence {
                             Video v = mVlm.getActiveVideo();
                             if (DBG) {
                                 P.w("YTPlayer Recovery video play Fails");
-                                P.w("    ytvid : " + v.ytvid);
-                                P.w("    title : " + v.title);
+                                P.w("    ytvid : " + v.v.ytvid);
+                                P.w("    title : " + v.v.title);
                             }
                         }
                         startNext(); // move to next video.
@@ -1544,7 +1535,7 @@ UnexpectedExceptionHandler.Evidence {
                     prepareCachedVideo(cachedVid);
                 else {
                     if (!Utils.isNetworkAvailable())
-                        mStartVideoRecovery.executeRecoveryStart(new Video(ytvid, "", "", volume, 0, 0), 1000);
+                        mStartVideoRecovery.executeRecoveryStart(new Video(ytvid, title, volume, 0), 1000);
                     else
                         prepareVideoStreaming(ytvid);
                 }
@@ -1645,7 +1636,7 @@ UnexpectedExceptionHandler.Evidence {
         int storedPos = 0;
         int storedVol = Policy.DEFAULT_VIDEO_VOLUME;
         if (mVlm.hasActiveVideo()) {
-            Long vol = (Long)mDb.getVideoInfo(mVlm.getActiveVideo().ytvid, ColVideo.VOLUME);
+            Long vol = (Long)mDb.getVideoInfo(mVlm.getActiveVideo().v.ytvid, ColVideo.VOLUME);
             if (null != vol)
                 storedVol = vol.intValue();
         }
@@ -1705,8 +1696,7 @@ UnexpectedExceptionHandler.Evidence {
         case PREPARED:
             return true;
 
-        default:
-            ; // ignored
+        default: // ignored
         }
         return false;
     }
@@ -1792,9 +1782,9 @@ UnexpectedExceptionHandler.Evidence {
             && Utils.isPrefTailTts()) {
             Video v  = mVlm.getActiveVideo();
             String text = Utils.getResString(R.string.tts_title_tail_pre) + " "
-                          + v.title + " "
+                          + v.v.title + " "
                           + Utils.getResString(R.string.tts_title_tail_post);
-            ttsSpeak(text, v.ytvid, action);
+            ttsSpeak(text, v.v.ytvid, action);
         } else
             action.run();
     }
@@ -2040,7 +2030,6 @@ UnexpectedExceptionHandler.Evidence {
 
     /**
      * Get duration(milliseconds) of current active video
-     * @return
      */
     int
     playerGetDuration() {
@@ -2049,7 +2038,6 @@ UnexpectedExceptionHandler.Evidence {
 
     /**
      * Get current position(milliseconds) from start
-     * @return
      */
     int
     playerGetPosition() {
@@ -2064,7 +2052,6 @@ UnexpectedExceptionHandler.Evidence {
 
     /**
      * Set volume of video-on-play
-     * @param vol
      */
     void
     playerSetVolume(int vol) {
@@ -2129,6 +2116,11 @@ UnexpectedExceptionHandler.Evidence {
 
     public static int
     mapPrefToQScore(Utils.PrefQuality prefq) {
+        if (null == prefq) {
+            eAssert(false);
+            return YTHacker.YTQUALITY_SCORE_LOWEST;
+        }
+
         switch (prefq) {
         case LOW:
             return YTHacker.YTQUALITY_SCORE_LOWEST;
@@ -2191,10 +2183,8 @@ UnexpectedExceptionHandler.Evidence {
             && mSurfHolder != holder)
             unsetSurfaceHolder(mSurfHolder);
         mSurfHolder = holder;
-        if (null != holder) {
+        if (null != holder)
             holder.addCallback(this);
-            holder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
-        }
     }
 
     public void
@@ -2288,12 +2278,12 @@ UnexpectedExceptionHandler.Evidence {
     }
 
     public boolean
-    isPlayerSeeking(int stateFlag) {
+    isPlayerSeeking() {
         return Utils.bitIsSet(mpGetStateFlag(), MPSTATE_FLAG_SEEKING);
     }
 
     public boolean
-    isPlayerBuffering(int stateFlag) {
+    isPlayerBuffering() {
         return Utils.bitIsSet(mpGetStateFlag(), MPSTATE_FLAG_BUFFERING);
     }
 
@@ -2349,24 +2339,19 @@ UnexpectedExceptionHandler.Evidence {
         }
     }
 
+    /**
+     * @param c Cursor that is created by using "sVideoProjectionToPlay"
+     *          Closing cursor is this function's responsibility.
+     */
     public void
-    startVideos(final Cursor c,
-                final int coliYtvid,
-                final int coliTitle,
-                final int coliAuthor,
-                final int coliVolume,
-                final int coliPlaytime,
-                final boolean shuffle) {
+    startVideos(final Cursor c, final boolean shuffle) {
         eAssert(Utils.isUiThread());
 
         new Thread(new Runnable() {
             @Override
             public void
             run() {
-                final Video[] vs = getVideos(c,
-                                             coliYtvid, coliTitle, coliAuthor,
-                                             coliVolume, coliPlaytime,
-                                             shuffle);
+                final Video[] vs = getVideos(c, shuffle);
                 Utils.getUiHandler().post(new Runnable() {
                     @Override
                     public void
@@ -2416,7 +2401,6 @@ UnexpectedExceptionHandler.Evidence {
     /**
      * Player session id.
      * Even if same video is re-played, session id is different.
-     * @return
      */
     public long
     getPlayerSessionId() {
@@ -2431,7 +2415,7 @@ UnexpectedExceptionHandler.Evidence {
     public String
     getActiveVideoYtId() {
         if (isVideoPlaying())
-            return mVlm.getActiveVideo().ytvid;
+            return mVlm.getActiveVideo().v.ytvid;
         return null;
     }
 

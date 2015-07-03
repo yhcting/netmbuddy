@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014
+ * Copyright (C) 2012, 2013, 2014, 2015
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -77,17 +77,18 @@ import free.yhc.netmbuddy.db.DB.Bookmark;
 import free.yhc.netmbuddy.core.Policy;
 import free.yhc.netmbuddy.core.YTHacker;
 import free.yhc.netmbuddy.core.YTPlayer;
+import free.yhc.netmbuddy.db.DMVideo;
 import free.yhc.netmbuddy.scmp.SCmp;
 
 public class UiUtils {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(UiUtils.class);
 
-    public static final long PLID_INVALID       = DB.INVALID_PLAYLIST_ID;
+    public static final long PLID_INVALID = DB.INVALID_PLAYLIST_ID;
     // Special playlist id that represents that this is unknown non-user playlist.
-    public static final long PLID_UNKNOWN       = PLID_INVALID - 1;
+    public static final long PLID_UNKNOWN = PLID_INVALID - 1;
     public static final long PLID_RECENT_PLAYED = PLID_INVALID - 2;
-    public static final long PLID_SEARCHED      = PLID_INVALID - 3;
+    public static final long PLID_SEARCHED = PLID_INVALID - 3;
 
     // NOTE
     // To save time for decoding image, pre-decoded bitmap is uses for unknown thumbnail image.
@@ -157,7 +158,7 @@ public class UiUtils {
 
     public static void
     showTextToastAtBottom(Context context, int textid, boolean lengthLong) {
-        Toast t = Toast.makeText(context, textid, lengthLong? Toast.LENGTH_LONG: Toast.LENGTH_SHORT);
+        Toast t = Toast.makeText(context, textid, lengthLong ? Toast.LENGTH_LONG : Toast.LENGTH_SHORT);
         t.setGravity(Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL, 0, 50);
         t.show();
     }
@@ -357,10 +358,10 @@ public class UiUtils {
                                        int hintText,
                                        EditTextAction action) {
         return buildOneLineEditTextDialog(context,
-                                          title,
-                                          "",
-                                          context.getResources().getText(hintText),
-                                          action);
+        title,
+        "",
+        context.getResources().getText(hintText),
+        action);
     }
 
     public static AlertDialog
@@ -440,13 +441,14 @@ public class UiUtils {
                 dialog.dismiss();
                 if (userMenus.length > which) {
                     // User menu is selected.
-                    action.onUserMenu(which,  user);
+                    action.onUserMenu(which, user);
                 } else if (userMenus.length == which) {
                     // Need to get new playlist name.
                     UiUtils.EditTextAction edAction = new UiUtils.EditTextAction() {
                         @Override
                         public void
-                        prepare(Dialog dialog, EditText edit) { }
+                        prepare(Dialog dialog, EditText edit) {
+                        }
 
                         @Override
                         public void
@@ -467,7 +469,7 @@ public class UiUtils {
                         }
                     };
                     UiUtils.buildOneLineEditTextDialog(context, R.string.enter_playlist_title, edAction)
-                           .show();
+                    .show();
                 } else
                     action.onPlaylist(ids[which], user);
             }
@@ -689,50 +691,53 @@ public class UiUtils {
     public static void
     showVideoDetailInfo(final Activity activity, final long vid) {
         DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
-            final class VideoDetailInfo {
-                String          title           = "";
-                String          author          = "";
-                String          timeAdded       = "";
-                String          timeLastPlayed  = "";
-                String          volume          = "";
-                String          playTime        = "";
-                String          ytvid           = "";
-                DB.Bookmark[]   bookmarks       = null;
-                // titles of playlists contain the video
-                String[]        pls             = new String[0];
-            }
+            private DMVideo _mDmb = null;
+            private String[] _mPls = new String[0];
 
-            private VideoDetailInfo _mVdi = new VideoDetailInfo();
             @Override
             public void
             onPostExecute(DiagAsyncTask task, Err result) {
-                String author = Utils.getResString(R.string.author) + " : ";
-                if (Utils.isValidValue(_mVdi.author))
-                    author +=  _mVdi.author;
+                DateFormat df = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM);
+                String channel = Utils.getResString(R.string.channel) + " : ";
+                if (Utils.isValidValue(_mDmb.channelTitle))
+                    channel +=  _mDmb.channelTitle;
                 else
-                    author += Utils.getResString(R.string.unknown);
+                    channel += Utils.getResString(R.string.unknown);
 
-                String playbackTm = Utils.getResString(R.string.playback_time) + " : " + _mVdi.playTime
+                String strTimePlayed;
+                if (0 == _mDmb.extra.timePlayed)
+                    strTimePlayed = Utils.getResString(R.string.not_played_yet);
+                else
+                    strTimePlayed = df.format(new Date(_mDmb.extra.timePlayed));
+
+                DB.Bookmark[] bookmarks; ;
+                if (null == _mDmb.bookmarks)
+                    // Unexpected error is ignored.
+                    bookmarks = new DB.Bookmark[0];
+                else
+                    bookmarks = DB.Bookmark.decode(_mDmb.bookmarks);
+
+                String playbackTm = Utils.getResString(R.string.playback_time) + " : " + _mDmb.playtime
                                         + Utils.getResString(R.string.seconds);
-                String volume = Utils.getResString(R.string.volume) + " : " + _mVdi.volume + " / 100";
-                String timeAdded = Utils.getResString(R.string.time_added) + " : " + _mVdi.timeAdded;
-                String timePlayed = Utils.getResString(R.string.time_last_played) + " : " + _mVdi.timeLastPlayed;
-                String ytvid = Utils.getResString(R.string.youtube_id) + " : " + _mVdi.ytvid;
-                String msg =_mVdi.title + "\n\n"
+                String volume = Utils.getResString(R.string.volume) + " : " + _mDmb.volume + " / 100";
+                String timeAdded = Utils.getResString(R.string.time_added) + " : " + _mDmb.extra.timeAdd;
+                String timePlayed = Utils.getResString(R.string.time_last_played) + " : " + strTimePlayed;
+                String ytvid = Utils.getResString(R.string.youtube_id) + " : " + _mDmb.ytvid;
+                String msg =_mDmb.title + "\n\n"
                              + ytvid + "\n"
-                             + author + "\n"
+                             + channel + "\n"
                              + playbackTm + "\n"
                              + volume + "\n"
                              + timeAdded + "\n"
                              + timePlayed + "\n";
-                if (_mVdi.bookmarks.length > 0) {
+                if (bookmarks.length > 0) {
                     msg += "[ " + Utils.getResString(R.string.bookmarks) + " ]\n";
-                    for (DB.Bookmark bm : _mVdi.bookmarks)
+                    for (DB.Bookmark bm : bookmarks)
                         msg += "    <" + Utils.secsToMinSecText(bm.pos / 1000) + "> " + bm.name + "\n";
                 }
 
                 msg += "\n[ " + Utils.getResString(R.string.playlist) + " ]\n";
-                for (String title : _mVdi.pls)
+                for (String title : _mPls)
                     msg += "* " + title + "\n";
 
                 UiUtils.createAlertDialog(activity,
@@ -745,52 +750,13 @@ public class UiUtils {
             @Override
             public Err
             doBackgroundWork(DiagAsyncTask task) {
-                final int COLI_TITLE        = 0;
-                final int COLI_AUTHOR       = 1;
-                final int COLI_VOLUME       = 2;
-                final int COLI_PLAYTIME     = 3;
-                final int COLI_TIME_ADD     = 4;
-                final int COLI_TIME_PLAYED  = 5;
-                final int COLI_VIDEOID      = 6;
-                DateFormat df = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM);
                 DB db = DB.get();
-                Cursor c = db.queryVideo(vid, new ColVideo[] {
-                        ColVideo.TITLE,
-                        ColVideo.AUTHOR,
-                        ColVideo.VOLUME,
-                        ColVideo.PLAYTIME,
-                        ColVideo.TIME_ADD,
-                        ColVideo.TIME_PLAYED,
-                        ColVideo.VIDEOID,
-                });
-
-                if (!c.moveToFirst()) {
-                    c.close();
-                    return Err.BAD_REQUEST;
-                }
-
-                _mVdi.title = c.getString(COLI_TITLE);
-                _mVdi.author = c.getString(COLI_AUTHOR);
-                _mVdi.volume = "" + c.getInt(COLI_VOLUME);
-                _mVdi.playTime = Utils.secsToMinSecText(c.getInt(COLI_PLAYTIME));
-                _mVdi.timeAdded = df.format(new Date(c.getLong(COLI_TIME_ADD)));
-                _mVdi.ytvid = c.getString(COLI_VIDEOID);
-                long tm = c.getLong(COLI_TIME_PLAYED);
-                if (0 == tm)
-                    _mVdi.timeLastPlayed = Utils.getResString(R.string.not_played_yet);
-                else
-                    _mVdi.timeLastPlayed =df.format(new Date(c.getLong(COLI_TIME_PLAYED)));
-                c.close();
-
-                _mVdi.bookmarks = db.getBookmarks(vid);
-                if (null == _mVdi.bookmarks)
-                    // Unexpected error is ignored.
-                    _mVdi.bookmarks = new DB.Bookmark[0];
+                _mDmb = db.getVideoInfo(vid, DMVideo.sDBProjectionExtraWithoutThumbnail);
 
                 long[] plids = db.getPlaylistsContainVideo(vid);
-                _mVdi.pls = new String[plids.length];
+                _mPls = new String[plids.length];
                 for (int i = 0; i < plids.length; i++)
-                    _mVdi.pls[i] = (String)db.getPlaylistInfo(plids[i], ColPlaylist.TITLE);
+                    _mPls[i] = (String)db.getPlaylistInfo(plids[i], ColPlaylist.TITLE);
 
                 return Err.NO_ERR;
             }

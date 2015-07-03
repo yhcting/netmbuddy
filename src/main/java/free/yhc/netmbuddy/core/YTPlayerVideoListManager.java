@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014
+ * Copyright (C) 2012, 2013, 2014, 2015
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -49,10 +49,10 @@ class YTPlayerVideoListManager {
     // NOTE!
     // mVs is accessed on by UIThread.
     // So, synchronization is not required.
-    private final Object        mVsLock = new Object();
-    private YTPlayer.Video[]    mVs = null; // video array
-    private int                 mVi = -1;   // video index
-    private OnListChangedListener   mListener = null;
+    private final Object mVsLock = new Object();
+    private YTPlayer.Video[] mVs = null; // video array
+    private int mVi = -1;   // video index
+    private OnListChangedListener mListener = null;
 
     interface OnListChangedListener {
         void onChanged(YTPlayerVideoListManager vm);
@@ -147,9 +147,7 @@ class YTPlayerVideoListManager {
 
     /**
      *
-     * @param index
-     * @return
-     *   false if -1 == mVi after removing. Otherwise true.
+     * @return false if -1 == mVi after removing. Otherwise true.
      */
     void
     removeVideo(String ytvid) {
@@ -160,7 +158,7 @@ class YTPlayerVideoListManager {
         ArrayList<YTPlayer.Video> al = new ArrayList<YTPlayer.Video>(mVs.length);
         int adjust = 0;
         for (int i = 0; i < mVs.length; i++) {
-            if (!mVs[i].ytvid.equals(ytvid))
+            if (!mVs[i].v.ytvid.equals(ytvid))
                 al.add(mVs[i]);
             else if (i <= mVi)
                 adjust++;
@@ -186,7 +184,7 @@ class YTPlayerVideoListManager {
     findVideoExcept(int from, String ytvid) {
         eAssert(from >= 0 && from <= mVs.length);
         for (int i = from; i < mVs.length; i++) {
-            if (!ytvid.equals(mVs[i].ytvid))
+            if (!ytvid.equals(mVs[i].v.ytvid))
                 return i;
         }
         return -1;

@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014
+ * Copyright (C) 2012, 2013, 2014, 2015
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -60,7 +60,6 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.SeekBar;
-import android.widget.SlidingDrawer;
 import android.widget.TextView;
 import free.yhc.netmbuddy.DiagAsyncTask;
 import free.yhc.netmbuddy.Err;
@@ -69,41 +68,42 @@ import free.yhc.netmbuddy.db.ColVideo;
 import free.yhc.netmbuddy.db.DB;
 import free.yhc.netmbuddy.core.YTPlayer.DBUpdateType;
 import free.yhc.netmbuddy.core.YTPlayer.Video;
+import free.yhc.netmbuddy.db.DMVideo;
 import free.yhc.netmbuddy.utils.UiUtils;
 import free.yhc.netmbuddy.utils.Utils;
 import free.yhc.netmbuddy.utils.YTUtils;
+import free.yhc.netmbuddy.widget.SlidingDrawer;
 
 public class YTPlayerUI implements
 OnSharedPreferenceChangeListener {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(YTPlayerUI.class);
 
-    private static final int    SEEKBAR_MAX         = 1000;
+    private static final int SEEKBAR_MAX = 1000;
 
-    private static YTPlayerUI   sInstance = null;
+    private static YTPlayerUI sInstance = null;
     // ------------------------------------------------------------------------
     //
     // ------------------------------------------------------------------------
-    private final Resources         mRes        = Utils.getAppContext().getResources();
-    private final DB                mDb         = DB.get();
-    private final UpdateProgress    mUpdateProg = new UpdateProgress();
-    private final YTPlayer          mMp;
-    private final TimeTickReceiver  mTTRcvr     = new TimeTickReceiver();
+    private final Resources mRes = Utils.getAppContext().getResources();
+    private final DB mDb = DB.get();
+    private final UpdateProgress mUpdateProg = new UpdateProgress();
+    private final YTPlayer mMp;
+    private final TimeTickReceiver mTTRcvr = new TimeTickReceiver();
 
 
     // ------------------------------------------------------------------------
     // UI Control.
     // ------------------------------------------------------------------------
-    private Activity            mVActivity      = null;
-    private KBLinkedList<YTPlayer.OnDBUpdatedListener>    mDbUpdatedListenerl
-        = new KBLinkedList<YTPlayer.OnDBUpdatedListener>();
-    private LinearLayout        mPlayerv        = null;
-    private LinearLayout        mPlayerLDrawer  = null;
+    private Activity mVActivity = null;
+    private KBLinkedList<YTPlayer.OnDBUpdatedListener> mDbUpdatedListenerl = new KBLinkedList<>();
+    private LinearLayout mPlayerv = null;
+    private LinearLayout mPlayerLDrawer = null;
 
     // To support video
-    private SurfaceView         mSurfacev       = null;
+    private SurfaceView mSurfacev = null;
     // For extra Button
-    private YTPlayer.ToolButton mToolBtn        = null;
+    private YTPlayer.ToolButton mToolBtn = null;
 
     public static class TimeTickReceiver extends BroadcastReceiver {
         private YTPlayerUI  _mYtpui = null;
@@ -142,11 +142,11 @@ OnSharedPreferenceChangeListener {
     private class UpdateProgress implements Runnable {
         private static final int UPDATE_INTERVAL_MS = 1000;
 
-        private SeekBar     _mSeekbar = null;
-        private TextView    _mCurposv = null;
-        private TextView    _mMaxposv = null;
-        private int         _mLastProgress = -1;
-        private int         _mLastSecondaryProgress = -1; // For secondary progress
+        private SeekBar _mSeekbar = null;
+        private TextView _mCurposv = null;
+        private TextView _mMaxposv = null;
+        private int _mLastProgress = -1;
+        private int _mLastSecondaryProgress = -1; // For secondary progress
 
         private void
         resetProgressView() {
@@ -225,7 +225,6 @@ OnSharedPreferenceChangeListener {
 
         /**
          * Update secondary progress
-         * @param percent
          */
         void
         updateSecondary(int percent) {
@@ -281,9 +280,9 @@ OnSharedPreferenceChangeListener {
             nm.removePlayerNotification();
             return;
         }
-        String title = mMp.getActiveVideo().title;
+        String title = mMp.getActiveVideo().v.title;
 
-        NotiManager.NotiType ntype = NotiManager.NotiType.BASE;
+        NotiManager.NotiType ntype;
         switch (to) {
         case PREPARED:
         case PAUSED:
@@ -344,19 +343,18 @@ OnSharedPreferenceChangeListener {
 
         CharSequence videoTitle = "";
         if (mMp.hasActiveVideo())
-            videoTitle = mMp.getActiveVideo().title;
+            videoTitle = mMp.getActiveVideo().v.title;
 
         switch (to) {
         case PREPARED:
         case PAUSED:
         case STARTED:
             eAssert(null != videoTitle);
-            if (mMp.isPlayerBuffering(toFlag)
-                || mMp.isPlayerSeeking(toFlag))
+            if (mMp.isPlayerBuffering()
+                || mMp.isPlayerSeeking())
                 videoTitle = "(" + mRes.getText(R.string.buffering) + ") " + videoTitle;
 
-            if (null != videoTitle)
-                pvSetTitle(titlev, videoTitle);
+            pvSetTitle(titlev, videoTitle);
             break;
 
         case ERROR:
@@ -536,7 +534,7 @@ OnSharedPreferenceChangeListener {
         case INITIALIZED:
         case PREPARING:
         case PREPARED_AUDIO:
-            ; // do nothing progress is now under update..
+            // do nothing progress is now under update..
             break;
 
         default:
@@ -683,15 +681,14 @@ OnSharedPreferenceChangeListener {
             @Override
             public Err
             doBackgroundWork(DiagAsyncTask task) {
-                if (YTUtils.insertVideoToPlaylist(plid,
-                                                  video.ytvid,
-                                                  video.title,
-                                                  video.author,
-                                                  video.playtime,
-                                                  volume)) {
-                    return Err.NO_ERR;
-                } else
+                DMVideo v = new DMVideo();
+                v.copy(video.v);
+                eAssert(Utils.isValidValue(v.ytvid));
+                if (!YTUtils.fillYtDataAndThumbnail(v))
                     return Err.IO_NET;
+                v.setPreferenceData(volume, "");
+                DB.Err dberr = DB.get().insertVideoToPlaylist(plid, v);
+                return Err.map(dberr);
             }
         };
 
@@ -803,7 +800,7 @@ OnSharedPreferenceChangeListener {
             return; // This line can be reached because of race-condition...
 
         final int[] opts;
-        final Long vid = (Long)mDb.getVideoInfo(video.ytvid, ColVideo.ID);
+        final Long vid = (Long)mDb.getVideoInfo(video.v.ytvid, ColVideo.ID);
         if (null != vid)
             opts = new int[] { R.string.detail_info,
                                R.string.set_bookmark,
@@ -835,7 +832,7 @@ OnSharedPreferenceChangeListener {
                     break;
 
                 case R.string.bookmarks:
-                    UiUtils.showBookmarkDialog(mVActivity, video.ytvid, video.title);
+                    UiUtils.showBookmarkDialog(mVActivity, video.v.ytvid, video.v.title);
                     break;
 
                 case R.string.add_to:
@@ -843,11 +840,11 @@ OnSharedPreferenceChangeListener {
                     break;
 
                 case R.string.volume:
-                    changeVideoVolume(video.title, video.ytvid);
+                    changeVideoVolume(video.v.title, video.v.ytvid);
                     break;
 
                 case R.string.delete:
-                    pvMoreControlDelete(vid, video.ytvid);
+                    pvMoreControlDelete(vid, video.v.ytvid);
                     break;
 
                 default:
@@ -1284,7 +1281,7 @@ OnSharedPreferenceChangeListener {
         // Retrieve current volume
         int curvol = Policy.DEFAULT_VIDEO_VOLUME;
         if (mMp.isVideoPlaying()
-            && mMp.getActiveVideo().ytvid.equals(ytvid)) {
+            && mMp.getActiveVideo().v.ytvid.equals(ytvid)) {
             runningVideo = true;
             curvol = mMp.playerGetVolume();
         } else {

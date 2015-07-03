@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014
+ * Copyright (C) 2012, 2013, 2014, 2015
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -36,11 +36,19 @@
 
 package free.yhc.netmbuddy.utils;
 
+import static free.yhc.netmbuddy.utils.Utils.eAssert;
+
+import android.graphics.Bitmap;
+import android.support.annotation.Nullable;
+
+import free.yhc.netmbuddy.Err;
 import free.yhc.netmbuddy.R;
 import free.yhc.netmbuddy.core.YTDataAdapter;
 import free.yhc.netmbuddy.core.YTDataHelper;
+import free.yhc.netmbuddy.db.ColVideo;
 import free.yhc.netmbuddy.db.DB;
 import free.yhc.netmbuddy.core.Policy;
+import free.yhc.netmbuddy.db.DMVideo;
 import free.yhc.netmbuddy.ytapiv3.YTApiFacade;
 import free.yhc.netmbuddy.core.YTHacker;
 
@@ -48,9 +56,21 @@ public class YTUtils {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(YTUtils.class);
 
+    private static YTDataHelper.ThumbnailResp
+    loadYtVideoThumbnail(String ytvid) throws YTDataAdapter.YTApiException {
+        String thumbnailUrl = YTHacker.getYtVideoThumbnailUrl(ytvid);
+        YTDataHelper.ThumbnailReq req = new YTDataHelper.ThumbnailReq(
+            null,
+            thumbnailUrl,
+            Utils.getAppContext().getResources().getDimensionPixelSize(R.dimen.thumbnail_width),
+            Utils.getAppContext().getResources().getDimensionPixelSize(R.dimen.thumbnail_height));
+        return YTDataHelper.requestThumbnail(req);
+    }
+
     public static boolean
     verifyYoutubeVideoId(String ytvid) {
-        return 11 == ytvid.length();
+        return null != ytvid
+               && 11 == ytvid.length();
     }
 
     public static int
@@ -60,61 +80,56 @@ public class YTUtils {
                YTApiFacade.MAX_AVAILABLE_RESULTS_FOR_QUERY;
     }
 
-    public static YTDataHelper.ThumbnailResp
-    loadYtVideoThumbnail(String ytvid)
-        throws YTDataAdapter.YTApiException {
-        String thumbnailUrl = YTHacker.getYtVideoThumbnailUrl(ytvid);
-        YTDataHelper.ThumbnailReq req = new YTDataHelper.ThumbnailReq(
-                null,
-                thumbnailUrl,
-                Utils.getAppContext().getResources().getDimensionPixelSize(R.dimen.thumbnail_width),
-                Utils.getAppContext().getResources().getDimensionPixelSize(R.dimen.thumbnail_height));
-        return YTDataHelper.requestThumbnail(req);
-    }
 
     /**
-     * This function download thumbnail image through network synchronously.
+     * Fill Youtube data fil
      */
-    public static boolean
-    insertVideoToPlaylist(long      plid,
-                          String    ytvid,
-                          String    title,
-                          String    author,
-                          int       playtime,
-                          int       volume,
-                          String    bookmarks) {
+    @Nullable
+    public static YTDataAdapter.Video
+    getYtVideoData(String ytvid) {
+        try {
+            return YTApiFacade.requestVideoInfo(ytvid);
+        } catch (YTDataAdapter.YTApiException e) {
+            return null;
+        }
+    }
+
+    @Nullable
+    public static Bitmap
+    getYtThumbnail(String ytvid) {
+        YTDataHelper.ThumbnailResp tr = null;
         // Loading thumbnail is done.
-        YTDataHelper.ThumbnailResp tr;
         try {
             tr = loadYtVideoThumbnail(ytvid);
-            if (null == tr.bm)
-                return false;
         } catch (YTDataAdapter.YTApiException e) {
-            return false;
+            return null;
         }
-        DB.Err err = DB.get().insertVideoToPlaylist(plid,
-                                                    ytvid,
-                                                    title,
-                                                    author,
-                                                    playtime,
-                                                    ImageUtils.compressBitmap(tr.bm),
-                                                    Policy.DEFAULT_VIDEO_VOLUME,
-                                                    bookmarks);
-        tr.bm.recycle();
-
-        if (DB.Err.NO_ERR != err)
-            return false;
-
-        return true;
+        if (null == tr)
+            return null;
+        return tr.bm;
     }
 
     public static boolean
-    insertVideoToPlaylist(long      plid,
-                          String    ytvid,
-                          String    title,
-                          String    author,
-                          int       playtime,
-                          int       volume) {
-        return insertVideoToPlaylist(plid, ytvid, title, author, playtime, volume, "");
+    fillYtDataAndThumbnail(DMVideo v) {
+        eAssert(verifyYoutubeVideoId(v.ytvid));
+        if (!v.isYtDataFilled()) {
+            YTDataAdapter.Video ytv = getYtVideoData(v.ytvid);
+            if (null == ytv)
+                return false;
+            v.setYtData(ytv);
+        }
+        if (!v.isThumbnailFilled()) {
+            // NOTE
+            // Getting thumbnail URL from youtube video id requires downloanding and parsing.
+            // It takes too much time.
+            // So, a kind of HACK is used to get thumbnail URL from youtube video id.
+            // see comments of 'YTHacker.getYtVideoThumbnailUrl()' for details.
+            Bitmap bm = getYtThumbnail(v.ytvid);
+            if (null == bm)
+                return false;
+            v.setThumbnail(ImageUtils.compressBitmap(bm));
+            bm.recycle();
+        }
+        return true;
     }
 }

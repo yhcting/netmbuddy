@@ -42,10 +42,10 @@ import free.yhc.netmbuddy.core.YTDataHelper;
 import free.yhc.netmbuddy.core.YTDataAdapter;
 import free.yhc.netmbuddy.utils.Utils;
 
-public class YTVideoSearchAuthorActivity extends YTVideoSearchActivity implements
+public class YTVideoSearchChannelActivity extends YTVideoSearchActivity implements
 UnexpectedExceptionHandler.Evidence {
     private static final boolean DBG = false;
-    private static final Utils.Logger P = new Utils.Logger(YTVideoSearchAuthorActivity.class);
+    private static final Utils.Logger P = new Utils.Logger(YTVideoSearchChannelActivity.class);
 
     @Override
     protected int
@@ -56,7 +56,7 @@ UnexpectedExceptionHandler.Evidence {
     @Override
     protected YTDataAdapter.ReqType
     getSearchType() {
-        return YTDataAdapter.ReqType.VID_AUTHOR;
+        return YTDataAdapter.ReqType.VID_CHANNEL;
     }
 
     @Override

@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014
+ * Copyright (C) 2012, 2013, 2014, 2015
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -138,7 +138,7 @@ public class YTPlayerVideoListAdapter extends BaseAdapter {
         mView2PosMap.put(v, position);
 
         TextView tv = (TextView)v;
-        tv.setText(((YTPlayer.Video)getItem(position)).title);
+        tv.setText(((YTPlayer.Video)getItem(position)).v.title);
 
         if (mActivePos >=0
             && position == mActivePos)

@@ -69,12 +69,9 @@ public class YTVideoSearchAdapter extends YTSearchAdapter<YTDataAdapter.Video> {
     public interface CheckStateListener {
         /**
          *
-         * @param nrChecked
-         *   total number of check item of this adapter.
-         * @param pos
-         *   item position that check state is changed on.
-         * @param checked
-         *   new check state after changing.
+         * @param nrChecked total number of check item of this adapter.
+         * @param pos item position that check state is changed on.
+         * @param checked new check state after changing.
          */
         void onStateChanged(int nrChecked, int pos, boolean checked);
     }
@@ -167,9 +164,6 @@ public class YTVideoSearchAdapter extends YTSearchAdapter<YTDataAdapter.Video> {
         dateText = android.text.format.DateFormat.getDateFormat(mCxt).format(vid.uploadedTime);
 
         ((TextView)v.findViewById(R.id.uploadedtime)).setText("< " + dateText + " >");
-        // author is not available anymore at Youtube Data APIv3
-        ((TextView)v.findViewById(R.id.author)).setText("");
-
 
         if (mDupSet.contains(position))
             setToDup(v);
@@ -200,8 +194,13 @@ public class YTVideoSearchAdapter extends YTSearchAdapter<YTDataAdapter.Video> {
     }
 
     public String
-    getItemAuthor(int pos) {
-        return ""; // TODO Not implemented yet.
+    getItemChannelTitle(int pos) {
+        return mItems[pos].channelTitle;
+    }
+
+    public String
+    getItemChannelId(int pos) {
+        return mItems[pos].channelId;
     }
 
     public int
@@ -228,9 +227,7 @@ public class YTVideoSearchAdapter extends YTSearchAdapter<YTDataAdapter.Video> {
 
         return new YTPlayer.Video(getItemVideoId(pos),
                                   getItemTitle(pos),
-                                  getItemAuthor(pos),
                                   getItemVolume(pos),
-                                  playtime,
                                   0);
     }
 

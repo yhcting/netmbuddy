@@ -80,20 +80,8 @@ UnexpectedExceptionHandler.Evidence {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(PlaylistActivity.class);
 
-    private static final ColVideo[] sVideoProjectionToPlay
-        = new ColVideo[] { ColVideo.VIDEOID,
-                           ColVideo.TITLE,
-                           ColVideo.AUTHOR,
-                           ColVideo.VOLUME,
-                           ColVideo.PLAYTIME};
-    private static final int COLI_VID_YTVID     = 0;
-    private static final int COLI_VID_TITLE     = 1;
-    private static final int COLI_VID_AUTHOR    = 2;
-    private static final int COLI_VID_VOLUME    = 3;
-    private static final int COLI_VID_PLAYTIME  = 4;
-
-    private final DB            mDb = DB.get();
-    private final YTPlayer      mMp = YTPlayer.get();
+    private final DB mDb = DB.get();
+    private final YTPlayer mMp = YTPlayer.get();
 
     private final OnPlayerUpdateDBListener mOnPlayerUpdateDbListener
         = new OnPlayerUpdateDBListener();
@@ -121,7 +109,6 @@ UnexpectedExceptionHandler.Evidence {
     /**
      * Closing cursor is this functions responsibility.
      * DO NOT close cursor by caller.
-     * @param c
      */
     private void
     playMusics(Cursor c) {
@@ -139,13 +126,7 @@ UnexpectedExceptionHandler.Evidence {
 
         ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
         playerv.setVisibility(View.VISIBLE);
-        mMp.startVideos(c,
-                        COLI_VID_YTVID,
-                        COLI_VID_TITLE,
-                        COLI_VID_AUTHOR,
-                        COLI_VID_VOLUME,
-                        COLI_VID_PLAYTIME,
-                        Utils.isPrefSuffle());
+        mMp.startVideos(c, Utils.isPrefSuffle());
 
     }
 
@@ -156,7 +137,7 @@ UnexpectedExceptionHandler.Evidence {
 
     private void
     playAllMusics(View anchor) {
-        playMusics(mDb.queryVideos(sVideoProjectionToPlay, null, false));
+        playMusics(mDb.queryVideos(YTPlayer.sVideoProjectionToPlay, null, false));
         UiUtils.showTextToast(this, R.string.msg_play_all_musics);
     }
 
@@ -439,15 +420,16 @@ UnexpectedExceptionHandler.Evidence {
                     }
                 };
                 new DiagAsyncTask(PlaylistActivity.this,
-                                  worker,
-                                  DiagAsyncTask.Style.SPIN,
-                                  R.string.exporting_db)
-                    .run();
+                worker,
+                DiagAsyncTask.Style.SPIN,
+                R.string.exporting_db)
+                .run();
             }
 
             @Override
             public void
-            onCancel(Dialog dialog) { }
+            onCancel(Dialog dialog) {
+            }
         }).show();
     }
 
@@ -489,33 +471,22 @@ UnexpectedExceptionHandler.Evidence {
     }
 
     private void
-    onMenuMoreYtSearchAuthor(final View anchor) {
-        startActivity(new Intent(this, YTVideoSearchAuthorActivity.class));
-    }
-
-    private void
-    onMenuMoreYtSearchPlaylist(final View anchor) {
-        Intent i = new Intent(PlaylistActivity.this, YTPlaylistSearchActivity.class);
-        startActivity(i);
+    onMenuMoreYtSearchChannel(final View anchor) {
+        startActivity(new Intent(this, YTVideoSearchChannelActivity.class));
     }
 
     private void
     onMenuMoreYtSearch(final View anchor) {
         final int[] menus = {
-                R.string.videos_with_author,
-                R.string.user_playlist };
+                R.string.channel_videos };
 
         UiUtils.OnMenuSelected action = new UiUtils.OnMenuSelected() {
             @Override
             public void
             onSelected(int pos, int menuTitle) {
                 switch (menuTitle) {
-                case R.string.videos_with_author:
-                    onMenuMoreYtSearchAuthor(anchor);
-                    break;
-
-                case R.string.user_playlist:
-                    onMenuMoreYtSearchPlaylist(anchor);
+                case R.string.channel_videos:
+                    onMenuMoreYtSearchChannel(anchor);
                     break;
                 default:
                     eAssert(false);
@@ -840,7 +811,7 @@ UnexpectedExceptionHandler.Evidence {
 
     private void
     onListItemClick(View view, int position, long itemId) {
-        playMusics(mDb.queryVideos(itemId, sVideoProjectionToPlay, null, false));
+        playMusics(mDb.queryVideos(itemId, YTPlayer.sVideoProjectionToPlay, null, false));
     }
 
     @Override

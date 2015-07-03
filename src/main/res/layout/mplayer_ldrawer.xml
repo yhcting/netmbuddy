@@ -1,12 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<SlidingDrawer xmlns:android="http://schemas.android.com/apk/res/android"
+<free.yhc.netmbuddy.widget.SlidingDrawer
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:netmbuddy="http://schemas.android.com/apk/res-auto"
     android:id="@+id/mplayer_ldrawer"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginTop="50dp"
-    android:handle="@+id/mplayer_ldrawer_handle"
-    android:content="@+id/mplayer_ldrawer_content"
     android:orientation="vertical"
+    netmbuddy:handle="@+id/mplayer_ldrawer_handle"
+    netmbuddy:content="@+id/mplayer_ldrawer_content"
     >
     <ImageView
         android:id="@+id/mplayer_ldrawer_handle"
@@ -34,4 +36,4 @@
         <include
             layout="@layout/mplayer_list" />
     </LinearLayout>
-</SlidingDrawer>
+</free.yhc.netmbuddy.widget.SlidingDrawer>

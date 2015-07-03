@@ -46,8 +46,18 @@ import java.text.SimpleDateFormat;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static free.yhc.netmbuddy.utils.JsonUtils.jGetString;
+import static free.yhc.netmbuddy.utils.JsonUtils.jGetStrings;
+import static free.yhc.netmbuddy.utils.JsonUtils.jGetInt;
+import static free.yhc.netmbuddy.utils.JsonUtils.jGetLong;
+import static free.yhc.netmbuddy.utils.JsonUtils.jGetDouble;
+import static free.yhc.netmbuddy.utils.JsonUtils.jGetObject;
+import static free.yhc.netmbuddy.utils.JsonUtils.jGetObjects;
+import static free.yhc.netmbuddy.utils.JsonUtils.jGetBoolean;
+
 import free.yhc.netmbuddy.core.YTDataAdapter;
 import free.yhc.netmbuddy.utils.Utils;
+import free.yhc.netmbuddy.utils.JsonUtils.JsonModel;
 
 // To support Youtube Data API v3
 class YTResp {
@@ -61,67 +71,63 @@ class YTResp {
     //
     //
     // =======================================================================
-    static abstract class JSONModel {
-        abstract void set(JSONObject jo);
-    }
-
-    static class Id extends JSONModel {
+    static class Id extends JsonModel {
         String kind = null;
         String videoId = null;
         String channelId = null;
         String playlistId = null;
 
         @Override
-        void
+        public void
         set(JSONObject jo) {
-            kind = getJString(jo, "kind");
-            videoId = getJString(jo, "videoId");
-            channelId = getJString(jo, "channelId");
-            playlistId = getJString(jo, "playlistId");
+            kind = jGetString(jo, "kind");
+            videoId = jGetString(jo, "videoId");
+            channelId = jGetString(jo, "channelId");
+            playlistId = jGetString(jo, "playlistId");
         }
     }
 
-    static class PageInfo extends JSONModel {
+    static class PageInfo extends JsonModel {
         Integer totalResults = null;
         Integer resultsPerPage = null;
 
         @Override
-        void
+        public void
         set(JSONObject jo) {
-            totalResults = getJInt(jo, "totalResults");
-            resultsPerPage = getJInt(jo, "resultsPerPage");
+            totalResults = jGetInt(jo, "totalResults");
+            resultsPerPage = jGetInt(jo, "resultsPerPage");
         }
     }
 
-    static class Thumbnail extends JSONModel {
+    static class Thumbnail extends JsonModel {
         String url = null;
         Integer width = null;
         Integer height = null;
 
         @Override
-        void
+        public void
         set(JSONObject jo) {
-            url = getJString(jo, "url");
-            width = getJInt(jo, "width");
-            height = getJInt(jo, "height");
+            url = jGetString(jo, "url");
+            width = jGetInt(jo, "width");
+            height = jGetInt(jo, "height");
         }
     }
 
-    static class Thumbnails extends JSONModel {
+    static class Thumbnails extends JsonModel {
         Thumbnail default_ = null;
         Thumbnail medium = null;
         Thumbnail high = null;
 
         @Override
-        void
+        public void
         set(JSONObject jo) {
-            default_ = getJObject(jo, "default", Thumbnail.class);
-            medium = getJObject(jo, "medium", Thumbnail.class);
-            high = getJObject(jo, "high", Thumbnail.class);
+            default_ = jGetObject(jo, "default", Thumbnail.class);
+            medium = jGetObject(jo, "medium", Thumbnail.class);
+            high = jGetObject(jo, "high", Thumbnail.class);
         }
     }
 
-    static class Snippet extends JSONModel {
+    static class Snippet extends JsonModel {
         String publishedAt = null;
         String channelId = null;
         String title = null;
@@ -133,33 +139,33 @@ class YTResp {
         String liveBroadcastContent = null;
 
         @Override
-        void
+        public void
         set(JSONObject jo) {
-            publishedAt = getJString(jo, "publishedAt");
-            channelId = getJString(jo, "channelId");
-            title = getJString(jo, "title");
-            description = getJString(jo, "description");
-            thumbnails = getJObject(jo, "thumbnails", Thumbnails.class);
-            channelTitle = getJString(jo, "channelTitle");
-            tags = getJStrings(jo, "tags");
-            categoryId = getJString(jo, "categoryId");
-            liveBroadcastContent = getJString(jo, "liveBroadcastContent");
+            publishedAt = jGetString(jo, "publishedAt");
+            channelId = jGetString(jo, "channelId");
+            title = jGetString(jo, "title");
+            description = jGetString(jo, "description");
+            thumbnails = jGetObject(jo, "thumbnails", Thumbnails.class);
+            channelTitle = jGetString(jo, "channelTitle");
+            tags = jGetStrings(jo, "tags");
+            categoryId = jGetString(jo, "categoryId");
+            liveBroadcastContent = jGetString(jo, "liveBroadcastContent");
         }
     }
 
-    static class RegionRestriction extends JSONModel {
+    static class RegionRestriction extends JsonModel {
         String[] allowed = null;
         String[] blocked = null;
 
         @Override
-        void
+        public void
         set(JSONObject jo) {
-            allowed = getJStrings(jo, "allowed");
-            blocked = getJStrings(jo, "blocked");
+            allowed = jGetStrings(jo, "allowed");
+            blocked = jGetStrings(jo, "blocked");
         }
     }
 
-    static class ContentRating extends JSONModel {
+    static class ContentRating extends JsonModel {
         String acbRating = null;
         String agcomRating = null;
         String anatelRating = null;
@@ -226,76 +232,76 @@ class YTResp {
         String ytRating = null;
 
         @Override
-        void
+        public void
         set(JSONObject jo) {
-            acbRating = getJString(jo, "acbRating");
-            agcomRating = getJString(jo, "agcomRating");
-            anatelRating = getJString(jo, "anatelRating");
-            bbfcRating = getJString(jo, "bbfcRating");
-            bfvcRating = getJString(jo, "bfvcRating");
-            bmukkRating = getJString(jo, "bmukkRating");
-            catvRating = getJString(jo, "catvRating");
-            catvfrRating = getJString(jo, "catvfrRating");
-            cbfcRating = getJString(jo, "cbfcRating");
-            cccRating = getJString(jo, "cccRating");
-            cceRating = getJString(jo, "cceRating");
-            chfilmRating = getJString(jo, "chfilmRating");
-            chvrsRating = getJString(jo, "chvrsRating");
-            cicfRating = getJString(jo, "cicfRating");
-            cnaRating = getJString(jo, "cnaRating");
-            csaRating = getJString(jo, "csaRating");
-            cscfRating = getJString(jo, "cscfRating");
-            czfilmRating = getJString(jo, "czfilmRating");
-            djctqRating = getJString(jo, "djctqRating");
-            djctqRatingReasons = getJStrings(jo, "djctqRatingReasons");
-            eefilmRating = getJString(jo, "eefilmRating");
-            egfilmRating = getJString(jo, "egfilmRating");
-            eirinRating = getJString(jo, "eirinRating");
-            fcbmRating = getJString(jo, "fcbmRating");
-            fcoRating = getJString(jo, "fcoRating");
-            fmocRating = getJString(jo, "fmocRating");
-            fpbRating = getJString(jo, "fpbRating");
-            fskRating = getJString(jo, "fskRating");
-            grfilmRating = getJString(jo, "grfilmRating");
-            icaaRating = getJString(jo, "icaaRating");
-            ifcoRating = getJString(jo, "ifcoRating");
-            ilfilmRating = getJString(jo, "ilfilmRating");
-            incaaRating = getJString(jo, "incaaRating");
-            kfcbRating = getJString(jo, "kfcbRating");
-            kijkwijzerRating = getJString(jo, "kijkwijzerRating");
-            kmrbRating = getJString(jo, "kmrbRating");
-            lsfRating = getJString(jo, "lsfRating");
-            mccaaRating = getJString(jo, "mccaaRating");
-            mccypRating = getJString(jo, "mccypRating");
-            mdaRating = getJString(jo, "mdaRating");
-            medietilsynetRating = getJString(jo, "medietilsynetRating");
-            mekuRating = getJString(jo, "mekuRating");
-            mibacRating = getJString(jo, "mibacRating");
-            mocRating = getJString(jo, "mocRating");
-            moctwRating = getJString(jo, "moctwRating");
-            mpaaRating = getJString(jo, "mpaaRating");
-            mtrcbRating = getJString(jo, "mtrcbRating");
-            nbcRating = getJString(jo, "nbcRating");
-            nbcplRating = getJString(jo, "nbcplRating");
-            nfrcRating = getJString(jo, "nfrcRating");
-            nfvcbRating = getJString(jo, "nfvcbRating");
-            nkclvRating = getJString(jo, "nkclvRating");
-            oflcRating = getJString(jo, "oflcRating");
-            pefilmRating = getJString(jo, "pefilmRating");
-            rcnofRating = getJString(jo, "rcnofRating");
-            resorteviolenciaRating = getJString(jo, "resorteviolenciaRating");
-            rtcRating = getJString(jo, "rtcRating");
-            rteRating = getJString(jo, "rteRating");
-            russiaRating = getJString(jo, "russiaRating");
-            skfilmRating = getJString(jo, "skfilmRating");
-            smaisRating = getJString(jo, "smaisRating");
-            smsaRating = getJString(jo, "smsaRating");
-            tvpgRating = getJString(jo, "tvpgRating");
-            ytRating = getJString(jo, "ytRating");
+            acbRating = jGetString(jo, "acbRating");
+            agcomRating = jGetString(jo, "agcomRating");
+            anatelRating = jGetString(jo, "anatelRating");
+            bbfcRating = jGetString(jo, "bbfcRating");
+            bfvcRating = jGetString(jo, "bfvcRating");
+            bmukkRating = jGetString(jo, "bmukkRating");
+            catvRating = jGetString(jo, "catvRating");
+            catvfrRating = jGetString(jo, "catvfrRating");
+            cbfcRating = jGetString(jo, "cbfcRating");
+            cccRating = jGetString(jo, "cccRating");
+            cceRating = jGetString(jo, "cceRating");
+            chfilmRating = jGetString(jo, "chfilmRating");
+            chvrsRating = jGetString(jo, "chvrsRating");
+            cicfRating = jGetString(jo, "cicfRating");
+            cnaRating = jGetString(jo, "cnaRating");
+            csaRating = jGetString(jo, "csaRating");
+            cscfRating = jGetString(jo, "cscfRating");
+            czfilmRating = jGetString(jo, "czfilmRating");
+            djctqRating = jGetString(jo, "djctqRating");
+            djctqRatingReasons = jGetStrings(jo, "djctqRatingReasons");
+            eefilmRating = jGetString(jo, "eefilmRating");
+            egfilmRating = jGetString(jo, "egfilmRating");
+            eirinRating = jGetString(jo, "eirinRating");
+            fcbmRating = jGetString(jo, "fcbmRating");
+            fcoRating = jGetString(jo, "fcoRating");
+            fmocRating = jGetString(jo, "fmocRating");
+            fpbRating = jGetString(jo, "fpbRating");
+            fskRating = jGetString(jo, "fskRating");
+            grfilmRating = jGetString(jo, "grfilmRating");
+            icaaRating = jGetString(jo, "icaaRating");
+            ifcoRating = jGetString(jo, "ifcoRating");
+            ilfilmRating = jGetString(jo, "ilfilmRating");
+            incaaRating = jGetString(jo, "incaaRating");
+            kfcbRating = jGetString(jo, "kfcbRating");
+            kijkwijzerRating = jGetString(jo, "kijkwijzerRating");
+            kmrbRating = jGetString(jo, "kmrbRating");
+            lsfRating = jGetString(jo, "lsfRating");
+            mccaaRating = jGetString(jo, "mccaaRating");
+            mccypRating = jGetString(jo, "mccypRating");
+            mdaRating = jGetString(jo, "mdaRating");
+            medietilsynetRating = jGetString(jo, "medietilsynetRating");
+            mekuRating = jGetString(jo, "mekuRating");
+            mibacRating = jGetString(jo, "mibacRating");
+            mocRating = jGetString(jo, "mocRating");
+            moctwRating = jGetString(jo, "moctwRating");
+            mpaaRating = jGetString(jo, "mpaaRating");
+            mtrcbRating = jGetString(jo, "mtrcbRating");
+            nbcRating = jGetString(jo, "nbcRating");
+            nbcplRating = jGetString(jo, "nbcplRating");
+            nfrcRating = jGetString(jo, "nfrcRating");
+            nfvcbRating = jGetString(jo, "nfvcbRating");
+            nkclvRating = jGetString(jo, "nkclvRating");
+            oflcRating = jGetString(jo, "oflcRating");
+            pefilmRating = jGetString(jo, "pefilmRating");
+            rcnofRating = jGetString(jo, "rcnofRating");
+            resorteviolenciaRating = jGetString(jo, "resorteviolenciaRating");
+            rtcRating = jGetString(jo, "rtcRating");
+            rteRating = jGetString(jo, "rteRating");
+            russiaRating = jGetString(jo, "russiaRating");
+            skfilmRating = jGetString(jo, "skfilmRating");
+            smaisRating = jGetString(jo, "smaisRating");
+            smsaRating = jGetString(jo, "smsaRating");
+            tvpgRating = jGetString(jo, "tvpgRating");
+            ytRating = jGetString(jo, "ytRating");
         }
     }
 
-    static class Status extends JSONModel {
+    static class Status extends JsonModel {
         String uploadStatus = null;
         String failureReason = null;
         String rejectionReason = null;
@@ -306,21 +312,21 @@ class YTResp {
         String publicStatsViewable = null;
 
         @Override
-        void
+        public void
         set(JSONObject jo) {
-            uploadStatus = getJString(jo, "uploadStatus");
-            failureReason = getJString(jo, "failureReason");
-            rejectionReason = getJString(jo, "rejectionReason");
-            privacyStatus = getJString(jo, "privacyStatus");
-            publishAt = getJString(jo, "publishAt");
-            license = getJString(jo, "license");
-            embeddable = getJString(jo, "embeddable");
-            publicStatsViewable = getJString(jo, "publicStatsViewable");
+            uploadStatus = jGetString(jo, "uploadStatus");
+            failureReason = jGetString(jo, "failureReason");
+            rejectionReason = jGetString(jo, "rejectionReason");
+            privacyStatus = jGetString(jo, "privacyStatus");
+            publishAt = jGetString(jo, "publishAt");
+            license = jGetString(jo, "license");
+            embeddable = jGetString(jo, "embeddable");
+            publicStatsViewable = jGetString(jo, "publicStatsViewable");
 
         }
     }
 
-    static class Statistics extends JSONModel {
+    static class Statistics extends JsonModel {
         Long viewCount = null;
         Long likeCount = null;
         Long dislikeCount = null;
@@ -328,67 +334,67 @@ class YTResp {
         Long commentCount = null;
 
         @Override
-        void
+        public void
         set(JSONObject jo) {
-            viewCount = getJLong(jo, "viewCount");
-            likeCount = getJLong(jo, "likeCount");
-            dislikeCount = getJLong(jo, "dislikeCount");
-            favoriteCount = getJLong(jo, "favoriteCount");
-            commentCount = getJLong(jo, "commentCount");
+            viewCount = jGetLong(jo, "viewCount");
+            likeCount = jGetLong(jo, "likeCount");
+            dislikeCount = jGetLong(jo, "dislikeCount");
+            favoriteCount = jGetLong(jo, "favoriteCount");
+            commentCount = jGetLong(jo, "commentCount");
         }
     }
 
-    static class Player extends JSONModel {
+    static class Player extends JsonModel {
         String embedHtml = null;
 
         @Override
-        void
+        public void
         set(JSONObject jo) {
-            embedHtml = getJString(jo, "embedHtml");
+            embedHtml = jGetString(jo, "embedHtml");
         }
     }
 
-    static class TopicDetails extends JSONModel {
+    static class TopicDetails extends JsonModel {
         String[] topicIds = null;
         String[] relevantTopicIds = null;
 
         @Override
-        void
+        public void
         set(JSONObject jo) {
-            topicIds = getJStrings(jo, "topicIds");
-            relevantTopicIds = getJStrings(jo, "relevantTopicIds");
+            topicIds = jGetStrings(jo, "topicIds");
+            relevantTopicIds = jGetStrings(jo, "relevantTopicIds");
         }
     }
 
-    static class Location extends JSONModel {
+    static class Location extends JsonModel {
         Double latitude = null;
         Double longitude = null;
         Double altitude = null;
 
         @Override
-        void
+        public void
         set(JSONObject jo) {
-            latitude = getJDouble(jo, "latitude");
-            longitude = getJDouble(jo, "longitude");
-            altitude = getJDouble(jo, "altitude");
+            latitude = jGetDouble(jo, "latitude");
+            longitude = jGetDouble(jo, "longitude");
+            altitude = jGetDouble(jo, "altitude");
         }
     }
 
-    static class RecordingDetails extends JSONModel {
+    static class RecordingDetails extends JsonModel {
         String locationDescription = null;
         Location location = null;
         String recordingDate = null;
 
         @Override
-        void
+        public void
         set(JSONObject jo) {
-            locationDescription = getJString(jo, "locationDescription");
-            location = getJObject(jo, "location", Location.class);
-            recordingDate = getJString(jo, "recordingDate");
+            locationDescription = jGetString(jo, "locationDescription");
+            location = jGetObject(jo, "location", Location.class);
+            recordingDate = jGetString(jo, "recordingDate");
         }
     }
 
-    static class VideoStream extends JSONModel {
+    static class VideoStream extends JsonModel {
         Integer widthPixels = null;
         Integer heightPixels = null;
         Double frameRateFps = null;
@@ -399,36 +405,36 @@ class YTResp {
         String vendor = null;
 
         @Override
-        void
+        public void
         set(JSONObject jo) {
-            widthPixels = getJInt(jo, "widthPixels");
-            heightPixels = getJInt(jo, "heightPixels");
-            frameRateFps = getJDouble(jo, "frameRateFps");
-            aspectRatio = getJDouble(jo, "aspectRatio");
-            codec = getJString(jo, "codec");
-            bitrateBps = getJLong(jo, "bitrateBps");
-            rotation = getJString(jo, "rotation");
-            vendor = getJString(jo, "vendor");
+            widthPixels = jGetInt(jo, "widthPixels");
+            heightPixels = jGetInt(jo, "heightPixels");
+            frameRateFps = jGetDouble(jo, "frameRateFps");
+            aspectRatio = jGetDouble(jo, "aspectRatio");
+            codec = jGetString(jo, "codec");
+            bitrateBps = jGetLong(jo, "bitrateBps");
+            rotation = jGetString(jo, "rotation");
+            vendor = jGetString(jo, "vendor");
         }
     }
 
-    static class AudioStream extends JSONModel {
+    static class AudioStream extends JsonModel {
         Integer channelCount = null;
         String codec = null;
         Long bitrateBps = null;
         String vendor = null;
 
         @Override
-        void
+        public void
         set(JSONObject jo) {
-            channelCount = getJInt(jo, "channelCount");
-            codec = getJString(jo, "codec");
-            bitrateBps = getJLong(jo, "bitrateBps");
-            vendor = getJString(jo, "vendor");
+            channelCount = jGetInt(jo, "channelCount");
+            codec = jGetString(jo, "codec");
+            bitrateBps = jGetLong(jo, "bitrateBps");
+            vendor = jGetString(jo, "vendor");
         }
     }
 
-    static class FileDetails extends JSONModel {
+    static class FileDetails extends JsonModel {
         String fileName = null;
         Long fileSize = null;
         String fileType = null;
@@ -441,37 +447,37 @@ class YTResp {
         String creationTime = null;
 
         @Override
-        void
+        public void
         set(JSONObject jo) {
-            fileName = getJString(jo, "fileName");
-            fileSize = getJLong(jo, "fileSize");
-            fileType = getJString(jo, "fileType");
-            container = getJString(jo, "container");
-            videoStreams = getJObjects(jo, "videoStreams", VideoStream.class);
-            audioStreams = getJObjects(jo, "audioStreams", AudioStream.class);
-            durationMs = getJLong(jo, "durationMs");
-            bitrateBps = getJLong(jo, "bitrateBps");
-            recordingLocation = getJObject(jo, "recordingLocation", Location.class);
-            creationTime = getJString(jo, "creationTime");
+            fileName = jGetString(jo, "fileName");
+            fileSize = jGetLong(jo, "fileSize");
+            fileType = jGetString(jo, "fileType");
+            container = jGetString(jo, "container");
+            videoStreams = jGetObjects(jo, "videoStreams", VideoStream.class);
+            audioStreams = jGetObjects(jo, "audioStreams", AudioStream.class);
+            durationMs = jGetLong(jo, "durationMs");
+            bitrateBps = jGetLong(jo, "bitrateBps");
+            recordingLocation = jGetObject(jo, "recordingLocation", Location.class);
+            creationTime = jGetString(jo, "creationTime");
         }
     }
 
-    static class ProcessingProgress extends JSONModel {
+    static class ProcessingProgress extends JsonModel {
         Long partsTotal = null;
         Long partsProcessed = null;
         Long timeLeftMs = null;
 
         @Override
-        void
+        public void
         set(JSONObject jo) {
-            partsTotal = getJLong(jo, "partsTotal");
-            partsProcessed = getJLong(jo, "partsProcessed");
-            timeLeftMs = getJLong(jo, "timeLeftMs");
+            partsTotal = jGetLong(jo, "partsTotal");
+            partsProcessed = jGetLong(jo, "partsProcessed");
+            timeLeftMs = jGetLong(jo, "timeLeftMs");
         }
     }
 
 
-    static class ProcessingDetails extends JSONModel {
+    static class ProcessingDetails extends JsonModel {
         String processingStatus = null;
         ProcessingProgress processingProgress = null;
         String processingFailureReason = null;
@@ -482,32 +488,32 @@ class YTResp {
         String thumbnailsAvailability = null;
 
         @Override
-        void
+        public void
         set(JSONObject jo) {
-            processingStatus = getJString(jo, "processingStatus");
-            processingProgress = getJObject(jo, "processingProgress", ProcessingProgress.class);
-            processingFailureReason = getJString(jo, "processingFailureReason");
-            fileDetailsAvailability = getJString(jo, "fileDetailsAvailability");
-            processingIssuesAvailability = getJString(jo, "processingIssuesAvailability");
-            tagSuggestionsAvailability = getJString(jo, "tagSuggestionsAvailability");
-            editorSuggestionsAvailability = getJString(jo, "editorSuggestionsAvailability");
-            thumbnailsAvailability = getJString(jo, "thumbnailsAvailability");
+            processingStatus = jGetString(jo, "processingStatus");
+            processingProgress = jGetObject(jo, "processingProgress", ProcessingProgress.class);
+            processingFailureReason = jGetString(jo, "processingFailureReason");
+            fileDetailsAvailability = jGetString(jo, "fileDetailsAvailability");
+            processingIssuesAvailability = jGetString(jo, "processingIssuesAvailability");
+            tagSuggestionsAvailability = jGetString(jo, "tagSuggestionsAvailability");
+            editorSuggestionsAvailability = jGetString(jo, "editorSuggestionsAvailability");
+            thumbnailsAvailability = jGetString(jo, "thumbnailsAvailability");
         }
     }
 
-    static class TagSuggestion extends JSONModel {
+    static class TagSuggestion extends JsonModel {
         String tag = null;
         String[] categoryRestricts = null;
 
         @Override
-        void
+        public void
         set(JSONObject jo) {
-            tag = getJString(jo, "tag");
-            categoryRestricts = getJStrings(jo, "categoryRestricts");
+            tag = jGetString(jo, "tag");
+            categoryRestricts = jGetStrings(jo, "categoryRestricts");
         }
     }
 
-    static class Suggestions extends JSONModel {
+    static class Suggestions extends JsonModel {
         String[] processingErrors = null;
         String[] processingWarnings = null;
         String[] processingHints = null;
@@ -515,18 +521,18 @@ class YTResp {
         String[] editorSuggestions = null;
 
         @Override
-        void
+        public void
         set(JSONObject jo) {
-            processingErrors = getJStrings(jo, "processingErrors");
-            processingWarnings = getJStrings(jo, "processingWarnings");
-            processingHints = getJStrings(jo, "processingHints");
-            tagSuggestions = getJObjects(jo, "tagSuggestions", TagSuggestion.class);
-            editorSuggestions = getJStrings(jo, "editorSuggestions");
+            processingErrors = jGetStrings(jo, "processingErrors");
+            processingWarnings = jGetStrings(jo, "processingWarnings");
+            processingHints = jGetStrings(jo, "processingHints");
+            tagSuggestions = jGetObjects(jo, "tagSuggestions", TagSuggestion.class);
+            editorSuggestions = jGetStrings(jo, "editorSuggestions");
         }
     }
 
 
-    static class LiveStreamingDetails extends JSONModel {
+    static class LiveStreamingDetails extends JsonModel {
         String actualStartTime = null;
         String actualEndTime = null;
         String scheduledStartTime = null;
@@ -534,17 +540,17 @@ class YTResp {
         Long concurrentViewers = null;
 
         @Override
-        void
+        public void
         set(JSONObject jo) {
-            actualStartTime = getJString(jo, "actualStartTime");
-            actualEndTime = getJString(jo, "actualEndTime");
-            scheduledStartTime = getJString(jo, "scheduledStartTime");
-            scheduledEndTime = getJString(jo, "scheduledEndTime");
-            concurrentViewers = getJLong(jo, "concurrentViewers");
+            actualStartTime = jGetString(jo, "actualStartTime");
+            actualEndTime = jGetString(jo, "actualEndTime");
+            scheduledStartTime = jGetString(jo, "scheduledStartTime");
+            scheduledEndTime = jGetString(jo, "scheduledEndTime");
+            concurrentViewers = jGetLong(jo, "concurrentViewers");
         }
     }
 
-    static class ContentDetails extends JSONModel {
+    static class ContentDetails extends JsonModel {
         String duration = null;
         String dimension = null;
         String definition = null;
@@ -554,19 +560,19 @@ class YTResp {
         ContentRating contentRating = null;
 
         @Override
-        void
+        public void
         set(JSONObject jo) {
-            duration = getJString(jo, "duration");
-            dimension = getJString(jo, "dimension");
-            definition = getJString(jo, "definition");
-            caption = getJString(jo, "caption");
-            licensedContent = getJBoolean(jo, "licensedContent");
-            regionRestriction = getJObject(jo, "regionRestriction", RegionRestriction.class);
-            contentRating = getJObject(jo, "contentRating", ContentRating.class);
+            duration = jGetString(jo, "duration");
+            dimension = jGetString(jo, "dimension");
+            definition = jGetString(jo, "definition");
+            caption = jGetString(jo, "caption");
+            licensedContent = jGetBoolean(jo, "licensedContent");
+            regionRestriction = jGetObject(jo, "regionRestriction", RegionRestriction.class);
+            contentRating = jGetObject(jo, "contentRating", ContentRating.class);
         }
     }
 
-    static class VideoRes extends JSONModel {
+    static class VideoRes extends JsonModel {
         static final String KIND = "youtube#video";
         String kind = null;
         String etag = null;
@@ -584,22 +590,22 @@ class YTResp {
         LiveStreamingDetails liveStreamingDetails = null;
 
         @Override
-        void
+        public void
         set(JSONObject jo) {
-            kind = getJString(jo, "kind");
-            etag = getJString(jo, "etag");
-            id = getJString(jo, "id");
-            snippet = getJObject(jo, "snippet", Snippet.class);
-            contentDetails = getJObject(jo, "contentDetails", ContentDetails.class);
-            status = getJObject(jo, "status", Status.class);
-            statistics = getJObject(jo, "statistics", Statistics.class);
-            player = getJObject(jo, "player", Player.class);
-            topicDetails = getJObject(jo, "topicDetails", TopicDetails.class);
-            recordingDetails = getJObject(jo, "recordingDetails", RecordingDetails.class);
-            fileDetails = getJObject(jo, "fileDetails", FileDetails.class);
-            processingDetails = getJObject(jo, "processingDetails", ProcessingDetails.class);
-            suggestions = getJObject(jo, "suggestions", Suggestions.class);
-            liveStreamingDetails = getJObject(jo, "liveStreamingDetails", LiveStreamingDetails.class);
+            kind = jGetString(jo, "kind");
+            etag = jGetString(jo, "etag");
+            id = jGetString(jo, "id");
+            snippet = jGetObject(jo, "snippet", Snippet.class);
+            contentDetails = jGetObject(jo, "contentDetails", ContentDetails.class);
+            status = jGetObject(jo, "status", Status.class);
+            statistics = jGetObject(jo, "statistics", Statistics.class);
+            player = jGetObject(jo, "player", Player.class);
+            topicDetails = jGetObject(jo, "topicDetails", TopicDetails.class);
+            recordingDetails = jGetObject(jo, "recordingDetails", RecordingDetails.class);
+            fileDetails = jGetObject(jo, "fileDetails", FileDetails.class);
+            processingDetails = jGetObject(jo, "processingDetails", ProcessingDetails.class);
+            suggestions = jGetObject(jo, "suggestions", Suggestions.class);
+            liveStreamingDetails = jGetObject(jo, "liveStreamingDetails", LiveStreamingDetails.class);
         }
 
         /**
@@ -625,7 +631,7 @@ class YTResp {
         }
     }
 
-    static class SearchRes extends JSONModel {
+    static class SearchRes extends JsonModel {
         static final String KIND = "youtube#searchResult";
         String kind = null;
         String etag = null;
@@ -633,12 +639,12 @@ class YTResp {
         Snippet snippet = null;
 
         @Override
-        void
+        public void
         set(JSONObject jo) {
-            kind = getJString(jo, "kind");
-            etag = getJString(jo, "etag");
-            id = getJObject(jo, "id", Id.class);
-            snippet = getJObject(jo, "snippet", Snippet.class);
+            kind = jGetString(jo, "kind");
+            etag = jGetString(jo, "etag");
+            id = jGetObject(jo, "id", Id.class);
+            snippet = jGetObject(jo, "snippet", Snippet.class);
         }
 
         YTDataAdapter.Video
@@ -654,7 +660,7 @@ class YTResp {
         }
     }
 
-    static class SearchListResponse extends JSONModel {
+    static class SearchListResponse extends JsonModel {
         static final String KIND = "youtube#searchListResponse";
         String kind = null;
         String etag = null;
@@ -664,14 +670,14 @@ class YTResp {
         SearchRes[] items = null;
 
         @Override
-        void
+        public void
         set(JSONObject jo) {
-            kind = getJString(jo, "kind");
-            etag = getJString(jo, "etag");
-            nextPageToken = getJString(jo, "nextPageToken");
-            prevPageToken = getJString(jo, "prevPageToken");
-            pageInfo = getJObject(jo, "pageInfo", PageInfo.class);
-            items = getJObjects(jo, "items", SearchRes.class);
+            kind = jGetString(jo, "kind");
+            etag = jGetString(jo, "etag");
+            nextPageToken = jGetString(jo, "nextPageToken");
+            prevPageToken = jGetString(jo, "prevPageToken");
+            pageInfo = jGetObject(jo, "pageInfo", PageInfo.class);
+            items = jGetObjects(jo, "items", SearchRes.class);
         }
 
         /**
@@ -692,7 +698,7 @@ class YTResp {
         }
     }
 
-    static class VideoListResponse extends JSONModel {
+    static class VideoListResponse extends JsonModel {
         static final String KIND = "youtube#videoListResponse";
         String kind = null;
         String etag = null;
@@ -702,14 +708,14 @@ class YTResp {
         VideoRes[] items = null;
 
         @Override
-        void
+        public void
         set(JSONObject jo) {
-            kind = getJString(jo, "kind");
-            etag = getJString(jo, "etag");
-            nextPageToken = getJString(jo, "nextPageToken");
-            prevPageToken = getJString(jo, "prevPageToken");
-            pageInfo = getJObject(jo, "pageInfo", PageInfo.class);
-            items = getJObjects(jo, "items", VideoRes.class);
+            kind = jGetString(jo, "kind");
+            etag = jGetString(jo, "etag");
+            nextPageToken = jGetString(jo, "nextPageToken");
+            prevPageToken = jGetString(jo, "prevPageToken");
+            pageInfo = jGetObject(jo, "pageInfo", PageInfo.class);
+            items = jGetObjects(jo, "items", VideoRes.class);
         }
 
         /**
@@ -786,140 +792,5 @@ class YTResp {
     //
     //
     // =======================================================================
-    private static JSONObject
-    getJJObject(JSONObject jo, String key) {
-        if (null == jo)
-            return null;
-        try {
-            return jo.getJSONObject(key);
-        } catch (JSONException ignored) {
-            return null;
-        }
-    }
-
-    private static JSONArray
-    getJJArray(JSONObject jo, String key) {
-        if (null == jo)
-            return null;
-        try {
-            return jo.getJSONArray(key);
-        } catch (JSONException ignored) {
-            return null;
-        }
-    }
-
-    private static String
-    getJString(JSONObject jo, String key) {
-        if (null == jo)
-            return null;
-        try {
-            return jo.getString(key);
-        } catch (JSONException ignored) {
-            return null;
-        }
-    }
-
-    private static Integer
-    getJInt(JSONObject jo, String key) {
-        if (null == jo)
-            return null;
-        try {
-            return jo.getInt(key);
-        } catch (JSONException ignored) {
-            return null;
-        }
-    }
-
-    private static Long
-    getJLong(JSONObject jo, String key) {
-        if (null == jo)
-            return null;
-        try {
-            return jo.getLong(key);
-        } catch (JSONException ignored) {
-            return null;
-        }
-    }
-
-    private static Boolean
-    getJBoolean(JSONObject jo, String key) {
-        if (null == jo)
-            return null;
-        try {
-            return jo.getBoolean(key);
-        } catch (JSONException ignored) {
-            return null;
-        }
-    }
-
-    private static Double
-    getJDouble(JSONObject jo, String key) {
-        if (null == jo)
-            return null;
-        try {
-            return jo.getDouble(key);
-        } catch (JSONException ignored) {
-            return null;
-        }
-    }
-
-    private static String[]
-    getJStrings(JSONObject jo, String key) {
-        JSONArray ja = getJJArray(jo, key);
-        if (null == ja)
-            return null;
-        String[] r = new String[ja.length()];
-        try {
-            for (int i = 0; i < r.length; i++)
-                r[i] = ja.getString(i);
-            return r;
-        } catch (JSONException e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    private static <K extends JSONModel> K
-    getJObject(JSONObject jo, String key, Class<K> cls) {
-        if (null == jo)
-            return null;
-        try {
-            JSONObject o = jo.getJSONObject(key);
-            K r = null;
-            try {
-                r = cls.newInstance();
-            } catch (Exception e) {
-                e.printStackTrace();
-                return null;
-            }
-            r.set(o);
-            return r;
-        } catch (JSONException ignored) {
-            return null;
-        }
-    }
-
-    private static <K extends JSONModel> K[]
-    getJObjects(JSONObject jo, String key, Class<K> cls) {
-        JSONArray ja = getJJArray(jo, key);
-        if (null == ja)
-            return null;
-        K[] r = (K[])Array.newInstance(cls, ja.length());
-        try {
-            for (int i = 0; i < r.length; i++) {
-                try {
-                    r[i] = cls.newInstance();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    return null;
-                }
-                r[i].set(ja.getJSONObject(i));
-            }
-            return r;
-        } catch (JSONException e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
 
 }

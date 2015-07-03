@@ -115,4 +115,18 @@ public class YTApiFacade {
         eAssert(false);
         return null;
     }
+
+    public static YTDataAdapter.Video
+    requestVideoInfo(String ytvid) throws YTDataAdapter.YTApiException {
+        byte[] data = null;
+        try {
+            data = loadUrl(YTRespVideos.getRequestUrl(new String[] { ytvid }));
+        } catch (NetLoader.LocalException e) {
+            throw new YTDataAdapter.YTApiException(YTDataAdapter.Err.IO_NET);
+        }
+        YTResp.VideoListResponse vlresp = YTRespVideos.parse(data);
+        YTDataAdapter.VideoListResp resp = vlresp.makeAdapterData();
+        eAssert(resp.vids.length > 0);
+        return resp.vids[0];
+    }
 }

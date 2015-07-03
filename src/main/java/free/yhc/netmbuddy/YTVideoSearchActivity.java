@@ -54,9 +54,11 @@ import free.yhc.netmbuddy.core.YTDataHelper;
 import free.yhc.netmbuddy.db.DB;
 import free.yhc.netmbuddy.core.YTPlayer;
 import free.yhc.netmbuddy.db.DBHelper;
+import free.yhc.netmbuddy.db.DMVideo;
 import free.yhc.netmbuddy.utils.ImageUtils;
 import free.yhc.netmbuddy.utils.UiUtils;
 import free.yhc.netmbuddy.utils.Utils;
+import free.yhc.netmbuddy.utils.YTUtils;
 
 public abstract class YTVideoSearchActivity extends YTSearchActivity implements
 DBHelper.CheckDupDoneReceiver,
@@ -154,16 +156,9 @@ UnexpectedExceptionHandler.Evidence {
     }
 
     private void
-    onContextMenuVideosOfThisAuthor(final int position) {
-        Intent i = new Intent(this, YTVideoSearchAuthorActivity.class);
-        i.putExtra(YTSearchActivity.KEY_TEXT, getAdapter().getItemAuthor(position));
-        startActivity(i);
-    }
-
-    private void
-    onContextMenuPlaylistsOfThisAuthor(final int position) {
-        Intent i = new Intent(this, YTPlaylistSearchActivity.class);
-        i.putExtra(YTSearchActivity.KEY_TEXT, getAdapter().getItemAuthor(position));
+    onContextMenuVideosOfThisChannel(final int position) {
+        Intent i = new Intent(this, YTVideoSearchChannelActivity.class);
+        i.putExtra(YTSearchActivity.KEY_TEXT, getAdapter().getItemChannelTitle(position));
         startActivity(i);
     }
 
@@ -386,14 +381,12 @@ UnexpectedExceptionHandler.Evidence {
             return R.string.msg_no_thumbnail;
         }
 
-        final YTDataAdapter.Video vid = (YTDataAdapter.Video)adapter.getItem(pos);
-        DB.Err err = mDb.insertVideoToPlaylist(plid,
-                                               vid.id,
-                                               vid.title,
-                                               "", // TODO author name is NOT implemented yet.
-                                               (int)vid.playTimeSec,
-                                               ImageUtils.compressBitmap(bm),
-                                               volume);
+        final YTDataAdapter.Video ytv = (YTDataAdapter.Video)adapter.getItem(pos);
+        DMVideo v = new DMVideo();
+        v.setYtData(ytv);
+        v.setThumbnail(ImageUtils.compressBitmap(bm));
+        v.setPreferenceData(volume, "");
+        DB.Err err = mDb.insertVideoToPlaylist(plid, v);
         if (DB.Err.NO_ERR != err) {
             if (DB.Err.DUPLICATED == err)
                 return R.string.msg_existing_muisc;
@@ -475,9 +468,9 @@ UnexpectedExceptionHandler.Evidence {
         inflater.inflate(R.menu.ytvideosearch_context, menu);
         AdapterView.AdapterContextMenuInfo mInfo = (AdapterView.AdapterContextMenuInfo)menuInfo;
 
-        boolean visible = !getAdapter().getItemAuthor(mInfo.position).isEmpty();
-        menu.findItem(R.id.videos_of_this_author).setVisible(visible);
-        menu.findItem(R.id.playlists_of_this_author).setVisible(visible);
+        // TODO : Implement channel menu here!
+        boolean visible = !getAdapter().getItemChannelTitle(mInfo.position).isEmpty();
+        menu.findItem(R.id.videos_of_this_channel).setVisible(visible);
     }
 
     @Override
@@ -497,12 +490,8 @@ UnexpectedExceptionHandler.Evidence {
                 onContextMenuPlayVideo(info.position);
                 return true;
 
-            case R.id.videos_of_this_author:
-                onContextMenuVideosOfThisAuthor(info.position);
-                return true;
-
-            case R.id.playlists_of_this_author:
-                onContextMenuPlaylistsOfThisAuthor(info.position);
+            case R.id.videos_of_this_channel:
+                onContextMenuVideosOfThisChannel(info.position);
                 return true;
 
             case R.id.search_similar_titles:

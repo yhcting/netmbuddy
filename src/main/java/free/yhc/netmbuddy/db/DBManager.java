@@ -245,8 +245,7 @@ class DBManager {
         SQLiteDatabase db = null;
         try {
             db = SQLiteDatabase.openDatabase(tempExDb.getAbsolutePath(), null, SQLiteDatabase.OPEN_READWRITE);
-            if (!new DBUpgrader(db, db.getVersion(), DB.getVersion()).upgrade())
-                return Err.INVALID_DB;
+            new DBUpgrader(db, db.getVersion(), DB.getVersion()).upgrade();
         } catch (SQLiteException e) {
             return Err.INVALID_DB;
         } finally {
