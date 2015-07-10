@@ -46,7 +46,9 @@ import free.yhc.netmbuddy.utils.Utils;
 public class YTMPPreferenceActivity extends PreferenceActivity implements
 SharedPreferences.OnSharedPreferenceChangeListener,
 UnexpectedExceptionHandler.Evidence {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(YTMPPreferenceActivity.class);
 
     @Override

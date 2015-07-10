@@ -194,7 +194,7 @@ It may takes long time(up to several minutes) in case that:\n
     <string name="err_io_net">Error in accessing network.</string>
     <string name="err_io_file">Error in accessing local file.</string>
     <string name="err_io_unknown">Error in IO operation - network or file etc.</string>
-    <string name="err_db_duplicated">Duplicated database item.</string>
+    <string name="err_db_duplicated">Duplicated item.</string>
     <string name="err_db_version_mismatch">Database versions are mismatched.</string>
     <string name="err_db_invalid">Invalid database.</string>
     <string name="err_db_unknown">Unknown database error.</string>

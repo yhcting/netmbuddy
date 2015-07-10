@@ -47,7 +47,9 @@ import free.yhc.netmbuddy.R;
 import free.yhc.netmbuddy.db.DB;
 
 class BookmarkListAdapter extends BaseAdapter {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(BookmarkListAdapter.class);
 
     private final Context mContext;

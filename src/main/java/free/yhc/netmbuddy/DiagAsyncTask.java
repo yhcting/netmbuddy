@@ -52,7 +52,9 @@ public class DiagAsyncTask extends BGTask<Err> implements
 DialogInterface.OnDismissListener,
 View.OnClickListener,
 UnexpectedExceptionHandler.Evidence {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(DiagAsyncTask.class);
 
     private static final int MAX_PROGRESS_RANGE = 10000; // See Android API reference document.
@@ -143,6 +145,7 @@ UnexpectedExceptionHandler.Evidence {
         this(context, listener, style, context.getResources().getText(msg), cancelable, true);
     }
 
+    @SuppressWarnings("unused")
     public DiagAsyncTask(Context context,
                          Worker listener,
                          Style style,
@@ -173,6 +176,7 @@ UnexpectedExceptionHandler.Evidence {
         setTitle(mContext.getResources().getText(title));
     }
 
+    @SuppressWarnings("unused")
     public void
     publishMessage(final String message) {
         Utils.getUiHandler().post(new Runnable() {
@@ -232,7 +236,7 @@ UnexpectedExceptionHandler.Evidence {
         if (maxProgress > MAX_PROGRESS_RANGE)
             maxProgress = MAX_PROGRESS_RANGE;
         if (null != mDialog)
-            mDialog.setMax(mMaxProgress);
+            mDialog.setMax(maxProgress );
 
     }
 
@@ -304,11 +308,8 @@ UnexpectedExceptionHandler.Evidence {
             @Override
             public boolean
             onKey(DialogInterface dialog, int keyCode, KeyEvent event) {
-                if (KeyEvent.KEYCODE_SEARCH == keyCode
-                    && 0 == event.getRepeatCount()) {
-                    return true;
-                }
-                return false;
+                return KeyEvent.KEYCODE_SEARCH == keyCode
+                       && 0 == event.getRepeatCount();
             }
         });
 

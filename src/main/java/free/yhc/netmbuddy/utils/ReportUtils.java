@@ -46,7 +46,9 @@ import free.yhc.netmbuddy.R;
 import free.yhc.netmbuddy.core.Policy;
 
 public class ReportUtils {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(ReportUtils.class);
 
     private static final File sErrLogFile = new File(Policy.APPDATA_ERRLOG);
@@ -58,6 +60,7 @@ public class ReportUtils {
 
     private static void
     cleanReportFile(File f) {
+        //noinspection ResultOfMethodCallIgnored
         f.delete();
     }
 
@@ -73,7 +76,6 @@ public class ReportUtils {
 
     /**
      * Send stored report - crash, improvement etc - to developer as E-mail.
-     * @param context
      */
     private static void
     sendReportMail(Context context, File reportf, String subject) {
@@ -83,22 +85,19 @@ public class ReportUtils {
         if (!reportf.exists())
             return; // nothing to do
 
-        StringBuilder sbr = new StringBuilder();
-        sbr.append(FileUtils.readTextFile(reportf)).append("\n\n");
+        String report = FileUtils.readTextFile(reportf) + "\n\n";
         // we successfully read all log files.
         // let's clean it.
         cleanReportFile(reportf);
-
         Utils.sendMail(context,
                        Policy.REPORT_RECEIVER,
                        subject,
-                       sbr.toString(),
+                       report,
                        null);
     }
 
     /**
      * Overwrite
-     * @param report
      */
     public static void
     storeErrReport(String report) {
@@ -109,7 +108,6 @@ public class ReportUtils {
 
     /**
      * Send stored report - crash, improvement etc - to developer as E-mail.
-     * @param context
      */
     public static void
     sendErrReport(Context context) {

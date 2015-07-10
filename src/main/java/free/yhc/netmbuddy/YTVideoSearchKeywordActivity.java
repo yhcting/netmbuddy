@@ -43,7 +43,9 @@ import free.yhc.netmbuddy.utils.Utils;
 
 public class YTVideoSearchKeywordActivity extends YTVideoSearchActivity implements
 UnexpectedExceptionHandler.Evidence {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(YTVideoSearchKeywordActivity.class);
 
     @Override

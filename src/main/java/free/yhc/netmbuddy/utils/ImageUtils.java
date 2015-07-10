@@ -51,8 +51,6 @@ public class ImageUtils {
      * Decode image from file path(String) or raw data (byte[]).
      * @param image Two types are supported.
      *              String for file path / byte[] for raw image data.
-     * @param opt
-     * @return
      */
     private static Bitmap
     decodeImageRaw(Object image, BitmapFactory.Options opt) {
@@ -134,7 +132,6 @@ public class ImageUtils {
      * @param width width of rect to be shrunk
      * @param height height of rect to be shrunk
      * @param out calculated value [ out[0](width) out[1](height) ]
-     * @return false(not shrunk) / true(shrunk)
      */
     public static void
     fitFixedRatio(int boundW, int boundH, int width, int height, int[] out) {
@@ -164,10 +161,9 @@ public class ImageUtils {
         BitmapFactory.Options opt = null;
         if (0 < boundW && 0 < boundH) {
             int[] imgsz = new int[2]; // image size : [0]=width / [1] = height
-            if (false == imageSize(image, imgsz)) {
+            if (!imageSize(image, imgsz))
                 // This is not proper image data
                 return null;
-            }
 
             int[] bsz = new int[2]; // adjusted bitmap size
             boolean bShrink = shrinkFixedRatio(boundW, boundH, imgsz[0], imgsz[1], bsz);
@@ -201,8 +197,6 @@ public class ImageUtils {
 
     /**
      * Compress give bitmap to JPEG formatted image data.
-     * @param bm
-     * @return
      */
     public static byte[]
     compressBitmap(Bitmap bm) {

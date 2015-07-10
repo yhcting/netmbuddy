@@ -43,16 +43,14 @@ import android.app.SearchManager;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.v4.app.FragmentActivity;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
-import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.AnimationUtils;
 import android.widget.AdapterView;
-import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
@@ -67,7 +65,9 @@ import free.yhc.netmbuddy.utils.Utils;
 
 public abstract class YTSearchActivity extends Activity implements
 YTDataHelper.VideoListRespReceiver {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(YTSearchActivity.class);
 
     public static final String KEY_TITLE = "searctitle";
@@ -111,6 +111,7 @@ YTDataHelper.VideoListRespReceiver {
         tv.setText(text);
     }
 
+    @SuppressWarnings("unused")
     protected void
     setTitleText(int resid) {
         TextView tv = (TextView)findViewById(R.id.title);
@@ -206,6 +207,7 @@ YTDataHelper.VideoListRespReceiver {
         setupToolBtn2(tool2Drawable, tool2OnClick);
     }
 
+    @SuppressWarnings("unused")
     @Nullable
     private YTSearchAdapter
     getAdapter() {
@@ -249,7 +251,7 @@ YTDataHelper.VideoListRespReceiver {
 
     private boolean
     handleSearchResult(YTDataHelper helper,
-                       YTDataHelper.VideoListReq req,
+                       @SuppressWarnings("unused") YTDataHelper.VideoListReq req,
                        YTDataHelper.VideoListResp resp) {
         if (mSearchHelper != helper) {
             helper.close(true); // this is dangling helper.
@@ -341,6 +343,7 @@ YTDataHelper.VideoListRespReceiver {
     // Overriding activity
     //
     // ========================================================================
+    @SuppressWarnings("unused")
     private void
     restoreInstanceState(Bundle b) {
         if (null == b)
@@ -359,7 +362,7 @@ YTDataHelper.VideoListRespReceiver {
 
     @Override
     public void
-    onSaveInstanceState(Bundle b) {
+    onSaveInstanceState(@NonNull Bundle b) {
         putBundleString(b, KEY_TEXT, mText);
         putBundleString(b, KEY_CUR_PAGETOKEN, mCurPageToken);
         putBundleString(b, KEY_PREV_PAGETOKEN, mPrevPageToken);

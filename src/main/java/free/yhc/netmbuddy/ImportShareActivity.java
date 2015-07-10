@@ -55,6 +55,8 @@ import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+
 import free.yhc.netmbuddy.core.UnexpectedExceptionHandler;
 import free.yhc.netmbuddy.share.Share;
 import free.yhc.netmbuddy.utils.UiUtils;
@@ -102,6 +104,7 @@ UnexpectedExceptionHandler.Evidence {
 
     private class Importer extends DiagAsyncTask.Worker {
         private final Share.ImporterI _mImporter;
+        @SuppressWarnings("unused")
         private final Share.ImportPrepareResult _mIpr;
 
         private Share.ImportResult _mResult = null;
@@ -113,22 +116,24 @@ UnexpectedExceptionHandler.Evidence {
 
         private CharSequence
         getReportText(boolean cancelled) {
-            int success = 0;
-            int fail = 0;
+            int success;
+            int fail;
             Share.ImportResult r = _mResult;
             if (null != r) {
                 success = r.success.get();
                 fail = r.fail.get();
-            } else
-                if (DBG) P.e("Unexpected Error (returned result is null!)\n"
-                        + "   recovered");
+            } else {
+                if (DBG) P.e("Unexpected Error (returned result is null!)\n" +
+                             "   recovered");
+                return "<null> data";
+            }
 
             CharSequence title = " [ " + Utils.getResString(R.string.app_name) + " ]\n"
                                  + Utils.getResString(R.string.import_) + " : "
-                                     + Utils.getResString(cancelled?
-                                                        R.string.cancelled:
-                                                        R.string.done)
-                                     + "\n"
+                                 + Utils.getResString(cancelled?
+                                                      R.string.cancelled:
+                                                      R.string.done)
+                                 + "\n"
                                  + r.message;
             if (Share.Err.NO_ERR != r.err)
                 title = title + "\n" + Utils.getResString(Err.map(r.err).getMessage());
@@ -185,7 +190,7 @@ UnexpectedExceptionHandler.Evidence {
         onCancelled(DiagAsyncTask task) {
             onEnd(true);
         }
-    };
+    }
 
     private void
     prepareImport() {
@@ -305,11 +310,7 @@ UnexpectedExceptionHandler.Evidence {
                 is = getContentResolver().openInputStream(uri);
             else
                 eAssert(false);
-        } catch (FileNotFoundException e) {
-            UiUtils.showTextToast(this, R.string.msg_fail_to_access_data);
-            finish();
-            return;
-        } catch (SecurityException e) {
+        } catch (FileNotFoundException | SecurityException e) {
             UiUtils.showTextToast(this, R.string.msg_fail_to_access_data);
             finish();
             return;
@@ -364,7 +365,7 @@ UnexpectedExceptionHandler.Evidence {
 
     @Override
     protected void
-    onApplyThemeResource(Resources.Theme theme, int resid, boolean first) {
+    onApplyThemeResource(@NonNull Resources.Theme theme, int resid, boolean first) {
         super.onApplyThemeResource(theme, resid, first);
         // no background panel is shown
         theme.applyStyle(style.Theme_Panel, true);

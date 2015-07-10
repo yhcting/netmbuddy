@@ -37,22 +37,20 @@
 package free.yhc.netmbuddy.share;
 
 import android.database.Cursor;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import static free.yhc.netmbuddy.utils.JsonUtils.jGetString;
-import static free.yhc.netmbuddy.utils.JsonUtils.jGetStrings;
+//import static free.yhc.netmbuddy.utils.JsonUtils.jGetStrings;
 import static free.yhc.netmbuddy.utils.JsonUtils.jGetInt;
 import static free.yhc.netmbuddy.utils.JsonUtils.jGetLong;
-import static free.yhc.netmbuddy.utils.JsonUtils.jGetDouble;
+//import static free.yhc.netmbuddy.utils.JsonUtils.jGetDouble;
 import static free.yhc.netmbuddy.utils.JsonUtils.jGetObject;
 import static free.yhc.netmbuddy.utils.JsonUtils.jGetObjects;
-import static free.yhc.netmbuddy.utils.JsonUtils.jGetBoolean;
-import static free.yhc.netmbuddy.utils.Utils.eAssert;
+//import static free.yhc.netmbuddy.utils.JsonUtils.jGetBoolean;
+//import static free.yhc.netmbuddy.utils.Utils.eAssert;
 
 import free.yhc.netmbuddy.db.ColPlaylist;
 import free.yhc.netmbuddy.db.ColVideo;
@@ -61,7 +59,9 @@ import free.yhc.netmbuddy.utils.JsonUtils.JsonModel;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class DataModel {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(DataModel.class);
 
     static final int DATAMODEL_VERSION = 2; // current share data version.

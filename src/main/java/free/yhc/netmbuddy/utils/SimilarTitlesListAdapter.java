@@ -37,7 +37,6 @@
 package free.yhc.netmbuddy.utils;
 
 import android.content.Context;
-import android.database.Cursor;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
@@ -50,12 +49,14 @@ import free.yhc.netmbuddy.db.DB;
 import free.yhc.netmbuddy.db.DMVideo;
 
 class SimilarTitlesListAdapter extends BaseAdapter {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(SimilarTitlesListAdapter.class);
 
     private final DB mDb;
     private Context mContext;
-    private long[] mVids;;
+    private long[] mVids;
 
     SimilarTitlesListAdapter(Context context,
                              long[] vids) {

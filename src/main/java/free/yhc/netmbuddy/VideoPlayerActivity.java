@@ -38,6 +38,7 @@ package free.yhc.netmbuddy;
 
 import java.util.ArrayList;
 
+import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -91,6 +92,7 @@ UnexpectedExceptionHandler.Evidence {
         SYSTEM,     // current system status
     }
 
+    @SuppressWarnings("unused")
     private void
     printWindowFrames() {
         if (DBG) {
@@ -172,8 +174,7 @@ UnexpectedExceptionHandler.Evidence {
         if (0 >= vw || 0 >= vh)
             return;
 
-        // TODO
-        // Is there good way to get screen size without branching two cases?
+        // TODO : Is there good way to get screen size without branching two cases?
         // Below codes looks dirty to me....
         // But, at this moment, I failed to find any other way...
         //
@@ -318,6 +319,7 @@ UnexpectedExceptionHandler.Evidence {
         infov.setVisibility(View.GONE);
     }
 
+    @SuppressLint("CommitPrefEdits")
     private void
     doChangeVideoQuality(Utils.PrefQuality quality) {
         SharedPreferences.Editor prefEdit = PreferenceManager.getDefaultSharedPreferences(getApplicationContext())
@@ -331,14 +333,14 @@ UnexpectedExceptionHandler.Evidence {
     }
 
     private void
-    changeVideoQuality(View anchor) {
+    changeVideoQuality(@SuppressWarnings("unused") View anchor) {
         String ytvid = mMp.getActiveVideoYtId();
         if (null == ytvid)
             return;
 
         YTHacker hack = RTState.get().getCachedYtHacker(ytvid);
-        final ArrayList<Integer> opts = new ArrayList<Integer>();
-        int i = 0;
+        final ArrayList<Integer> opts = new ArrayList<>();
+        int i;
         for (Utils.PrefQuality q : Utils.PrefQuality.values()) {
             if (mVQuality != q
                 && null != hack
@@ -417,7 +419,7 @@ UnexpectedExceptionHandler.Evidence {
             break;
 
         default:
-            ; // ignore it.
+             // ignore it.
         }
     }
 

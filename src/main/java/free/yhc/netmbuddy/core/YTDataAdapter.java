@@ -68,7 +68,9 @@ import free.yhc.netmbuddy.utils.Utils;
  *
  */
 public class YTDataAdapter {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(YTDataAdapter.class);
 
     public enum Err {
@@ -97,6 +99,7 @@ public class YTDataAdapter {
             _mErr = err;
         }
 
+        @SuppressWarnings("unused")
         public YTApiException(Err err, String msg) {
             super(msg);
             _mErr = err;
@@ -117,6 +120,7 @@ public class YTDataAdapter {
         public String nextPageToken = null;
         public String prevPageToken = null;
         public PageInfo() { }
+        @SuppressWarnings("unused")
         public PageInfo(int totalResults, String nextPageToken, String prevPageToken) {
             this.totalResults = totalResults;
             this.nextPageToken = nextPageToken;
@@ -158,6 +162,7 @@ public class YTDataAdapter {
         public String hint = null;
         public String pageToken = null;
         public int pageSize = -1; // # of max items in one page.
+        @SuppressWarnings("unused")
         public VideoListReq() { }
         public VideoListReq(ReqType type, String hint, String pageToken, int pageSize) {
             this.type = type;
@@ -174,6 +179,7 @@ public class YTDataAdapter {
         public PageInfo page = null;
         public Video[] vids = null;
         public VideoListResp() { }
+        @SuppressWarnings("unused")
         public VideoListResp(PageInfo page, Video[] vids) {
             this.page = page;
             this.vids = vids;

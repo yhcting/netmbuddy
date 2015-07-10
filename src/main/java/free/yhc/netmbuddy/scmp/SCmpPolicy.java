@@ -39,14 +39,16 @@ package free.yhc.netmbuddy.scmp;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class SCmpPolicy {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(SCmpPolicy.class);
 
-    static final float DEF_ORDER_COEFF  = 3.0f;
-    static final float DEF_CONT_ADV     = 4.0f;
+    static final float DEF_ORDER_COEFF = 3.0f;
+    static final float DEF_CONT_ADV = 4.0f;
     // values whose similarity is smaller than "scmpThreshold", are ignored.
     // Larger value(close to 1.0f) leads to better performance.
-    static final float DEF_SCMP_THRESHOLD   = 0.7f;
+    static final float DEF_SCMP_THRESHOLD = 0.7f;
 
     private final float mOrderCoeff;
     private final float mContAdv;
@@ -58,6 +60,7 @@ public class SCmpPolicy {
         mCmpThreshold = DEF_SCMP_THRESHOLD;
     }
 
+    @SuppressWarnings("unused")
     public SCmpPolicy(float orderCoeff, float contAdv, float scmpThreshold) {
         mOrderCoeff = orderCoeff;
         mContAdv = contAdv;

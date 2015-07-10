@@ -58,6 +58,7 @@ public class YTDownloader {
     private static final int MSG_WHAT_CLOSE     = 0;
     private static final int MSG_WHAT_DOWNLOAD  = 1;
 
+    @SuppressWarnings({"unused", "FieldCanBeLocal"})
     private String mProxy = null;
     private DownloadDoneReceiver mDnDoneRcvr = null;
     private BGHandler mBgHandler  = null;
@@ -67,7 +68,7 @@ public class YTDownloader {
         void downloadDone(YTDownloader downloader, DnArg arg, Err err);
     }
 
-    public static enum Err {
+    public enum Err {
         NO_ERR,
         IO_NET,
         IO_FILE,
@@ -139,6 +140,8 @@ public class YTDownloader {
             _mCurOutF = arg.outf;
 
             if (null != _mTmpF)
+                // We did out best. Return value is ignored intentionally.
+                //noinspection ResultOfMethodCallIgnored
                 _mTmpF.delete();
 
             if (DBG) P.v("Start Download : " + arg.ytvid + " => " + arg.outf.getAbsolutePath());
@@ -170,6 +173,8 @@ public class YTDownloader {
                 fos.close();
                 fos = null;
                 // file returned by YTHacker is mpeg format!
+                // We did out best. Return value is ignored intentionally.
+                //noinspection ResultOfMethodCallIgnored
                 _mTmpF.renameTo(arg.outf);
                 sendResult(arg, Err.NO_ERR);
                 if (DBG) P.v("Download Done : " + arg.ytvid);
@@ -190,9 +195,11 @@ public class YTDownloader {
                 if (null != fos)
                     try {
                         fos.close();
-                    } catch (IOException e) {}
+                    } catch (IOException ignored) {}
 
                 if (null != _mTmpF)
+                    // We did out best. Return value is ignored intentionally.
+                    //noinspection ResultOfMethodCallIgnored
                     _mTmpF.delete();
 
                 // assigning object reference is atomic operation in JAVA
@@ -241,19 +248,14 @@ public class YTDownloader {
         switch (err) {
         case NO_ERR:
             return Err.NO_ERR;
-
         case IO_NET:
             return Err.IO_NET;
-
         case NETWORK_UNAVAILABLE:
             return Err.NETWORK_UNAVAILABLE;
-
         case PARSE_HTML:
             return Err.PROTOCOL;
-
         case INTERRUPTED:
             return Err.INTERRUPTED;
-
         default:
             return Err.UNKNOWN;
         }
@@ -264,14 +266,11 @@ public class YTDownloader {
         switch (err) {
         case NO_ERR:
             return Err.NO_ERR;
-
         case HTTPGET:
         case IO_NET:
             return Err.IO_NET;
-
         case INTERRUPTED:
             return Err.INTERRUPTED;
-
         default:
             return Err.UNKNOWN;
         }
@@ -307,10 +306,8 @@ public class YTDownloader {
 
     /**
      *
-     * @param ytvid
-     *   11-character-long youtube video id
-     * @param delay
-     *   real-downloading will be started after 'delay' milliseconds.
+     * @param ytvid 11-character-long youtube video id
+     * @param delay real-downloading will be started after 'delay' milliseconds.
      */
     public Err
     download(final String ytvid, final File outf, final int qscore, final long delay) {
@@ -353,9 +350,8 @@ public class YTDownloader {
 
     public void
     close() {
-        // TODO
+        // TODO : Checking that below code works as expected perfectly, is required.
         // Stop running thread!
-        // Need to check that below code works as expected perfectly.
         // "interrupting thread" is quite annoying and unpredictable job!
         if (null != mBgHandler)
             mBgHandler.close();

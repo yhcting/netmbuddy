@@ -51,7 +51,9 @@ import free.yhc.netmbuddy.utils.Utils;
 
 public abstract class YTSearchAdapter<T> extends BaseAdapter implements
 YTDataHelper.ThumbnailRespReceiver {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(YTSearchAdapter.class);
 
     // So, assign one of them as view tag's key value.
@@ -119,6 +121,7 @@ YTDataHelper.ThumbnailRespReceiver {
         v.setTag(VTAGKEY_VALID, false);
     }
 
+    @SuppressWarnings("unused")
     protected void
     setViewInvalid(int pos) {
         setViewInvalid(mItemViews[pos]);
@@ -173,6 +176,7 @@ YTDataHelper.ThumbnailRespReceiver {
         if (mHelper != helper)
             return; // invalid callback.
 
+        //noinspection StatementWithEmptyBody
         if (YTDataAdapter.Err.NO_ERR != resp.err) {
             ; // TODO set to something else...
         } else {

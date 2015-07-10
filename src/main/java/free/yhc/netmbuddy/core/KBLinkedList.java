@@ -42,10 +42,12 @@ import java.util.LinkedList;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class KBLinkedList<T> {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(KBLinkedList.class);
 
-    private LinkedList<Elem> mL = new LinkedList<Elem>();
+    private LinkedList<Elem> mL = new LinkedList<>();
 
     private static class Elem {
         final Object key;
@@ -65,6 +67,7 @@ public class KBLinkedList<T> {
             return itr.hasNext();
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public T
         next() {
@@ -86,11 +89,13 @@ public class KBLinkedList<T> {
         return mL.add(new Elem(key, item));
     }
 
+    @SuppressWarnings("unused")
     public void
     addFirst(Object key, T item) {
         mL.addFirst(new Elem(key, item));
     }
 
+    @SuppressWarnings("unused")
     public void
     addLast(Object key, T item) {
         mL.addLast(new Elem(key, item));
@@ -129,13 +134,17 @@ public class KBLinkedList<T> {
         return new Iter();
     }
 
+    @SuppressWarnings("unused")
     public T[]
     toArray(T[] a) {
         // NOT TESTED enough yet!
+        @SuppressWarnings("ToArrayCallWithZeroLengthArrayArgument")
         Elem[] es = mL.toArray(new Elem[0]);
         if (a.length < es.length)
+            //noinspection unchecked
             a = (T[])Utils.newArray(a.getClass().getComponentType(), es.length);
         for (int i = 0; i < es.length; i++)
+            //noinspection unchecked
             a[i] = (T)es[i].item;
         return a;
     }

@@ -42,13 +42,12 @@ import org.json.JSONObject;
 
 import java.lang.reflect.Array;
 
-import free.yhc.netmbuddy.Err;
-import free.yhc.netmbuddy.db.DB;
-
 import static free.yhc.netmbuddy.utils.Utils.eAssert;
 
 public class JsonUtils {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(JsonUtils.class);
 
     public static abstract class JsonModel {
@@ -64,6 +63,7 @@ public class JsonUtils {
         }
     }
 
+    @SuppressWarnings("unused")
     public static JSONObject
     jGetJObject(JSONObject jo, String key) {
         if (null == jo)
@@ -86,6 +86,7 @@ public class JsonUtils {
         }
     }
 
+    @SuppressWarnings("unused")
     public static Object
     jGet(JSONObject jo, String key) {
         if (null == jo)
@@ -186,7 +187,7 @@ public class JsonUtils {
             return null;
         try {
             JSONObject o = jo.getJSONObject(key);
-            K r = null;
+            K r;
             try {
                 r = cls.newInstance();
             } catch (Exception e) {
@@ -205,6 +206,7 @@ public class JsonUtils {
         JSONArray ja = jGetJArray(jo, key);
         if (null == ja)
             return null;
+        @SuppressWarnings("unchecked")
         K[] r = (K[]) Array.newInstance(cls, ja.length());
         try {
             for (int i = 0; i < r.length; i++) {

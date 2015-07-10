@@ -64,7 +64,9 @@ import free.yhc.netmbuddy.utils.Utils;
 //
 // ============================================================================
 class Importer implements ImporterI {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(Importer.class);
 
     private final ZipInputStream mZis;

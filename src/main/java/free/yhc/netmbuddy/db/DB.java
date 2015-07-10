@@ -36,28 +36,26 @@
 package free.yhc.netmbuddy.db;
 
 import static free.yhc.netmbuddy.utils.Utils.eAssert;
-import static free.yhc.netmbuddy.utils.Utils.isValidValue;
 
 import java.io.File;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-import android.support.annotation.Nullable;
 
 import free.yhc.netmbuddy.core.UnexpectedExceptionHandler;
-import free.yhc.netmbuddy.core.YTDataAdapter;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class DB implements
 UnexpectedExceptionHandler.Evidence {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(DB.class);
 
     public static final long INVALID_PLAYLIST_ID = -1;
@@ -118,6 +116,7 @@ UnexpectedExceptionHandler.Evidence {
             return DBUtils.decodeBookmarks(bookmarkString);
         }
 
+        @SuppressWarnings("unused")
         public Bookmark() { }
         public Bookmark(String aName, int aPos) {
             name = aName;
@@ -239,15 +238,16 @@ UnexpectedExceptionHandler.Evidence {
     // ----------------------------------------------------------------------
     private void
     markBooleanWatcherChanged(HashMap<Object, Boolean> hm) {
+        //noinspection SynchronizationOnLocalVariableOrMethodParameter
         synchronized (hm) {
-            Iterator<Object> itr = hm.keySet().iterator();
-             while (itr.hasNext())
-                hm.put(itr.next(), true);
+            for (Object o : hm.keySet())
+                hm.put(o, true);
         }
     }
 
     private void
     registerToBooleanWatcher(HashMap<Object, Boolean> hm, Object key) {
+        //noinspection SynchronizationOnLocalVariableOrMethodParameter
         synchronized (hm) {
             hm.put(key, false);
         }
@@ -255,6 +255,7 @@ UnexpectedExceptionHandler.Evidence {
 
     private boolean
     isRegisteredToBooleanWatcher(HashMap<Object, Boolean> hm, Object key) {
+        //noinspection SynchronizationOnLocalVariableOrMethodParameter
         synchronized (hm) {
             return (null != hm.get(key));
         }
@@ -262,6 +263,7 @@ UnexpectedExceptionHandler.Evidence {
 
     private void
     unregisterToBooleanWatcher(HashMap<Object, Boolean> hm, Object key) {
+        //noinspection SynchronizationOnLocalVariableOrMethodParameter
         synchronized (hm) {
             hm.remove(key);
         }
@@ -269,6 +271,7 @@ UnexpectedExceptionHandler.Evidence {
 
     private boolean
     isBooleanWatcherUpdated(HashMap<Object, Boolean> hm, Object key) {
+        //noinspection SynchronizationOnLocalVariableOrMethodParameter
         synchronized (hm) {
             return hm.get(key);
         }
@@ -733,6 +736,7 @@ UnexpectedExceptionHandler.Evidence {
     /**
      * Does playlist contains given video?
      */
+    @SuppressWarnings("unused")
     public boolean
     containsVideo(long plid, String ytvid) {
         Cursor c = mDb.rawQuery(DBUtils.buildQueryVideosSQL(
@@ -840,6 +844,7 @@ UnexpectedExceptionHandler.Evidence {
         return updateVideo(ColVideo.ID, vid, ColVideo.BOOKMARKS, bmsstr);
     }
 
+    @SuppressWarnings("unused")
     public int
     deleteBookmark(long vid, String name, int position) {
         String bmsstr = (String)getVideoInfo(vid, ColVideo.BOOKMARKS);
@@ -854,6 +859,7 @@ UnexpectedExceptionHandler.Evidence {
         return updateVideo(ColVideo.VIDEOID, ytvid, ColVideo.BOOKMARKS, bmsstr);
     }
 
+    @SuppressWarnings("unused")
     public Bookmark[]
     getBookmarks(long vid) {
         String bmsstr = (String)getVideoInfo(vid, ColVideo.BOOKMARKS);
@@ -956,6 +962,7 @@ UnexpectedExceptionHandler.Evidence {
                          null, null, null, DBUtils.buildSQLOrderBy(false, ColVideo.TITLE, true));
     }
 
+    @SuppressWarnings("unused")
     public Cursor
     queryVideo(long vid, ColVideo[] cols) {
         eAssert(cols.length > 0);
@@ -1031,7 +1038,7 @@ UnexpectedExceptionHandler.Evidence {
             return new long[0];
         }
 
-        ArrayList<Long> pls = new ArrayList<Long>();
+        ArrayList<Long> pls = new ArrayList<>();
         do {
             long plid = plc.getLong(0);
             if (containsVideo(plid, vid))
@@ -1039,7 +1046,7 @@ UnexpectedExceptionHandler.Evidence {
         } while (plc.moveToNext());
         plc.close();
 
-        return Utils.convertArrayLongTolong(pls.toArray(new Long[0]));
+        return Utils.convertArrayLongTolong(pls.toArray(new Long[pls.size()]));
     }
 
     // ----------------------------------------------------------------------

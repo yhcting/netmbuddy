@@ -47,7 +47,6 @@ import java.net.UnknownHostException;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.http.HttpEntity;
-import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
@@ -101,6 +100,7 @@ public class NetLoader {
             return _mErr;
         }
 
+        @SuppressWarnings("unused")
         public Object
         extra() {
             return _mExtra;
@@ -119,7 +119,9 @@ public class NetLoader {
     }
 
     private HttpClient
-    newHttpClient(String proxyHost, int port, String uastring) {
+    newHttpClient(@SuppressWarnings("unused") String proxyHost,
+                  @SuppressWarnings("unused") int port,
+                  String uastring) {
         // TODO Proxy is NOT supported yet. These are ignored.
         HttpClient hc = new DefaultHttpClient();
         HttpParams params = hc.getParams();
@@ -233,10 +235,8 @@ public class NetLoader {
                 int statusCode = httpResp.getStatusLine().getStatusCode();
 
                 InputStream contentStream = null;
-                String      contentType = null;
-                if (HttpUtils.SC_NO_CONTENT == statusCode) {
-                    ;
-                } else {
+                String contentType = null;
+                if (HttpUtils.SC_NO_CONTENT != statusCode) {
                     HttpEntity httpEntity = httpResp.getEntity();
 
                     if (null == httpEntity) {
@@ -256,7 +256,7 @@ public class NetLoader {
                 switch (statusCode) {
                 case HttpUtils.SC_OK:
                 case HttpUtils.SC_NO_CONTENT:
-                    ;// expected response. let's move forward
+                    // This is expected response. let's move forward
                     break;
 
                 default:
@@ -289,13 +289,12 @@ public class NetLoader {
                 if (0 >= retry)
                     throw new LocalException(Err.IO_NET);
 
-                ; // continue next retry after some time.
+                // continue next retry after some time.
                 try {
                     Thread.sleep(300);
                 } catch (InterruptedException ie) {
-                    throw new LocalException(Err.INTERRUPTED);
+                    throw new LocalException(Err.IO_NET);
                 }
-                throw new LocalException(Err.IO_NET);
             } catch (IOException e) {
                 if (DBG) P.v("NetLoader IOException : " + e.getMessage());
                 throw new LocalException(Err.IO_NET);

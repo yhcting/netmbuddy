@@ -50,7 +50,9 @@ import free.yhc.netmbuddy.utils.UiUtils;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class YTPlayerVideoListAdapter extends BaseAdapter {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(YTPlayerVideoListAdapter.class);
 
     private final int mActiveTextColor;

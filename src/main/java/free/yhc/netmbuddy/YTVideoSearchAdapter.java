@@ -38,7 +38,6 @@ package free.yhc.netmbuddy;
 
 import static free.yhc.netmbuddy.utils.Utils.eAssert;
 
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 
@@ -50,12 +49,13 @@ import android.widget.TextView;
 import free.yhc.netmbuddy.db.DB;
 import free.yhc.netmbuddy.core.Policy;
 import free.yhc.netmbuddy.core.YTPlayer;
-import free.yhc.netmbuddy.core.YTDataHelper;
 import free.yhc.netmbuddy.core.YTDataAdapter;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class YTVideoSearchAdapter extends YTSearchAdapter<YTDataAdapter.Video> {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(YTVideoSearchAdapter.class);
 
     // Check Button Tag Key
@@ -196,11 +196,13 @@ public class YTVideoSearchAdapter extends YTSearchAdapter<YTDataAdapter.Video> {
         return mItems[pos].id;
     }
 
+    @SuppressWarnings("unused")
     public String
     getItemPlaytime(int pos) {
         return Utils.secsToMinSecText(mItems[pos].playTimeSec);
     }
 
+    @SuppressWarnings("unused")
     public String
     getItemThumbnailUrl(int pos) {
         return mItems[pos].thumbnailUrl;
@@ -233,22 +235,19 @@ public class YTVideoSearchAdapter extends YTSearchAdapter<YTDataAdapter.Video> {
 
     public YTPlayer.Video
     getYTPlayerVideo(int pos) {
-        int playtime = 0;
-        try {
-            playtime = Integer.parseInt(getItemPlaytime(pos));
-        } catch (NumberFormatException ignored) { }
-
         return new YTPlayer.Video(getItemVideoId(pos),
                                   getItemTitle(pos),
                                   getItemVolume(pos),
                                   0);
     }
 
+    @SuppressWarnings("unused")
     public boolean
     isItemChecked(int pos) {
         return mCheckedMap.containsKey(pos);
     }
 
+    @SuppressWarnings("unused")
     public int
     getNrCheckedItems() {
         return mCheckedMap.size();
@@ -256,6 +255,7 @@ public class YTVideoSearchAdapter extends YTSearchAdapter<YTDataAdapter.Video> {
 
     public int[]
     getCheckedItem() {
+        //noinspection ToArrayCallWithZeroLengthArrayArgument
         return Utils.convertArrayIntegerToint(mCheckedMap.keySet().toArray(new Integer[0]));
     }
 
@@ -273,6 +273,7 @@ public class YTVideoSearchAdapter extends YTSearchAdapter<YTDataAdapter.Video> {
         mCheckListener = listener;
     }
 
+    @SuppressWarnings("unused")
     public void
     unsetCheckStateListener() {
         mCheckListener = null;

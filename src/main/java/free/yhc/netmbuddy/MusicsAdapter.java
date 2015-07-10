@@ -57,7 +57,9 @@ import free.yhc.netmbuddy.utils.UiUtils;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class MusicsAdapter extends ResourceCursorAdapter {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(MusicsAdapter.class);
 
     private static final int LAYOUT = R.layout.musics_row;
@@ -163,6 +165,7 @@ public class MusicsAdapter extends ResourceCursorAdapter {
         return (int)(long)getCursorInfo(pos, ColVideo.VOLUME);
     }
 
+    @SuppressWarnings("unused")
     public int
     getMusicPlaytime(int pos) {
         return (int)(long)getCursorInfo(pos, ColVideo.PLAYTIME);
@@ -191,6 +194,7 @@ public class MusicsAdapter extends ResourceCursorAdapter {
      */
     public int[]
     getCheckedMusics() {
+        //noinspection ToArrayCallWithZeroLengthArrayArgument
         return Utils.convertArrayIntegerToint(mCheckedMap.keySet().toArray(new Integer[0]));
     }
 
@@ -210,6 +214,7 @@ public class MusicsAdapter extends ResourceCursorAdapter {
         notifyDataSetChanged();
     }
 
+    @SuppressWarnings("unused")
     public void
     reloadCursor() {
         changeCursor(createCursor());

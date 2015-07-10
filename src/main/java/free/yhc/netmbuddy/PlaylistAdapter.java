@@ -49,18 +49,25 @@ import free.yhc.netmbuddy.utils.UiUtils;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class PlaylistAdapter extends ResourceCursorAdapter {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(PlaylistAdapter.class);
 
     private static final int LAYOUT = R.layout.playlist_row;
 
+    private static final ColPlaylist[] sDBProjection = {
+        ColPlaylist.ID,
+        ColPlaylist.TITLE,
+        ColPlaylist.SIZE
+    };
     private static final int COLI_ID        = 0;
     private static final int COLI_TITLE     = 1;
     private static final int COLI_SIZE      = 2;
 
-    private final Context                     mContext;
-    private final OnItemButtonClickListener   mOnItemBtnClick;
-    private final View.OnClickListener        mDetailListOnClick = new View.OnClickListener() {
+    private final Context mContext;
+    private final OnItemButtonClickListener mOnItemBtnClick;
+    private final View.OnClickListener mDetailListOnClick = new View.OnClickListener() {
         @Override
         public void
         onClick(View v) {
@@ -79,16 +86,12 @@ public class PlaylistAdapter extends ResourceCursorAdapter {
 
     private Cursor
     createCursor() {
-        return DB.get().queryPlaylist(new ColPlaylist[] {
-                ColPlaylist.ID,
-                ColPlaylist.TITLE,
-                ColPlaylist.SIZE
-        });
+        return DB.get().queryPlaylist(sDBProjection);
     }
 
     public PlaylistAdapter(Context context,
                            OnItemButtonClickListener listener) {
-        super(context, LAYOUT, null);
+        super(context, LAYOUT, null, true);
         mContext        = context;
         mOnItemBtnClick = listener;
     }

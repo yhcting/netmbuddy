@@ -39,7 +39,9 @@ package free.yhc.netmbuddy.core;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class HttpUtils {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(HttpUtils.class);
 
     // Statuc Codes
@@ -51,6 +53,7 @@ public class HttpUtils {
     public static final int SC_NO_CONTENT   = 204;
 
     // Redirection      : 3xx
+    @SuppressWarnings("unused")
     public static final int SC_FOUND        = 302;
 
     // Client Error     : 4xx

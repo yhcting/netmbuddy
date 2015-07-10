@@ -48,13 +48,13 @@ import free.yhc.netmbuddy.db.DB.Col;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class DBUtils {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(DBUtils.class);
 
     /**
      * Convert Col[] to string[] of column's name
-     * @param cols
-     * @return
      */
     static String[]
     getColNames(Col[] cols) {
@@ -265,7 +265,7 @@ public class DBUtils {
             return "";
 
         String s = "";
-        int i = 0;
+        int i;
         for (i = 0; i < bms.length - 1; i++)
             s += encodeBookmark(bms[i]) + DB.BOOKMARK_DELIMITER;
         s += encodeBookmark(bms[i]);
@@ -286,7 +286,8 @@ public class DBUtils {
     static String
     deleteBookmark(String bmsstr, DB.Bookmark bm) {
         DB.Bookmark[] bmarr = decodeBookmarks(bmsstr);
-        if (0 == bmarr.length)
+        if (null == bmarr
+            || 0 == bmarr.length)
             return ""; // nothing to delete.
         DB.Bookmark[] newBmarr = new DB.Bookmark[bmarr.length - 1];
         // to avoid deleting more than one item.

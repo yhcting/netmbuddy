@@ -55,7 +55,9 @@ import free.yhc.netmbuddy.ytapiv3.YTApiFacade;
 
 
 public class YTDataHelper {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(YTDataHelper.class);
 
     private static final int MSG_WHAT_OPEN       = 0;
@@ -80,6 +82,7 @@ public class YTDataHelper {
     public static class VideoListReq {
         public Object opaque = null;
         public YTDataAdapter.VideoListReq yt = null;
+        @SuppressWarnings("unused")
         public VideoListReq() { }
         public VideoListReq(Object opaque, YTDataAdapter.VideoListReq yt) {
             this.opaque = opaque;
@@ -91,6 +94,7 @@ public class YTDataHelper {
         public YTDataAdapter.Err err = null;
         public Object opaque = null;
         public YTDataAdapter.VideoListResp yt = null;
+        @SuppressWarnings("unused")
         public VideoListResp() { }
         public VideoListResp(YTDataAdapter.Err err,
                              Object opaque,
@@ -106,6 +110,7 @@ public class YTDataHelper {
         public String url = null;
         public int width = -1;
         public int height = -1;
+        @SuppressWarnings("unused")
         public ThumbnailReq() { }
         public ThumbnailReq(Object opaque,
                             String url,
@@ -122,6 +127,7 @@ public class YTDataHelper {
         public YTDataAdapter.Err err;
         public Object opaque = null;
         public Bitmap bm = null;
+        @SuppressWarnings("unused")
         public ThumbnailResp() { }
         public ThumbnailResp(YTDataAdapter.Err err,
                              Object opaque,
@@ -309,6 +315,7 @@ public class YTDataHelper {
         }
     }
 
+    @SuppressWarnings("unused")
     private static YTDataAdapter.Err
     map(NetLoader.Err err, Object extra) {
         switch (err) {
@@ -457,9 +464,8 @@ public class YTDataHelper {
 
     public void
     close(boolean interrupt) {
-        // TODO
+        // TODO checking that below code works as expected perfectly, is required.
         // Stop running thread!
-        // Need to check that below code works as expected perfectly.
         // "interrupting thread" is quite annoying and unpredictable job!
         if (null != mBgHandler) {
             mBgHandler.close(interrupt);

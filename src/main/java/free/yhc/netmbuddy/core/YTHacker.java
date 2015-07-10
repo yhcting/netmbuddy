@@ -74,9 +74,9 @@ public class YTHacker {
     private static final int YTVID_LENGTH = 11;
     private static final int YTQSCORE_INVALID = -1;
 
-    // TODO
+    // TODO Need to verify below tags again
     // This is from experimental result and hacking script code.
-    // Need to verify below tags again!
+    @SuppressWarnings("unused")
     private static final int YTSTREAMTAG_INVALID     = -1;
 
     private static final int YTSTREAMTAG_MPEG_1080p  = 37;
@@ -87,13 +87,20 @@ public class YTHacker {
     private static final int YTSTREAMTAG_3GPP_240p   = 36;
     private static final int YTSTREAMTAG_3GPP_144p   = 17;
 
+    @SuppressWarnings("unused")
     private static final int YTSTREAMTAG_WEBM_1080p  = 46;
+    @SuppressWarnings("unused")
     private static final int YTSTREAMTAG_WEBM_720p   = 45;
+    @SuppressWarnings("unused")
     private static final int YTSTREAMTAG_WEBM_480p   = 44;
+    @SuppressWarnings("unused")
     private static final int YTSTREAMTAG_WEBM_360p   = 43;
 
+    @SuppressWarnings("unused")
     private static final int YTSTREAMTAG_FLV_480p    = 35;
+    @SuppressWarnings("unused")
     private static final int YTSTREAMTAG_FLV_360p    = 34;
+    @SuppressWarnings("unused")
     private static final int YTSTREAMTAG_FLV_240p    = 5;
 
     private static final Pattern sYtUrlStreamMapPattern
@@ -109,7 +116,7 @@ public class YTHacker {
     private static final Pattern sYtUrlGenerate204Pattern
         = Pattern.compile(".*\"(http(s)?\\:.+\\/generate_204[^\"]*)\".*");
 
-    private final NetLoader mLoader = new NetLoader();;
+    private final NetLoader mLoader = new NetLoader();
     private final String mYtvid;
     private final Object mUser;
     private final YtHackListener mListener;
@@ -200,8 +207,7 @@ public class YTHacker {
             case YTSTREAMTAG_3GPP_144p:
                 return YTQUALITY_SCORE_LOWEST;
             default:
-                // TODO
-                // Check it!
+                // TODO : Check it for additional formats!
                 // Webm and Flv should be considered here?
                 // Webm and Flv format is NOT used!
                 return YTQSCORE_INVALID;
@@ -247,6 +253,7 @@ public class YTHacker {
             return ve;
         }
 
+        @SuppressWarnings("unused")
         static String
         dump(YtVideoElem e) {
             return "[Video Elem]\n"
@@ -327,13 +334,13 @@ public class YTHacker {
                 if (m.matches()) {
                     line = m.group(1);
                     String[] vidElemUrls = line.split(",");
-                    ArrayList<YtVideoElem> al = new ArrayList<YtVideoElem>(vidElemUrls.length);
+                    ArrayList<YtVideoElem> al = new ArrayList<>(vidElemUrls.length);
                     for (String s : vidElemUrls) {
                         YtVideoElem ve = YtVideoElem.parse(s);
                         if (null != ve)
                             al.add(ve);
                     }
-                    result.vids = al.toArray(new YtVideoElem[0]);
+                    result.vids = al.toArray(new YtVideoElem[al.size()]);
                 }
             }
         }
@@ -431,8 +438,7 @@ public class YTHacker {
      * So, it is NOT 100% guaranteed that correct url is returned.
      * But, I'm strongly sure that return value is valid and correct based on my experience.
      * That's the reason why this function is member of 'YTHacker'(Not YTSearchHeler).
-     * @param ytvid
-     * @return
+     * @param ytvid Youtube video id
      */
     public static String
     getYtVideoThumbnailUrl(String ytvid) {
@@ -517,10 +523,9 @@ public class YTHacker {
 
     /**
      *
-     * @param quality
+     * @param quality Quality value. See YTQUALITY_SCORE_XXX
      * @param exact true : exact matching is required.
      *              false : best-fit is found.
-     * @return
      */
     public YtVideo
     getVideo(int quality, boolean exact) {
@@ -530,11 +535,10 @@ public class YTHacker {
 
         // Select video that has closest quality score
         YtVideoElem ve = null;
-        int qgap = -1;
         int curgap = -1;
         for (YtVideoElem e : mYtr.vids) {
             if (YTQSCORE_INVALID != e.qscore) {
-                qgap = quality - e.qscore;
+                int qgap = quality - e.qscore;
                 qgap = qgap < 0? -qgap: qgap;
                 if (null == ve || qgap < curgap) {
                     ve = e;

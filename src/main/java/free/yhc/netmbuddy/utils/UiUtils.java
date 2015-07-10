@@ -181,6 +181,7 @@ public class UiUtils {
         return dialog;
     }
 
+    @SuppressWarnings("unused")
     public static AlertDialog
     createAlertDialog(Context context, int icon, int title, int message) {
         eAssert(0 != title);
@@ -242,6 +243,7 @@ public class UiUtils {
         return dialog;
     }
 
+    @SuppressWarnings("unused")
     private static AlertDialog
     createEditTextDialog(Context context, View layout, int title) {
         return createEditTextDialog(context, layout, context.getResources().getText(title));
@@ -340,6 +342,7 @@ public class UiUtils {
                                           action);
     }
 
+    @SuppressWarnings("unused")
     public static AlertDialog
     buildOneLineEditTextDialog(Context context,
                                CharSequence title,
@@ -365,10 +368,10 @@ public class UiUtils {
     }
 
     public static AlertDialog
-    buildPopupMenuDialog(final Activity         activity,
-                         final OnMenuSelected   action,
-                         final int              diagTitle,
-                         final int[]            menuTitles) {
+    buildPopupMenuDialog(final Activity activity,
+                         final OnMenuSelected action,
+                         final int diagTitle,
+                         final int[] menuTitles) {
         final CharSequence[] items = new CharSequence[menuTitles.length];
         for (int i = 0; i < menuTitles.length; i++)
             items[i] = activity.getResources().getText(menuTitles[i]);
@@ -387,13 +390,13 @@ public class UiUtils {
     }
 
     public static AlertDialog
-    buildSelectPlaylistDialog(final DB                  db,
-                              final Context             context,
-                              final int                 diagTitle,
-                              final String[]            userMenuStrings,
-                              final OnPlaylistSelected  action,
-                              long                      plidExcluded,
-                              final Object              user) {
+    buildSelectPlaylistDialog(final DB db,
+                              final Context context,
+                              final int diagTitle,
+                              final String[] userMenuStrings,
+                              final OnPlaylistSelected action,
+                              long plidExcluded,
+                              final Object tag) {
         final String[] userMenus = (null == userMenuStrings)? new String[0]: userMenuStrings;
 
         // Create menu list
@@ -401,10 +404,10 @@ public class UiUtils {
                                                               ColPlaylist.TITLE });
 
         final int iTitle = c.getColumnIndex(ColPlaylist.TITLE.getName());
-        final int iId    = c.getColumnIndex(ColPlaylist.ID.getName());
+        final int iId = c.getColumnIndex(ColPlaylist.ID.getName());
 
-        LinkedList<String> menul = new LinkedList<String>();
-        LinkedList<Long>   idl   = new LinkedList<Long>();
+        LinkedList<String> menul = new LinkedList<>();
+        LinkedList<Long> idl = new LinkedList<>();
 
         for (int i = 0; i < userMenus.length; i++) {
             menul.add(userMenus[i]);
@@ -425,14 +428,14 @@ public class UiUtils {
         }
         c.close();
 
-        final String[] menus = menul.toArray(new String[0]);
-        final long[]   ids   = Utils.convertArrayLongTolong(idl.toArray(new Long[0]));
+        final String[] menus = menul.toArray(new String[menul.size()]);
+        final long[] ids = Utils.convertArrayLongTolong(idl.toArray(new Long[idl.size()]));
 
         AlertDialog.Builder bldr = new AlertDialog.Builder(context);
         if (diagTitle > 0)
             bldr.setTitle(diagTitle);
         ArrayAdapter<String> adapter
-            = new ArrayAdapter<String>(context, android.R.layout.select_dialog_item, menus);
+            = new ArrayAdapter<>(context, android.R.layout.select_dialog_item, menus);
         bldr.setAdapter(adapter, new DialogInterface.OnClickListener() {
             @Override
             public void
@@ -441,7 +444,7 @@ public class UiUtils {
                 dialog.dismiss();
                 if (userMenus.length > which) {
                     // User menu is selected.
-                    action.onUserMenu(which, user);
+                    action.onUserMenu(which, tag);
                 } else if (userMenus.length == which) {
                     // Need to get new playlist name.
                     UiUtils.EditTextAction edAction = new UiUtils.EditTextAction() {
@@ -465,13 +468,13 @@ public class UiUtils {
                                 return;
                             }
 
-                            action.onPlaylist(plid, user);
+                            action.onPlaylist(plid, tag);
                         }
                     };
                     UiUtils.buildOneLineEditTextDialog(context, R.string.enter_playlist_title, edAction)
-                    .show();
+                           .show();
                 } else
-                    action.onPlaylist(ids[which], user);
+                    action.onPlaylist(ids[which], tag);
             }
         });
         return bldr.create();
@@ -485,8 +488,6 @@ public class UiUtils {
      * NOTE
      * If exception like "Exception : try to used recycled bitmap ..." is shown up,
      *   read and understand what this function does with highest priority!
-     * @param v
-     * @param imgdata
      */
     public static void
     setThumbnailImageView(ImageView v, byte[] imgdata) {
@@ -603,13 +604,13 @@ public class UiUtils {
     }
 
     public static void
-    doAddVideosTo(final Activity                activity,
-                  final Object                  user,
-                  final OnPostExecuteListener   listener,
-                  final long                    dstPlid,
-                  final long                    srcPlid,
-                  final long[]                  vids,
-                  final boolean                 move) {
+    doAddVideosTo(final Activity activity,
+                  final Object user,
+                  final OnPostExecuteListener listener,
+                  final long dstPlid,
+                  final long srcPlid,
+                  final long[] vids,
+                  final boolean move) {
         DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
             @Override
             public void
@@ -627,11 +628,11 @@ public class UiUtils {
                         DB.Err err = db.insertVideoToPlaylist(dstPlid, mid);
                         if (DB.Err.NO_ERR != err) {
                             // Error Case
-                            if (DB.Err.DUPLICATED != err)
-                                return Err.DB_DUPLICATED;
-                            // From here : DB_DUPLICATED Case.
-                            else if (1 == vids.length && !move)
+                            if (DB.Err.DUPLICATED != err
+                                || 1 == vids.length && !move)
                                 return Err.map(err);
+
+                            // From here : DB_DUPLICATED Case.
                         }
 
                         // "Insertion is OK"
@@ -658,12 +659,12 @@ public class UiUtils {
     }
 
     public static void
-    addVideosTo(final Activity                activity,
-                final Object                  user,
-                final OnPostExecuteListener   listener,
-                final long                    plid,
-                final long[]                  vids,
-                final boolean                 move) {
+    addVideosTo(final Activity activity,
+                final Object tag,
+                final OnPostExecuteListener listener,
+                final long plid,
+                final long[] vids,
+                final boolean move) {
         final long srcPlid = UiUtils.isUserPlaylist(plid)? plid: DB.INVALID_PLAYLIST_ID;
         UiUtils.OnPlaylistSelected action = new UiUtils.OnPlaylistSelected() {
             @Override
@@ -684,7 +685,7 @@ public class UiUtils {
                                           null,
                                           action,
                                           srcPlid,
-                                          null)
+                                          tag)
                .show();
     }
 
@@ -710,7 +711,7 @@ public class UiUtils {
                 else
                     strTimePlayed = df.format(new Date(_mDmb.extra.timePlayed));
 
-                DB.Bookmark[] bookmarks; ;
+                DB.Bookmark[] bookmarks;
                 if (null == _mDmb.bookmarks)
                     // Unexpected error is ignored.
                     bookmarks = new DB.Bookmark[0];
@@ -837,8 +838,8 @@ public class UiUtils {
                 scmp.setCmpParameter(title, true, null);
                 Cursor c = null;
                 try {
-                    final int COLI_ID       = 0;
-                    final int COLI_TITLE    = 1;
+                    final int COLI_ID = 0;
+                    final int COLI_TITLE = 1;
                     c = DB.get().queryVideos(new ColVideo[] { ColVideo.ID,
                                                               ColVideo.TITLE },
                                              null,
@@ -897,8 +898,9 @@ public class UiUtils {
                 bldr.setView(lv);
                 final AlertDialog diag = bldr.create();
                 final SimilarTitlesListAdapter adapter
-                    = new SimilarTitlesListAdapter(activity,
-                                                   Utils.convertArrayLongTolong(mVids.toArray(new Long[0])));
+                    = new SimilarTitlesListAdapter(
+                        activity,
+                        Utils.convertArrayLongTolong(mVids.toArray(new Long[mVids.size()])));
                 lv.setAdapter(adapter);
                 diag.show();
             }

@@ -79,11 +79,14 @@ import free.yhc.netmbuddy.core.Policy;
 import free.yhc.netmbuddy.core.RTState;
 
 public class Utils {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Logger(Utils.class);
 
     //private static final boolean DBG    = false;
     private static final boolean LOGF = false;
+    @SuppressWarnings("unused")
     private static final String TAG = "[NetMBuddy]";
 
     // Value SHOULD match xml preference value for title tts.
@@ -91,7 +94,7 @@ public class Utils {
     private static final int TITLE_TTS_TAIL = 0x01; // tts at the end
 
     // This is only for debugging.
-    private static boolean  sInitialized = false;
+    private static boolean sInitialized = false;
 
     // For debugging
     private static PrintWriter sLogWriter = null;
@@ -102,8 +105,8 @@ public class Utils {
 
     // Even if these two variables are not 'final', those should be handled like 'final'
     //   because those are set only at init() function, and SHOULD NOT be changed.
-    private static Context  sAppContext = null;
-    private static Handler  sUiHandler = null;
+    private static Context sAppContext = null;
+    private static Handler sUiHandler = null;
 
     private static SharedPreferences sPrefs = null;
     private static TimeElemComparator sTimeElemComparator = new TimeElemComparator();
@@ -208,21 +211,27 @@ public class Utils {
         if (!sInitialized)
             sInitialized = true;
 
+        //noinspection ResultOfMethodCallIgnored
         new File(Policy.APPDATA_DIR).mkdirs();
+        //noinspection ResultOfMethodCallIgnored
         new File(Policy.APPDATA_VIDDIR).mkdirs();
+        //noinspection ResultOfMethodCallIgnored
         new File(Policy.APPDATA_LOGDIR).mkdirs();
 
         // Clear/Create cache directory!
         File cacheF = new File(Policy.APPDATA_CACHEDIR);
         FileUtils.removeFileRecursive(cacheF, cacheF);
+        //noinspection ResultOfMethodCallIgnored
         cacheF.mkdirs();
 
         // Clear/Make temp directory!
         File tempF = new File(Policy.APPDATA_TMPDIR);
         FileUtils.removeFileRecursive(tempF, tempF);
+        //noinspection ResultOfMethodCallIgnored
         tempF.mkdirs();
 
         if (LOGF) {
+            //noinspection ResultOfMethodCallIgnored
             new File(Policy.APPDATA_LOGDIR).mkdirs();
             String dateText = DateFormat
                                 .getDateTimeInstance(DateFormat.MEDIUM,
@@ -264,10 +273,12 @@ public class Utils {
             pri = aPri;
         }
 
+        @SuppressWarnings("unused")
         String pref() {
             return pref;
         }
 
+        @SuppressWarnings("unused")
         int pri() {
             return pri;
         }
@@ -280,10 +291,12 @@ public class Utils {
         }
         // For logging
         public void v(String msg) { log(_mCls, LogLV.V, msg); }
+        @SuppressWarnings("unused")
         public void d(String msg) { log(_mCls, LogLV.D, msg); }
         public void i(String msg) { log(_mCls, LogLV.I, msg); }
         public void w(String msg) { log(_mCls, LogLV.W, msg); }
         public void e(String msg) { log(_mCls, LogLV.E, msg); }
+        @SuppressWarnings("unused")
         public void f(String msg) { log(_mCls, LogLV.F, msg); }
     }
 
@@ -295,6 +308,7 @@ public class Utils {
         StackTraceElement ste = Thread.currentThread().getStackTrace()[5];
         msg = ste.getClassName() + "/" + ste.getMethodName() + "(" + ste.getLineNumber() + ") : " + msg;
 
+        //noinspection PointlessBooleanExpression
         if (!LOGF) {
             switch(lv) {
             case V: Log.v(cls.getSimpleName(), msg); break;
@@ -360,8 +374,6 @@ public class Utils {
     /**
      * Is is valid string?
      * Valid means "Not NULL and Not empty".
-     * @param v
-     * @return
      */
     public static boolean
     isValidValue(CharSequence v) {
@@ -370,11 +382,9 @@ public class Utils {
 
     /**
      * Is any available active network at this device?
-     * @return
      */
     public static boolean
     isNetworkAvailable() {
-
         ConnectivityManager cm = (ConnectivityManager)getAppContext().getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo ni;
 
@@ -383,10 +393,8 @@ public class Utils {
         else
             ni = cm.getActiveNetworkInfo();
 
-        if (null != ni)
-            return ni.isConnectedOrConnecting();
-        else
-            return false;
+        return null != ni
+               && ni.isConnectedOrConnecting();
     }
 
     public static String
@@ -394,7 +402,7 @@ public class Utils {
         ActivityManager am = (ActivityManager)getAppContext().getSystemService(Context.ACTIVITY_SERVICE);
         List<ActivityManager.RunningTaskInfo> tasks = am.getRunningTasks(1);
         ActivityManager.RunningTaskInfo ar = tasks.get(0);
-        return ar.topActivity.getClassName().toString();
+        return ar.topActivity.getClassName();
     }
 
     public static boolean
@@ -442,33 +450,39 @@ public class Utils {
         return s.replaceFirst("\\s+$", "");
     }
 
+    @SuppressWarnings("unused")
     public static Date
     parseDateString(String dateString) {
         dateString = removeLeadingTrailingWhiteSpace(dateString);
         Date date = null;
         try {
             date = DateUtils.parseDate(dateString, sDateFormats);
-        } catch (DateParseException e) { }
+        } catch (DateParseException ignored) { }
         return date;
     }
 
     // ------------------------------------------------------
     // To handle generic array
     // ------------------------------------------------------
+    @SuppressWarnings("unused")
     public static <T> T[]
     toArray(List<T> list, T[] a) {
         if (a.length < list.size())
+            //noinspection unchecked
             a = (T[])java.lang.reflect.Array.newInstance(a.getClass().getComponentType(), list.size());
         return list.toArray(a);
     }
 
+    @SuppressWarnings("unused")
     public static <T> T[]
     toArray(List<T> list, Class<T> k) {
+        //noinspection unchecked
         return list.toArray((T[])java.lang.reflect.Array.newInstance(k, list.size()));
     }
 
     public static <T> T[]
     newArray(Class<T> k, int size) {
+        //noinspection unchecked
         return (T[])java.lang.reflect.Array.newInstance(k, size);
     }
 
@@ -485,6 +499,7 @@ public class Utils {
         return value;
     }
 
+    @SuppressWarnings("unused")
     private static int
     getIntPreference(String key, int defvalue) {
         Integer value = (Integer)RTState.get().getOverridingPreference(key);
@@ -541,6 +556,7 @@ public class Utils {
         return Policy.SIMILARITY_THRESHOLD_NORMAL;
     }
 
+    @SuppressWarnings("unused")
     public static PrefLevel
     getPrefMemConsumption() {
         // See preference.xml for meaning of each number value.
@@ -621,6 +637,7 @@ public class Utils {
         return flag & ~mask;
     }
 
+    @SuppressWarnings("unused")
     public static long
     bitSet(long flag, long value, long mask) {
         flag = bitClear(flag, mask);
@@ -632,11 +649,13 @@ public class Utils {
         return value == (flag & mask);
     }
 
+    @SuppressWarnings("unused")
     public static boolean
     bitIsSet(long flag, long mask) {
         return bitCompare(flag, mask, mask);
     }
 
+    @SuppressWarnings("unused")
     public static boolean
     bitIsClear(long flag, long mask) {
         return bitCompare(flag, 0, mask);
@@ -663,6 +682,7 @@ public class Utils {
         return bitCompare(flag, mask, mask);
     }
 
+    @SuppressWarnings("unused")
     public static boolean
     bitIsClear(int flag, int mask) {
         return bitCompare(flag, 0, mask);
@@ -673,6 +693,7 @@ public class Utils {
     // Misc
     //
     // ------------------------------------------------------------------------
+    @SuppressWarnings("unused")
     public static String
     secsToTimeText(int secs) {
         int h = secs / 60 / 60;
@@ -711,9 +732,7 @@ public class Utils {
 
     public static <K,V> K
     findKey(HashMap<K, V> map, V value) {
-        Iterator<K> iter = map.keySet().iterator();
-        while(iter.hasNext()) {
-            K key = iter.next();
+        for (K key : map.keySet()) {
             if (map.get(key).equals(value))
                 return key;
         }
@@ -721,9 +740,9 @@ public class Utils {
     }
 
     public static Object[]
-    getSortedKeyOfTimeMap (HashMap<? extends Object, Long> timeMap) {
+    getSortedKeyOfTimeMap (HashMap<?, Long> timeMap) {
         TimeElem[] te = new TimeElem[timeMap.size()];
-        Object[] vs = timeMap.keySet().toArray(new Object[0]);
+        Object[] vs = timeMap.keySet().toArray();
         for (int i = 0; i < vs.length; i++)
             te[i] = new TimeElem(vs[i], timeMap.get(vs[i]));
         Arrays.sort(te, sTimeElemComparator);
@@ -739,6 +758,7 @@ public class Utils {
     // Other android specifics.
     //
     // ------------------------------------------------------------------------
+    @SuppressWarnings("unused")
     public static boolean
     copyAssetFile(String dest, String assetFile) {
         try {

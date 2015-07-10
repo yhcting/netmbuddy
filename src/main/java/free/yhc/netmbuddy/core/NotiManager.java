@@ -68,7 +68,7 @@ public class NotiManager {
     private Notification mLastPlayerNotification = null;
 
     // NOTE
-    public static enum NotiType {
+    public enum NotiType {
         // All player type notification uses same notification id because
         //   these notification SHOULD NOT be multiple-displayed.
         BASE  (R.drawable.noti_base,  getPlayerNotificationId()),
@@ -281,7 +281,7 @@ public class NotiManager {
         return sInstance;
     }
 
-    public static final int
+    public static int
     getPlayerNotificationId() {
         return R.drawable.noti_base;
     }

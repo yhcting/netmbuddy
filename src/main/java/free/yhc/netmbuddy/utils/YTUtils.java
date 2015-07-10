@@ -41,19 +41,17 @@ import static free.yhc.netmbuddy.utils.Utils.eAssert;
 import android.graphics.Bitmap;
 import android.support.annotation.Nullable;
 
-import free.yhc.netmbuddy.Err;
 import free.yhc.netmbuddy.R;
 import free.yhc.netmbuddy.core.YTDataAdapter;
 import free.yhc.netmbuddy.core.YTDataHelper;
-import free.yhc.netmbuddy.db.ColVideo;
-import free.yhc.netmbuddy.db.DB;
-import free.yhc.netmbuddy.core.Policy;
 import free.yhc.netmbuddy.db.DMVideo;
 import free.yhc.netmbuddy.ytapiv3.YTApiFacade;
 import free.yhc.netmbuddy.core.YTHacker;
 
 public class YTUtils {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(YTUtils.class);
 
     private static YTDataHelper.ThumbnailResp
@@ -73,6 +71,7 @@ public class YTUtils {
                && 11 == ytvid.length();
     }
 
+    @SuppressWarnings("unused")
     public static int
     getAvailableTotalResults(int totalResults) {
         return totalResults < YTApiFacade.MAX_AVAILABLE_RESULTS_FOR_QUERY?
@@ -97,7 +96,7 @@ public class YTUtils {
     @Nullable
     public static Bitmap
     getYtThumbnail(String ytvid) {
-        YTDataHelper.ThumbnailResp tr = null;
+        YTDataHelper.ThumbnailResp tr;
         // Loading thumbnail is done.
         try {
             tr = loadYtVideoThumbnail(ytvid);

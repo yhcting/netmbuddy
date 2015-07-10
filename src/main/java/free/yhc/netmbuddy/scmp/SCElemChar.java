@@ -39,7 +39,9 @@ package free.yhc.netmbuddy.scmp;
 import free.yhc.netmbuddy.utils.Utils;
 
 class SCElemChar implements SCElemI {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(SCElemChar.class);
 
     private final char mC;

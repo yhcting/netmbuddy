@@ -42,12 +42,13 @@ import android.content.res.Configuration;
 import android.os.Bundle;
 import free.yhc.netmbuddy.utils.Utils;
 
-import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class YTMPActivity extends Activity {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(YTMPActivity.class);
 
     @Override

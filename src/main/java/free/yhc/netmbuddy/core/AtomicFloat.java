@@ -61,11 +61,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class AtomicFloat extends Number {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(AtomicFloat.class);
 
     private AtomicInteger mBits;
 
+    @SuppressWarnings("unused")
     public AtomicFloat() {
         this(0f);
     }
@@ -74,6 +77,7 @@ public class AtomicFloat extends Number {
         mBits = new AtomicInteger(Float.floatToIntBits(initialValue));
     }
 
+    @SuppressWarnings("unused")
     public final boolean
     compareAndSet(float expect, float update) {
         return mBits.compareAndSet(Float.floatToIntBits(expect),
@@ -90,11 +94,13 @@ public class AtomicFloat extends Number {
         return Float.intBitsToFloat(mBits.get());
     }
 
+    @SuppressWarnings("unused")
     public final float
     getAndSet(float newValue) {
         return Float.intBitsToFloat(mBits.getAndSet(Float.floatToIntBits(newValue)));
     }
 
+    @SuppressWarnings("unused")
     public final boolean
     weakCompareAndSet(float expect, float update) {
         return mBits.weakCompareAndSet(Float.floatToIntBits(expect),

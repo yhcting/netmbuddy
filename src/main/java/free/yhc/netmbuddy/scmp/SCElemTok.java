@@ -40,7 +40,9 @@ import free.yhc.netmbuddy.utils.Utils;
 
 // Tok : Just checking whether two are equal or not.
 class SCElemTok implements SCElemI {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(SCElemTok.class);
 
     private final String  mTok;

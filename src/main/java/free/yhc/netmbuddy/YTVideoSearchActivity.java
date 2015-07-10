@@ -46,7 +46,6 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.TextView;
 
 import free.yhc.netmbuddy.core.UnexpectedExceptionHandler;
 import free.yhc.netmbuddy.core.YTDataAdapter;
@@ -58,12 +57,13 @@ import free.yhc.netmbuddy.db.DMVideo;
 import free.yhc.netmbuddy.utils.ImageUtils;
 import free.yhc.netmbuddy.utils.UiUtils;
 import free.yhc.netmbuddy.utils.Utils;
-import free.yhc.netmbuddy.utils.YTUtils;
 
 public abstract class YTVideoSearchActivity extends YTSearchActivity implements
 DBHelper.CheckDupDoneReceiver,
 UnexpectedExceptionHandler.Evidence {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(YTVideoSearchActivity.class);
 
     private final DB mDb = DB.get();
@@ -103,7 +103,7 @@ UnexpectedExceptionHandler.Evidence {
                     enableContentLoading();
                     YTVideoSearchAdapter adapter = getAdapter();
                     if (null != adapter)
-                        checkDupAsync(null, (YTDataAdapter.Video[])adapter.getItems());
+                        checkDupAsync(null, adapter.getItems());
             }
             // others are ignored.
         }
@@ -181,6 +181,7 @@ UnexpectedExceptionHandler.Evidence {
 
     private void
     checkDupDoneNewEntries(DBHelper.CheckDupArg arg, boolean[] results) {
+        @SuppressWarnings("unused")
         YTDataHelper.VideoListReq req = (YTDataHelper.VideoListReq)arg.tag;
 
         // helper's event receiver is changed to adapter in adapter's constructor.
@@ -344,7 +345,6 @@ UnexpectedExceptionHandler.Evidence {
 
     /**
      * Override it to enabel tool button for search.
-     * @return
      */
     protected int
     getToolButtonSearchIcon() {

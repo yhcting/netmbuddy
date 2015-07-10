@@ -38,7 +38,7 @@ package free.yhc.netmbuddy.share;
 
 import android.database.Cursor;
 
-import static free.yhc.netmbuddy.utils.Utils.eAssert;
+//import static free.yhc.netmbuddy.utils.Utils.eAssert;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -68,7 +68,9 @@ import free.yhc.netmbuddy.utils.Utils;
 //         * Json.FVIDEOS <JSONArray>
 //             + Json.sVideoProjectionForShare fields
 class ExporterPlaylist implements ExporterI {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(ExporterPlaylist.class);
 
     private final File _mFout;

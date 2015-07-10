@@ -49,6 +49,11 @@ import static free.yhc.netmbuddy.utils.Utils.eAssert;
  * DMVideo : Data Model Video
  */
 public class DMVideo {
+    @SuppressWarnings("unused")
+    private static final boolean DBG = false;
+    @SuppressWarnings("unused")
+    private static final Utils.Logger P = new Utils.Logger(DMVideo.class);
+
     public static final ColVideo[] sDBProjectionWithoutThumbnail;
     public static final ColVideo[] sDBProjection;
     public static final ColVideo[] sDBProjectionExtra;
@@ -63,21 +68,14 @@ public class DMVideo {
         colarr.add(ColVideo.CHANNELTITLE);
         colarr.add(ColVideo.VOLUME);
         colarr.add(ColVideo.BOOKMARKS);
-
-        sDBProjectionWithoutThumbnail = colarr.toArray(new ColVideo[0]);
-
+        sDBProjectionWithoutThumbnail = colarr.toArray(new ColVideo[colarr.size()]);
         colarr.add(ColVideo.THUMBNAIL);
-
-        sDBProjection = colarr.toArray(new ColVideo[0]);
-
+        sDBProjection = colarr.toArray(new ColVideo[colarr.size()]);
         colarr.add(ColVideo.TIME_ADD);
         colarr.add(ColVideo.TIME_PLAYED);
-
-        sDBProjectionExtra = colarr.toArray(new ColVideo[0]);
-
+        sDBProjectionExtra = colarr.toArray(new ColVideo[colarr.size()]);
         colarr.remove(ColVideo.THUMBNAIL);
-
-        sDBProjectionExtraWithoutThumbnail = colarr.toArray(new ColVideo[0]);
+        sDBProjectionExtraWithoutThumbnail = colarr.toArray(new ColVideo[colarr.size()]);
     }
 
     public long id = -1; // ColVideo.ID
@@ -125,12 +123,14 @@ public class DMVideo {
         setExtraData(v.extra);
     }
 
+    @SuppressWarnings("unused")
     public boolean
     isAvailable() {
         // if ytvid is set, it is available.
         return Utils.isValidValue(ytvid);
     }
 
+    @SuppressWarnings("unused")
     public boolean
     isPreferenceDataFilled() {
         return volume != DB.INVALID_VOLUME
@@ -185,7 +185,7 @@ public class DMVideo {
 
     public DMVideo
     setYtData(YTDataAdapter.Video v) {
-        return setYtData(v.id, v.title, (int)v.playTimeSec, v.channelId, v.channelTitle);
+        return setYtData(v.id, v.title, v.playTimeSec, v.channelId, v.channelTitle);
     }
 
     public DMVideo
@@ -201,6 +201,7 @@ public class DMVideo {
         return this;
     }
 
+    @SuppressWarnings("unused")
     public DMVideo
     setThumbnailIfNotSet(byte[] data) {
         if (!isThumbnailFilled())

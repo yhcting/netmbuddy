@@ -46,7 +46,9 @@ import free.yhc.netmbuddy.core.YTDataAdapter;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class DBHelper {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(DBHelper.class);
 
     private static final int MSG_WHAT_CLOSE         = 0;
@@ -98,8 +100,7 @@ public class DBHelper {
 
         private boolean[]
         checkDup(YTDataAdapter.Video[] vids) {
-            // TODO
-            // Should I check "entries[i].available" flag???
+            // TODO : Should I check "entries[i].available" flag???
             boolean[] r = new boolean[vids.length];
             for (int i = 0; i < r.length; i++)
                 r[i] = DB.get().containsVideo(vids[i].id);
@@ -117,7 +118,6 @@ public class DBHelper {
                         rcvr.checkDupDone(_mHelper, arg, results, err);
                 }
             });
-            return;
         }
 
         private void
@@ -183,9 +183,8 @@ public class DBHelper {
 
     public void
     close() {
-        // TODO
+        // TODO : Checking that below code works as expected perfectly, is required
         // Stop running thread!
-        // Need to check that below code works as expected perfectly.
         // "interrupting thread" is quite annoying and unpredictable job!
         if (null != mBgHandler) {
             mBgHandler.close();

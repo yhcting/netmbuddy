@@ -63,7 +63,9 @@ import free.yhc.netmbuddy.utils.Utils;
 
 public class MusicsActivity extends Activity implements
 UnexpectedExceptionHandler.Evidence {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(MusicsActivity.class);
 
     public static final String MAP_KEY_PLAYLIST_ID  = "playlistid";
@@ -158,7 +160,8 @@ UnexpectedExceptionHandler.Evidence {
     }
 
     private void
-    setToPlaylistThumbnail(long mid, int pos) {
+    setToPlaylistThumbnail(@SuppressWarnings("unused") long mid,
+                           int pos) {
         eAssert(UiUtils.isUserPlaylist(mPlid));
         byte[] data = getAdapter().getMusicThumbnail(pos);
         mDb.updatePlaylist(mPlid,
@@ -170,13 +173,15 @@ UnexpectedExceptionHandler.Evidence {
     }
 
     private void
-    onListItemClick(View view, int pos, long id) {
+    onListItemClick(@SuppressWarnings("unused") View view,
+                    int pos,
+                    @SuppressWarnings("unused") long id) {
         YTPlayer.Video vid = getAdapter().getYTPlayerVideo(pos);
         startVideos(new YTPlayer.Video[] { vid });
     }
 
     private void
-    onToolPlay(View anchor) {
+    onToolPlay(@SuppressWarnings("unused") View anchor) {
         MusicsAdapter adpr = getAdapter();
         int[] poss = adpr.getCheckedMusicsSortedByTime();
         if (0 == poss.length) {
@@ -192,7 +197,7 @@ UnexpectedExceptionHandler.Evidence {
     }
 
     private void
-    onToolAppendPlayQ(View anchor) {
+    onToolAppendPlayQ(@SuppressWarnings("unused") View anchor) {
         MusicsAdapter adpr = getAdapter();
         int[] poss = adpr.getCheckedMusicsSortedByTime();
         if (0 == poss.length) {
@@ -212,7 +217,7 @@ UnexpectedExceptionHandler.Evidence {
     }
 
     private void
-    onToolCopy(View anchor) {
+    onToolCopy(@SuppressWarnings("unused") View anchor) {
         MusicsAdapter adpr = getAdapter();
         int[] poss = adpr.getCheckedMusics();
         if (0 == poss.length) {
@@ -224,7 +229,7 @@ UnexpectedExceptionHandler.Evidence {
     }
 
     private void
-    onToolMove(View anchor) {
+    onToolMove(@SuppressWarnings("unused") View anchor) {
         MusicsAdapter adpr = getAdapter();
         int[] poss = adpr.getCheckedMusics();
         if (0 == poss.length) {
@@ -236,7 +241,7 @@ UnexpectedExceptionHandler.Evidence {
     }
 
     private void
-    onToolDelete(View anchor) {
+    onToolDelete(@SuppressWarnings("unused") View anchor) {
         MusicsAdapter adpr = getAdapter();
         int[] poss = adpr.getCheckedMusics();
         if (0 == poss.length) {
@@ -300,13 +305,15 @@ UnexpectedExceptionHandler.Evidence {
     }
 
     private void
-    onContextMenuVolume(final long id, final int pos) {
+    onContextMenuVolume(@SuppressWarnings("unused") final long id,
+                        final int pos) {
         mMp.changeVideoVolume(getAdapter().getMusicTitle(pos),
                               getAdapter().getMusicYtid(pos));
     }
 
     private void
-    onContextMenuAppendToPlayQ(final long id, final int pos) {
+    onContextMenuAppendToPlayQ(@SuppressWarnings("unused") final long id,
+                               final int pos) {
         YTPlayer.Video vid = getAdapter().getYTPlayerVideo(pos);
         appendToPlayQ(new YTPlayer.Video[] { vid });
     }
@@ -335,17 +342,20 @@ UnexpectedExceptionHandler.Evidence {
     }
 
     private void
-    onContextMenuPlayVideo(final long id, final int pos) {
+    onContextMenuPlayVideo(@SuppressWarnings("unused") final long id,
+                           final int pos) {
         UiUtils.playAsVideo(this, getAdapter().getMusicYtid(pos));
     }
 
     private void
-    onContextMenuDetailInfo(final long id, final int pos) {
+    onContextMenuDetailInfo(final long id,
+                            @SuppressWarnings("unused") final int pos) {
         UiUtils.showVideoDetailInfo(this, id);
     }
 
     private void
-    onContextMenuBookmarks(final long id, final int pos) {
+    onContextMenuBookmarks(@SuppressWarnings("unused") final long id,
+                           final int pos) {
 
         UiUtils.showBookmarkDialog(this,
                                    getAdapter().getMusicYtid(pos),
@@ -353,14 +363,16 @@ UnexpectedExceptionHandler.Evidence {
     }
 
     private void
-    onContextMenuVideosOfThisChannel(final long id, final int pos) {
+    onContextMenuVideosOfThisChannel(@SuppressWarnings("unused") final long id,
+                                     final int pos) {
         Intent i = new Intent(this, YTVideoSearchChannelActivity.class);
         i.putExtra(YTSearchActivity.KEY_TEXT, getAdapter().getMusicChannelId(pos));
         startActivity(i);
     }
 
     private void
-    onContextMenuSearchSimilarTitles(final long id, final int pos) {
+    onContextMenuSearchSimilarTitles(@SuppressWarnings("unused") final long id,
+                                     final int pos) {
         UiUtils.showSimilarTitlesDialog(this, getAdapter().getMusicTitle(pos));
     }
 
@@ -440,7 +452,7 @@ UnexpectedExceptionHandler.Evidence {
         inflater.inflate(R.menu.musics_context, menu);
         AdapterContextMenuInfo mInfo = (AdapterContextMenuInfo)menuInfo;
 
-        boolean visible = UiUtils.isUserPlaylist(mPlid)? true: false;
+        boolean visible = UiUtils.isUserPlaylist(mPlid);
         menu.findItem(R.id.plthumbnail).setVisible(visible);
 
         visible = Utils.isValidValue(getAdapter().getMusicChannel(mInfo.position));
@@ -540,6 +552,7 @@ UnexpectedExceptionHandler.Evidence {
 
         // TODO : NOT implemented yet
         eAssert(false);
+        //noinspection StatementWithEmptyBody
         switch (requestCode) {
 
         }

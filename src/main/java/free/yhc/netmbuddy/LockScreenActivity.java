@@ -55,7 +55,9 @@ import free.yhc.netmbuddy.utils.Utils;
 public class LockScreenActivity extends Activity implements
 YTPlayer.VideosStateListener,
 UnexpectedExceptionHandler.Evidence {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(LockScreenActivity.class);
 
     static final String INTENT_KEY_APP_FOREGROUND = "app_foreground";

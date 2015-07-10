@@ -41,7 +41,9 @@ import free.yhc.netmbuddy.utils.Utils;
 // STok : Similarity Token
 //      : returns similarity.
 class SCElemSTok extends SCElem {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(SCElemSTok.class);
 
     SCElemSTok(String tok) {

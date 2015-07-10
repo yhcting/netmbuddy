@@ -54,7 +54,7 @@ class DNLoop {
     interface IteratorListener {
         /**
          *
-         * @param dnl
+         * @param dnl DNLoop object
          * @param oVals iteration values
          * @return true : keep going.
          *         false: stop iteration.
@@ -62,7 +62,7 @@ class DNLoop {
         boolean iter(DNLoop dnl, Object[] oVals);
         /**
          *
-         * @param dnl
+         * @param dnl DNLoop object
          * @param depth 0 : inner-most loop
          */
         void end(DNLoop dnl, int depth);
@@ -75,8 +75,6 @@ class DNLoop {
      *     loop <5>
      *         loop <4>
      *             loop <2> <= loopVals[0][2]
-     * @param loopVals
-     * @param iterL
      */
     DNLoop(Object[][] loopVals,
            IteratorListener iterL) {
@@ -123,17 +121,14 @@ class DNLoop {
                         oVals[j] = mLoopVals[j][mLoopI[j]];
 
                     ++mLoopI[0];
-                    bDone = false;
-                    if (null != mIterL
-                        && !mIterL.iter(this, oVals))
-                        bDone = true;
-
+                    bDone = null != mIterL && !mIterL.iter(this, oVals);
                     break; // exit from for-loop.
                 }
             }
         }
     }
 
+    @SuppressWarnings("unused")
     static void
     test() {
         String[][] oVals = new String[][] {
@@ -148,7 +143,7 @@ class DNLoop {
             iter(DNLoop dnl, Object[] oVals) {
                 String s = "";
                 for (Object o : oVals)
-                    s += (String)o + " ";
+                    s += o + " ";
                 if (DBG) P.v("- " + s);
                 return true;
             }

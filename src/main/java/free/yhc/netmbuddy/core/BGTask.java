@@ -70,10 +70,14 @@ public abstract class BGTask<R> {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(BGTask.class);
 
+    @SuppressWarnings("unused")
     public static final int PRIORITY_MIN = Thread.MIN_PRIORITY; // 1
+    @SuppressWarnings("unused")
     public static final int PRIORITY_MAX = Thread.MAX_PRIORITY; // 10
+    @SuppressWarnings("unused")
     public static final int PRIORITY_NORM = Thread.NORM_PRIORITY; // 5
     public static final int PRIORITY_MIDLOW = 3;
+    @SuppressWarnings("unused")
     public static final int PRIORITY_MIDHIGH= 7;
 
     private static final String DEFAULT_THREAD_NAME = "BGTask";
@@ -189,7 +193,7 @@ public abstract class BGTask<R> {
                     break;
 
                 default:
-                    ;// unexpected... just ignore it...
+                    // unexpected... just ignore it...
                 }
             }
         }
@@ -216,6 +220,7 @@ public abstract class BGTask<R> {
     protected void
     onProgress(int prog) { }
 
+    @SuppressWarnings("unused")
     protected void
     onIncrementProgressBy(int diff) { }
 
@@ -249,10 +254,12 @@ public abstract class BGTask<R> {
         mOwner = owner;
     }
 
+    @SuppressWarnings("unused")
     public BGTask(String name, int priority) {
         this(name, Utils.getUiHandler(), priority);
     }
 
+    @SuppressWarnings("unused")
     public BGTask(int priority) {
         this(DEFAULT_THREAD_NAME, Utils.getUiHandler(), priority);
     }
@@ -275,6 +282,7 @@ public abstract class BGTask<R> {
         mThread.setName(name);
     }
 
+    @SuppressWarnings("unused")
     public final State
     getState() {
         synchronized (mStateLock) {
@@ -287,6 +295,7 @@ public abstract class BGTask<R> {
         return mOwner;
     }
 
+    @SuppressWarnings("unused")
     public final boolean
     isOwnerThread(Thread thread) {
         return thread == mOwner.getLooper().getThread();
@@ -295,8 +304,8 @@ public abstract class BGTask<R> {
     /**
      * Is task cancelled by user? (by calling 'cancel()')
      * This function returns 'true' even if task is under CANCELING state.
-     * @return
      */
+    @SuppressWarnings("unused")
     public final boolean
     isCancelled() {
         return mUserCancel.get();
@@ -345,7 +354,7 @@ public abstract class BGTask<R> {
 
 
     /**
-     * @param interrupt
+     * @param interrupt true to interrupt background task
      * @return 'false' if task is already cancelled - cancel() is called more than once!
      */
     public final boolean

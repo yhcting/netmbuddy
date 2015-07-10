@@ -43,13 +43,11 @@ import java.util.ArrayList;
 import free.yhc.netmbuddy.utils.Utils;
 
 class YTPlayerVideoListManager {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(YTPlayerVideoListManager.class);
 
-    // NOTE!
-    // mVs is accessed on by UIThread.
-    // So, synchronization is not required.
-    private final Object mVsLock = new Object();
     private YTPlayer.Video[] mVs = null; // video array
     private int mVi = -1;   // video index
     private OnListChangedListener mListener = null;
@@ -62,12 +60,14 @@ class YTPlayerVideoListManager {
         mListener = listener;
     }
 
+    @SuppressWarnings("unused")
     void
     setOnListChangedListener(OnListChangedListener listener) {
         eAssert(Utils.isUiThread());
         mListener = listener;
     }
 
+    @SuppressWarnings("unused")
     void
     clearOnListChangedListener() {
         eAssert(Utils.isUiThread());
@@ -80,6 +80,7 @@ class YTPlayerVideoListManager {
             mListener.onChanged(this);
     }
 
+    @SuppressWarnings("unused")
     int
     size() {
         eAssert(Utils.isUiThread());
@@ -145,17 +146,13 @@ class YTPlayerVideoListManager {
         notifyToListChangedListener();
     }
 
-    /**
-     *
-     * @return false if -1 == mVi after removing. Otherwise true.
-     */
     void
     removeVideo(String ytvid) {
         eAssert(Utils.isUiThread());
         if (null == mVs)
             return;
 
-        ArrayList<YTPlayer.Video> al = new ArrayList<YTPlayer.Video>(mVs.length);
+        ArrayList<YTPlayer.Video> al = new ArrayList<>(mVs.length);
         int adjust = 0;
         for (int i = 0; i < mVs.length; i++) {
             if (!mVs[i].v.ytvid.equals(ytvid))
@@ -163,7 +160,7 @@ class YTPlayerVideoListManager {
             else if (i <= mVi)
                 adjust++;
         }
-        mVs = al.toArray(new YTPlayer.Video[0]);
+        mVs = al.toArray(new YTPlayer.Video[al.size()]);
         mVi = mVi - adjust;
         eAssert(mVi >= 0 || mVi <= mVs.length);
         notifyToListChangedListener();
@@ -176,9 +173,7 @@ class YTPlayerVideoListManager {
 
     /**
      * find video index that is NOT 'ytvid'
-     * @param ytvid
-     * @return
-     *   -1 if fail to find.
+     * @return -1 if fail to find.
      */
     int
     findVideoExcept(int from, String ytvid) {

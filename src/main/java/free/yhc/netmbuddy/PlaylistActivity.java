@@ -77,7 +77,9 @@ import free.yhc.netmbuddy.utils.Utils;
 
 public class PlaylistActivity extends Activity implements
 UnexpectedExceptionHandler.Evidence {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(PlaylistActivity.class);
 
     private final DB mDb = DB.get();
@@ -131,12 +133,12 @@ UnexpectedExceptionHandler.Evidence {
     }
 
     private void
-    searchMusics(View anchor) {
+    searchMusics(@SuppressWarnings("unused") View anchor) {
         startSearch(null, false, null, false);
     }
 
     private void
-    playAllMusics(View anchor) {
+    playAllMusics(@SuppressWarnings("unused") View anchor) {
         playMusics(mDb.queryVideos(YTPlayer.sVideoProjectionToPlay, null, false));
         UiUtils.showTextToast(this, R.string.msg_play_all_musics);
     }
@@ -208,6 +210,7 @@ UnexpectedExceptionHandler.Evidence {
     // This function MUST COVER ALL USE-CASE regarding DB ACCESS.
     private void
     stopDbAccess() {
+        eAssert(!Utils.isUiThread());
         final Object uiWait = new Object();
         Utils.getUiHandler().post(new Runnable() {
             @Override
@@ -224,18 +227,20 @@ UnexpectedExceptionHandler.Evidence {
             }
         });
 
+        //noinspection SynchronizationOnLocalVariableOrMethodParameter
         synchronized (uiWait) {
             try {
                 uiWait.wait();
-            } catch (InterruptedException e) { }
+            } catch (InterruptedException ignored) { }
         }
 
         // Wait for sometime that existing DB operation is completed.
         // This is not safe enough.
         // But, waiting 2 seconds is fair enough.
+        //noinspection EmptyCatchBlock
         try {
             Thread.sleep(2000);
-        } catch (InterruptedException e) { }
+        } catch (InterruptedException ignored) { }
     }
 
     private Err
@@ -260,6 +265,7 @@ UnexpectedExceptionHandler.Evidence {
         stopDbAccess();
 
         // Make directories.
+        //noinspection ResultOfMethodCallIgnored
         new File(exDbf.getAbsoluteFile().getParent()).mkdirs();
         return Err.map(mDb.exportDatabase(exDbf));
     }
@@ -270,7 +276,7 @@ UnexpectedExceptionHandler.Evidence {
     //
     // ------------------------------------------------------------------------
     private void
-    onMenuMoreAppInfo(View anchor) {
+    onMenuMoreAppInfo(@SuppressWarnings("unused") View anchor) {
         View v = UiUtils.inflateLayout(this, R.layout.info_dialog);
         ((ImageView)v.findViewById(R.id.image)).setImageResource(R.drawable.appinfo_pic);
         AlertDialog.Builder bldr = new AlertDialog.Builder(this);
@@ -280,7 +286,7 @@ UnexpectedExceptionHandler.Evidence {
     }
 
     private void
-    onMenuMoreLicense(View anchor) {
+    onMenuMoreLicense(@SuppressWarnings("unused") View anchor) {
         View v = UiUtils.inflateLayout(this, R.layout.info_dialog);
         v.findViewById(R.id.image).setVisibility(View.GONE);
         TextView tv = ((TextView)v.findViewById(R.id.text));
@@ -293,13 +299,13 @@ UnexpectedExceptionHandler.Evidence {
     }
 
     private void
-    onMenuMoreClearSearchHistory(View anchor) {
+    onMenuMoreClearSearchHistory(@SuppressWarnings("unused") View anchor) {
         SearchSuggestionProvider.clearHistory();
         UiUtils.showTextToast(this, R.string.msg_search_history_cleared);
     }
 
     private void
-    onMenuMoreDbImport(View anchor) {
+    onMenuMoreDbImport(@SuppressWarnings("unused") View anchor) {
         final File exDbf = new File(Policy.EXTERNAL_DBFILE);
         // Actual import!
         CharSequence title = getResources().getText(R.string.import_);
@@ -344,7 +350,7 @@ UnexpectedExceptionHandler.Evidence {
     }
 
     private void
-    onMenuMoreDbMerge(View anchor) {
+    onMenuMoreDbMerge(@SuppressWarnings("unused") View anchor) {
         final File exDbf = new File(Policy.EXTERNAL_DBFILE);
         // Actual import!
         CharSequence title = getResources().getText(R.string.merge);
@@ -389,7 +395,7 @@ UnexpectedExceptionHandler.Evidence {
     }
 
     private void
-    onMenuMoreDbExport(View anchor) {
+    onMenuMoreDbExport(@SuppressWarnings("unused") View anchor) {
         final File exDbf = new File(Policy.EXTERNAL_DBFILE);
         // Actual import!
         CharSequence title = getResources().getText(R.string.export);
@@ -471,7 +477,7 @@ UnexpectedExceptionHandler.Evidence {
     }
 
     private void
-    onMenuMoreYtSearchChannel(final View anchor) {
+    onMenuMoreYtSearchChannel(@SuppressWarnings("unused") final View anchor) {
         startActivity(new Intent(this, YTVideoSearchChannelActivity.class));
     }
 
@@ -502,7 +508,7 @@ UnexpectedExceptionHandler.Evidence {
     }
 
     private void
-    onMenuMoreSendOpinion(View anchor) {
+    onMenuMoreSendOpinion(@SuppressWarnings("unused") View anchor) {
         if (!Utils.isNetworkAvailable()) {
             UiUtils.showTextToast(this, R.string.err_network_unavailable);
             return;
@@ -511,7 +517,7 @@ UnexpectedExceptionHandler.Evidence {
     }
 
     private void
-    onMenuMoreAutoStop(View anchor) {
+    onMenuMoreAutoStop(@SuppressWarnings("unused") View anchor) {
         final int[] menus = {
                 R.string.off,
                 R.string.time10m,
@@ -530,13 +536,13 @@ UnexpectedExceptionHandler.Evidence {
                 case R.string.time10m:  timems = 10 * 60 * 1000;        break;
                 case R.string.time20m:  timems = 20 * 60 * 1000;        break;
                 case R.string.time30m:  timems = 30 * 60 * 1000;        break;
-                case R.string.time1h:   timems = 1 * 60 * 60 * 1000;    break;
+                case R.string.time1h:   timems = 60 * 60 * 1000;        break;
                 case R.string.time2h:   timems = 2 * 60 * 60 * 1000;    break;
                 default:
                     eAssert(false);
                 }
 
-                if (0 <= timems)
+                if (0 < timems)
                     mMp.setAutoStop(timems);
                 else
                     mMp.unsetAutoStop();
@@ -612,7 +618,7 @@ UnexpectedExceptionHandler.Evidence {
 
     private void
     setupToolButtons() {
-        ((ImageView)findViewById(R.id.playall)).setOnClickListener(new View.OnClickListener() {
+        (findViewById(R.id.playall)).setOnClickListener(new View.OnClickListener() {
             @Override
             public void
             onClick(View v) {
@@ -620,7 +626,7 @@ UnexpectedExceptionHandler.Evidence {
             }
         });
 
-        ((ImageView)findViewById(R.id.recently_played)).setOnClickListener(new View.OnClickListener() {
+        (findViewById(R.id.recently_played)).setOnClickListener(new View.OnClickListener() {
             @Override
             public void
             onClick(View v) {
@@ -630,7 +636,7 @@ UnexpectedExceptionHandler.Evidence {
             }
         });
 
-        ((ImageView)findViewById(R.id.dbsearch)).setOnClickListener(new View.OnClickListener() {
+        (findViewById(R.id.dbsearch)).setOnClickListener(new View.OnClickListener() {
             @Override
             public void
             onClick(View v) {
@@ -638,7 +644,7 @@ UnexpectedExceptionHandler.Evidence {
             }
         });
 
-        ((ImageView)findViewById(R.id.ytsearch)).setOnClickListener(new View.OnClickListener() {
+        (findViewById(R.id.ytsearch)).setOnClickListener(new View.OnClickListener() {
             @Override
             public void
             onClick(View v) {
@@ -646,7 +652,7 @@ UnexpectedExceptionHandler.Evidence {
             }
         });
 
-        ((ImageView)findViewById(R.id.preferences)).setOnClickListener(new View.OnClickListener() {
+        (findViewById(R.id.preferences)).setOnClickListener(new View.OnClickListener() {
             @Override
             public void
             onClick(View v) {
@@ -655,7 +661,7 @@ UnexpectedExceptionHandler.Evidence {
             }
         });
 
-        ((ImageView)findViewById(R.id.more)).setOnClickListener(new View.OnClickListener() {
+        (findViewById(R.id.more)).setOnClickListener(new View.OnClickListener() {
             @Override
             public void
             onClick(final View v) {
@@ -795,6 +801,7 @@ UnexpectedExceptionHandler.Evidence {
             doBackgroundWork(DiagAsyncTask task) {
                 Share.Err err = exporter.execute();
                 if (Share.Err.NO_ERR != err) {
+                    //noinspection ResultOfMethodCallIgnored
                     fTmp.delete();
                     return Err.map(err);
                 }
@@ -810,7 +817,9 @@ UnexpectedExceptionHandler.Evidence {
     }
 
     private void
-    onListItemClick(View view, int position, long itemId) {
+    onListItemClick(@SuppressWarnings("unused") View view,
+                    @SuppressWarnings("unused") int position,
+                    long itemId) {
         playMusics(mDb.queryVideos(itemId, YTPlayer.sVideoProjectionToPlay, null, false));
     }
 

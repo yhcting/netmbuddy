@@ -396,8 +396,7 @@ UnexpectedExceptionHandler.Evidence {
 
         /**
          *
-         * @param millis
-         *   <= 0 for unset autostop.
+         * @param millis <= 0 for unset autostop.
          */
         void
         set(long millis) {
@@ -821,7 +820,7 @@ UnexpectedExceptionHandler.Evidence {
         return mMpSurfAttached;
     }
 
-
+    @SuppressWarnings("unused")
     private boolean
     mpIsPlaying() {
         return null != mMp && mMp.isPlaying();
@@ -1121,6 +1120,8 @@ UnexpectedExceptionHandler.Evidence {
     private int
     getVideoQualityScore() {
         Utils.PrefQuality pq = Utils.getPrefQuality();
+        //Keep below code for future refactoring.(It is always 'false')
+        //noinspection ConstantConditions
         if (null == pq)
             return YTHacker.getQScorePreferLow(mapPrefToQScore(Utils.PrefQuality.LOW));
         int qscore = mapPrefToQScore(pq);
@@ -1243,6 +1244,7 @@ UnexpectedExceptionHandler.Evidence {
         mYtDnr.close();
     }
 
+    @SuppressWarnings("unused")
     private void
     stopCaching(final String ytvid) {
         // If current downloading video is same with current active video
@@ -2379,8 +2381,7 @@ UnexpectedExceptionHandler.Evidence {
 
     /**
      * player will be stopped after 'millis'
-     * @param millis
-     *   0 for unset autostop
+     * @param millis 0 for unset autostop
      */
     public void
     setAutoStop(long millis) {

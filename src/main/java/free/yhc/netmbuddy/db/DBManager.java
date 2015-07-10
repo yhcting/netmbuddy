@@ -40,7 +40,6 @@ import static free.yhc.netmbuddy.utils.Utils.eAssert;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
@@ -58,7 +57,9 @@ import free.yhc.netmbuddy.core.Policy;
 import free.yhc.netmbuddy.utils.Utils;
 
 class DBManager {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(DBManager.class);
 
     private static final String sTableAndroidMetadata = "android_metadata";
@@ -78,7 +79,7 @@ class DBManager {
 
     private static HashMap<String, String>
     extractFieldAndType(String schemaString) {
-        HashMap<String, String> map = new HashMap<String, String>();
+        HashMap<String, String> map = new HashMap<>();
 
         Matcher m = sPFieldDef.matcher(schemaString);
         String str;
@@ -136,8 +137,6 @@ class DBManager {
             fis = new FileInputStream(fSrc);
             fos = new FileOutputStream(fDst);
             Utils.copy(fos, fis);
-        } catch (FileNotFoundException e) {
-            err = Err.IO_FILE;
         } catch (InterruptedException e) {
             // Unexpected interrupt!!
             err = Err.INTERRUPTED;
@@ -172,7 +171,7 @@ class DBManager {
                             "type = 'table'",
                             null, null, null, null);
 
-        HashMap<String, String> map = new HashMap<String, String>();
+        HashMap<String, String> map = new HashMap<>();
         if (c.moveToFirst()) {
             do {
                 // Key : table name, Value : sql text
@@ -214,12 +213,12 @@ class DBManager {
 
     private static Err
     verifyExternalDBFile(File exDbf) {
-        Err err = Err.INVALID_DB;
+        Err err;
         try {
             if (!exDbf.canRead())
                 return Err.IO_FILE;
 
-            SQLiteDatabase exDb = null;
+            SQLiteDatabase exDb;
             try {
                 exDb = SQLiteDatabase.openDatabase(exDbf.getAbsolutePath(), null, SQLiteDatabase.OPEN_READONLY);
             } catch (SQLiteException e) {
@@ -238,6 +237,8 @@ class DBManager {
     copyAndUpgrade(File tempExDb, File exDbf) {
         Err err = copy(tempExDb, exDbf);
         if (Err.NO_ERR != err) {
+            // Return value is ignored intentionally
+            //noinspection ResultOfMethodCallIgnored
             tempExDb.delete();
             return err;
         }
@@ -262,7 +263,7 @@ class DBManager {
      *   All operations that might access DB, SHOULD BE STOPPED
      *     before importing DB.
      *   And that operation should be resumed after importing DB.
-     * @param exDbf
+     * @param exDbf exported database file
      */
     static Err
     importDatabase(File exDbf) {
@@ -285,9 +286,13 @@ class DBManager {
             err = copy(inDbf, exDbf);
             if (Err.NO_ERR != err) {
                 // Restore it
+                // Return value is ignored intentionally
+                //noinspection ResultOfMethodCallIgnored
                 inDbf.delete();
+                //noinspection ResultOfMethodCallIgnored
                 inDbfBackup.renameTo(inDbf);
             } else {
+                //noinspection ResultOfMethodCallIgnored
                 inDbfBackup.delete();
             }
         } finally {
@@ -372,7 +377,7 @@ class DBManager {
      *   All operations that might access DB, SHOULD BE STOPPED
      *     before importing DB.
      *   And that operation should be resumed after importing DB.
-     * @param exDbf
+     * @param exDbf exported database file
      */
     static Err
     mergeDatabase(File exDbf) {
@@ -381,6 +386,7 @@ class DBManager {
             return err;
 
         File fTmp = null;
+        err = Err.IO_FILE;
         try {
             fTmp = File.createTempFile("mergeDBTempFile", null, new File(Policy.APPDATA_TMPDIR));
             err = copyAndUpgrade(fTmp, exDbf);
@@ -388,19 +394,22 @@ class DBManager {
         } catch (IOException e) {
             err = Err.IO_FILE;
         } finally {
-            if (Err.NO_ERR != err) {
-                if (null != fTmp)
-                    fTmp.delete();
-                return err;
-            }
+            if (Err.NO_ERR != err
+                && null != fTmp)
+                //noinspection ResultOfMethodCallIgnored
+                fTmp.delete();
         }
+        if (Err.NO_ERR != err)
+            return err;
 
         // Now exDbf is temporally-created-file.
+        // 'Always false' But for future refactoring.
+        //noinspection ConstantConditions
         if (null == exDbf)
             return Err.IO_FILE;
 
         try {
-            SQLiteDatabase exDb = null;
+            SQLiteDatabase exDb;
             try {
                 exDb = SQLiteDatabase.openDatabase(exDbf.getAbsolutePath(), null, SQLiteDatabase.OPEN_READONLY);
             } catch (SQLiteException e) {
@@ -434,6 +443,7 @@ class DBManager {
                 db.endTransaction();
             }
         } finally {
+            //noinspection ResultOfMethodCallIgnored
             exDbf.delete();
         }
 
@@ -453,19 +463,18 @@ class DBManager {
             Utils.copy(fos, fis);
             fis.close();
             fos.close();
-        } catch (FileNotFoundException e) {
-            err = Err.IO_FILE;
         } catch (InterruptedException e) {
             // Unexpected interrupt!!
             err = Err.UNKNOWN;
         } catch (IOException e) {
             err = Err.IO_FILE;
         } finally {
-            if (Err.NO_ERR != err) {
+            if (Err.NO_ERR != err)
+                //noinspection ResultOfMethodCallIgnored
                 exDbf.delete();
-                return err;
-            }
         }
+        if (Err.NO_ERR != err)
+            return err;
 
         DB.get().open(); // open again.
         return Err.NO_ERR;

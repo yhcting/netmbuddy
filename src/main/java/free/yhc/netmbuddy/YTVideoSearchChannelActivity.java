@@ -38,13 +38,14 @@ package free.yhc.netmbuddy;
 
 import android.os.Bundle;
 import free.yhc.netmbuddy.core.UnexpectedExceptionHandler;
-import free.yhc.netmbuddy.core.YTDataHelper;
 import free.yhc.netmbuddy.core.YTDataAdapter;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class YTVideoSearchChannelActivity extends YTVideoSearchActivity implements
 UnexpectedExceptionHandler.Evidence {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(YTVideoSearchChannelActivity.class);
 
     @Override

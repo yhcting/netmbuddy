@@ -39,7 +39,9 @@ package free.yhc.netmbuddy.scmp;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class SCmp {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(SCmp.class);
 
     private SCElemI mBaseElem;
@@ -62,6 +64,7 @@ public class SCmp {
         return Utils.max(s0, s1);
     }
 
+    @SuppressWarnings("unused")
     public static float
     similarity(String s0, String s1, boolean enableLenDiff, SCmpPolicy policy) {
         SCElemSStr estr0 = SCElemSStr.create(SCElemSStr.Type.EXACT_WORD, s0, null);

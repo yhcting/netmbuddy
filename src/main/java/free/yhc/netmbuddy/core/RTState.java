@@ -45,16 +45,17 @@ import free.yhc.netmbuddy.utils.Utils;
 
 public class RTState implements
 UnexpectedExceptionHandler.Evidence {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(RTState.class);
 
     private static RTState sInstance = null;
 
-    // TODO
-    // Proxy string should be changed if user changes proxy setting.
+    // TODO Proxy string should be changed if user changes proxy setting.
     private String mProxy = "";
     private HashMap<String, MapValue> mOverridingPref = new HashMap<>();
-    private LruCache<String, YTHacker> mHackerCache = new LruCache(Policy.YTHACK_CACHE_SIZE);
+    private LruCache<String, YTHacker> mHackerCache = new LruCache<>(Policy.YTHACK_CACHE_SIZE);
 
     private static class MapValue {
         Object owner;
@@ -85,6 +86,7 @@ UnexpectedExceptionHandler.Evidence {
         return sInstance;
     }
 
+    @SuppressWarnings("unused")
     public String
     getProxy() {
         return mProxy;
@@ -92,8 +94,7 @@ UnexpectedExceptionHandler.Evidence {
 
     /**
      *
-     * @param hacker
-     *   should be successfully hacked object.
+     * @param hacker should be successfully hacked object.
      */
     public void
     cachingYtHacker(YTHacker hacker) {
@@ -106,11 +107,13 @@ UnexpectedExceptionHandler.Evidence {
         return mHackerCache.get(ytvid);
     }
 
+    @SuppressWarnings("unused")
     public void
     setOverridingPreference(String key, Object owner, Object value) {
         mOverridingPref.put(key, new MapValue(owner, value));
     }
 
+    @SuppressWarnings("unused")
     public boolean
     unsetOverridingPreference(String key, Object owner) {
         MapValue v = mOverridingPref.get(key);
@@ -128,9 +131,10 @@ UnexpectedExceptionHandler.Evidence {
 
     /**
      *
-     * @param key
+     * @param key key string of preference
      * @return null if overriding value DOESN'T EXIST.
      */
+    @SuppressWarnings("unused")
     public Object
     getOverridingPreferenceOwner(String key) {
         MapValue v = mOverridingPref.get(key);

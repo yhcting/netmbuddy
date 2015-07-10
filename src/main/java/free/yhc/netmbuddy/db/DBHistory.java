@@ -39,7 +39,9 @@ package free.yhc.netmbuddy.db;
 import free.yhc.netmbuddy.utils.Utils;
 
 class DBHistory {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(DBHistory.class);
 
     static final String[] sTables = {

@@ -41,7 +41,9 @@ import free.yhc.netmbuddy.db.DB.Col;
 import free.yhc.netmbuddy.utils.Utils;
 
 class DBUpgrader {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(DBUpgrader.class);
 
     private final SQLiteDatabase mDb;
@@ -67,7 +69,8 @@ class DBUpgrader {
     private static void
     execDropColumns(SQLiteDatabase db ,
                     String table, String tempTable,
-                    Col[] dbCols, String[] unusedCols) {
+                    Col[] dbCols,
+                    @SuppressWarnings("unused") String[] unusedCols) {
         // SQLITE doesn't support 'DROP COLUMN'.
         // This is heavy workaround.
 

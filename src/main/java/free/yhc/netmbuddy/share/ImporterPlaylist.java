@@ -36,21 +36,11 @@
 
 package free.yhc.netmbuddy.share;
 
-import android.graphics.Bitmap;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-
-import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+import android.graphics.Bitmap;
 
-import free.yhc.netmbuddy.core.YTDataAdapter;
-import free.yhc.netmbuddy.core.YTDataHelper;
 import free.yhc.netmbuddy.db.ColPlaylist;
-import free.yhc.netmbuddy.db.ColVideo;
 import free.yhc.netmbuddy.db.DB;
 import free.yhc.netmbuddy.core.MultiThreadRunner;
 import free.yhc.netmbuddy.core.Policy;
@@ -67,7 +57,9 @@ import free.yhc.netmbuddy.utils.Utils;
 import free.yhc.netmbuddy.utils.YTUtils;
 
 class ImporterPlaylist implements ImporterI {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(ImporterPlaylist.class);
 
     private final DataModel.Playlist mPl;
@@ -137,6 +129,7 @@ class ImporterPlaylist implements ImporterI {
         DB db = DB.get();
         String baseTitle = shareTitle + "- share";
         int i = 0;
+        //noinspection StatementWithEmptyBody
         while (db.containsPlaylist(baseTitle + i++));
         return baseTitle + --i;
     }

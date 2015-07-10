@@ -41,10 +41,12 @@ import android.provider.SearchRecentSuggestions;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class SearchSuggestionProvider extends SearchRecentSuggestionsProvider {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(SearchSuggestionProvider.class);
 
-    private final static String AUTHORITY   = "free.yhc.netmbuddy";
+    private final static String AUTHORITY = "free.yhc.netmbuddy";
     private final static int MODE = DATABASE_MODE_QUERIES;
 
     public SearchSuggestionProvider() {

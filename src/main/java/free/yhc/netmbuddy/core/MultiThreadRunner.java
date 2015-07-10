@@ -38,7 +38,6 @@ package free.yhc.netmbuddy.core;
 
 import static free.yhc.netmbuddy.utils.Utils.eAssert;
 
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -50,7 +49,9 @@ import free.yhc.netmbuddy.utils.Utils;
 // Runnable => Job
 // Thread   => Task
 public class MultiThreadRunner {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(MultiThreadRunner.class);
 
     private final Handler mOwner;
@@ -66,7 +67,8 @@ public class MultiThreadRunner {
         = new AtomicReference<>(null);
 
     // For debugging purpose.
-    private int  mSeqN   = 0;
+    @SuppressWarnings("unused")
+    private int  mSeqN = 0;
 
     public interface OnProgressListener {
         /**
@@ -87,7 +89,8 @@ public class MultiThreadRunner {
         private Handler _mOwner = null;
         private OnProgressListener _mProgListener = null;
 
-        public Job(boolean interruptOnCancel, float progWeight) {
+        public Job(@SuppressWarnings("unused") boolean interruptOnCancel,
+                   float progWeight) {
             _mProgWeight = progWeight;
             _mInterruptOnCancel = true; // default is true.
         }
@@ -96,13 +99,11 @@ public class MultiThreadRunner {
             this(true, progWeight);
         }
 
+        @SuppressWarnings("unused")
         public Job() {
             this(0);
         }
 
-        /**
-         * @hide
-         */
         final void
         setOwner(Handler owner) {
             // Setting only ONCE is allowed to avoid synch. issue.
@@ -110,9 +111,6 @@ public class MultiThreadRunner {
             _mOwner = owner;
         }
 
-        /**
-         * @hide
-         */
         final void
         setProgListener(OnProgressListener listener) {
             // Setting only ONCE is allowed to avoid synch. issue.
@@ -120,14 +118,12 @@ public class MultiThreadRunner {
             _mProgListener = listener;
         }
 
-        /**
-         * @hide
-         */
         final boolean
         getInterruptOnCancel() {
             return _mInterruptOnCancel;
         }
 
+        @SuppressWarnings("unused")
         final int
         getTaskPriority() {
             return _mTaskPriority;
@@ -138,6 +134,7 @@ public class MultiThreadRunner {
             return _mProgWeight;
         }
 
+        @SuppressWarnings("unused")
         protected final void
         publishProgress(float prog) {
             // NOTE
@@ -168,8 +165,9 @@ public class MultiThreadRunner {
         onCancelled() { }
 
         public void
-        onPostRun(R result) { }
+        onPostRun(@SuppressWarnings("unused") R result) { }
 
+        @SuppressWarnings("unused")
         public void
         onProgress(int prog) { }
     }
@@ -182,6 +180,7 @@ public class MultiThreadRunner {
         // To workaround Android GB Framework bug regarding AsyncTask.
         // On GB Framework, it is NOT guaranteed that onCancelled() is called after returning from doInBackground().
         // This is based on experimental result on Moto Bionic.
+        @SuppressWarnings("unused")
         private final boolean _mJobDone = false;
 
         private boolean
@@ -235,7 +234,7 @@ public class MultiThreadRunner {
         @Override
         protected R
         doAsyncTask() {
-            R r = null;
+            R r;
             r = _mJob.doJob();
             return r;
         }
@@ -270,7 +269,6 @@ public class MultiThreadRunner {
 
     /**
      * mQLock should be held.
-     * @return
      */
     private boolean
     isAllJobsDoneLocked() {
@@ -279,20 +277,21 @@ public class MultiThreadRunner {
 
     /**
      * mQLock should be held.
-     * @param job
      */
     private void
     runJobLocked(Job<?> job) {
-        // TODO
+        // TODO : instantiate generic 'task'
         // Is there any to instantiate generic 'task' whose generic type is
         //   same with generic type of 'job' instead of raw-type?
+        @SuppressWarnings("unchecked")
         Task<?> t = new Task(this, job, mOwner);
         mRunQ.addLast(t);
         t.run();
     }
 
     private void
-    onTaskDone(final Task<?> task, final boolean cancelled) {
+    onTaskDone(final Task<?> task,
+               @SuppressWarnings("unused") final boolean cancelled) {
         mustRunOnOwnerThread();
         //logD("Run TaskDone START : " + task.getName());
 
@@ -331,6 +330,7 @@ public class MultiThreadRunner {
         return mOwner;
     }
 
+    @SuppressWarnings("unused")
     public void
     setOnDoneListener(OnDoneListener listener) {
         mDoneListener.set(listener);
@@ -371,11 +371,13 @@ public class MultiThreadRunner {
         }
     }
 
+    @SuppressWarnings("unused")
     public void
     clearCancelledState() {
         mCancelled.set(false);
     }
 
+    @SuppressWarnings("unused")
     public void
     setProgress(float v) {
         mProgress.set(v);
@@ -386,9 +388,8 @@ public class MultiThreadRunner {
         mCancelled.set(true);
         synchronized (mQLock) {
             mReadyQ.clear();
-            Iterator<Task<?>> iter = mRunQ.iterator();
-            while (iter.hasNext())
-                iter.next().cancel();
+            for (Task<?> t : mRunQ)
+                t.cancel();
         }
     }
 

@@ -77,57 +77,86 @@ public enum Err {
     public static Err
     map(YTHacker.Err err) {
         switch (err) {
-        case NO_ERR: return NO_ERR;
-        case IO_NET: return IO_NET;
-        case NETWORK_UNAVAILABLE: return NETWORK_UNAVAILABLE;
-        case PARSE_HTML: return YTPARSEHTML;
-        case INTERRUPTED: return INTERRUPTED;
-        default: return UNKNOWN;
+        case NO_ERR:
+            return NO_ERR;
+        case IO_NET:
+            return IO_NET;
+        case NETWORK_UNAVAILABLE:
+            return NETWORK_UNAVAILABLE;
+        case PARSE_HTML:
+            return YTPARSEHTML;
+        case INTERRUPTED:
+            return INTERRUPTED;
+        default:
+            return UNKNOWN;
         }
     }
 
     public static Err
     map(DB.Err err) {
         switch (err) {
-        case NO_ERR: return NO_ERR;
-        case VERSION_MISMATCH: return DB_VERSION_MISMATCH;
-        case IO_FILE: return IO_FILE;
-        case DUPLICATED: return DB_DUPLICATED;
-        case INTERRUPTED: return INTERRUPTED;
-        case INVALID_DB: return DB_INVALID;
-        default: return UNKNOWN;
+        case NO_ERR:
+            return NO_ERR;
+        case VERSION_MISMATCH:
+            return DB_VERSION_MISMATCH;
+        case IO_FILE:
+            return IO_FILE;
+        case DUPLICATED:
+            return DB_DUPLICATED;
+        case INTERRUPTED:
+            return INTERRUPTED;
+        case INVALID_DB:
+            return DB_INVALID;
+        default:
+            return UNKNOWN;
         }
     }
 
     public static Err
     map(YTDataAdapter.Err err) {
         switch (err) {
-        case NO_ERR: return NO_ERR;
-        case IO_NET: return Err.IO_NET;
-        case INTERRUPTED: return Err.INTERRUPTED;
-        case BAD_REQUEST: return Err.BAD_REQUEST;
-        case NETWORK_UNAVAILABLE: return Err.NETWORK_UNAVAILABLE;
-        case INVALID_PARAM: return Err.YTINVALID_PARAM;
-        case BAD_RESPONSE: return PARSER_UNKNOWN;
-        default: return UNKNOWN;
+        case NO_ERR:
+            return NO_ERR;
+        case IO_NET:
+            return Err.IO_NET;
+        case INTERRUPTED:
+            return Err.INTERRUPTED;
+        case BAD_REQUEST:
+            return Err.BAD_REQUEST;
+        case NETWORK_UNAVAILABLE:
+            return Err.NETWORK_UNAVAILABLE;
+        case INVALID_PARAM:
+            return Err.YTINVALID_PARAM;
+        case BAD_RESPONSE:
+            return PARSER_UNKNOWN;
+        default:
+            return UNKNOWN;
         }
     }
 
     public static Err
     map(Share.Err err) {
         switch (err) {
-        case NO_ERR: return NO_ERR;
-        case IO_FILE: return Err.IO_FILE;
-        case IO_NET: return Err.IO_NET;
-        case INTERRUPTED: return Err.INTERRUPTED;
-        case INVALID_SHARE: return Err.INVALID_DATA;
-        case UNSUPPORTED_VERSION: return Err.UNSUPPORTED_VERSION;
-        case DB_UNKNOWN: return Err.DB_UNKNOWN;
-        default: return Err.UNKNOWN;
+        case NO_ERR:
+            return NO_ERR;
+        case IO_FILE:
+            return Err.IO_FILE;
+        case IO_NET:
+            return Err.IO_NET;
+        case INTERRUPTED:
+            return Err.INTERRUPTED;
+        case INVALID_SHARE:
+            return Err.INVALID_DATA;
+        case UNSUPPORTED_VERSION:
+            return Err.UNSUPPORTED_VERSION;
+        case DB_UNKNOWN:
+            return Err.DB_UNKNOWN;
+        default:
+            return Err.UNKNOWN;
         }
     }
 
-    private Err(int msg) {
+    Err(int msg) {
         mMsg = msg;
     }
 

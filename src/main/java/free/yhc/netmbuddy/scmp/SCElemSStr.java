@@ -41,16 +41,17 @@ import java.util.LinkedList;
 import free.yhc.netmbuddy.utils.Utils;
 
 class SCElemSStr extends SCElem {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(SCElemSStr.class);
 
-    private static final String DEF_DELIMITER_REGEX
-        = "(\\s|~|\\(|\\)|\\.|\\,|\\-|\\\\|\\*|\\&|\\||\\^|\\%|\\$|\\#|\\@|\\!|\\`|\\'|\\\"|\\?|\\/|\\>|\\<|\\_|\\+|\\=|\\[|\\]|\\{|\\})+";
+    private static final String DEF_DELIMITER_REGEX = "[\\Q ~().,-\\*&|^%$#@!`'\"?/><_+=[]{};:\\E]+";
 
     enum Type {
         NORMAL,
         EXACT_WORD,
-    };
+    }
 
     static SCElemSStr
     create(Type ty, String str, String delimiterRegex) {
@@ -58,12 +59,12 @@ class SCElemSStr extends SCElem {
             delimiterRegex = DEF_DELIMITER_REGEX;
 
         String[] toks = str.split(delimiterRegex);
-        LinkedList<String> l = new LinkedList<String>();
+        LinkedList<String> l = new LinkedList<>();
         for (String s : toks) {
             if (!s.isEmpty())
                 l.addLast(s);
         }
-        return new SCElemSStr(l.toArray(new String[0]), ty);
+        return new SCElemSStr(l.toArray(new String[l.size()]), ty);
     }
 
     private SCElemSStr(String[] toks, Type ty) {

@@ -53,9 +53,12 @@ import free.yhc.netmbuddy.core.YTPlayerLifeSupportService;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class YTMPApp extends Application {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(YTMPApp.class);
 
+    @SuppressWarnings("FieldCanBeLocal")
     private static String PREF_KEY_APP_VERSION = "app_version";
 
     // ========================================================================
@@ -93,7 +96,8 @@ public class YTMPApp extends Application {
     }
 
     private void
-    onAppUpgrade(Context context, int from, int to) {
+    onAppUpgrade(Context context, int from,
+                 @SuppressWarnings("unused") int to) {
         if (from < 31)
             onUpgradeTo31(context);
     }

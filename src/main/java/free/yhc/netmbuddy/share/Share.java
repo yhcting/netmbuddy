@@ -50,7 +50,9 @@ import free.yhc.netmbuddy.utils.Utils;
 //
 // ============================================================================
 public class Share {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(Share.class);
 
     public interface OnProgressListener {
@@ -63,8 +65,7 @@ public class Share {
         /**
          * Synchronous call.
          * @param arg user argument. It depends on share type.
-         * @param listener
-         * @return
+         * @param listener listener
          */
         ImportResult execute(Object arg, OnProgressListener listener);
         void cancel();

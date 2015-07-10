@@ -76,7 +76,9 @@ import free.yhc.netmbuddy.widget.SlidingDrawer;
 
 public class YTPlayerUI implements
 OnSharedPreferenceChangeListener {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(YTPlayerUI.class);
 
     private static final int SEEKBAR_MAX = 1000;
@@ -159,6 +161,7 @@ OnSharedPreferenceChangeListener {
             _mLastSecondaryProgress = 0;
         }
 
+        @SuppressWarnings("unused")
         int
         getSecondaryProgressPercent() {
             int percent =  _mLastSecondaryProgress * 100 / SEEKBAR_MAX;
@@ -273,8 +276,10 @@ OnSharedPreferenceChangeListener {
     //
     // ========================================================================
     private void
-    notiConfigure(YTPlayer.MPState from, int fromFlag,
-                  YTPlayer.MPState to,   int toFlag) {
+    notiConfigure(@SuppressWarnings("unused") YTPlayer.MPState from,
+                  @SuppressWarnings("unused") int fromFlag,
+                  YTPlayer.MPState to,
+                  @SuppressWarnings("unused") int toFlag) {
         NotiManager nm = NotiManager.get();
         if (!mMp.hasActiveVideo()) {
             nm.removePlayerNotification();
@@ -336,8 +341,10 @@ OnSharedPreferenceChangeListener {
 
     private void
     pvConfigureTitle(TextView titlev,
-                     YTPlayer.MPState from, int fromFlag,
-                     YTPlayer.MPState to,   int toFlag) {
+                     @SuppressWarnings("unused") YTPlayer.MPState from,
+                     @SuppressWarnings("unused") int fromFlag,
+                     YTPlayer.MPState to,
+                     @SuppressWarnings("unused") int toFlag) {
         if (null == titlev)
             return;
 
@@ -369,7 +376,7 @@ OnSharedPreferenceChangeListener {
         }
     }
 
-
+    @SuppressWarnings("unused")
     private void
     pvDisableControlButton(ViewGroup playerv) {
         pvDisableButton((ImageView)playerv.findViewById(R.id.mplayer_btnplay));
@@ -381,8 +388,10 @@ OnSharedPreferenceChangeListener {
 
     private void
     pvConfigureControl(ViewGroup controlv,
-                       YTPlayer.MPState from, int fromFlag,
-                       YTPlayer.MPState to,   int toFlag) {
+                       @SuppressWarnings("unused") YTPlayer.MPState from,
+                       @SuppressWarnings("unused") int fromFlag,
+                       YTPlayer.MPState to,
+                       @SuppressWarnings("unused") int toFlag) {
         if (null == controlv)
             return;
 
@@ -453,7 +462,7 @@ OnSharedPreferenceChangeListener {
                         //   with the moment when user-pause is triggered.
                         if (mMp.getPlayerSessionId() == sessionId
                             && YTPlayer.MPState.PAUSED == mMp.getPlayerState()
-                            && PlayBtnState.STOP == (PlayBtnState)playv.getTag()
+                            && PlayBtnState.STOP == playv.getTag()
                             && activity == mVActivity) {
                             playv.setImageResource(R.drawable.ic_media_play);
                             playv.setTag(PlayBtnState.START);
@@ -505,8 +514,10 @@ OnSharedPreferenceChangeListener {
 
     private void
     pvConfigureProgress(ViewGroup progressv,
-                        YTPlayer.MPState from, int fromFlag,
-                        YTPlayer.MPState to,   int toFlag) {
+                        @SuppressWarnings("unused") YTPlayer.MPState from,
+                        @SuppressWarnings("unused") int fromFlag,
+                        YTPlayer.MPState to,
+                        @SuppressWarnings("unused") int toFlag) {
 
         if (null == progressv)
             return;
@@ -574,8 +585,10 @@ OnSharedPreferenceChangeListener {
 
     private void
     pvConfigureLDrawer(ViewGroup playerLDrawer,
-                      YTPlayer.MPState from, int fromFlag,
-                      YTPlayer.MPState to,   int toFlag) {
+                       @SuppressWarnings("unused") YTPlayer.MPState from,
+                       @SuppressWarnings("unused") int fromFlag,
+                       @SuppressWarnings("unused") YTPlayer.MPState to,
+                       @SuppressWarnings("unused") int toFlag) {
         if (null == playerLDrawer)
             return;
 
@@ -793,7 +806,7 @@ OnSharedPreferenceChangeListener {
     }
 
     private void
-    pvOnMoreButtonClicked(View v) {
+    pvOnMoreButtonClicked(@SuppressWarnings("unused") View v) {
         final YTPlayer.Video video  = mMp.getActiveVideo();
 
         if (null == video)
@@ -824,10 +837,14 @@ OnSharedPreferenceChangeListener {
             onClick(DialogInterface dialog, int item) {
                 switch (opts[item]) {
                 case R.string.detail_info:
+                    // vid is NOT null
+                    //noinspection ConstantConditions
                     pvMoreControlDetailInfo(vid);
                     break;
 
                 case R.string.set_bookmark:
+                    // vid is NOT null
+                    //noinspection ConstantConditions
                     pvMoreControlSetBookmark(vid);
                     break;
 
@@ -884,7 +901,7 @@ OnSharedPreferenceChangeListener {
                     break;
 
                 default:
-                    ; // do nothing.
+                    // do nothing.
                 }
             }
         });
@@ -926,7 +943,7 @@ OnSharedPreferenceChangeListener {
     }
 
     private void
-    pvSetupStatusBar(ViewGroup playerv) {
+    pvSetupStatusBar(@SuppressWarnings("unused") ViewGroup playerv) {
         updateStatusAutoStopSet(mMp.isAutoStopSet(), mMp.getAutoStopTime());
         onSharedPreferenceChanged(Utils.getSharedPreference(), Utils.getResString(R.string.csquality));
         onSharedPreferenceChanged(Utils.getSharedPreference(), Utils.getResString(R.string.csrepeat));
@@ -934,7 +951,9 @@ OnSharedPreferenceChangeListener {
     }
 
     private void
-    pvInit(ViewGroup playerv, ViewGroup playerLDrawer, SurfaceView surfacev) {
+    pvInit(ViewGroup playerv,
+           ViewGroup playerLDrawer,
+           @SuppressWarnings("unused") SurfaceView surfacev) {
         mMp.addPlayerStateListener(this, new YTPlayer.PlayerStateListener() {
             @Override
             public void
@@ -1134,11 +1153,21 @@ OnSharedPreferenceChangeListener {
         TextView tv = (TextView)mPlayerv.findViewById(R.id.mplayer_status_quality);
         CharSequence text = "?";
         switch (quality) {
-        case VERYHIGH:  text = "VH";    break;
-        case HIGH:      text = "H";     break;
-        case NORMAL:    text = "M";     break;
-        case MIDLOW:    text = "ML";    break;
-        case LOW:       text = "L";     break;
+        case VERYHIGH:
+            text = "VH";
+            break;
+        case HIGH:
+            text = "H";
+            break;
+        case NORMAL:
+            text = "M";
+            break;
+        case MIDLOW:
+            text = "ML";
+            break;
+        case LOW:
+            text = "L";
+            break;
         }
         tv.setText("[" + text + "]");
     }
@@ -1241,6 +1270,7 @@ OnSharedPreferenceChangeListener {
         return mVActivity;
     }
 
+    @SuppressWarnings("unused")
     SurfaceView
     getSurfaceView() {
         return mSurfacev;

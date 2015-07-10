@@ -57,7 +57,7 @@ class SCElem implements SCElemI {
         F, // Found
         C, // Continuous
         N, // Non-continuous
-    };
+    }
 
     // Similarity CoMPare RESult
     private static class ScanRes {
@@ -114,7 +114,9 @@ class SCElem implements SCElemI {
     }
 
     private float
-    getLengthDiffDeduction(SCmpPolicy policy, SCElemI[] es0, SCElemI[] es1) {
+    getLengthDiffDeduction(@SuppressWarnings("unused") SCmpPolicy policy,
+                           SCElemI[] es0,
+                           SCElemI[] es1) {
         if (!getEnableLengthDiff())
             return 1.0f; // by default ignore length-diff-factor.
 
@@ -146,7 +148,7 @@ class SCElem implements SCElemI {
 
     private ScanRes[][]
     scanSimiarElems(SCmpPolicy policy, SCElemI[] es0, SCElemI[] es1) {
-        LinkedList<LinkedList<ScanRes>> lres = new LinkedList<LinkedList<ScanRes>>();
+        LinkedList<LinkedList<ScanRes>> lres = new LinkedList<>();
         for (SCElemI e0 : es0) {
             int i = 0;
             boolean bFirst = true;
@@ -156,7 +158,7 @@ class SCElem implements SCElemI {
                 float similarity = e0.similarity(e1);
                 if (similarity >= policy.getCmpThreshold()) {
                     if (bFirst) {
-                        ll = new LinkedList<ScanRes>();
+                        ll = new LinkedList<>();
                         lres.addLast(ll);
                         bFirst = false;
                     }
@@ -168,9 +170,7 @@ class SCElem implements SCElemI {
         // Converting result to two-dimensional array
         ScanRes[][] res = new ScanRes[lres.size()][];
         int i = 0;
-        Iterator<LinkedList<ScanRes>> itr = lres.iterator();
-        while (itr.hasNext()) {
-            LinkedList<ScanRes> l = itr.next();
+        for (LinkedList<ScanRes> l : lres) {
             Iterator<ScanRes> itr2 = l.iterator();
             res[i] = new ScanRes[l.size()];
             int j = 0;
@@ -204,7 +204,7 @@ class SCElem implements SCElemI {
             }
             if (DBG) P.v("State Changed : " + prevst.name() + " -> " + st.name() + " (" + r.s + ")");
             if (prevst != st
-                || (State.F == prevst && State.F == st)) {
+                || State.F == prevst) {
                 if (State.C == prevst)
                     sw *= policy.getContAdv();
                 if (DBG) P.v("Session Weight " + sw + " is added");
@@ -238,7 +238,8 @@ class SCElem implements SCElemI {
     }
 
     private void
-    dnlEndLoop(DNLoop dnl, int depth) {
+    dnlEndLoop(@SuppressWarnings("unused") DNLoop dnl,
+               int depth) {
         if (DBG) P.v("- End loop : " + depth);
     }
 

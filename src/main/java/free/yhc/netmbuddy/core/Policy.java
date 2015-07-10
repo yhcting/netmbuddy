@@ -38,10 +38,11 @@ package free.yhc.netmbuddy.core;
 
 import android.os.Environment;
 import free.yhc.netmbuddy.utils.Utils;
-import free.yhc.netmbuddy.ytapiv3.YTApiFacade;
 
 public class Policy {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(Policy.class);
 
     public static final String APPBASENAME = "netmbuddy";
@@ -67,7 +68,6 @@ public class Policy {
     public static final int YTSEARCH_MAX_RESULTS = 20; //YTApiFacade.MAX_RESULTS_PER_PAGE; // 1 ~ 50
 
     // Performance for loading thumbnail
-    public static final int YTSEARCH_LOAD_THUMBNAIL_INTERVAL = 100; // 100ms
     public static final int YTSEARCH_MAX_LOAD_THUMBNAIL_THREAD = 4;
     public static final int YTIMPORT_MAX_LOAD_THUMBNAIL_THREAD = 10;
 
@@ -133,8 +133,7 @@ public class Policy {
     // --------------------------------------------------------------------
     // Usage Report
     // --------------------------------------------------------------------
-    public static final String REPORT_RECEIVER = "yhcting77dev@gmail.com";
-    public static final String TIME_STAMP_FILE_SUFFIX = "____tmstamp___";
+    public static final String REPORT_RECEIVER = "yhcting77dev0@gmail.com";
 
     // --------------------------------------------------------------------
     // Values dependent on Preference.

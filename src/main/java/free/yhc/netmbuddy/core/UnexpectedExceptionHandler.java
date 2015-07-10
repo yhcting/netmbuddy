@@ -44,7 +44,6 @@ package free.yhc.netmbuddy.core;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.Thread.UncaughtExceptionHandler;
-import java.util.Iterator;
 import java.util.LinkedList;
 
 import android.content.Context;
@@ -56,7 +55,9 @@ import free.yhc.netmbuddy.utils.Utils;
 
 public class UnexpectedExceptionHandler implements
 UncaughtExceptionHandler {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(UnexpectedExceptionHandler.class);
 
     private static final String UNKNOWN = "unknown";
@@ -139,6 +140,7 @@ UncaughtExceptionHandler {
 
     private void
     appendCommonReport(StringBuilder report) {
+        //noinspection StringConcatenationInsideStringBufferAppend
         report.append("==================== Package Information ==================\n")
               .append("  - name        : " + mPr.packageName + "\n")
               .append("  - version     : " + mPr.versionName + "\n")
@@ -180,8 +182,7 @@ UncaughtExceptionHandler {
 
     /**
      * register module that will be dumped when unexpected exception is issued.
-     * @param m
-     * @return
+     * @param m module providing evidences
      */
     public boolean
     registerModule(Evidence m) {
@@ -211,11 +212,9 @@ UncaughtExceptionHandler {
         appendCommonReport(report);
 
         // collect dump informations
-        Iterator<Evidence> iter = mMods.iterator();
-        while (iter.hasNext()) {
-            Evidence tm = iter.next();
+        for (Evidence tm : mMods)
             report.append(tm.dump(DumpLevel.FULL)).append("\n\n");
-        }
+
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
         ex.printStackTrace(pw);

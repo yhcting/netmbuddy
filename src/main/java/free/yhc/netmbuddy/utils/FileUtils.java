@@ -51,7 +51,9 @@ import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 public class FileUtils {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(FileUtils.class);
 
     // Characters that is not allowed as filename in Android.
@@ -80,7 +82,7 @@ public class FileUtils {
 
     private static void
     zipDir(ZipOutputStream zos, String directory, String path)
-            throws IOException, FileNotFoundException {
+            throws IOException {
         final int BUFSZ = 4096;
         File zipDir = new File(directory);
 
@@ -88,8 +90,8 @@ public class FileUtils {
         String[] dirList = zipDir.list();
         byte[] buf = new byte[BUFSZ];
         // loop through dirList, and zip the files
-        for (int i = 0; i < dirList.length; i++) {
-            File f = new File(zipDir, dirList[i]);
+        for (String aDirList : dirList) {
+            File f = new File(zipDir, aDirList);
             if (f.isDirectory()) {
                 String filePath = f.getPath();
                 zipDir(zos, filePath, path + f.getName() + "/");
@@ -110,7 +112,7 @@ public class FileUtils {
 
     private static void
     zipFile(ZipOutputStream zos, String fsrc)
-            throws IOException, FileNotFoundException {
+            throws IOException {
         FileInputStream fis = new FileInputStream(fsrc);
         try {
             zip(zos, fis, getFileBaseName(fsrc));
@@ -121,7 +123,7 @@ public class FileUtils {
 
     public static void
     zip(ZipOutputStream zos, String fsrc, String comment)
-            throws IOException, FileNotFoundException {
+            throws IOException {
         File f = new File(fsrc);
         if (null != comment)
             zos.setComment(comment);
@@ -146,9 +148,10 @@ public class FileUtils {
             zos.write(buf, 0, br);
     }
 
+    @SuppressWarnings("unused")
     public static void
     zip(String zipFilePath, String srcFilePath, String comment)
-            throws IOException, FileNotFoundException {
+            throws IOException {
         ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(zipFilePath));
         zos.setLevel(8);
         try {
@@ -178,12 +181,12 @@ public class FileUtils {
         while (null != (ze = zis.getNextEntry())) {
             File f = new File(outDir, ze.getName());
             //create directories if required.
+            // return value is ignored intentionally
+            //noinspection ResultOfMethodCallIgnored
             f.getParentFile().mkdirs();
 
             //if the entry is directory, leave it. Otherwise extract it.
-            if (ze.isDirectory())
-                continue;
-            else {
+            if (!ze.isDirectory()) {
                 int br;
                 byte buf[] = new byte[BUFSZ];
                 FileOutputStream fos = new FileOutputStream(f);
@@ -197,6 +200,7 @@ public class FileUtils {
         }
     }
 
+    @SuppressWarnings("unused")
     public static void
     unzip(String outDir, String file)
             throws IOException {
@@ -224,7 +228,7 @@ public class FileUtils {
 
     public static boolean
     removeFileRecursive(File f, File[] skips) {
-        HashSet<String> skipSets = new HashSet<String>();
+        HashSet<String> skipSets = new HashSet<>();
         for (File skf : skips)
             skipSets.add(skf.getAbsolutePath());
 
@@ -236,6 +240,7 @@ public class FileUtils {
         return removeFileRecursive(f, new File[] { skip });
     }
 
+    @SuppressWarnings("unused")
     public static boolean
     removeFileRecursive(File f) {
         return removeFileRecursive(f, new File[0]);
@@ -248,15 +253,13 @@ public class FileUtils {
     // ========================================================================
     /**
      *
-     * @param file
-     *   Text file.
-     * @return
-     *   value when reading non-text files, is not defined.
+     * @param file Text file.
+     * @return value when reading non-text files, is not defined.
      */
     public static String
     readTextFile(File file) {
         try {
-            StringBuffer fileData = new StringBuffer(4096);
+            StringBuilder fileData = new StringBuilder(4096);
             BufferedReader reader = new BufferedReader(new FileReader(file));
             char[] buf = new char[4096];
             int bytes;
