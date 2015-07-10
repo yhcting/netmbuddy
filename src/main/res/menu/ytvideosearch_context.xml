@@ -2,7 +2,7 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android" >
     <!-- Order of Menu should reflect easy-usecase. See comments at "musics_context.xml" for details -->
     <item android:id="@+id/play_video"                  android:title="@string/play_video"></item>
-    <item android:id="@+id/videos_of_this_channel"      android:title="@string/videos_of_this_channel"></item>
+    <item android:id="@+id/videos_of_same_channel"      android:title="@string/videos_of_same_channel"></item>
     <item android:id="@+id/search_similar_titles"       android:title="@string/search_similar_titles"></item>
     <item android:id="@+id/append_to_playq"             android:title="@string/append_to_playq"></item>
     <item android:id="@+id/add_to"                      android:title="@string/add_to"></item>

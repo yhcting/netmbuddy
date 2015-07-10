@@ -70,6 +70,7 @@ YTDataHelper.VideoListRespReceiver {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(YTSearchActivity.class);
 
+    public static final String KEY_TITLE = "searctitle";
     public static final String KEY_TEXT = "searchtext";
     public static final String KEY_CUR_PAGETOKEN = "cur_pagetoken";
     public static final String KEY_NEXT_PAGETOKEN = "next_pagetoken";
@@ -79,6 +80,7 @@ YTDataHelper.VideoListRespReceiver {
     protected ListView mListv = null;
 
     private String mText = null;
+    private String mTitle = null;
     private String mCurPageToken = null;
     private String mNextPageToken = null;
     private String mPrevPageToken = null;
@@ -240,8 +242,6 @@ YTDataHelper.VideoListRespReceiver {
             return Utils.getResString(R.string.keyword);
         case VID_CHANNEL:
             return Utils.getResString(R.string.channel);
-        case VID_PLAYLIST:
-            return Utils.getResString(R.string.playlist);
         }
         eAssert(false);
         return null;
@@ -281,7 +281,7 @@ YTDataHelper.VideoListRespReceiver {
     }
 
     private void
-    loadPage(String text, String pageToken) {
+    loadPage(String title, String text, String pageToken) {
         disableNaviBar();
         // close helper to cancel all existing work.
         if (null != mSearchHelper)
@@ -293,6 +293,7 @@ YTDataHelper.VideoListRespReceiver {
         // open again to support new search.
         mSearchHelper.open();
 
+        mTitle = title;
         mText = text;
         mCurPageToken = pageToken;
         YTDataAdapter.VideoListReq ytreq
@@ -303,7 +304,7 @@ YTDataHelper.VideoListRespReceiver {
         YTDataHelper.VideoListReq req
             = new YTDataHelper.VideoListReq(null, ytreq);
         YTDataAdapter.Err err = mSearchHelper.requestVideoListAsync(req);
-        setTitleText(searchTypeString(getSearchType()) + " : " + text);
+        setTitleText(searchTypeString(getSearchType()) + " : " + title);
         if (YTDataAdapter.Err.NO_ERR == err)
             enableContentLoading();
         else
@@ -316,8 +317,8 @@ YTDataHelper.VideoListRespReceiver {
     }
 
     protected void
-    startNewSearch(final String text) {
-        loadPage(text, "");
+    startNewSearch(final String title, final String text) {
+        loadPage(title, text, "");
     }
 
     // ========================================================================
@@ -396,7 +397,7 @@ YTDataHelper.VideoListRespReceiver {
                     eAssert(false); // This is UNEXPECTED.
                     return;
                 }
-                loadPage(mText, mPrevPageToken);
+                loadPage(mTitle, mText, mPrevPageToken);
             }
         });
 
@@ -408,7 +409,7 @@ YTDataHelper.VideoListRespReceiver {
                     eAssert(false); // This is UNEXPECTED.
                     return;
                 }
-                loadPage(mText, mNextPageToken);
+                loadPage(mTitle, mText, mNextPageToken);
             }
         });
 
@@ -433,7 +434,7 @@ YTDataHelper.VideoListRespReceiver {
             @Override
             public void
             run() {
-                startNewSearch(query);
+                startNewSearch(query, query);
             }
         });
     }

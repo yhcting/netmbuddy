@@ -321,32 +321,10 @@ public class YTDataHelper {
     private static YTDataAdapter.VideoListResp
     doRequestVideoList(YTDataAdapter.VideoListReq req)
         throws YTDataAdapter.YTApiException {
-        //YTFeed.Result r = null;
         switch (req.type) {
             case VID_KEYWORD:
+            case VID_CHANNEL:
                 return YTApiFacade.requestVideoList(req);
-
-            /*
-            case VID_AUTHOR:
-            r = parse(loadUrl(YTVideoFeed.getFeedUrlByAuthor(arg.text, arg.starti, arg.max)),
-                      FeedType.VIDEO);
-                break;
-            */
-
-            /*
-            case VID_PLAYLIST:
-            r = parse(loadUrl(YTVideoFeed.getFeedUrlByPlaylist(arg.text, arg.starti, arg.max)),
-                      FeedType.VIDEO);
-                break;
-            */
-
-            /*
-            case PL_USER:
-            r = parse(loadUrl(YTPlaylistFeed.getFeedUrlByUser(arg.text, arg.starti, arg.max)),
-                      FeedType.PLAYLIST);
-                break;
-            */
-
             default:
                 eAssert(false);
         }

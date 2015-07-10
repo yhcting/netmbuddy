@@ -153,17 +153,30 @@ public class YTVideoSearchAdapter extends YTSearchAdapter<YTDataAdapter.Video> {
         if (!verifyVideo(vid))
             v.setVisibility(View.INVISIBLE);
 
-        TextView titlev = (TextView)v.findViewById(R.id.title);
-        titlev.setText(vid.title);
+        TextView tv = (TextView)v.findViewById(R.id.title);
+        tv.setText(vid.title);
+        String text;
 
-        String playtmtext = "?";
-        playtmtext = Utils.secsToMinSecText(vid.playTimeSec);
-        ((TextView)v.findViewById(R.id.playtime)).setText(playtmtext);
+        tv = (TextView)v.findViewById(R.id.playtime);
+        if (0 <= vid.playTimeSec) {
+            text = Utils.secsToMinSecText(vid.playTimeSec);
+            tv.setText(text);
+        } else
+            tv.setVisibility(View.INVISIBLE);
 
-        String dateText;
-        dateText = android.text.format.DateFormat.getDateFormat(mCxt).format(vid.uploadedTime);
+        tv = (TextView)v.findViewById(R.id.uploadedtime);
+        if (null != vid.uploadedTime) {
+            text = android.text.format.DateFormat.getDateFormat(mCxt).format(vid.uploadedTime);
+            tv.setText("< " + text + " >");
+        } else
+            tv.setVisibility(View.INVISIBLE);
 
-        ((TextView)v.findViewById(R.id.uploadedtime)).setText("< " + dateText + " >");
+        tv = (TextView)v.findViewById(R.id.channel);
+        if (null != vid.channelTitle
+            && null != vid.channelId) {
+            tv.setText(vid.channelTitle);
+        } else
+            tv.setVisibility(View.INVISIBLE);
 
         if (mDupSet.contains(position))
             setToDup(v);

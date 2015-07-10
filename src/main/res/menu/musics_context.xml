@@ -11,7 +11,7 @@
     <item android:id="@+id/detail_info"                 android:title="@string/detail_info"></item>
     <item android:id="@+id/bookmarks"                   android:title="@string/bookmarks"></item>
     <item android:id="@+id/volume"                      android:title="@string/volume"></item>
-    <item android:id="@+id/videos_of_this_channel"      android:title="@string/videos_of_this_channel"></item>
+    <item android:id="@+id/videos_of_same_channel"      android:title="@string/videos_of_same_channel"></item>
     <item android:id="@+id/search_similar_titles"       android:title="@string/search_similar_titles"></item>
     <item android:id="@+id/rename"                      android:title="@string/rename"></item>
     <item android:id="@+id/move_to"                     android:title="@string/move_to"></item>

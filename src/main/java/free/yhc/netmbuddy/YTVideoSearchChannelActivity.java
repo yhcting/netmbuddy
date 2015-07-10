@@ -71,8 +71,9 @@ UnexpectedExceptionHandler.Evidence {
         super.onCreate(savedInstanceState);
         UnexpectedExceptionHandler.get().registerModule(this);
 
-        String text = getIntent().getStringExtra(KEY_TEXT);
-        onCreateInternal(text);
+        String channelId = getIntent().getStringExtra(KEY_TEXT);
+        String channelTitle = getIntent().getStringExtra(KEY_TITLE);
+        onCreateInternal(channelTitle, channelId);
     }
 
     @Override

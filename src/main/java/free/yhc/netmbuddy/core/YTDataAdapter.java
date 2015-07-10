@@ -88,7 +88,6 @@ public class YTDataAdapter {
     public enum ReqType {
         VID_KEYWORD,
         VID_CHANNEL,
-        VID_PLAYLIST
     }
 
 

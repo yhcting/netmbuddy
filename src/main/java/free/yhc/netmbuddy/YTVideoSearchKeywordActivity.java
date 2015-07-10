@@ -70,7 +70,7 @@ UnexpectedExceptionHandler.Evidence {
         super.onCreate(savedInstanceState);
         UnexpectedExceptionHandler.get().registerModule(this);
         String text = getIntent().getStringExtra(KEY_TEXT);
-        onCreateInternal(text);
+        onCreateInternal(text, text);
     }
 
     @Override

@@ -94,40 +94,6 @@
                 android:resource="@xml/searchable_user"/>
         </activity>
         <activity
-            android:name=".YTVideoSearchPlaylistActivity"
-            android:configChanges="orientation|screenSize|keyboardHidden"
-            android:theme="@android:style/Theme.NoTitleBar"
-            android:launchMode="singleTop"
-            android:exported="false"
-            >
-            <meta-data
-                android:name="android.app.default_searchable"
-                android:value=".YTVideoSearchPlaylistActivity" />
-            <intent-filter>
-                <action android:name="android.intent.action.SEARCH" />
-            </intent-filter>
-            <meta-data
-                android:name="android.app.searchable"
-                android:resource="@xml/searchable_user"/>
-        </activity>
-        <activity
-            android:name=".YTPlaylistSearchActivity"
-            android:configChanges="orientation|screenSize|keyboardHidden"
-            android:theme="@android:style/Theme.NoTitleBar"
-            android:launchMode="singleTop"
-            android:exported="false"
-            >
-            <meta-data
-                android:name="android.app.default_searchable"
-                android:value=".YTPlaylistSearchActivity" />
-            <intent-filter>
-                <action android:name="android.intent.action.SEARCH" />
-            </intent-filter>
-            <meta-data
-                android:name="android.app.searchable"
-                android:resource="@xml/searchable_user"/>
-        </activity>
-        <activity
             android:name=".YTMPPreferenceActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
             android:theme="@android:style/Theme.NoTitleBar"

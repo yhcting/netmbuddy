@@ -70,7 +70,7 @@
     <string name="choose_app">Choose App.</string>
     <string name="play_video">Play video</string>
     <string name="channel_videos">Channel videos</string>
-    <string name="videos_of_this_channel">Videos of this channel</string>
+    <string name="videos_of_same_channel">Videos of same channel</string>
     <string name="importing_db">Importing DB</string>
     <string name="merging_db">Merging DB</string>
     <string name="exporting_db">Exporting DB</string>

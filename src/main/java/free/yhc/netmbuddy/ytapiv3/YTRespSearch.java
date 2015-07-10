@@ -53,16 +53,24 @@ public class YTRespSearch extends YTResp {
     private static final Utils.Logger P = new Utils.Logger(YTRespSearch.class);
 
     static String
-    getRequestUrl(String query, String pageToken, int maxResults) {
+    getVideoSearchRequestUrl(String channelId,
+                             String query,
+                             String pageToken,
+                             int maxResults) {
         eAssert(null != pageToken);
         if (!pageToken.isEmpty())
             pageToken = "&pageToken=" + Uri.encode(pageToken, null);
+        if (!channelId.isEmpty())
+            channelId = "&channelId=" + channelId;
+        if (!query.isEmpty())
+            query = "&q=" + Uri.encode(query);
         return "https://www.googleapis.com/youtube/v3/search"
                 + "?key=" + Uri.encode(YTApiFacade.API_KEY)
                 + "&maxResults=" + maxResults
                 + "&type=video"
                 + "&part=id,snippet"
-                + "&q=" + Uri.encode(query)
+                + channelId
+                + query
                 + "&fields=nextPageToken,prevPageToken,pageInfo(totalResults,resultsPerPage)"
                     + ",items/id/videoId"
                 + pageToken;

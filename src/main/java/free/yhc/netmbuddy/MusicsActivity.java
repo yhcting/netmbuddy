@@ -420,7 +420,7 @@ UnexpectedExceptionHandler.Evidence {
             onContextMenuBookmarks(info.id, info.position);
             return true;
 
-        case R.id.videos_of_this_channel:
+        case R.id.videos_of_same_channel:
             onContextMenuVideosOfThisChannel(info.id, info.position);
             return true;
 
@@ -444,7 +444,7 @@ UnexpectedExceptionHandler.Evidence {
         menu.findItem(R.id.plthumbnail).setVisible(visible);
 
         visible = Utils.isValidValue(getAdapter().getMusicChannel(mInfo.position));
-        menu.findItem(R.id.videos_of_this_channel).setVisible(visible);
+        menu.findItem(R.id.videos_of_same_channel).setVisible(visible);
     }
 
     @Override

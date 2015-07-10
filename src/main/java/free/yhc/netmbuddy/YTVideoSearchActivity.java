@@ -156,9 +156,10 @@ UnexpectedExceptionHandler.Evidence {
     }
 
     private void
-    onContextMenuVideosOfThisChannel(final int position) {
+    onContextMenuVideosOfSameChannel(final int position) {
         Intent i = new Intent(this, YTVideoSearchChannelActivity.class);
-        i.putExtra(YTSearchActivity.KEY_TEXT, getAdapter().getItemChannelTitle(position));
+        i.putExtra(YTSearchActivity.KEY_TITLE, getAdapter().getItemChannelTitle(position));
+        i.putExtra(YTSearchActivity.KEY_TEXT, getAdapter().getItemChannelId(position));
         startActivity(i);
     }
 
@@ -324,7 +325,7 @@ UnexpectedExceptionHandler.Evidence {
     //
     // ========================================================================
     protected void
-    onCreateInternal(String stext) {
+    onCreateInternal(String title, String text) {
       mToolBtnSearchAction = new View.OnClickListener() {
             @Override
             public void
@@ -336,8 +337,8 @@ UnexpectedExceptionHandler.Evidence {
         setupBottomBar(getToolButtonSearchIcon(), mToolBtnSearchAction,
         0, null);
 
-        if (null != stext)
-            startNewSearch(stext);
+        if (null != text)
+            startNewSearch(title, text);
         else
             doNewSearch();
     }
@@ -447,7 +448,7 @@ UnexpectedExceptionHandler.Evidence {
 
         enableContentList();
         if (null != getAdapter()
-        && arg.vids == getAdapter().getItems())
+            && arg.vids == getAdapter().getItems())
             // Entry is same with current adapter.
             // That means 'dup. checking is done for exsiting entries"
             applyDupCheckResults(getAdapter(), results);
@@ -468,9 +469,10 @@ UnexpectedExceptionHandler.Evidence {
         inflater.inflate(R.menu.ytvideosearch_context, menu);
         AdapterView.AdapterContextMenuInfo mInfo = (AdapterView.AdapterContextMenuInfo)menuInfo;
 
-        // TODO : Implement channel menu here!
-        boolean visible = Utils.isValidValue(getAdapter().getItemChannelTitle(mInfo.position));
-        menu.findItem(R.id.videos_of_this_channel).setVisible(visible);
+        // menu 'videos of same channel' is useless if we are already in the same-type-search
+        boolean visible = Utils.isValidValue(getAdapter().getItemChannelTitle(mInfo.position))
+                          && YTDataAdapter.ReqType.VID_CHANNEL != getSearchType();
+        menu.findItem(R.id.videos_of_same_channel).setVisible(visible);
     }
 
     @Override
@@ -490,8 +492,8 @@ UnexpectedExceptionHandler.Evidence {
                 onContextMenuPlayVideo(info.position);
                 return true;
 
-            case R.id.videos_of_this_channel:
-                onContextMenuVideosOfThisChannel(info.position);
+            case R.id.videos_of_same_channel:
+                onContextMenuVideosOfSameChannel(info.position);
                 return true;
 
             case R.id.search_similar_titles:

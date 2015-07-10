@@ -92,17 +92,32 @@ public class YTApiFacade {
      */
     public static YTDataAdapter.VideoListResp
     requestVideoList(YTDataAdapter.VideoListReq req) throws YTDataAdapter.YTApiException {
+        String requrl;
         switch (req.type) {
         case VID_KEYWORD:
-            byte[] data;
-            try {
-                data = loadUrl(YTRespSearch.getRequestUrl(req.hint, req.pageToken, req.pageSize));
-            } catch (NetLoader.LocalException e) {
-                throw new YTDataAdapter.YTApiException(YTDataAdapter.Err.IO_NET);
-            }
-            YTResp.SearchListResponse slresp = YTRespSearch.parse(data);
-            if (null == slresp.items)
-                throw new YTDataAdapter.YTApiException(YTDataAdapter.Err.UNKNOWN);
+            requrl = YTRespSearch.getVideoSearchRequestUrl("", req.hint, req.pageToken, req.pageSize);
+            break;
+        case VID_CHANNEL:
+            requrl = YTRespSearch.getVideoSearchRequestUrl(req.hint, "", req.pageToken, req.pageSize);
+            break;
+        default:
+            eAssert(false);
+            return null;
+        }
+
+        byte[] data;
+        try {
+            data = loadUrl(requrl);
+        } catch (NetLoader.LocalException e) {
+            throw new YTDataAdapter.YTApiException(YTDataAdapter.Err.IO_NET);
+        }
+        YTResp.SearchListResponse slresp = YTRespSearch.parse(data);
+        if (null == slresp.items
+            || slresp.items.length > slresp.pageInfo.totalResults)
+            throw new YTDataAdapter.YTApiException(YTDataAdapter.Err.BAD_RESPONSE);
+
+        YTDataAdapter.VideoListResp ytvl;
+        if (slresp.items.length > 0) {
             String[] ytvids = new String[slresp.items.length];
             for (int i = 0; i < ytvids.length; i++)
                 ytvids[i] = slresp.items[i].id.videoId;
@@ -112,10 +127,15 @@ public class YTApiFacade {
                 throw new YTDataAdapter.YTApiException(YTDataAdapter.Err.IO_NET);
             }
             YTResp.VideoListResponse vlresp = YTRespVideos.parse(data);
-            return vlresp.makeAdapterData();
+            ytvl = vlresp.makeAdapterData();
+        } else {
+            ytvl = new YTDataAdapter.VideoListResp();
+            ytvl.vids = new YTDataAdapter.Video[0];
         }
-        eAssert(false);
-        return null;
+        ytvl.page.totalResults = slresp.pageInfo.totalResults;
+        ytvl.page.nextPageToken = slresp.nextPageToken;
+        ytvl.page.prevPageToken = slresp.prevPageToken;
+        return ytvl;
     }
 
     public static YTDataAdapter.Video
