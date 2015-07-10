@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014
+ * Copyright (C) 2012, 2013, 2014, 2015
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -100,6 +100,11 @@ class DBHistory {
     // ----------------------------------------------------------------------------------------------------------------
     private static FieldNType sFnTBookmarksT =      new FieldNType("bookmarks",       "text");
 
+    // ----------------------------------------------------------------------------------------------------------------
+    // Newly added at version 4
+    // ----------------------------------------------------------------------------------------------------------------
+    private static FieldNType sFnTChannelIdT =      new FieldNType("channelid",       "text");
+    private static FieldNType sFnTChannelTitleT =   new FieldNType("channeltitle",    "text");
 
     // [3Dim][2Dim][1Dim]
     // 1st dimension : FieldNType lists
@@ -234,7 +239,38 @@ class DBHistory {
                 // Below field are newly added
                 sFnTBookmarksT,
             }
+        },
+
+        // DB version 4
+        {
+            // Playlist table
+            {
+                sFnTTitleT,
+                sFnTDescriptionT,
+                sFnTThumbnailB,
+                sFnTSizeI,
+                sFnT_idI,
+                sFnTThumbnail_vidT,
+            },
+
+            // Video table
+            {
+                sFnTTitleT,
+                sFnTDescriptionT,
+                sFnTVideoidT,
+                sFnTPlaytimeI,
+                sFnTThumbnailB,
+                sFnTVolumeI,
+                sFnTTime_addI,
+                sFnTTime_playedI,
+                sFnTRefcountI,
+                sFnTNrplayedI,
+                sFnTBookmarksT,
+                sFnT_idI,
+                // Below field are newly added
+                sFnTChannelIdT,
+                sFnTChannelTitleT
+            }
         }
     };
-
 }
