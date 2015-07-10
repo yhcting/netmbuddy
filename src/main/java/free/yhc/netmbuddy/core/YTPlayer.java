@@ -1442,7 +1442,7 @@ UnexpectedExceptionHandler.Evidence {
     private void
     startVideo(Video v, boolean recovery) {
         if (null != v)
-            startVideo(v.v.ytvid, v.v.title, v.v.volume, recovery);
+            startVideo(v.v.ytvid, v.v.title, (int)v.v.volume, recovery);
     }
 
     private void

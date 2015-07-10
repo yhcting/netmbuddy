@@ -111,7 +111,7 @@ class SimilarTitlesListAdapter extends BaseAdapter {
         } else
             channelv.setVisibility(View.GONE);
         uploadtmv.setVisibility(View.GONE);
-        playtmv.setText(Utils.secsToMinSecText(dbv.playtime));
+        playtmv.setText(Utils.secsToMinSecText((int)dbv.playtime));
 
         // NOTE: Load thumbnail separately from main adapter cursor
         byte[] thumbnailData = (byte[])DB.get().getVideoInfo(dbv.id, ColVideo.THUMBNAIL);

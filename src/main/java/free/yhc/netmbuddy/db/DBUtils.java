@@ -71,7 +71,7 @@ public class DBUtils {
             cvs.put(col.getName(), (String)value);
             break;
         case "integer":
-            cvs.put(col.getName(), (Integer)value);
+            cvs.put(col.getName(), (Long)value);
             break;
         case "blob":
             cvs.put(col.getName(), (byte[])value);
@@ -312,9 +312,9 @@ public class DBUtils {
         int i = c.getColumnIndex(col.getName());
         if ("text".equals(col.getType()))
             return c.getString(i);
-        else if ("integer".equals(col.getType()))
+        else if ("integer".equals(col.getType())) {
             return c.getLong(i);
-        else if ("blob".equals(col.getType()))
+        } else if ("blob".equals(col.getType()))
             return c.getBlob(i);
         else {
             eAssert(false);

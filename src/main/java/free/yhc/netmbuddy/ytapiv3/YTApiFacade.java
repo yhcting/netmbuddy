@@ -94,13 +94,15 @@ public class YTApiFacade {
     requestVideoList(YTDataAdapter.VideoListReq req) throws YTDataAdapter.YTApiException {
         switch (req.type) {
         case VID_KEYWORD:
-            byte[] data = null;
+            byte[] data;
             try {
                 data = loadUrl(YTRespSearch.getRequestUrl(req.hint, req.pageToken, req.pageSize));
             } catch (NetLoader.LocalException e) {
                 throw new YTDataAdapter.YTApiException(YTDataAdapter.Err.IO_NET);
             }
             YTResp.SearchListResponse slresp = YTRespSearch.parse(data);
+            if (null == slresp.items)
+                throw new YTDataAdapter.YTApiException(YTDataAdapter.Err.UNKNOWN);
             String[] ytvids = new String[slresp.items.length];
             for (int i = 0; i < ytvids.length; i++)
                 ytvids[i] = slresp.items[i].id.videoId;

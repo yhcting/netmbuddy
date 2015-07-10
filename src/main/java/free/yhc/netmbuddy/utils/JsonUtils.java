@@ -162,17 +162,18 @@ public class JsonUtils {
             for (int i = 0; i < r.length; i++) {
                 try {
                     r[i] = cls.newInstance();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    return null;
+                } catch (InstantiationException e) {
+                    eAssert(false);
+                } catch (IllegalAccessException e) {
+                    eAssert(false);
                 }
                 r[i].set(ja.getJSONObject(i));
             }
             return r;
         } catch (JSONException e) {
-            e.printStackTrace();
-            return null;
+            eAssert(false);
         }
+        return null;
     }
 
     /**

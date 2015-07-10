@@ -140,10 +140,10 @@ public class YTDataAdapter {
         public String id = null; // youtube video id
         public String channelId = null;
         public String channelTitle = null;
-        public long playTimeSec  = -1;   // seconds
+        public int playTimeSec  = -1;   // seconds
         public Video() { }
         public Video(String title, String thumbnailUrl, Date uploadedTime, String id,
-                     String channelId, String channelTitle, long playTimeSec) {
+                     String channelId, String channelTitle, int playTimeSec) {
             this.title = title;
             this.thumbnailUrl = thumbnailUrl;
             this.uploadedTime = uploadedTime;

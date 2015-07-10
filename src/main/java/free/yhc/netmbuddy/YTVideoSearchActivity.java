@@ -469,7 +469,7 @@ UnexpectedExceptionHandler.Evidence {
         AdapterView.AdapterContextMenuInfo mInfo = (AdapterView.AdapterContextMenuInfo)menuInfo;
 
         // TODO : Implement channel menu here!
-        boolean visible = !getAdapter().getItemChannelTitle(mInfo.position).isEmpty();
+        boolean visible = Utils.isValidValue(getAdapter().getItemChannelTitle(mInfo.position));
         menu.findItem(R.id.videos_of_this_channel).setVisible(visible);
     }
 

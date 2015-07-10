@@ -47,11 +47,11 @@ public class DMVideo {
     public long id = -1; // ColVideo.ID
     public String ytvid = null; // ColVideo.VIDEOID
     public String title = null; // ColVideo.TITLE
-    public int playtime = -1; // ColVideo.PLAYTIME
+    public long playtime = -1; // ColVideo.PLAYTIME
     public byte[] thumbnail = null; // ColVideo.THUMBNAIL
     public String channelId = null; // ColVideo.CHANNELID
     public String channelTitle = null; // ColVideo.CHANNELTITLE
-    public int volume = DB.INVALID_VOLUME; // ColVideo.VOLUME
+    public long volume = DB.INVALID_VOLUME; // ColVideo.VOLUME
     public String bookmarks = null; // ColVideo.BOOKMARKS
     public Extra extra = null; // optional data.
 
@@ -67,7 +67,7 @@ public class DMVideo {
     }
 
     private DMVideo
-    setYtData(String ytvid, String title, int playtime, String channelId, String channelTitle) {
+    setYtData(String ytvid, String title, long playtime, String channelId, String channelTitle) {
         this.ytvid = ytvid;
         this.title = title;
         this.playtime = playtime;
@@ -126,9 +126,9 @@ public class DMVideo {
                 case ID: id = (Long)o; break;
                 case TITLE: title = (String)o; break;
                 case VIDEOID: ytvid = (String)o; break;
-                case PLAYTIME: playtime = (Integer)o; break;
+                case PLAYTIME: playtime = (Long)o; break;
                 case THUMBNAIL: thumbnail = (byte[])o; break;
-                case VOLUME: volume = (Integer)o; break;
+                case VOLUME: volume = (Long)o; break;
                 case BOOKMARKS: bookmarks = (String)o; break;
                 case CHANNELID: channelId = (String)o; break;
                 case CHANNELTITLE: channelTitle = (String)o; break;
@@ -149,7 +149,7 @@ public class DMVideo {
 
     public DMVideo
     setYtData(YTDataAdapter.Video v) {
-        return setYtData(v.id, v.title, (int) v.playTimeSec, v.channelId, v.channelTitle);
+        return setYtData(v.id, v.title, (int)v.playTimeSec, v.channelId, v.channelTitle);
     }
 
     public DMVideo
@@ -176,7 +176,7 @@ public class DMVideo {
      * Set data if a field is not set yet.
      */
     public DMVideo
-    setPreferenceDataIfNotSet(int volume, String bookmarks) {
+    setPreferenceDataIfNotSet(long volume, String bookmarks) {
         if (DB.INVALID_VOLUME == volume)
             this.volume = volume;
         if (null == this.bookmarks)

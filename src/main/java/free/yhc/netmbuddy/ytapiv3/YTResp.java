@@ -66,12 +66,79 @@ class YTResp {
 
     static final SimpleDateFormat SDF = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss.SSS'Z'");
 
+
     // =======================================================================
     //
     //
     //
     // =======================================================================
-    static class Id extends JsonModel {
+    private static void
+    setSnippetData(YTDataAdapter.Video v, Snippet snippet) {
+        if (null != snippet) {
+            v.title = snippet.title;
+            v.channelId = snippet.channelId;
+            v.channelTitle = snippet.channelTitle;
+            if (null != snippet.thumbnails
+                && null != snippet.thumbnails.default_) {
+                v.thumbnailUrl = snippet.thumbnails.default_.url;
+            }
+            try {
+                v.uploadedTime = SDF.parse(snippet.publishedAt);
+            } catch (ParseException ignore) { }
+        }
+    }
+
+    // return seconds
+    private static long
+    parseYTDuration(String durstr) {
+        String s = null;
+        int Y = 0, M = 0, W = 0, D = 0, H = 0, m = 0, S = 0;
+        Pattern p = Pattern.compile(
+        "^P"
+        + "(?:([0-9]+)Y)?"
+        + "(?:([0-9]+)M)?"
+        + "(?:([0-9]+)W)?"
+        + "(?:([0-9]+)D)?"
+        + "T"
+        + "(?:([0-9]+)H)?"
+        + "(?:([0-9]+)M)?"
+        + "(?:([0-9]+)S)"
+        + "$");
+        Matcher mr = p.matcher(durstr);
+        if (!mr.matches())
+            return -1; // unknown format
+
+        if (null != (s = mr.group(1)))
+            Y = Integer.parseInt(s);
+        if (null != (s = mr.group(2)))
+            M = Integer.parseInt(s);
+        if (null != (s = mr.group(3)))
+            W = Integer.parseInt(s);
+        if (null != (s = mr.group(4)))
+            D = Integer.parseInt(s);
+        if (null != (s = mr.group(5)))
+            H = Integer.parseInt(s);
+        if (null != (s = mr.group(6)))
+            m = Integer.parseInt(s);
+        if (null != (s = mr.group(7)))
+            S = Integer.parseInt(s);
+
+        final int unitm = 60; // 1 min == 60 sec
+        final int unitH = 60 * unitm;
+        final int unitD = 24 * unitH;
+        if (0 < W
+        || 0 < M
+        || 0 < Y)
+            return -1; // too long
+        return D * unitD + H * unitH + m * unitm + S;
+    }
+
+    // =======================================================================
+    //
+    // All decendents of 'JsonModel' is set as 'public' to be used via reflection.
+    //
+    // =======================================================================
+    public static class Id extends JsonModel {
         String kind = null;
         String videoId = null;
         String channelId = null;
@@ -87,7 +154,7 @@ class YTResp {
         }
     }
 
-    static class PageInfo extends JsonModel {
+    public static class PageInfo extends JsonModel {
         Integer totalResults = null;
         Integer resultsPerPage = null;
 
@@ -99,7 +166,7 @@ class YTResp {
         }
     }
 
-    static class Thumbnail extends JsonModel {
+    public static class Thumbnail extends JsonModel {
         String url = null;
         Integer width = null;
         Integer height = null;
@@ -113,7 +180,7 @@ class YTResp {
         }
     }
 
-    static class Thumbnails extends JsonModel {
+    public static class Thumbnails extends JsonModel {
         Thumbnail default_ = null;
         Thumbnail medium = null;
         Thumbnail high = null;
@@ -127,7 +194,7 @@ class YTResp {
         }
     }
 
-    static class Snippet extends JsonModel {
+    public static class Snippet extends JsonModel {
         String publishedAt = null;
         String channelId = null;
         String title = null;
@@ -153,7 +220,7 @@ class YTResp {
         }
     }
 
-    static class RegionRestriction extends JsonModel {
+    public static class RegionRestriction extends JsonModel {
         String[] allowed = null;
         String[] blocked = null;
 
@@ -165,7 +232,7 @@ class YTResp {
         }
     }
 
-    static class ContentRating extends JsonModel {
+    public static class ContentRating extends JsonModel {
         String acbRating = null;
         String agcomRating = null;
         String anatelRating = null;
@@ -301,7 +368,7 @@ class YTResp {
         }
     }
 
-    static class Status extends JsonModel {
+    public static class Status extends JsonModel {
         String uploadStatus = null;
         String failureReason = null;
         String rejectionReason = null;
@@ -326,7 +393,7 @@ class YTResp {
         }
     }
 
-    static class Statistics extends JsonModel {
+    public static class Statistics extends JsonModel {
         Long viewCount = null;
         Long likeCount = null;
         Long dislikeCount = null;
@@ -344,7 +411,7 @@ class YTResp {
         }
     }
 
-    static class Player extends JsonModel {
+    public static class Player extends JsonModel {
         String embedHtml = null;
 
         @Override
@@ -354,7 +421,7 @@ class YTResp {
         }
     }
 
-    static class TopicDetails extends JsonModel {
+    public static class TopicDetails extends JsonModel {
         String[] topicIds = null;
         String[] relevantTopicIds = null;
 
@@ -366,7 +433,7 @@ class YTResp {
         }
     }
 
-    static class Location extends JsonModel {
+    public static class Location extends JsonModel {
         Double latitude = null;
         Double longitude = null;
         Double altitude = null;
@@ -380,7 +447,7 @@ class YTResp {
         }
     }
 
-    static class RecordingDetails extends JsonModel {
+    public static class RecordingDetails extends JsonModel {
         String locationDescription = null;
         Location location = null;
         String recordingDate = null;
@@ -394,7 +461,7 @@ class YTResp {
         }
     }
 
-    static class VideoStream extends JsonModel {
+    public static class VideoStream extends JsonModel {
         Integer widthPixels = null;
         Integer heightPixels = null;
         Double frameRateFps = null;
@@ -418,7 +485,7 @@ class YTResp {
         }
     }
 
-    static class AudioStream extends JsonModel {
+    public static class AudioStream extends JsonModel {
         Integer channelCount = null;
         String codec = null;
         Long bitrateBps = null;
@@ -434,7 +501,7 @@ class YTResp {
         }
     }
 
-    static class FileDetails extends JsonModel {
+    public static class FileDetails extends JsonModel {
         String fileName = null;
         Long fileSize = null;
         String fileType = null;
@@ -462,7 +529,7 @@ class YTResp {
         }
     }
 
-    static class ProcessingProgress extends JsonModel {
+    public static class ProcessingProgress extends JsonModel {
         Long partsTotal = null;
         Long partsProcessed = null;
         Long timeLeftMs = null;
@@ -476,8 +543,7 @@ class YTResp {
         }
     }
 
-
-    static class ProcessingDetails extends JsonModel {
+    public static class ProcessingDetails extends JsonModel {
         String processingStatus = null;
         ProcessingProgress processingProgress = null;
         String processingFailureReason = null;
@@ -501,7 +567,7 @@ class YTResp {
         }
     }
 
-    static class TagSuggestion extends JsonModel {
+    public static class TagSuggestion extends JsonModel {
         String tag = null;
         String[] categoryRestricts = null;
 
@@ -513,7 +579,7 @@ class YTResp {
         }
     }
 
-    static class Suggestions extends JsonModel {
+    public static class Suggestions extends JsonModel {
         String[] processingErrors = null;
         String[] processingWarnings = null;
         String[] processingHints = null;
@@ -532,7 +598,7 @@ class YTResp {
     }
 
 
-    static class LiveStreamingDetails extends JsonModel {
+    public static class LiveStreamingDetails extends JsonModel {
         String actualStartTime = null;
         String actualEndTime = null;
         String scheduledStartTime = null;
@@ -550,7 +616,7 @@ class YTResp {
         }
     }
 
-    static class ContentDetails extends JsonModel {
+    public static class ContentDetails extends JsonModel {
         String duration = null;
         String dimension = null;
         String definition = null;
@@ -572,7 +638,7 @@ class YTResp {
         }
     }
 
-    static class VideoRes extends JsonModel {
+    public static class VideoRes extends JsonModel {
         static final String KIND = "youtube#video";
         String kind = null;
         String etag = null;
@@ -615,23 +681,14 @@ class YTResp {
         makeAdapterData() {
             YTDataAdapter.Video v = new YTDataAdapter.Video();
             v.id = id;
-            if (null != snippet) {
-                v.title = snippet.title;
-                if (null != snippet.thumbnails
-                    && null != snippet.thumbnails.default_) {
-                    v.thumbnailUrl = snippet.thumbnails.default_.url;
-                }
-                try {
-                    v.uploadedTime = SDF.parse(snippet.publishedAt);
-                } catch (ParseException ignore) { }
-            }
+            setSnippetData(v, snippet);
             if (null != contentDetails)
-                v.playTimeSec = parseYTDuration(contentDetails.duration);
+                v.playTimeSec = (int)parseYTDuration(contentDetails.duration);
             return v;
         }
     }
 
-    static class SearchRes extends JsonModel {
+    public static class SearchRes extends JsonModel {
         static final String KIND = "youtube#searchResult";
         String kind = null;
         String etag = null;
@@ -651,16 +708,12 @@ class YTResp {
         makeAdapterData() {
             YTDataAdapter.Video v = new YTDataAdapter.Video();
             v.id = id.videoId;
-            v.title = snippet.title;
-            v.thumbnailUrl = snippet.thumbnails.default_.url;
-            try {
-                v.uploadedTime = SDF.parse(snippet.publishedAt);
-            } catch (ParseException ignore) { }
+            setSnippetData(v, snippet);
             return v;
         }
     }
 
-    static class SearchListResponse extends JsonModel {
+    public static class SearchListResponse extends JsonModel {
         static final String KIND = "youtube#searchListResponse";
         String kind = null;
         String etag = null;
@@ -698,7 +751,7 @@ class YTResp {
         }
     }
 
-    static class VideoListResponse extends JsonModel {
+    public static class VideoListResponse extends JsonModel {
         static final String KIND = "youtube#videoListResponse";
         String kind = null;
         String etag = null;
@@ -734,57 +787,6 @@ class YTResp {
                 r.vids[i] = items[i].makeAdapterData();
             return r;
         }
-    }
-
-    // =======================================================================
-    //
-    //
-    //
-    // =======================================================================
-
-    // return seconds
-    private static long
-    parseYTDuration(String durstr) {
-        String s = null;
-        int Y = 0, M = 0, W = 0, D = 0, H = 0, m = 0, S = 0;
-        Pattern p = Pattern.compile(
-              "^P"
-            + "(?:([0-9]+)Y)?"
-            + "(?:([0-9]+)M)?"
-            + "(?:([0-9]+)W)?"
-            + "(?:([0-9]+)D)?"
-            + "T"
-            + "(?:([0-9]+)H)?"
-            + "(?:([0-9]+)M)?"
-            + "(?:([0-9]+)S)"
-            + "$");
-        Matcher mr = p.matcher(durstr);
-        if (!mr.matches())
-            return -1; // unknown format
-
-        if (null != (s = mr.group(1)))
-            Y = Integer.parseInt(s);
-        if (null != (s = mr.group(2)))
-            M = Integer.parseInt(s);
-        if (null != (s = mr.group(3)))
-            W = Integer.parseInt(s);
-        if (null != (s = mr.group(4)))
-            D = Integer.parseInt(s);
-        if (null != (s = mr.group(5)))
-            H = Integer.parseInt(s);
-        if (null != (s = mr.group(6)))
-            m = Integer.parseInt(s);
-        if (null != (s = mr.group(7)))
-            S = Integer.parseInt(s);
-
-        final int unitm = 60; // 1 min == 60 sec
-        final int unitH = 60 * unitm;
-        final int unitD = 24 * unitH;
-        if (0 < W
-                || 0 < M
-                || 0 < Y)
-            return -1; // too long
-        return D * unitD + H * unitH + m * unitm + S;
     }
 
     // =======================================================================

@@ -72,7 +72,7 @@ public class YTRespSearch extends YTResp {
 
     static YTResp.SearchListResponse
     parse(byte[] data) throws YTDataAdapter.YTApiException {
-        JSONObject jo = null;
+        JSONObject jo;
         try {
             jo = new JSONObject(new String(data));
         } catch (JSONException e) {

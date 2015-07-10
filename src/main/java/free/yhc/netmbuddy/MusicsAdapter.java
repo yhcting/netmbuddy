@@ -170,12 +170,12 @@ public class MusicsAdapter extends ResourceCursorAdapter {
 
     public int
     getMusicVolume(int pos) {
-        return (Integer)getCursorInfo(pos, ColVideo.VOLUME);
+        return (int)(long)getCursorInfo(pos, ColVideo.VOLUME);
     }
 
     public int
     getMusicPlaytime(int pos) {
-        return (Integer)getCursorInfo(pos, ColVideo.PLAYTIME);
+        return (int)(long)getCursorInfo(pos, ColVideo.PLAYTIME);
     }
 
     public String
@@ -211,7 +211,7 @@ public class MusicsAdapter extends ResourceCursorAdapter {
         Object[] objs = Utils.getSortedKeyOfTimeMap(mCheckedMap);
         int[] poss = new int[objs.length];
         for (int i = 0; i < poss.length; i++)
-            poss[i] = (Integer)objs[i];
+            poss[i] = (int)(long)objs[i];
         return poss;
     }
 
@@ -286,7 +286,7 @@ public class MusicsAdapter extends ResourceCursorAdapter {
         } else
             channelv.setVisibility(View.GONE);
         uploadtmv.setVisibility(View.GONE);
-        playtmv.setText(Utils.secsToMinSecText((Integer)DBUtils.getCursorVal(cur, ColVideo.PLAYTIME)));
+        playtmv.setText(Utils.secsToMinSecText((int)(long)DBUtils.getCursorVal(cur, ColVideo.PLAYTIME)));
         // TODO How about caching thumbnails???
         // NOTE: Load thumbnail separately from main adapter cursor
         byte[] thumbnailData = (byte[])DB.get().getVideoInfo((Long)DBUtils.getCursorVal(cur, ColVideo.ID),

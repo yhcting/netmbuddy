@@ -110,7 +110,7 @@ public enum ColVideo implements DB.Col {
             byte[] thumbnail = v.thumbnail;
             if (null == thumbnail)
                 thumbnail = new byte[0];
-            int volume = v.volume;
+            long volume = v.volume;
             if (DB.INVALID_VOLUME == volume)
                 volume = Policy.DEFAULT_VIDEO_VOLUME;
 

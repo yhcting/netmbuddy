@@ -157,7 +157,7 @@ public class YTVideoSearchAdapter extends YTSearchAdapter<YTDataAdapter.Video> {
         titlev.setText(vid.title);
 
         String playtmtext = "?";
-        playtmtext = Utils.secsToMinSecText((int)vid.playTimeSec);
+        playtmtext = Utils.secsToMinSecText(vid.playTimeSec);
         ((TextView)v.findViewById(R.id.playtime)).setText(playtmtext);
 
         String dateText;
@@ -185,7 +185,7 @@ public class YTVideoSearchAdapter extends YTSearchAdapter<YTDataAdapter.Video> {
 
     public String
     getItemPlaytime(int pos) {
-        return Utils.secsToMinSecText((int)mItems[pos].playTimeSec);
+        return Utils.secsToMinSecText(mItems[pos].playTimeSec);
     }
 
     public String
@@ -251,7 +251,7 @@ public class YTVideoSearchAdapter extends YTSearchAdapter<YTDataAdapter.Video> {
         Object[] objs = Utils.getSortedKeyOfTimeMap(mCheckedMap);
         int[] poss = new int[objs.length];
         for (int i = 0; i < poss.length; i++)
-            poss[i] = (Integer)objs[i];
+            poss[i] = (int)(long)objs[i];
         return poss;
     }
 
