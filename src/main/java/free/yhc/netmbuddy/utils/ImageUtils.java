@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014
+ * Copyright (C) 2012, 2013, 2014, 2015
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -49,9 +49,8 @@ public class ImageUtils {
 
     /**
      * Decode image from file path(String) or raw data (byte[]).
-     * @param image
-     *   Two types are supported.
-     *   String for file path / byte[] for raw image data.
+     * @param image Two types are supported.
+     *              String for file path / byte[] for raw image data.
      * @param opt
      * @return
      */
@@ -70,12 +69,9 @@ public class ImageUtils {
 
     /**
      * Get size(width, height) of given image.
-     * @param image
-     *   'image file path' or 'byte[]' image data
-     * @param out
-     *   out[0] : width of image / out[1] : height of image
-     * @return
-     *   false if image cannot be decode. true if success
+     * @param image 'image file path' or 'byte[]' image data
+     * @param out out[0] : width of image / out[1] : height of image
+     * @return false if image cannot be decode. true if success
      */
     public static boolean
     imageSize(Object image, int[] out) {
@@ -96,18 +92,12 @@ public class ImageUtils {
      *   bound rectangle(boundW, boundH) with fixed ratio.
      * If input rectangle is included in bound, then input rectangle itself will be
      *   returned. (we don't need to adjust)
-     * @param boundW
-     *   width of bound rect
-     * @param boundH
-     *   height of bound rect
-     * @param width
-     *   width of rect to be shrunk
-     * @param height
-     *   height of rect to be shrunk
-     * @param out
-     *   calculated value [ out[0](width) out[1](height) ]
-     * @return
-     *   false(not shrunk) / true(shrunk)
+     * @param boundW width of bound rect
+     * @param boundH height of bound rect
+     * @param width  width of rect to be shrunk
+     * @param height height of rect to be shrunk
+     * @param out calculated value [ out[0](width) out[1](height) ]
+     * @return false(not shrunk) / true(shrunk)
      */
     public static boolean
     shrinkFixedRatio(int boundW, int boundH, int width, int height, int[] out) {
@@ -139,18 +129,12 @@ public class ImageUtils {
      *   bound rectangle(boundW, boundH) with fixed ratio - preserving width-height-ratio.
      * If input rectangle is included in bound, then input rectangle itself will be
      *   returned. (we don't need to adjust)
-     * @param boundW
-     *   width of bound rect
-     * @param boundH
-     *   height of bound rect
-     * @param width
-     *   width of rect to be shrunk
-     * @param height
-     *   height of rect to be shrunk
-     * @param out
-     *   calculated value [ out[0](width) out[1](height) ]
-     * @return
-     *   false(not shrunk) / true(shrunk)
+     * @param boundW width of bound rect
+     * @param boundH height of bound rect
+     * @param width width of rect to be shrunk
+     * @param height height of rect to be shrunk
+     * @param out calculated value [ out[0](width) out[1](height) ]
+     * @return false(not shrunk) / true(shrunk)
      */
     public static void
     fitFixedRatio(int boundW, int boundH, int width, int height, int[] out) {
@@ -168,14 +152,10 @@ public class ImageUtils {
     /**
      * Make fixed-ration-bounded-bitmap with file.
      * If (0 >= boundW || 0 >= boundH), original-size-bitmap is trying to be created.
-     * @param image
-     *   image file path (absolute path) or raw data (byte[])
-     * @param boundW
-     *   bound width
-     * @param boundH
-     *   bound height
-     * @return
-     *   null if fails
+     * @param image image file path (absolute path) or raw data (byte[])
+     * @param boundW bound width
+     * @param boundH bound height
+     * @return null if fails
      */
     public static Bitmap
     decodeImage(Object image, int boundW, int boundH) {

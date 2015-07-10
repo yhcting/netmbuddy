@@ -52,13 +52,13 @@ UnexpectedExceptionHandler.Evidence {
 
     // TODO
     // Proxy string should be changed if user changes proxy setting.
-    private String  mProxy          = "";
-    private HashMap<String, MapValue>   mOverridingPref = new HashMap<String, MapValue>();
-    private LruCache<String, YTHacker>  mHackerCache    = new LruCache(Policy.YTHACK_CACHE_SIZE);
+    private String mProxy = "";
+    private HashMap<String, MapValue> mOverridingPref = new HashMap<>();
+    private LruCache<String, YTHacker> mHackerCache = new LruCache(Policy.YTHACK_CACHE_SIZE);
 
     private static class MapValue {
-        Object  owner;
-        Object  value;
+        Object owner;
+        Object value;
         MapValue(Object aOwner, Object aValue) {
             owner = aOwner;
             value = aValue;
@@ -129,8 +129,7 @@ UnexpectedExceptionHandler.Evidence {
     /**
      *
      * @param key
-     * @return
-     *   null if overriding value DOESN'T EXIST.
+     * @return null if overriding value DOESN'T EXIST.
      */
     public Object
     getOverridingPreferenceOwner(String key) {

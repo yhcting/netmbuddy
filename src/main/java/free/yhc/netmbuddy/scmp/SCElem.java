@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014
+ * Copyright (C) 2012, 2013, 2014, 2015
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -47,10 +47,10 @@ class SCElem implements SCElemI {
 
     private static final SCmpPolicy sDefaultPolicy = new SCmpPolicy();
 
-    private SCElemI[]   mElems = null;
-    private SCmpPolicy  mPolicy = sDefaultPolicy;
-    private float       mMaxW = -1.0f; // maximum weight
-    private boolean     mEnableLengthDiff = false; // by default...
+    private SCElemI[] mElems = null;
+    private SCmpPolicy mPolicy = sDefaultPolicy;
+    private float mMaxW = -1.0f; // maximum weight
+    private boolean mEnableLengthDiff = false; // by default...
 
     private enum State {
         I, // idle
@@ -61,8 +61,8 @@ class SCElem implements SCElemI {
 
     // Similarity CoMPare RESult
     private static class ScanRes {
-        int     i;
-        float   s; // similarity
+        int i;
+        float s; // similarity
         ScanRes(int aI, float aS) {
             i = aI;
             s = aS;

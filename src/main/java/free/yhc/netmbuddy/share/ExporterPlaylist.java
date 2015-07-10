@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014
+ * Copyright (C) 2012, 2013, 2014, 2015
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -48,13 +48,10 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.zip.ZipOutputStream;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import free.yhc.netmbuddy.R;
 import free.yhc.netmbuddy.core.Policy;
-import free.yhc.netmbuddy.db.ColPlaylist;
-import free.yhc.netmbuddy.db.ColVideo;
 import free.yhc.netmbuddy.db.DB;
 import free.yhc.netmbuddy.share.Share.Err;
 import free.yhc.netmbuddy.share.Share.ExporterI;
@@ -74,8 +71,8 @@ class ExporterPlaylist implements ExporterI {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(ExporterPlaylist.class);
 
-    private final File  _mFout;
-    private final long  _mPlid;
+    private final File _mFout;
+    private final long _mPlid;
 
     ExporterPlaylist(File fout, long plid) {
         _mFout = fout;

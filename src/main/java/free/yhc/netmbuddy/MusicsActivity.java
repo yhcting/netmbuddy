@@ -67,12 +67,12 @@ UnexpectedExceptionHandler.Evidence {
     private static final Utils.Logger P = new Utils.Logger(MusicsActivity.class);
 
     public static final String MAP_KEY_PLAYLIST_ID  = "playlistid";
-    public static final String MAP_KEY_TITLE        = "title";
-    public static final String MAP_KEY_KEYWORD      = "keyword";
-    public static final String MAP_KEY_THUMBNAIL    = "thumbnail";
+    public static final String MAP_KEY_TITLE = "title";
+    public static final String MAP_KEY_KEYWORD = "keyword";
+    public static final String MAP_KEY_THUMBNAIL = "thumbnail";
 
-    private final DB            mDb = DB.get();
-    private final YTPlayer      mMp = YTPlayer.get();
+    private final DB mDb = DB.get();
+    private final YTPlayer mMp = YTPlayer.get();
 
     private final MusicsAdapter.CheckStateListener mCheckListener
         = new MusicsAdapter.CheckStateListener() {
@@ -85,8 +85,8 @@ UnexpectedExceptionHandler.Evidence {
     private final OnPlayerUpdateDBListener mOnPlayerUpdateDbListener
         = new OnPlayerUpdateDBListener();
 
-    private long        mPlid   = UiUtils.PLID_INVALID;
-    private ListView    mListv  = null;
+    private long mPlid = UiUtils.PLID_INVALID;
+    private ListView mListv = null;
 
     private class OnPlayerUpdateDBListener implements YTPlayer.OnDBUpdatedListener {
         @Override
@@ -538,6 +538,8 @@ UnexpectedExceptionHandler.Evidence {
         if (Activity.RESULT_OK != resultCode)
             return;
 
+        // TODO : NOT implemented yet
+        eAssert(false);
         switch (requestCode) {
 
         }

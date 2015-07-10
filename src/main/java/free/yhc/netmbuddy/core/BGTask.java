@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014
+ * Copyright (C) 2012, 2013, 2014, 2015
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -70,17 +70,17 @@ public abstract class BGTask<R> {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(BGTask.class);
 
-    public static final int PRIORITY_MIN    = Thread.MIN_PRIORITY;  // 1
-    public static final int PRIORITY_MAX    = Thread.MAX_PRIORITY;  // 10
-    public static final int PRIORITY_NORM   = Thread.NORM_PRIORITY; // 5
+    public static final int PRIORITY_MIN = Thread.MIN_PRIORITY; // 1
+    public static final int PRIORITY_MAX = Thread.MAX_PRIORITY; // 10
+    public static final int PRIORITY_NORM = Thread.NORM_PRIORITY; // 5
     public static final int PRIORITY_MIDLOW = 3;
     public static final int PRIORITY_MIDHIGH= 7;
 
     private static final String DEFAULT_THREAD_NAME = "BGTask";
 
-    private final Thread            mThread;
-    private final Handler           mOwner;
-    private final Object            mStateLock  = new Object();
+    private final Thread mThread;
+    private final Handler mOwner;
+    private final Object mStateLock = new Object();
     // NOTE
     // Why this special variable 'mUserCancel' is required?
     // Most of interface functions work asynchronously to keep order of State-event.
@@ -88,8 +88,8 @@ public abstract class BGTask<R> {
     // But, just after 'cancel' is called, this Task should be regarded as 'cancelled'
     //   even if canceling is still ongoing.(User already cancel the task!)
     // To resolve this issue, mUserCancel is introduced.
-    private final AtomicReference<Boolean> mUserCancel = new AtomicReference<Boolean>(false);
-    private State   mState  = State.READY;
+    private final AtomicReference<Boolean> mUserCancel = new AtomicReference<>(false);
+    private State mState = State.READY;
 
     public enum State {
         // before background job is running

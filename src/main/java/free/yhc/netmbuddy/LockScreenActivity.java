@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014
+ * Copyright (C) 2012, 2013, 2014, 2015
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -58,11 +58,11 @@ UnexpectedExceptionHandler.Evidence {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(LockScreenActivity.class);
 
-    static final String INTENT_KEY_APP_FOREGROUND   = "app_foreground";
+    static final String INTENT_KEY_APP_FOREGROUND = "app_foreground";
 
-    private final YTPlayer  mMp = YTPlayer.get();
+    private final YTPlayer mMp = YTPlayer.get();
 
-    private boolean         mForeground = false;
+    private boolean mForeground = false;
 
     public static class ScreenMonitor extends BroadcastReceiver {
         public static void

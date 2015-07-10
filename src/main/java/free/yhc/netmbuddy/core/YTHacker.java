@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014
+ * Copyright (C) 2012, 2013, 2014, 2015
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -61,43 +61,42 @@ public class YTHacker {
     public static final String HTTP_UASTRING
         = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/535.19 (KHTML, like Gecko) Ubuntu/12.04 Chromium/18.0.1025.168 Chrome/18.0.1025.168 Safari/535.19";
 
-    public static final int     YTQUALITY_SCORE_MAXIMUM     = 100;
-    public static final int     YTQUALITY_SCORE_HIGHEST     = 100;
-    public static final int     YTQUALITY_SCORE_HIGH        = 80;
-    public static final int     YTQUALITY_SCORE_MIDHIGH     = 60;
-    public static final int     YTQUALITY_SCORE_MIDLOW      = 40;
-    public static final int     YTQUALITY_SCORE_LOW         = 20;
-    public static final int     YTQUALITY_SCORE_LOWEST      = 0;
-    public static final int     YTQUALITY_SCORE_MINIMUM     = 0;
+    public static final int YTQUALITY_SCORE_MAXIMUM = 100;
+    public static final int YTQUALITY_SCORE_HIGHEST = 100;
+    public static final int YTQUALITY_SCORE_HIGH    = 80;
+    public static final int YTQUALITY_SCORE_MIDHIGH = 60;
+    public static final int YTQUALITY_SCORE_MIDLOW  = 40;
+    public static final int YTQUALITY_SCORE_LOW     = 20;
+    public static final int YTQUALITY_SCORE_LOWEST  = 0;
+    public static final int YTQUALITY_SCORE_MINIMUM = 0;
 
     // See youtube api documentation.
-    private static final int    YTVID_LENGTH = 11;
-
-    private static final int    YTQSCORE_INVALID        = -1;
+    private static final int YTVID_LENGTH = 11;
+    private static final int YTQSCORE_INVALID = -1;
 
     // TODO
     // This is from experimental result and hacking script code.
     // Need to verify below tags again!
-    private static final int    YTSTREAMTAG_INVALID     = -1;
+    private static final int YTSTREAMTAG_INVALID     = -1;
 
-    private static final int    YTSTREAMTAG_MPEG_1080p  = 37;
-    private static final int    YTSTREAMTAG_MPEG_720p   = 22;
-    private static final int    YTSTREAMTAG_MPEG_480p   = -1; // ???? What is itag value for mpeg4 480p???
-    private static final int    YTSTREAMTAG_MPEG_360p   = 18;
+    private static final int YTSTREAMTAG_MPEG_1080p  = 37;
+    private static final int YTSTREAMTAG_MPEG_720p   = 22;
+    private static final int YTSTREAMTAG_MPEG_480p   = -1; // ???? What is itag value for mpeg4 480p???
+    private static final int YTSTREAMTAG_MPEG_360p   = 18;
 
-    private static final int    YTSTREAMTAG_3GPP_240p   = 36;
-    private static final int    YTSTREAMTAG_3GPP_144p   = 17;
+    private static final int YTSTREAMTAG_3GPP_240p   = 36;
+    private static final int YTSTREAMTAG_3GPP_144p   = 17;
 
-    private static final int    YTSTREAMTAG_WEBM_1080p  = 46;
-    private static final int    YTSTREAMTAG_WEBM_720p   = 45;
-    private static final int    YTSTREAMTAG_WEBM_480p   = 44;
-    private static final int    YTSTREAMTAG_WEBM_360p   = 43;
+    private static final int YTSTREAMTAG_WEBM_1080p  = 46;
+    private static final int YTSTREAMTAG_WEBM_720p   = 45;
+    private static final int YTSTREAMTAG_WEBM_480p   = 44;
+    private static final int YTSTREAMTAG_WEBM_360p   = 43;
 
-    private static final int    YTSTREAMTAG_FLV_480p    = 35;
-    private static final int    YTSTREAMTAG_FLV_360p    = 34;
-    private static final int    YTSTREAMTAG_FLV_240p    = 5;
+    private static final int YTSTREAMTAG_FLV_480p    = 35;
+    private static final int YTSTREAMTAG_FLV_360p    = 34;
+    private static final int YTSTREAMTAG_FLV_240p    = 5;
 
-    private static final Pattern    sYtUrlStreamMapPattern
+    private static final Pattern sYtUrlStreamMapPattern
         = Pattern.compile(".*\"url_encoded_fmt_stream_map\":\\s*\"([^\"]+)\".*");
 
     // [ Small talk... ]
@@ -107,12 +106,12 @@ public class YTHacker {
     //   204 (No Content) response comes.
     // So, this URL is a kind of special URL that creates 204 response
     //   and notify to server that preparing real-contents.
-    private static final Pattern    sYtUrlGenerate204Pattern
+    private static final Pattern sYtUrlGenerate204Pattern
         = Pattern.compile(".*\"(http(s)?\\:.+\\/generate_204[^\"]*)\".*");
 
-    private final NetLoader     mLoader = new NetLoader();;
-    private final String        mYtvid;
-    private final Object        mUser;
+    private final NetLoader mLoader = new NetLoader();;
+    private final String mYtvid;
+    private final Object mUser;
     private final YtHackListener mListener;
     // NOTE
     // mBgTask used as "private final" to avoid synchronizing issue.
@@ -122,8 +121,8 @@ public class YTHacker {
     //         mBgTask.xxxxx
     private final AsyncTask<Void, Void, Err> mBgTask;
 
-    private YtVideoHtmlResult   mYtr = null;
-    private boolean             mCancelled = false;
+    private YtVideoHtmlResult mYtr = null;
+    private boolean mCancelled = false;
 
     public interface YtHackListener {
         void onPreHack(YTHacker ythack, String ytvid, Object user);
@@ -143,7 +142,7 @@ public class YTHacker {
     public static class LocalException extends java.lang.Exception {
         static final long serialVersionUID = 0; // to make compiler be happy
 
-        private final Err   _mErr;
+        private final Err _mErr;
 
         public LocalException(Err err) {
             _mErr = err;
@@ -156,8 +155,8 @@ public class YTHacker {
     }
 
     public static class YtVideo {
-        public final String   url;
-        public final String   type; // mime
+        public final String url;
+        public final String type; // mime
         YtVideo(String aUrl, String aType) {
             url = aUrl;
             type = aType;
@@ -165,14 +164,14 @@ public class YTHacker {
     }
 
     private static class YtVideoElem {
-        String  url         = "";
-        String  tag         = "";
-        String  type        = "";
-        String  quality     = "";
+        String  url = "";
+        String  tag = "";
+        String  type = "";
+        String  quality = "";
         // Quality score of this video
         // This value is guesses from 'tag'
         // -1 means "invalid, so, DO NOT use this video".
-        int     qscore      = YTQSCORE_INVALID;
+        int qscore = YTQSCORE_INVALID;
 
         private YtVideoElem() {} // DO NOT CREATE DIRECTLY
 
@@ -260,9 +259,9 @@ public class YTHacker {
     }
 
     private static class YtVideoHtmlResult {
-        long            tmstamp = 0; // System time in milli.
-        String          generate_204_url = ""; // url including generate 204
-        YtVideoElem[]   vids = new YtVideoElem[0];
+        long tmstamp = 0; // System time in milli.
+        String generate_204_url = ""; // url including generate 204
+        YtVideoElem[] vids = new YtVideoElem[0];
     }
 
     private static Err
@@ -449,16 +448,16 @@ public class YTHacker {
     getQScorePreferLow(int qscore) {
         int score = qscore - 1;
         return score < YTQUALITY_SCORE_MINIMUM?
-                YTQUALITY_SCORE_MINIMUM:
-                score;
+               YTQUALITY_SCORE_MINIMUM:
+               score;
     }
 
     public static int
     getQScorePreferHigh(int qscore) {
         int score = qscore + 1;
         return score > YTQUALITY_SCORE_MAXIMUM?
-                YTQUALITY_SCORE_MAXIMUM:
-                score;
+               YTQUALITY_SCORE_MAXIMUM:
+               score;
     }
 
     public YTHacker(String ytvid, Object user,
@@ -519,9 +518,8 @@ public class YTHacker {
     /**
      *
      * @param quality
-     * @param exact
-     *   true : exact matching is required.
-     *   false : best-fit is found.
+     * @param exact true : exact matching is required.
+     *              false : best-fit is found.
      * @return
      */
     public YtVideo

@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014
+ * Copyright (C) 2012, 2013, 2014, 2015
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -70,10 +70,10 @@ UncaughtExceptionHandler {
     //
     // Dependency on only following modules are allowed
     // - Utils
-    private final Thread.UncaughtExceptionHandler   mOldHandler = Thread.getDefaultUncaughtExceptionHandler();
-    private final LinkedList<Evidence>         mMods = new LinkedList<Evidence>();
+    private final Thread.UncaughtExceptionHandler mOldHandler = Thread.getDefaultUncaughtExceptionHandler();
+    private final LinkedList<Evidence> mMods = new LinkedList<>();
     private final PackageReport mPr = new PackageReport();
-    private final BuildReport   mBr = new BuildReport();
+    private final BuildReport mBr = new BuildReport();
 
     public enum DumpLevel {
         FULL
@@ -84,27 +84,27 @@ UncaughtExceptionHandler {
     }
 
     private class PackageReport {
-        String packageName          = UNKNOWN;
-        String versionName          = UNKNOWN;
-        String filesDir             = UNKNOWN;
+        String packageName = UNKNOWN;
+        String versionName = UNKNOWN;
+        String filesDir    = UNKNOWN;
     }
     // Useful Informations
     private class BuildReport {
-        String androidVersion       = UNKNOWN;
-        String board                = UNKNOWN;
-        String brand                = UNKNOWN;
-        String device               = UNKNOWN;
-        String display              = UNKNOWN;
-        String fingerPrint          = UNKNOWN;
-        String host                 = UNKNOWN;
-        String id                   = UNKNOWN;
-        String manufacturer         = UNKNOWN;
-        String model                = UNKNOWN;
-        String product              = UNKNOWN;
-        String tags                 = UNKNOWN;
-        long   time                 = 0;
-        String type                 = UNKNOWN;
-        String user                 = UNKNOWN;
+        String androidVersion = UNKNOWN;
+        String board          = UNKNOWN;
+        String brand          = UNKNOWN;
+        String device         = UNKNOWN;
+        String display        = UNKNOWN;
+        String fingerPrint    = UNKNOWN;
+        String host           = UNKNOWN;
+        String id             = UNKNOWN;
+        String manufacturer   = UNKNOWN;
+        String model          = UNKNOWN;
+        String product        = UNKNOWN;
+        String tags           = UNKNOWN;
+        long   time           = 0;
+        String type           = UNKNOWN;
+        String user           = UNKNOWN;
     }
 
     // ========================
@@ -117,9 +117,8 @@ UncaughtExceptionHandler {
             PackageInfo pi = pm.getPackageInfo(context.getPackageName(), 0);
             mPr.versionName = pi.versionName;
             mPr.packageName = pi.packageName;
-        } catch (NameNotFoundException e) {
-            ; // ignore
-        }
+        } catch (NameNotFoundException ignore) { }
+
         mPr.filesDir        = context.getFilesDir().getAbsolutePath();
         mBr.model           = android.os.Build.MODEL;
         mBr.androidVersion  = android.os.Build.VERSION.RELEASE;

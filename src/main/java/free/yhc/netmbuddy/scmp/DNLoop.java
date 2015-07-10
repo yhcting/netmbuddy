@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014
+ * Copyright (C) 2012, 2013, 2014, 2015
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -45,28 +45,25 @@ class DNLoop {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(DNLoop.class);
 
-    private final Object[][]    mLoopVals;
-    private final IteratorListener  mIterL;
+    private final Object[][] mLoopVals;
+    private final IteratorListener mIterL;
 
-    private int[]   mLoopI;
-    private Object  mUser;
+    private int[] mLoopI;
+    private Object mUser;
 
     interface IteratorListener {
         /**
          *
          * @param dnl
-         * @param oVals
-         *   iteration values
-         * @return
-         *     true : keep going.
-         *     false: stop iteration.
+         * @param oVals iteration values
+         * @return true : keep going.
+         *         false: stop iteration.
          */
         boolean iter(DNLoop dnl, Object[] oVals);
         /**
          *
          * @param dnl
-         * @param depth
-         *   0 : inner-most loop
+         * @param depth 0 : inner-most loop
          */
         void end(DNLoop dnl, int depth);
     }

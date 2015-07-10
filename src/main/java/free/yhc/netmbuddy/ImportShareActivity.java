@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014
+ * Copyright (C) 2012, 2013, 2014, 2015
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -65,16 +65,16 @@ UnexpectedExceptionHandler.Evidence {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(ImportShareActivity.class);
 
-    private DiagAsyncTask   mDiagTask   = null;
-    private AlertDialog     mDiag       = null;
-    private ZipInputStream  mZis        = null;
+    private DiagAsyncTask mDiagTask = null;
+    private AlertDialog mDiag = null;
+    private ZipInputStream mZis = null;
 
     /**
      * Cancel is NOT ALLOWED.
      */
     private class Preparer extends DiagAsyncTask.Worker {
-        private final Share.ImporterI   _mImporter;
-        private Share.ImportPrepareResult   _mResult = null;
+        private final Share.ImporterI _mImporter;
+        private Share.ImportPrepareResult _mResult = null;
 
         Preparer(Share.ImporterI importer) {
             _mImporter = importer;
@@ -101,10 +101,10 @@ UnexpectedExceptionHandler.Evidence {
     }
 
     private class Importer extends DiagAsyncTask.Worker {
-        private final Share.ImporterI               _mImporter;
-        private final Share.ImportPrepareResult     _mIpr;
+        private final Share.ImporterI _mImporter;
+        private final Share.ImportPrepareResult _mIpr;
 
-        private Share.ImportResult      _mResult = null;
+        private Share.ImportResult _mResult = null;
 
         Importer(Share.ImporterI importer, Share.ImportPrepareResult ipr) {
             _mIpr = ipr;

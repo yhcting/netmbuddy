@@ -53,9 +53,9 @@ class SimilarTitlesListAdapter extends BaseAdapter {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(SimilarTitlesListAdapter.class);
 
-    private final DB    mDb;
-    private Context     mContext;
-    private long[]      mVids;;
+    private final DB mDb;
+    private Context mContext;
+    private long[] mVids;;
 
     SimilarTitlesListAdapter(Context context,
                              long[] vids) {

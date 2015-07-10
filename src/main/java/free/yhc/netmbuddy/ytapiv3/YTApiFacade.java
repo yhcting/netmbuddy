@@ -51,7 +51,7 @@ public class YTApiFacade {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(YTApiFacade.class);
 
-    public static final int MAX_RESULTS_PER_PAGE            = 50;
+    public static final int MAX_RESULTS_PER_PAGE = 50;
     public static final int MAX_AVAILABLE_RESULTS_FOR_QUERY = 1000000;
 
     // Application specific

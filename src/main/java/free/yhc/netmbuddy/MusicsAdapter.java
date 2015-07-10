@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014
+ * Copyright (C) 2012, 2013, 2014, 2015
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -64,16 +64,6 @@ public class MusicsAdapter extends ResourceCursorAdapter {
 
     // Check Button Tag Key
     private static final int VTAGKEY_POS = R.drawable.btncheck_on;
-
-    private static final ColVideo[] sQueryCols
-        = new ColVideo[] { ColVideo.ID,
-                           ColVideo.VIDEOID,
-                           ColVideo.TITLE,
-                           ColVideo.CHANNELID,
-                           ColVideo.CHANNELTITLE,
-                           ColVideo.VOLUME,
-                           ColVideo.PLAYTIME,
-                           };
 
     private final Context mContext;
     private final CursorArg mCurArg;
@@ -197,9 +187,7 @@ public class MusicsAdapter extends ResourceCursorAdapter {
     }
 
     /**
-     *
-     * @return
-     *   array of music positions.
+     * @return array of music positions.
      */
     public int[]
     getCheckedMusics() {

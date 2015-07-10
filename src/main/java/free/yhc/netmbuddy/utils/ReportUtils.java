@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014
+ * Copyright (C) 2012, 2013, 2014, 2015
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -49,7 +49,7 @@ public class ReportUtils {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(ReportUtils.class);
 
-    private static final File   sErrLogFile     = new File(Policy.APPDATA_ERRLOG);
+    private static final File sErrLogFile = new File(Policy.APPDATA_ERRLOG);
 
     private static String
     getSubjectPrefix() {

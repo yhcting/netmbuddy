@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014
+ * Copyright (C) 2012, 2013, 2014, 2015
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -50,8 +50,8 @@ class BookmarkListAdapter extends BaseAdapter {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(BookmarkListAdapter.class);
 
-    private final Context       mContext;
-    private final OnItemAction  mOnItemAction;
+    private final Context mContext;
+    private final OnItemAction mOnItemAction;
 
     private DB.Bookmark[] mBms;
 
@@ -59,9 +59,9 @@ class BookmarkListAdapter extends BaseAdapter {
         void onDelete(BookmarkListAdapter adapter, int pos, DB.Bookmark bm);
     }
 
-    BookmarkListAdapter(Context          context,
-                        DB.Bookmark[]    bms,
-                        OnItemAction     onItemAction) {
+    BookmarkListAdapter(Context context,
+                        DB.Bookmark[] bms,
+                        OnItemAction onItemAction) {
         super();
         eAssert(null != bms
                 && null != onItemAction);

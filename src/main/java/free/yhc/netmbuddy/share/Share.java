@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014
+ * Copyright (C) 2012, 2013, 2014, 2015
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -38,13 +38,10 @@ package free.yhc.netmbuddy.share;
 
 import android.support.annotation.NonNull;
 
-import org.json.JSONObject;
-
 import java.io.File;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.ZipInputStream;
 
-import free.yhc.netmbuddy.utils.JsonUtils;
 import free.yhc.netmbuddy.utils.Utils;
 
 // ============================================================================

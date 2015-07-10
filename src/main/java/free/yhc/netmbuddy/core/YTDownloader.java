@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014
+ * Copyright (C) 2012, 2013, 2014, 2015
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -58,10 +58,10 @@ public class YTDownloader {
     private static final int MSG_WHAT_CLOSE     = 0;
     private static final int MSG_WHAT_DOWNLOAD  = 1;
 
-    private String                      mProxy      = null;
-    private DownloadDoneReceiver        mDnDoneRcvr = null;
-    private BGHandler                   mBgHandler  = null;
-    private Object                      mUserTag    = null; // user tag value
+    private String mProxy = null;
+    private DownloadDoneReceiver mDnDoneRcvr = null;
+    private BGHandler mBgHandler  = null;
+    private Object mUserTag = null; // user tag value
 
     public interface DownloadDoneReceiver {
         void downloadDone(YTDownloader downloader, DnArg arg, Err err);
@@ -79,9 +79,9 @@ public class YTDownloader {
     }
 
     public static class DnArg {
-        String  ytvid;
-        File    outf;
-        int     qscore;
+        String ytvid;
+        File outf;
+        int qscore;
 
         public DnArg(String aYtvid, File aOutf, int aQscore) {
             ytvid = aYtvid;
@@ -102,15 +102,15 @@ public class YTDownloader {
     }
 
     private static class BGHandler extends Handler {
-        private final YTDownloader          _mYtDownloader;
+        private final YTDownloader _mYtDownloader;
 
-        private NetLoader       _mLoader    = new NetLoader();
-        private File            _mTmpF      = null;
-        private volatile File   _mCurOutF   = null;
-        private boolean         _mClosed    = false;
+        private NetLoader _mLoader = new NetLoader();
+        private File _mTmpF = null;
+        private volatile File _mCurOutF = null;
+        private boolean _mClosed = false;
 
-        BGHandler(Looper                looper,
-                  YTDownloader          ytDownloader) {
+        BGHandler(Looper looper,
+                  YTDownloader ytDownloader) {
             super(looper);
             _mYtDownloader = ytDownloader;
         }

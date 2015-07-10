@@ -41,8 +41,6 @@ import android.net.Uri;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.ByteArrayInputStream;
-
 import free.yhc.netmbuddy.core.YTDataAdapter;
 import free.yhc.netmbuddy.utils.Utils;
 

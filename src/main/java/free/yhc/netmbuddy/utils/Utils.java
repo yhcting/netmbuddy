@@ -83,30 +83,30 @@ public class Utils {
     private static final Utils.Logger P = new Logger(Utils.class);
 
     //private static final boolean DBG    = false;
-    private static final boolean LOGF   = false;
-    private static final String  TAG    = "[YoutubeMusicPlayer]";
+    private static final boolean LOGF = false;
+    private static final String TAG = "[NetMBuddy]";
 
     // Value SHOULD match xml preference value for title tts.
-    private static final int    TITLE_TTS_HEAD  = 0x02; // tts at the beginning
-    private static final int    TITLE_TTS_TAIL  = 0x01; // tts at the end
+    private static final int TITLE_TTS_HEAD = 0x02; // tts at the beginning
+    private static final int TITLE_TTS_TAIL = 0x01; // tts at the end
 
     // This is only for debugging.
     private static boolean  sInitialized = false;
 
     // For debugging
-    private static PrintWriter  sLogWriter  = null;
-    private static DateFormat   sLogTimeDateFormat =
+    private static PrintWriter sLogWriter = null;
+    private static DateFormat sLogTimeDateFormat =
             DateFormat.getDateTimeInstance(DateFormat.MEDIUM,
                                            DateFormat.MEDIUM,
                                            Locale.ENGLISH);
 
     // Even if these two variables are not 'final', those should be handled like 'final'
     //   because those are set only at init() function, and SHOULD NOT be changed.
-    private static Context  sAppContext  = null;
-    private static Handler  sUiHandler   = null;
+    private static Context  sAppContext = null;
+    private static Handler  sUiHandler = null;
 
     private static SharedPreferences sPrefs = null;
-    private static TimeElemComparator   sTimeElemComparator = new TimeElemComparator();
+    private static TimeElemComparator sTimeElemComparator = new TimeElemComparator();
 
     private static final String[] sDateFormats = new String[] {
             // To support W3CDTF
@@ -116,13 +116,13 @@ public class Utils {
         "yyyy-MM-d'T'HH:mm:ss'Z'",
     };
 
-    public static enum PrefLevel {
+    public enum PrefLevel {
         LOW,
         NORMAL,
         HIGH
     }
 
-    public static enum PrefQuality {
+    public enum PrefQuality {
         LOW     (R.string.low),
         MIDLOW  (R.string.midlow),
         NORMAL  (R.string.normal),
@@ -130,7 +130,7 @@ public class Utils {
         VERYHIGH(R.string.veryhigh);
 
         private int text;
-        private
+
         PrefQuality(int aText) {
             text = aText;
         }
@@ -159,7 +159,7 @@ public class Utils {
         VERYHIGH(Policy.SIMILARITY_THRESHOLD_VERYHIGH);
 
         private float v;
-        private
+
         PrefTitleSimilarityThreshold(float aV) {
             v = aV;
         }
@@ -171,8 +171,8 @@ public class Utils {
     }
 
     private static class TimeElem {
-        public Object   v;
-        public long     time;
+        public Object v;
+        public long time;
 
         public
         TimeElem(Object aV, long aTime) {
@@ -258,7 +258,7 @@ public class Utils {
         F ("[F]", 1);
 
         private String pref; // prefix string
-        private int    pri;  // priority
+        private int pri;  // priority
         LogLV(String aPref, int aPri) {
             pref = aPref;
             pri = aPri;

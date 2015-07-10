@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014
+ * Copyright (C) 2012, 2013, 2014, 2015
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -52,8 +52,8 @@ public class DBHelper {
     private static final int MSG_WHAT_CLOSE         = 0;
     private static final int MSG_WHAT_CHECK_EXIST   = 1;
 
-    private BGHandler               mBgHandler  = null;
-    private CheckDupDoneReceiver    mDupRcvr    = null;
+    private BGHandler mBgHandler = null;
+    private CheckDupDoneReceiver mDupRcvr = null;
 
     public interface CheckDupDoneReceiver {
         void checkDupDone(DBHelper helper, CheckDupArg arg,
@@ -86,9 +86,9 @@ public class DBHelper {
     }
 
     private static class BGHandler extends Handler {
-        private final DBHelper  _mHelper;
+        private final DBHelper _mHelper;
 
-        private boolean         _mClosed  = false;
+        private boolean _mClosed = false;
 
         BGHandler(Looper    looper,
                   DBHelper  helper) {

@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014
+ * Copyright (C) 2012, 2013, 2014, 2015
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -54,15 +54,15 @@ UnexpectedExceptionHandler.Evidence {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(DiagAsyncTask.class);
 
-    private Context         mContext        = null;
-    private ProgressDialog  mDialog         = null;
-    private CharSequence    mTitle          = null;
-    private CharSequence    mMessage        = null;
-    private Style           mStyle          = Style.SPIN;
-    private Worker          mWorker         = null;
-    private boolean         mUserCancelled  = false;
-    private boolean         mCancelable     = true;
-    private boolean         mInterruptOnCancel = true;
+    private Context mContext = null;
+    private ProgressDialog mDialog = null;
+    private CharSequence mTitle = null;
+    private CharSequence mMessage = null;
+    private Style mStyle = Style.SPIN;
+    private Worker mWorker = null;
+    private boolean mUserCancelled = false;
+    private boolean mCancelable = true;
+    private boolean mInterruptOnCancel = true;
     private DialogInterface.OnDismissListener mOnDismissListener = null;
 
     public static abstract class Worker {
@@ -82,9 +82,9 @@ UnexpectedExceptionHandler.Evidence {
         onCancelled(DiagAsyncTask task) { }
     }
 
-    public static enum Style {
-        SPIN        (ProgressDialog.STYLE_SPINNER),
-        PROGRESS    (ProgressDialog.STYLE_HORIZONTAL);
+    public enum Style {
+        SPIN     (ProgressDialog.STYLE_SPINNER),
+        PROGRESS (ProgressDialog.STYLE_HORIZONTAL);
 
         private int style;
 

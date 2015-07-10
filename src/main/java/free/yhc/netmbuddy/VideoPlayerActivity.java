@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014
+ * Copyright (C) 2012, 2013, 2014, 2015
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -75,17 +75,17 @@ UnexpectedExceptionHandler.Evidence {
     private static final boolean sNavUiCanBeHidden
         = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.ICE_CREAM_SANDWICH;
 
-    private final YTPlayer      mMp = YTPlayer.get();
-    private SurfaceView         mSurfv;
-    private Utils.PrefQuality   mVQuality = Utils.getPrefQuality();
-    private int                 mStatusBarHeight    = 0;
+    private final YTPlayer mMp = YTPlayer.get();
+    private SurfaceView mSurfv;
+    private Utils.PrefQuality mVQuality = Utils.getPrefQuality();
+    private int mStatusBarHeight = 0;
 
     // If : Interface
-    private boolean             mDelayedSetIfVisibility     = true;
-    private boolean             mUserIfVisible  = false;
-    private int                 mLastSysUiVis   = 0;
+    private boolean mDelayedSetIfVisibility = true;
+    private boolean mUserIfVisible = false;
+    private int mLastSysUiVis = 0;
 
-    private static enum Orientation {
+    private enum Orientation {
         PORTRAIT,
         LANDSCAPE,
         SYSTEM,     // current system status

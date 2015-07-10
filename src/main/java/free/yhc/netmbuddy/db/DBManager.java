@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014
+ * Copyright (C) 2012, 2013, 2014, 2015
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -64,9 +64,9 @@ class DBManager {
     private static final String sTableAndroidMetadata = "android_metadata";
     private static final String sStmtAndroidMetadata = "CREATE TABLE android_metadata (locale TEXT)";
 
-    private static final Pattern sPFieldDef     = Pattern.compile("[^(]+\\((.+)\\)\\s*");
-    private static final Pattern sPTokenGroup   = Pattern.compile("(\\s*([^,]+)).*");
-    private static final Pattern sPFieldNType   = Pattern.compile("([^\\s]+)\\s+([^\\s]+).*");
+    private static final Pattern sPFieldDef   = Pattern.compile("[^(]+\\((.+)\\)\\s*");
+    private static final Pattern sPTokenGroup = Pattern.compile("(\\s*([^,]+)).*");
+    private static final Pattern sPFieldNType = Pattern.compile("([^\\s]+)\\s+([^\\s]+).*");
 
     private static final String[] sFieldNameNotAllowed = new String[] {
         "foreign",

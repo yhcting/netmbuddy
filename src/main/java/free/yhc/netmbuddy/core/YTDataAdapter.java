@@ -36,10 +36,7 @@
 
 package free.yhc.netmbuddy.core;
 
-import android.graphics.Bitmap;
-
 import java.util.Date;
-import java.util.Objects;
 
 import free.yhc.netmbuddy.utils.Utils;
 
@@ -175,7 +172,7 @@ public class YTDataAdapter {
      */
     public static class VideoListResp {
         public PageInfo page = null;
-        public Video[]  vids = null;
+        public Video[] vids = null;
         public VideoListResp() { }
         public VideoListResp(PageInfo page, Video[] vids) {
             this.page = page;

@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014
+ * Copyright (C) 2012, 2013, 2014, 2015
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -45,7 +45,7 @@ public class SearchSuggestionProvider extends SearchRecentSuggestionsProvider {
     private static final Utils.Logger P = new Utils.Logger(SearchSuggestionProvider.class);
 
     private final static String AUTHORITY   = "free.yhc.netmbuddy";
-    private final static int    MODE        = DATABASE_MODE_QUERIES;
+    private final static int MODE = DATABASE_MODE_QUERIES;
 
     public SearchSuggestionProvider() {
         setupSuggestions(AUTHORITY, MODE);

@@ -36,12 +36,8 @@
 
 package free.yhc.netmbuddy.share;
 
-import android.support.annotation.Nullable;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.zip.ZipInputStream;
 
 import org.json.JSONArray;
@@ -50,14 +46,12 @@ import org.json.JSONObject;
 
 import free.yhc.netmbuddy.db.ColPlaylist;
 import free.yhc.netmbuddy.db.ColVideo;
-import free.yhc.netmbuddy.db.DB;
 import free.yhc.netmbuddy.share.Share.Err;
 import free.yhc.netmbuddy.share.Share.ImportPrepareResult;
 import free.yhc.netmbuddy.share.Share.ImportResult;
 import free.yhc.netmbuddy.share.Share.ImporterI;
 import free.yhc.netmbuddy.share.Share.LocalException;
 import free.yhc.netmbuddy.share.Share.OnProgressListener;
-import free.yhc.netmbuddy.share.Share.Type;
 import free.yhc.netmbuddy.utils.FileUtils;
 import free.yhc.netmbuddy.utils.JsonUtils;
 import free.yhc.netmbuddy.utils.Utils;
@@ -73,9 +67,9 @@ class Importer implements ImporterI {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(Importer.class);
 
-    private final ZipInputStream    mZis;
+    private final ZipInputStream mZis;
     // concrete importer instance (depends on share type)
-    private ImporterI               mImporter = null;
+    private ImporterI mImporter = null;
 
     // =======================================================================
     //

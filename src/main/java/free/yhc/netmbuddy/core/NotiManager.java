@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014
+ * Copyright (C) 2012, 2013, 2014, 2015
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -63,19 +63,19 @@ public class NotiManager {
     private static NotiManager sInstance = null;
 
     // active notification set.
-    private final NotificationManager mNm = (NotificationManager)Utils.getAppContext()
-                                                                      .getSystemService(Context.NOTIFICATION_SERVICE);
+    private final NotificationManager mNm
+        = (NotificationManager)Utils.getAppContext().getSystemService(Context.NOTIFICATION_SERVICE);
     private Notification mLastPlayerNotification = null;
 
     // NOTE
     public static enum NotiType {
         // All player type notification uses same notification id because
         //   these notification SHOULD NOT be multiple-displayed.
-        BASE    (R.drawable.noti_base,  getPlayerNotificationId()),
-        START   (R.drawable.noti_start, getPlayerNotificationId()),
-        PAUSE   (R.drawable.noti_pause, getPlayerNotificationId()),
-        STOP    (R.drawable.noti_stop,  getPlayerNotificationId()),
-        ALERT   (R.drawable.noti_alert, getPlayerNotificationId()),
+        BASE  (R.drawable.noti_base,  getPlayerNotificationId()),
+        START (R.drawable.noti_start, getPlayerNotificationId()),
+        PAUSE (R.drawable.noti_pause, getPlayerNotificationId()),
+        STOP  (R.drawable.noti_stop,  getPlayerNotificationId()),
+        ALERT (R.drawable.noti_alert, getPlayerNotificationId()),
 
         // General notification - not used yet.
         // Why?
@@ -98,11 +98,11 @@ public class NotiManager {
         // So, by any reasonable solution is found, this notification is left as 'UNUSED'.
         IMPORT  (R.drawable.noti_import,R.drawable.noti_import);
 
-        private final int   _mIcon;
-        private final int   _mId;
+        private final int _mIcon;
+        private final int _mId;
 
         NotiType(int icon, int id) {
-            _mIcon   = icon;
+            _mIcon = icon;
             _mId = id;
         }
 
@@ -236,6 +236,7 @@ public class NotiManager {
                                                              PendingIntent.FLAG_UPDATE_CURRENT);
 
         /*
+         * TODO : This is depcreated API.
          * NOTE
          * Below way is deprecated but works well better than using recommended way - notification builder.
          * (See commends below about using builder)

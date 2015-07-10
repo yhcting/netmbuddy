@@ -66,6 +66,7 @@ UnexpectedExceptionHandler.Evidence {
         super.onCreate(savedInstanceState);
         UnexpectedExceptionHandler.get().registerModule(this);
 
+        // TODO : deprecated API is used
         addPreferencesFromResource(R.xml.preferences);
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         prefs.registerOnSharedPreferenceChangeListener(this);

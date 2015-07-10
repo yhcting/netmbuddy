@@ -106,7 +106,7 @@ OnSharedPreferenceChangeListener {
     private YTPlayer.ToolButton mToolBtn = null;
 
     public static class TimeTickReceiver extends BroadcastReceiver {
-        private YTPlayerUI  _mYtpui = null;
+        private YTPlayerUI _mYtpui = null;
 
         void
         setYTPlayerUI(YTPlayerUI ytpui) {

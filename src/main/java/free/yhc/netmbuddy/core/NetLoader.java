@@ -84,8 +84,8 @@ public class NetLoader {
     public static class LocalException extends java.lang.Exception {
         static final long serialVersionUID = 0; // to make compiler be happy
 
-        private final Err       _mErr;
-        private final Object    _mExtra;
+        private final Err _mErr;
+        private final Object _mExtra;
 
         public LocalException(Err err, Object extra) {
             _mErr = err;
@@ -108,9 +108,9 @@ public class NetLoader {
     }
 
     public static class HttpRespContent {
-        public int         stcode; // status code
+        public int stcode; // status code
         public InputStream stream;
-        public String      type;
+        public String type;
         HttpRespContent(int aStcode, InputStream aStream, String aType) {
             stcode = aStcode;
             stream = aStream;

@@ -56,10 +56,10 @@ public class YTPlayerVideoListAdapter extends BaseAdapter {
     private final int mActiveTextColor;
     private final int mInactiveTextColor;
     private final Context mContext;
-    private final HashMap<View, Integer>    mView2PosMap = new HashMap<View, Integer>();
+    private final HashMap<View, Integer> mView2PosMap = new HashMap<>();
 
-    private YTPlayer.Video[]    mVs;
-    private int                 mActivePos = -1;
+    private YTPlayer.Video[] mVs;
+    private int mActivePos = -1;
 
     private void
     setToActive(View v) {

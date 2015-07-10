@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014
+ * Copyright (C) 2012, 2013, 2014, 2015
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -53,26 +53,24 @@ public class MultiThreadRunner {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(MultiThreadRunner.class);
 
-    private final Handler               mOwner;
-    private final Object                mQLock      = new Object();
-    private final LinkedList<Job<?>>    mReadyQ     = new LinkedList<Job<?>>();
-    private final LinkedList<Task<?>>   mRunQ       = new LinkedList<Task<?>>();
-    private final int                   mMaxConcur;
-    private final AtomicBoolean         mCancelled  = new AtomicBoolean(false);
-    private final AtomicFloat           mProgress   = new AtomicFloat(0);
+    private final Handler mOwner;
+    private final Object mQLock = new Object();
+    private final LinkedList<Job<?>> mReadyQ = new LinkedList<>();
+    private final LinkedList<Task<?>> mRunQ = new LinkedList<>();
+    private final int mMaxConcur;
+    private final AtomicBoolean mCancelled  = new AtomicBoolean(false);
+    private final AtomicFloat mProgress   = new AtomicFloat(0);
     private final AtomicReference<OnProgressListener> mProgListener
-        = new AtomicReference<OnProgressListener>(null);
+        = new AtomicReference<>(null);
     private final AtomicReference<OnDoneListener> mDoneListener
-        = new AtomicReference<OnDoneListener>(null);
+        = new AtomicReference<>(null);
 
     // For debugging purpose.
     private int  mSeqN   = 0;
 
     public interface OnProgressListener {
         /**
-         *
-         * @param prog
-         *   accumulated value of each Job's progress weight.
+         * @param prog accumulated value of each Job's progress weight.
          */
         void onProgress(float prog);
     }

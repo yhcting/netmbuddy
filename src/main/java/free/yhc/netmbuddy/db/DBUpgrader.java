@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014
+ * Copyright (C) 2012, 2013, 2014, 2015
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -44,9 +44,9 @@ class DBUpgrader {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(DBUpgrader.class);
 
-    private final SQLiteDatabase    mDb;
-    private final int               mOldVersion;
-    private final int               mNewVersion;
+    private final SQLiteDatabase mDb;
+    private final int mOldVersion;
+    private final int mNewVersion;
 
     DBUpgrader(SQLiteDatabase db, int oldVersion, int newVersion) {
         mDb = db;
