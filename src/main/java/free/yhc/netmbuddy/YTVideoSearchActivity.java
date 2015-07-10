@@ -312,9 +312,8 @@ UnexpectedExceptionHandler.Evidence {
         int[] checkedItems = adpr.getCheckItemSortedByTime();
         YTPlayer.Video[] vids = new YTPlayer.Video[checkedItems.length];
         int j = 0;
-        for (int i : checkedItems) {
+        for (int i : checkedItems)
             vids[j++] = adpr.getYTPlayerVideo(i);
-        }
         appendToPlayQ(vids);
         adpr.cleanChecked();
     }

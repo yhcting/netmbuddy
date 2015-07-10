@@ -264,7 +264,7 @@ public class YTVideoSearchAdapter extends YTSearchAdapter<YTDataAdapter.Video> {
         Object[] objs = Utils.getSortedKeyOfTimeMap(mCheckedMap);
         int[] poss = new int[objs.length];
         for (int i = 0; i < poss.length; i++)
-            poss[i] = (int)(long)objs[i];
+            poss[i] = (int)objs[i];
         return poss;
     }
 
