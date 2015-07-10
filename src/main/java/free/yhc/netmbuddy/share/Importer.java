@@ -88,7 +88,7 @@ class Importer implements ImporterI {
         final String[][] video_v1Tov2 = {
             { "ytid", ColVideo.VIDEOID.getName() },
             { "volume", ColVideo.VOLUME.getName() },
-            { "bookmarks", ColVideo.VIDEOID.getName() },
+            { "bookmarks", ColVideo.BOOKMARKS.getName() },
         };
 
         // See DataModel.Playlist.sDBProjection
@@ -145,6 +145,7 @@ class Importer implements ImporterI {
     //
     //
     // =======================================================================
+
     Importer(ZipInputStream zis) {
         mZis = zis;
     }

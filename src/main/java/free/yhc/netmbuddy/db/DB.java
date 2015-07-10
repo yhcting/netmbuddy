@@ -689,6 +689,14 @@ UnexpectedExceptionHandler.Evidence {
                          ColPlaylist.TITLE.getName());
     }
 
+    public  Cursor
+    queryPlaylist(long plid, ColPlaylist[] cols) {
+        return mDb.query(TABLE_PLAYLIST,
+                         DBUtils.getColNames(cols),
+                         ColPlaylist.ID.getName() + " = " + plid,
+                         null, null, null, null);
+    }
+
     /**
      * Returned object can be type-casted to one of follows
      *  - Long

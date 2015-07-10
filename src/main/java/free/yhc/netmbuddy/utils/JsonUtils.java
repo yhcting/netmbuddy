@@ -83,6 +83,12 @@ public class JsonUtils {
         }
     }
 
+    public static int
+    jGetInt(JSONObject jo, String key, int defv) {
+        Integer i = jGetInt(jo, key);
+        return null == i ? defv : i;
+    }
+
     public static Long
     jGetLong(JSONObject jo, String key) {
         if (null == jo)
@@ -92,6 +98,12 @@ public class JsonUtils {
         } catch (JSONException ignored) {
             return null;
         }
+    }
+
+    public static long
+    jGetLong(JSONObject jo, String key, long defv) {
+        Long l = jGetLong(jo, key);
+        return null == l ? defv : l;
     }
 
     public static Boolean

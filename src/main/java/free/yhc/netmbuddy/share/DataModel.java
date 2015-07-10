@@ -69,7 +69,10 @@ public class DataModel {
     static final int INVALID_VERSION = -1;
     static final long INVALID_TIME = -1;
 
-    static class Meta extends JsonModel {
+    // All decendents of 'JsonModel' is set as 'public' to be used via reflection.
+    // ---------------------------------------------------------------------------
+
+    public static class Meta extends JsonModel {
         static final String MAGIC = "!*&@$$#$%~NetMBuddy!@@@@!%^^*#$$##";
 
         static final String FVERSION = "version";
@@ -98,8 +101,8 @@ public class DataModel {
             String tystr = jGetString(jo, FTYPE);
             if (null != tystr)
                 type = Share.Type.valueOf(tystr);
-            version = jGetInt(jo, FVERSION);
-            time = jGetLong(jo, FTIME);
+            version = jGetInt(jo, FVERSION, INVALID_VERSION);
+            time = jGetLong(jo, FTIME, 0);
         }
 
         @Override
@@ -122,7 +125,7 @@ public class DataModel {
         }
     }
 
-    static class Video extends JsonModel {
+    public static class Video extends JsonModel {
         // Projection between Jason and DB
         static final ColVideo[] sDBProjection = new ColVideo[] {
             ColVideo.VIDEOID, ColVideo.BOOKMARKS, ColVideo.VOLUME };
@@ -135,7 +138,7 @@ public class DataModel {
         public void
         set(JSONObject jo) {
             ytvid = jGetString(jo, ColVideo.VIDEOID.getName());
-            volume = jGetInt(jo, ColVideo.VOLUME.getName());
+            volume = jGetInt(jo, ColVideo.VOLUME.getName(), DB.INVALID_VOLUME);
             bookmarks = jGetString(jo, ColVideo.BOOKMARKS.getName());
         }
 
@@ -167,7 +170,7 @@ public class DataModel {
         }
     }
 
-    static class Playlist extends JsonModel {
+    public static class Playlist extends JsonModel {
         static final String FVIDEOS = "videos";
 
         static final ColPlaylist[] sDBProjection = new ColPlaylist[] {
@@ -227,7 +230,7 @@ public class DataModel {
 
     }
 
-    static class Root extends JsonModel {
+    public static class Root extends JsonModel {
         static final String FMETA = "meta";
         static final String FPLAYLIST = "playlist";
 

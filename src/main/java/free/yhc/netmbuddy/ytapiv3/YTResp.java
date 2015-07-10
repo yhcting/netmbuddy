@@ -88,22 +88,29 @@ class YTResp {
         }
     }
 
-    // return seconds
+    /**
+     *
+     * @return seconds(>=0). <0 if fails
+     */
     private static long
     parseYTDuration(String durstr) {
         String s = null;
         int Y = 0, M = 0, W = 0, D = 0, H = 0, m = 0, S = 0;
+        if (null == durstr)
+            return -1;
+
         Pattern p = Pattern.compile(
-        "^P"
-        + "(?:([0-9]+)Y)?"
-        + "(?:([0-9]+)M)?"
-        + "(?:([0-9]+)W)?"
-        + "(?:([0-9]+)D)?"
-        + "T"
-        + "(?:([0-9]+)H)?"
-        + "(?:([0-9]+)M)?"
-        + "(?:([0-9]+)S)"
-        + "$");
+            "^P"
+            + "(?:([0-9]+)Y)?"
+            + "(?:([0-9]+)M)?"
+            + "(?:([0-9]+)W)?"
+            + "(?:([0-9]+)D)?"
+            + "T"
+            + "(?:([0-9]+)H)?"
+            + "(?:([0-9]+)M)?"
+            + "(?:([0-9]+)S)"
+            + "$");
+
         Matcher mr = p.matcher(durstr);
         if (!mr.matches())
             return -1; // unknown format
@@ -127,8 +134,8 @@ class YTResp {
         final int unitH = 60 * unitm;
         final int unitD = 24 * unitH;
         if (0 < W
-        || 0 < M
-        || 0 < Y)
+            || 0 < M
+            || 0 < Y)
             return -1; // too long
         return D * unitD + H * unitH + m * unitm + S;
     }
@@ -740,7 +747,8 @@ class YTResp {
         makeAdapterData() {
             YTDataAdapter.VideoListResp r = new YTDataAdapter.VideoListResp();
             r.page = new YTDataAdapter.PageInfo();
-            if (null != pageInfo)
+            if (null != pageInfo
+                && null != pageInfo.totalResults)
                 r.page.totalResults = pageInfo.totalResults;
             r.page.nextPageToken = nextPageToken;
             r.page.prevPageToken = prevPageToken;
@@ -778,7 +786,8 @@ class YTResp {
         makeAdapterData() {
             YTDataAdapter.VideoListResp r = new YTDataAdapter.VideoListResp();
             r.page = new YTDataAdapter.PageInfo();
-            if (null != pageInfo)
+            if (null != pageInfo
+                && null != pageInfo.totalResults)
                 r.page.totalResults = pageInfo.totalResults;
             r.page.nextPageToken = nextPageToken;
             r.page.prevPageToken = prevPageToken;

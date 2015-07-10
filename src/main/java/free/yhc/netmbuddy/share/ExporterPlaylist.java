@@ -118,7 +118,7 @@ class ExporterPlaylist implements ExporterI {
         // -------------
         DataModel.Playlist dmpl = new DataModel.Playlist();
         try {
-            c = db.queryPlaylist(DataModel.Playlist.sDBProjection);
+            c = db.queryPlaylist(_mPlid, DataModel.Playlist.sDBProjection);
             if (!c.moveToFirst())
                 return Err.PARAMETER;
             dmpl.set(c);
@@ -129,7 +129,7 @@ class ExporterPlaylist implements ExporterI {
         // Video data in this playlist
         // ---------------------------
         c = db.queryVideos(_mPlid,
-                           new ColVideo[] { ColVideo.ID },
+                           DataModel.Video.sDBProjection,
                            null,
                            false);
         if (!c.moveToFirst()) {
