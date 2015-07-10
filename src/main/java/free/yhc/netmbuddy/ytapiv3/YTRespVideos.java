@@ -47,7 +47,9 @@ import free.yhc.netmbuddy.utils.Utils;
 import static free.yhc.netmbuddy.utils.Utils.eAssert;
 
 public class YTRespVideos extends YTResp {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(YTRespVideos.class);
 
     static String
@@ -74,7 +76,7 @@ public class YTRespVideos extends YTResp {
 
     static YTResp.VideoListResponse
     parse(byte[] data) throws YTDataAdapter.YTApiException {
-        JSONObject jo = null;
+        JSONObject jo;
         try {
             jo = new JSONObject(new String(data));
         } catch (JSONException e) {

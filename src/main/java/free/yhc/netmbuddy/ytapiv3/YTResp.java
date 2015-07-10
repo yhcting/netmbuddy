@@ -40,6 +40,7 @@ import org.json.JSONObject;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -58,10 +59,12 @@ import free.yhc.netmbuddy.utils.JsonUtils.JsonModel;
 
 // To support Youtube Data API v3
 class YTResp {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(YTResp.class);
 
-    static final SimpleDateFormat SDF = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss.SSS'Z'");
+    static final SimpleDateFormat SDF = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss.SSS'Z'", Locale.US);
 
 
     // =======================================================================
@@ -87,11 +90,11 @@ class YTResp {
 
     /**
      *
-     * @return seconds(>=0). <0 if fails
+     * @return seconds >=0. <0 if fails
      */
+    @SuppressWarnings("ConstantConditions")
     private static long
     parseYTDuration(String durstr) {
-        String s = null;
         int Y = 0, M = 0, W = 0, D = 0, H = 0, m = 0, S = 0;
         if (null == durstr)
             return -1;
@@ -112,6 +115,7 @@ class YTResp {
         if (!mr.matches())
             return -1; // unknown format
 
+        String s;
         if (null != (s = mr.group(1)))
             Y = Integer.parseInt(s);
         if (null != (s = mr.group(2)))
@@ -643,6 +647,7 @@ class YTResp {
     }
 
     public static class VideoRes extends JsonModel {
+        @SuppressWarnings("unused")
         static final String KIND = "youtube#video";
         String kind = null;
         String etag = null;
@@ -693,6 +698,7 @@ class YTResp {
     }
 
     public static class SearchRes extends JsonModel {
+        @SuppressWarnings("unused")
         static final String KIND = "youtube#searchResult";
         String kind = null;
         String etag = null;
@@ -718,6 +724,7 @@ class YTResp {
     }
 
     public static class SearchListResponse extends JsonModel {
+        @SuppressWarnings("unused")
         static final String KIND = "youtube#searchListResponse";
         String kind = null;
         String etag = null;
@@ -740,6 +747,7 @@ class YTResp {
         /**
          * Generate corresponding data structure of facade client side.
          */
+        @SuppressWarnings("unused")
         YTDataAdapter.VideoListResp
         makeAdapterData() {
             YTDataAdapter.VideoListResp r = new YTDataAdapter.VideoListResp();
@@ -757,6 +765,7 @@ class YTResp {
     }
 
     public static class VideoListResponse extends JsonModel {
+        @SuppressWarnings("unused")
         static final String KIND = "youtube#videoListResponse";
         String kind = null;
         String etag = null;

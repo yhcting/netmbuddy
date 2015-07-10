@@ -79,7 +79,6 @@ public class YTUtils {
                YTApiFacade.MAX_AVAILABLE_RESULTS_FOR_QUERY;
     }
 
-
     /**
      * Fill Youtube data fil
      */

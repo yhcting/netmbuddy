@@ -49,7 +49,9 @@ import free.yhc.netmbuddy.core.YTDataAdapter;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class YTApiFacade {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(YTApiFacade.class);
 
     public static final int MAX_RESULTS_PER_PAGE = 50;

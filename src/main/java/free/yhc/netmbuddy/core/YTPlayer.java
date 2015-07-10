@@ -2430,6 +2430,7 @@ UnexpectedExceptionHandler.Evidence {
         return mpGetVideoHeight();
     }
 
+    @SuppressWarnings("unused")
     public int
     getProgressPercent() {
         int progPercent = 0;

@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014
+ * Copyright (C) 2012, 2013, 2014, 2015
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -178,7 +178,7 @@ YTDataHelper.ThumbnailRespReceiver {
 
         //noinspection StatementWithEmptyBody
         if (YTDataAdapter.Err.NO_ERR != resp.err) {
-            ; // TODO set to something else...
+            // TODO set to something else...
         } else {
             // View is NOT reused here.
             // So, I don't need to worry about issues comes from reusing view in the list.

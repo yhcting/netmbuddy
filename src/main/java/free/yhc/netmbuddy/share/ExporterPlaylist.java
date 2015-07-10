@@ -106,7 +106,6 @@ class ExporterPlaylist implements ExporterI {
     public Err
     execute() {
         DB db = DB.get();
-        Cursor c = null;
 
         // Meta data
         // -------------
@@ -116,13 +115,15 @@ class ExporterPlaylist implements ExporterI {
         // Playlist data
         // -------------
         DataModel.Playlist dmpl = new DataModel.Playlist();
+        Cursor c = null;
         try {
             c = db.queryPlaylist(_mPlid, DataModel.Playlist.sDBProjection);
             if (!c.moveToFirst())
                 return Err.PARAMETER;
             dmpl.set(c);
         } finally {
-            c.close();
+            if (null != c)
+                c.close();
         }
 
         // Video data in this playlist

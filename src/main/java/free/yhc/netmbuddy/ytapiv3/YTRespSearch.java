@@ -47,7 +47,9 @@ import free.yhc.netmbuddy.utils.Utils;
 import static free.yhc.netmbuddy.utils.Utils.eAssert;
 
 public class YTRespSearch extends YTResp {
+    @SuppressWarnings("unused")
     private static final boolean DBG = false;
+    @SuppressWarnings("unused")
     private static final Utils.Logger P = new Utils.Logger(YTRespSearch.class);
 
     static String
