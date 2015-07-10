@@ -37,6 +37,7 @@
 package free.yhc.netmbuddy;
 
 import static free.yhc.netmbuddy.utils.Utils.eAssert;
+
 import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.Context;
@@ -54,6 +55,8 @@ UnexpectedExceptionHandler.Evidence {
     private static final boolean DBG = false;
     private static final Utils.Logger P = new Utils.Logger(DiagAsyncTask.class);
 
+    private static final int MAX_PROGRESS_RANGE = 10000; // See Android API reference document.
+
     private Context mContext = null;
     private ProgressDialog mDialog = null;
     private CharSequence mTitle = null;
@@ -64,6 +67,7 @@ UnexpectedExceptionHandler.Evidence {
     private boolean mCancelable = true;
     private boolean mInterruptOnCancel = true;
     private DialogInterface.OnDismissListener mOnDismissListener = null;
+    private int mMaxProgress = 0;
 
     public static abstract class Worker {
         public abstract Err
@@ -223,11 +227,28 @@ UnexpectedExceptionHandler.Evidence {
 
     @Override
     public void
-    onProgress(int percent) {
+    onPreProgress(int maxProgress) {
+        mMaxProgress = maxProgress;
+        if (maxProgress > MAX_PROGRESS_RANGE)
+            maxProgress = MAX_PROGRESS_RANGE;
+        if (null != mDialog)
+            mDialog.setMax(mMaxProgress);
+
+    }
+
+    @Override
+    public void
+    onProgress(int progress) {
         if (null == mDialog)
             return;
 
-        mDialog.setProgress(percent);
+        if (progress > mMaxProgress)
+            progress = mMaxProgress; // Nothing to do. progress already reaches to maximum value.
+
+        if (progress > MAX_PROGRESS_RANGE)
+            progress = (int)((long)progress * (long)MAX_PROGRESS_RANGE / (long)mMaxProgress);
+
+        mDialog.setProgress(progress);
     }
 
     @Override
@@ -274,7 +295,7 @@ UnexpectedExceptionHandler.Evidence {
         if (null != mMessage)
             mDialog.setMessage(mMessage);
         mDialog.setProgressStyle(mStyle.getStyle());
-        mDialog.setMax(100); // percent
+        //mDialog.setMax(mMaxProgress);
         // To prevent dialog is dismissed unexpectedly by back-key
         mDialog.setCancelable(false);
 

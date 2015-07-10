@@ -154,8 +154,14 @@ UnexpectedExceptionHandler.Evidence {
             Share.OnProgressListener listener = new Share.OnProgressListener() {
                 @Override
                 public void
-                onProgress(float prog) {
-                    task.publishProgress((int)(prog * 100));
+                onProgress(int prog) {
+                    task.publishProgress(prog);
+                }
+
+                @Override
+                public void
+                onPreProgress(int maxProg) {
+                    task.publishPreProgress(maxProg);
                 }
             };
             _mResult = _mImporter.execute(null, listener);

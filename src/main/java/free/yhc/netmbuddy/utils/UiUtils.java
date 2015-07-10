@@ -826,8 +826,8 @@ public class UiUtils {
     public static void
     showSimilarTitlesDialog(final Activity activity, final String title) {
         DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
-            private AtomicReference<Boolean>    mCancelled = new AtomicReference<Boolean>(false);
-            private LinkedList<Long>            mVids = new LinkedList<Long>();
+            private AtomicReference<Boolean> mCancelled = new AtomicReference<>(false);
+            private LinkedList<Long> mVids = new LinkedList<>();
 
             @Override
             public Err
@@ -847,10 +847,8 @@ public class UiUtils {
                         return Err.NO_ERR;
 
                     int maxCnt = c.getCount();
-                    int cnt = 0;
-                    int prevPercent = 0;
-                    int curPercent = 0;
 
+                    task.publishPreProgress(maxCnt);
                     task.publishProgress(0);
                     do {
                         if (DBG) {
@@ -865,13 +863,7 @@ public class UiUtils {
                                 return Err.NO_ERR;
                         }
 
-                        ++cnt;
-                        curPercent = cnt * 100 / maxCnt;
-                        if (curPercent > prevPercent) {
-                            task.publishProgress(curPercent);
-                            prevPercent = curPercent;
-                        }
-
+                        task.publishIncrenemtProgressBy(1);
                         if (mCancelled.get())
                             return Err.CANCELLED;
                     } while (c.moveToNext());
@@ -929,6 +921,7 @@ public class UiUtils {
                           R.string.searching,
                           true,
                           false)
+
             .run();
     }
 }

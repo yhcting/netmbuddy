@@ -54,7 +54,8 @@ public class Share {
     private static final Utils.Logger P = new Utils.Logger(Share.class);
 
     public interface OnProgressListener {
-        void onProgress(float prog);
+        void onPreProgress(int maxProg);
+        void onProgress(int prog);
     }
 
     public interface ImporterI {

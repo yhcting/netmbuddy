@@ -89,7 +89,9 @@ public abstract class BGTask<R> {
     //   even if canceling is still ongoing.(User already cancel the task!)
     // To resolve this issue, mUserCancel is introduced.
     private final AtomicReference<Boolean> mUserCancel = new AtomicReference<>(false);
+
     private State mState = State.READY;
+    private int mProgress = 0;
 
     public enum State {
         // before background job is running
@@ -209,7 +211,13 @@ public abstract class BGTask<R> {
     onCancelled() { }
 
     protected void
+    onPreProgress(int maxProg) { }
+
+    protected void
     onProgress(int prog) { }
+
+    protected void
+    onIncrementProgressBy(int diff) { }
 
     protected abstract R
     doAsyncTask();
@@ -300,20 +308,45 @@ public abstract class BGTask<R> {
     }
 
     public final void
+    publishPreProgress(final int maxProg) {
+        mOwner.post(new Runnable() {
+            @Override
+            public void
+            run() {
+                mProgress = 0;
+                onPreProgress(maxProg);
+            }
+        });
+    }
+
+    public final void
     publishProgress(final int prog) {
         mOwner.post(new Runnable() {
             @Override
             public void
             run() {
+                mProgress = prog;
                 onProgress(prog);
             }
         });
     }
 
+    public final void
+    publishIncrenemtProgressBy(final int diff) {
+        mOwner.post(new Runnable() {
+            @Override
+            public void
+            run() {
+                mProgress += diff;
+                onProgress(mProgress);
+            }
+        });
+    }
+
+
     /**
      * @param interrupt
-     * @return
-     *   'false' if task is already cancelled - cancel() is called more than once!
+     * @return 'false' if task is already cancelled - cancel() is called more than once!
      */
     public final boolean
     cancel(final boolean interrupt) {
@@ -324,7 +357,7 @@ public abstract class BGTask<R> {
             @Override
             public void
             run() {
-                synchronized(mStateLock) {
+                synchronized (mStateLock) {
                     switch (getStateLocked()) {
                     case STARTED:
                     case RUNNING:

@@ -37,6 +37,7 @@
 package free.yhc.netmbuddy.ytapiv3;
 
 import android.net.Uri;
+import android.support.annotation.Nullable;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -138,9 +139,16 @@ public class YTApiFacade {
         return ytvl;
     }
 
+    /**
+     *
+     * @param ytvid youtube video id
+     * @return null if youtube video id is invalid(unavailable) one.
+     * @throws YTDataAdapter.YTApiException
+     */
+    @Nullable
     public static YTDataAdapter.Video
     requestVideoInfo(String ytvid) throws YTDataAdapter.YTApiException {
-        byte[] data = null;
+        byte[] data;
         try {
             data = loadUrl(YTRespVideos.getRequestUrl(new String[] { ytvid }));
         } catch (NetLoader.LocalException e) {
@@ -148,7 +156,9 @@ public class YTApiFacade {
         }
         YTResp.VideoListResponse vlresp = YTRespVideos.parse(data);
         YTDataAdapter.VideoListResp resp = vlresp.makeAdapterData();
-        eAssert(resp.vids.length > 0);
+        if (0 == resp.vids.length)
+            // This is invalid video id
+            return null;
         return resp.vids[0];
     }
 }

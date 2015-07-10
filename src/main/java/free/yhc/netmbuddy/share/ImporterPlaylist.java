@@ -94,7 +94,7 @@ class ImporterPlaylist implements ImporterI {
         @Override
         public Err
         doJob() {
-            Err err = Err.NO_ERR;
+            Boolean success = false;
             try {
                 if (!YTUtils.verifyYoutubeVideoId(_mV.ytvid))
                     return Err.INVALID_SHARE;
@@ -106,14 +106,15 @@ class ImporterPlaylist implements ImporterI {
                 v.setPreferenceData(_mV.volume, _mV.bookmarks);
                 v.setPreferenceDataIfNotSet(Policy.DEFAULT_VIDEO_VOLUME, "");
                 if (DB.Err.NO_ERR != DB.get().insertVideoToPlaylist(_mPlid, v))
-                    err = Err.DB_UNKNOWN;
+                    return Err.DB_UNKNOWN;
+                success = true;
+                return Err.NO_ERR;
             } finally {
-                if (Err.NO_ERR == err)
+                if (success)
                     _mSuccess.incrementAndGet();
                 else
                     _mFail.incrementAndGet();
             }
-            return err;
         }
     }
 
@@ -154,13 +155,16 @@ class ImporterPlaylist implements ImporterI {
     public ImportResult
     execute(Object user, final OnProgressListener listener) {
         ImportResult ir = new ImportResult();
+
         mMtrunner.setOnProgressListener(new MultiThreadRunner.OnProgressListener() {
             @Override
             public void onProgress(float prog) {
-                listener.onProgress(prog);
+                listener.onProgress((int)prog);
             }
         });
 
+        listener.onPreProgress(mPl.videos.length);
+        listener.onProgress(0);
         try {
             final DB db = DB.get();
             String title = getUniqueSharePlaylistTitle(mPl.title);
@@ -169,7 +173,9 @@ class ImporterPlaylist implements ImporterI {
             if (plid < 0)
                 throw new LocalException(Err.DB_UNKNOWN);
 
-            float jobWeight = 1.0f / (mPl.videos.length + 1); // + 1 for loading playlist thumbnail.
+            // DO NOT count playlist-thumbnail as progress.
+            // User doesn't think this task as 'import' task.
+            float jobWeight = 0f;
             // Append job to load/insert playlist thumbnail.
             mMtrunner.appendJob(new MultiThreadRunner.Job<Err>(true, jobWeight) {
                 @Override
@@ -193,6 +199,7 @@ class ImporterPlaylist implements ImporterI {
                 }
             });
 
+            jobWeight = 1.0f;
             // Append jobs to load/add videos
             for (DataModel.Video v : mPl.videos) {
                 mMtrunner.appendJob(new ImportVideoJob(jobWeight,

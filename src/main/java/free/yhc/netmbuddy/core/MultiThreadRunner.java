@@ -59,7 +59,7 @@ public class MultiThreadRunner {
     private final LinkedList<Task<?>> mRunQ = new LinkedList<>();
     private final int mMaxConcur;
     private final AtomicBoolean mCancelled  = new AtomicBoolean(false);
-    private final AtomicFloat mProgress   = new AtomicFloat(0);
+    private final AtomicFloat mProgress = new AtomicFloat(0);
     private final AtomicReference<OnProgressListener> mProgListener
         = new AtomicReference<>(null);
     private final AtomicReference<OnDoneListener> mDoneListener
@@ -82,9 +82,9 @@ public class MultiThreadRunner {
     public static abstract class Job<R> {
         private final boolean _mInterruptOnCancel;
         private final float _mProgWeight;
-        private final int   _mTaskPriority = -1; // not used yet.
+        private final int _mTaskPriority = -1; // not used yet.
 
-        private Handler _mOwner     = null;
+        private Handler _mOwner = null;
         private OnProgressListener _mProgListener = null;
 
         public Job(boolean interruptOnCancel, float progWeight) {
@@ -176,13 +176,13 @@ public class MultiThreadRunner {
 
     private static class Task<R> extends BGTask<R> {
         private final MultiThreadRunner _mMtrunner;
-        private final Job<R>    _mJob;
+        private final Job<R> _mJob;
 
         // NOTE
         // To workaround Android GB Framework bug regarding AsyncTask.
         // On GB Framework, it is NOT guaranteed that onCancelled() is called after returning from doInBackground().
         // This is based on experimental result on Moto Bionic.
-        private final boolean   _mJobDone = false;
+        private final boolean _mJobDone = false;
 
         private boolean
         isOwnerThread() {
