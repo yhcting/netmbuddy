@@ -120,7 +120,10 @@ public class DMVideo {
         channelTitle = v.channelTitle;
         volume = v.volume;
         bookmarks = v.bookmarks;
-        setExtraData(v.extra);
+        if (null == v.extra)
+            extra = null;
+        else
+            copyExtraData(v.extra);
     }
 
     @SuppressWarnings("unused")
@@ -222,7 +225,7 @@ public class DMVideo {
     }
 
     public DMVideo
-    setExtraData(Extra e) {
+    copyExtraData(Extra e) {
         if (null == extra)
             extra = new Extra();
         extra.copy(e);
