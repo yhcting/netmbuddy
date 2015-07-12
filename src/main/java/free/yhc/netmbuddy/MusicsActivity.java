@@ -151,7 +151,7 @@ UnexpectedExceptionHandler.Evidence {
         UiUtils.OnPostExecuteListener listener = new UiUtils.OnPostExecuteListener() {
             @Override
             public void
-            onPostExecute(Err result, Object user) {
+            onPostExecute(Err result, Object tag) {
                 if (Err.NO_ERR == result)
                     getAdapter().reloadCursorAsync();
             }

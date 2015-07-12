@@ -106,8 +106,8 @@ public class UiUtils {
     }
 
     public interface OnPlaylistSelected {
-        void onUserMenu(int pos, Object user);
-        void onPlaylist(long plid, Object user);
+        void onUserMenu(int pos, Object tag);
+        void onPlaylist(long plid, Object tag);
     }
 
     public interface OnMenuSelected {
@@ -115,7 +115,7 @@ public class UiUtils {
     }
 
     public interface OnPostExecuteListener {
-        void    onPostExecute(Err result, Object user);
+        void    onPostExecute(Err result, Object tag);
     }
 
     // ========================================================================

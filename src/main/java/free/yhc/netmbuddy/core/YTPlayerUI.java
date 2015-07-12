@@ -675,7 +675,7 @@ OnSharedPreferenceChangeListener {
 
     private void
     pvMoreControlAddToWithYtid(final UiUtils.OnPostExecuteListener listener,
-                               final Object user,
+                               final Object tag,
                                final long plid,
                                final YTPlayer.Video video) {
         final int volume;
@@ -688,12 +688,13 @@ OnSharedPreferenceChangeListener {
             @Override
             public void
             onPostExecute(DiagAsyncTask task, Err result) {
-                listener.onPostExecute(result, user);
+                listener.onPostExecute(result, tag);
             }
 
             @Override
             public Err
             doBackgroundWork(DiagAsyncTask task) {
+                eAssert(null != video.v);
                 DMVideo v = new DMVideo();
                 v.copy(video.v);
                 eAssert(Utils.isValidValue(v.ytvid));
@@ -718,7 +719,7 @@ OnSharedPreferenceChangeListener {
         final UiUtils.OnPostExecuteListener listener = new UiUtils.OnPostExecuteListener() {
             @Override
             public void
-            onPostExecute(Err result, Object user) {
+            onPostExecute(Err result, Object tag) {
                 if (Err.NO_ERR != result)
                     return;
 
@@ -739,13 +740,13 @@ OnSharedPreferenceChangeListener {
             UiUtils.OnPlaylistSelected action = new UiUtils.OnPlaylistSelected() {
                 @Override
                 public void
-                onPlaylist(long plid, Object user) {
-                    pvMoreControlAddToWithYtid(listener, user, plid, video);
+                onPlaylist(long plid, Object tag) {
+                    pvMoreControlAddToWithYtid(listener, tag, plid, video);
                 }
 
                 @Override
                 public void
-                onUserMenu(int pos, Object user) {}
+                onUserMenu(int pos, Object tag) {}
             };
 
             // exclude current playlist
@@ -765,7 +766,7 @@ OnSharedPreferenceChangeListener {
         final UiUtils.OnPostExecuteListener listener = new UiUtils.OnPostExecuteListener() {
             @Override
             public void
-            onPostExecute(Err result, Object user) {
+            onPostExecute(Err result, Object tag) {
                 if (Err.NO_ERR != result)
                     return;
 
