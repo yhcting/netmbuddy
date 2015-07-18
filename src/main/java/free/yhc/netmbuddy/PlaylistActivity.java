@@ -667,13 +667,14 @@ UnexpectedExceptionHandler.Evidence {
 
     private void
     onMenuMore(final View anchor) {
+        // Disable premature menus.
         final int[] menus = {
                 R.string.app_info,
                 R.string.license,
                 R.string.clear_search_history,
-                R.string.delete_invalid_videos,
+                //R.string.delete_invalid_videos,
                 R.string.dbmore,
-                R.string.ytsearchmore,
+                //R.string.ytsearchmore,
                 R.string.feedback,
                 R.string.autostop };
 
