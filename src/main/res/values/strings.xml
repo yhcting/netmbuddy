@@ -95,6 +95,7 @@
     <string name="set_bookmark">Set bookmark</string>
     <string name="enter_bookmark_name">Enter bookmark name</string>
     <string name="search_similar_titles">Search similar titles</string>
+    <string name="delete_invalid_videos">Remove invalid videos</string>
     <string name="tts_title_head_pre">Next video is</string>
     <string name="tts_title_head_post"></string>
     <string name="tts_title_tail_pre">Previous video was</string>
@@ -184,6 +185,8 @@ It may takes long time(up to several minutes) in case that:\n
     <string name="msg_empty_bookmarks">There is no bookmark.</string>
     <string name="msg_no_similar_titles">There is no similar video title in local playlist.</string>
     <string name="msg_couldnt_use_title_tts">Title TTS is not available.</string>
+    <string name="msg_delete_invalid_videos">It is checked that video is available on Youtube.\nThis uses network resource and may take long time.</string>
+    <string name="msg_invalid_videos_deleted">invalid videos are deleted.</string>
 
     <string name="err_no_err">Success.</string>
     <string name="err_unknown">Unknown error.</string>

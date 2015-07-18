@@ -146,6 +146,18 @@ class YTResp {
     // All decendents of 'JsonModel' is set as 'public' to be used via reflection.
     //
     // =======================================================================
+    public static class Error extends JsonModel {
+        Integer code = null;
+        String message = null;
+
+        @Override
+        public void
+        set(JSONObject jo) {
+            code = jGetInt(jo, "code");
+            message = jGetString(jo, "message");
+        }
+    }
+
     public static class Id extends JsonModel {
         String kind = null;
         String videoId = null;

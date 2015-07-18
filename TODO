@@ -2,7 +2,10 @@
 * Shows unavailable video list.
 * Delete unavailable video.
 * Find similar video at Youtube (To find simlar video that can replace unavailable video.)
-  : comparing title and thumbnail. (How can we tell similarity of thumbnail on Android platform)
+    comparing title and thumbnail. (How can we tell similarity of thumbnail on Android platform)
 * Replace old unavailable video with new video.
 * Proceed to Youtube Data API v3...
 * Improvement : How about using 'ETag'
+* Append whole playlist to playQ.
+* Progress dialog would better to show real count + percent
+    At this moment, only percent is shown.

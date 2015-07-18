@@ -192,6 +192,10 @@ class ImporterPlaylist implements ImporterI {
                 }
             });
 
+            // FIXME : if number of videos is too large, OOM may be issued.
+            // But, even if # of videos is 10000, and 1k is required per video,
+            // Memory requirement is only 10M.
+            // So, at this moment, OOM is not considered yet.
             jobWeight = 1.0f;
             // Append jobs to load/add videos
             for (DataModel.Video v : mPl.videos) {

@@ -96,6 +96,7 @@ public abstract class BGTask<R> {
 
     private State mState = State.READY;
     private int mProgress = 0;
+    private Object mTag = null;
 
     public enum State {
         // before background job is running
@@ -232,13 +233,10 @@ public abstract class BGTask<R> {
     // ========================================================================
     /**
      *
-     * @param name
-     *   Thread name
-     * @param owner
-     *   Owner handler. All other action functions except for 'doAsyncTask' will be run on
-     *     given owner handler's context. If null, UI context is used as default.
-     * @param priority
-     *   Java thread priority LOW[1, 10]High
+     * @param name Thread name
+     * @param owner Owner handler. All other action functions except for 'doAsyncTask' will be run on
+     *              given owner handler's context. If null, UI context is used as default.
+     * @param priority Java thread priority LOW[1, 10]High
      */
     public BGTask(String name,
                   Handler owner,
@@ -288,6 +286,16 @@ public abstract class BGTask<R> {
         synchronized (mStateLock) {
             return getStateLocked();
         }
+    }
+
+    public void
+    setTag(Object tag) {
+        mTag = tag;
+    }
+
+    public Object
+    getTag() {
+        return mTag;
     }
 
     public final Handler

@@ -70,6 +70,7 @@ public class Policy {
     // Performance for loading thumbnail
     public static final int YTSEARCH_MAX_LOAD_THUMBNAIL_THREAD = 4;
     public static final int YTIMPORT_MAX_LOAD_THUMBNAIL_THREAD = 10;
+    public static final int YTSEARCH_MAX_CHECK_VIDEOID_THREAD = 4;
 
     // --------------------------------------------------------------------
     // Youtube Hack

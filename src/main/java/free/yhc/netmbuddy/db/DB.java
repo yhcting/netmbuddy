@@ -916,7 +916,7 @@ UnexpectedExceptionHandler.Evidence {
      * @return number of times deleted.
      */
     public int
-    deleteVideoFromAll(long vid) {
+    deleteVideoFromAllPlaylist(long vid) {
         return deleteVideoExcept(-1, vid);
     }
 

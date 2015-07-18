@@ -562,7 +562,7 @@ public class UiUtils {
                         if (isUserPlaylist(plid))
                             db.deleteVideoFrom(plid, mid);
                         else
-                            db.deleteVideoFromAll(mid);
+                            db.deleteVideoFromAllPlaylist(mid);
                     }
                     db.setTransactionSuccessful();
                 } finally {

@@ -68,7 +68,7 @@ public class YTRespSearch extends YTResp {
                 + "?key=" + Uri.encode(YTApiFacade.API_KEY)
                 + "&maxResults=" + maxResults
                 + "&type=video"
-                + "&part=id,snippet"
+                + "&part=id"
                 + channelId
                 + query
                 + "&fields=nextPageToken,prevPageToken,pageInfo(totalResults,resultsPerPage)"

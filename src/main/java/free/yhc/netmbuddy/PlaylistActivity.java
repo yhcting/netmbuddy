@@ -40,6 +40,7 @@ import static free.yhc.netmbuddy.utils.Utils.eAssert;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -63,6 +64,8 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import free.yhc.netmbuddy.PlaylistAdapter.ItemButton;
+import free.yhc.netmbuddy.core.MultiThreadRunner;
+import free.yhc.netmbuddy.core.YTDataAdapter;
 import free.yhc.netmbuddy.db.ColPlaylist;
 import free.yhc.netmbuddy.db.ColVideo;
 import free.yhc.netmbuddy.db.DB;
@@ -74,6 +77,7 @@ import free.yhc.netmbuddy.share.Share;
 import free.yhc.netmbuddy.utils.ReportUtils;
 import free.yhc.netmbuddy.utils.UiUtils;
 import free.yhc.netmbuddy.utils.Utils;
+import free.yhc.netmbuddy.ytapiv3.YTApiFacade;
 
 public class PlaylistActivity extends Activity implements
 UnexpectedExceptionHandler.Evidence {
@@ -100,6 +104,34 @@ UnexpectedExceptionHandler.Evidence {
                     getAdapter().reloadCursorAsync();
             }
             // others are ignored.
+        }
+    }
+
+    private static class DeleteInvalidVideoJob extends MultiThreadRunner.Job<Boolean> {
+        private final long _mVid;
+        private final String _mYtvid;
+        private final AtomicInteger _mDeleted;
+
+        DeleteInvalidVideoJob(long vid, String ytvid,
+                              AtomicInteger deleted) {
+            super(true, 1.0f);
+            _mVid = vid;
+            _mYtvid = ytvid;
+            _mDeleted = deleted;
+        }
+
+        @Override
+        public Boolean
+        doJob() {
+            try {
+                if (null == YTApiFacade.requestVideoInfo(_mYtvid)
+                    // This is invalid video.
+                    && 0 < DB.get().deleteVideoFromAllPlaylist(_mVid)) {
+                    _mDeleted.incrementAndGet();
+                    return true;
+                }
+            } catch (YTDataAdapter.YTApiException ignored) { }
+            return false;
         }
     }
 
@@ -148,9 +180,9 @@ UnexpectedExceptionHandler.Evidence {
         // Below three variables are reserved for future use - user feedback.
 
         DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
-            private int _mSCnt      = 0;    // inserted count
-            private int _mDupCnt    = 0;    // duplicated cont
-            private int _mFCnt      = 0;    // failure count
+            private int _mSCnt = 0;    // inserted count
+            private int _mDupCnt = 0;    // duplicated cont
+            private int _mFCnt = 0;    // failure count
 
             @Override
             public Err
@@ -197,6 +229,45 @@ UnexpectedExceptionHandler.Evidence {
                 DiagAsyncTask.Style.SPIN,
                 R.string.copying)
             .run();
+    }
+
+    private int
+    deleteInvalidVideos(final DiagAsyncTask task) {
+        MultiThreadRunner mtrun = new MultiThreadRunner(Utils.getUiHandler(),
+                                                        Policy.YTSEARCH_MAX_CHECK_VIDEOID_THREAD);
+        mtrun.setOnProgressListener(new MultiThreadRunner.OnProgressListener() {
+            @Override
+            public void
+            onProgress(float prog) {
+                task.publishProgress((int) prog);
+            }
+        });
+        Cursor c = mDb.queryVideos(new ColVideo[]{ColVideo.ID, ColVideo.VIDEOID},
+                                   null, false);
+        eAssert(null != c);
+        if (!c.moveToFirst()) {
+            c.close();
+            // empty cursor. Nothing to do.
+            return 0;
+        }
+
+        int nrvideos = c.getCount();
+        AtomicInteger deleted = new AtomicInteger();
+        task.publishPreProgress(nrvideos);
+        // FIXME : if number of videos is too large, OOM may be issued.
+        // But, even if # of videos is 10000, and 1k is required per video,
+        // Memory requirement is only 10M.
+        // So, at this moment, OOM is not considered yet.
+        do {
+            mtrun.appendJob(new DeleteInvalidVideoJob(c.getLong(0), c.getString(1), deleted));
+        } while (c.moveToNext());
+        c.close();
+
+        try {
+            mtrun.waitAllDone();
+        } catch (InterruptedException ignored) { }
+
+        return deleted.get();
     }
 
     // ------------------------------------------------------------------------
@@ -302,6 +373,44 @@ UnexpectedExceptionHandler.Evidence {
     onMenuMoreClearSearchHistory(@SuppressWarnings("unused") View anchor) {
         SearchSuggestionProvider.clearHistory();
         UiUtils.showTextToast(this, R.string.msg_search_history_cleared);
+    }
+
+    private void
+    onMenuMoreDeleteInvalidVideos(@SuppressWarnings("unused") View anchor) {
+        CharSequence title = getResources().getText(R.string.delete_invalid_videos);
+        CharSequence msg = getResources().getText(R.string.msg_delete_invalid_videos);
+        UiUtils.buildConfirmDialog(this, title, msg, new UiUtils.ConfirmAction() {
+            @Override
+            public void
+            onOk(Dialog dialog) {
+                DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
+                    @Override
+                    public void
+                    onPostExecute(DiagAsyncTask task,
+                                  @SuppressWarnings("unused") Err result) {
+                        int nrDeleted = (Integer)task.getTag();
+                        String msg = nrDeleted + " " + Utils.getResString(R.string.msg_invalid_videos_deleted);
+                        UiUtils.showTextToast(PlaylistActivity.this, msg);
+                    }
+
+                    @Override
+                    public Err
+                    doBackgroundWork(DiagAsyncTask task) {
+                        int nrDeleted = deleteInvalidVideos(task);
+                        task.setTag(nrDeleted);
+                        return Err.NO_ERR;
+                    }
+                };
+                new DiagAsyncTask(PlaylistActivity.this,
+                                  worker,
+                                  DiagAsyncTask.Style.PROGRESS,
+                                  R.string.delete_invalid_videos)
+                    .run();
+            }
+            @Override
+            public void
+            onCancel(Dialog dialog) { }
+        }).show();
     }
 
     private void
@@ -562,6 +671,7 @@ UnexpectedExceptionHandler.Evidence {
                 R.string.app_info,
                 R.string.license,
                 R.string.clear_search_history,
+                R.string.delete_invalid_videos,
                 R.string.dbmore,
                 R.string.ytsearchmore,
                 R.string.feedback,
@@ -593,6 +703,10 @@ UnexpectedExceptionHandler.Evidence {
 
                 case R.string.clear_search_history:
                     onMenuMoreClearSearchHistory(anchor);
+                    break;
+
+                case R.string.delete_invalid_videos:
+                    onMenuMoreDeleteInvalidVideos(anchor);
                     break;
 
                 case R.string.app_info:

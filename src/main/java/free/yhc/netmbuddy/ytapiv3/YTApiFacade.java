@@ -87,12 +87,15 @@ public class YTApiFacade {
     // =======================================================================
     //
     // Facade APIs
+    // These APIs communicates with Youtube server.
+    // So, these functions SHOULD NOT be used at main UI thread.,
     //
     // =======================================================================
+    public static boolean
+    isValidYtVideo(String ytvid) throws YTDataAdapter.YTApiException {
+        return null != requestVideoInfo(ytvid);
+    }
 
-    /**
-     * This function uses network. So, this function SHOULD NOT be used at main UI thread.
-     */
     public static YTDataAdapter.VideoListResp
     requestVideoList(YTDataAdapter.VideoListReq req) throws YTDataAdapter.YTApiException {
         String requrl;
@@ -158,7 +161,8 @@ public class YTApiFacade {
         }
         YTResp.VideoListResponse vlresp = YTRespVideos.parse(data);
         YTDataAdapter.VideoListResp resp = vlresp.makeAdapterData();
-        if (0 == resp.vids.length)
+        if (null == resp.vids
+            || 0 == resp.vids.length)
             // This is invalid video id
             return null;
         return resp.vids[0];
