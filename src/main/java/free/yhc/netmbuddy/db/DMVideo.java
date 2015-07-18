@@ -159,6 +159,8 @@ public class DMVideo {
     public DMVideo
     setData(ColVideo[] cols, Object[] values) {
         eAssert(cols.length == values.length);
+        if (null == extra)
+            extra = new Extra();
         for (int i = 0; i < cols.length; i++) {
             Object o = values[i];
             switch (cols[i]) {
