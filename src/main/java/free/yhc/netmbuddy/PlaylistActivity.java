@@ -73,6 +73,7 @@ import free.yhc.netmbuddy.core.Policy;
 import free.yhc.netmbuddy.core.SearchSuggestionProvider;
 import free.yhc.netmbuddy.core.UnexpectedExceptionHandler;
 import free.yhc.netmbuddy.core.YTPlayer;
+import free.yhc.netmbuddy.db.DMVideo;
 import free.yhc.netmbuddy.share.Share;
 import free.yhc.netmbuddy.utils.ReportUtils;
 import free.yhc.netmbuddy.utils.UiUtils;
@@ -932,6 +933,39 @@ UnexpectedExceptionHandler.Evidence {
     }
 
     private void
+    onContextMenuAppendToPlayQ(final AdapterContextMenuInfo info) {
+        final long plid = info.id;
+        DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
+            private YTPlayer.Video[] _mVids = null;
+            @Override
+            public void
+            onPostExecute(DiagAsyncTask task, Err result) {
+                if (null != _mVids)
+                    YTPlayer.get().appendToPlayQ(_mVids);
+            }
+
+            @Override
+            public Err
+            doBackgroundWork(DiagAsyncTask task) {
+                Cursor c = DB.get().queryVideos(plid,
+                                                YTPlayer.sVideoProjectionToPlay,
+                                                null,
+                                                false);
+                _mVids = YTPlayer.getVideos(c, Utils.isPrefSuffle());
+                c.close();
+                return Err.NO_ERR;
+            }
+        };
+        new DiagAsyncTask(this,
+                          worker,
+                          DiagAsyncTask.Style.SPIN,
+                          R.string.append_to_playq)
+            .run();
+
+    }
+
+
+    private void
     onListItemClick(@SuppressWarnings("unused") View view,
                     @SuppressWarnings("unused") int position,
                     long itemId) {
@@ -963,6 +997,10 @@ UnexpectedExceptionHandler.Evidence {
 
         case R.id.share:
             onContextMenuShare(info);
+            return true;
+
+        case R.id.append_to_playq:
+            onContextMenuAppendToPlayQ(info);
             return true;
         }
         eAssert(false);

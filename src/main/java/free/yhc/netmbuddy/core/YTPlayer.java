@@ -1162,40 +1162,6 @@ UnexpectedExceptionHandler.Evidence {
         return new File(getCachedVideoFilePath(ytvid, Utils.getPrefQuality()));
     }
 
-    /**
-     * Closing cursor is caller's responsibility.
-     * @param c Cursor that is created by using "sVideoProjectionToPlay"
-     *          Closing cursor is this function's responsibility.
-     */
-    private Video[]
-    getVideos(Cursor c, boolean shuffle) {
-        if (!c.moveToFirst())
-            return new Video[0];
-
-        Video[] vs = new Video[c.getCount()];
-        int i = 0;
-        do {
-            vs[i++] = new Video(c.getString(COLI_VID_YTVID),
-                                c.getString(COLI_VID_TITLE),
-                                c.getInt(COLI_VID_VOLUME),
-                                0);
-        } while (c.moveToNext());
-
-        if (!shuffle)
-            Arrays.sort(vs, sVideoTitleComparator);
-        else {
-            // This is shuffled case!
-            Random r = new Random(System.currentTimeMillis());
-            NrElem[] nes = new NrElem[vs.length];
-            for (i = 0; i < nes.length; i++)
-                nes[i] = new NrElem(r.nextInt(), vs[i]);
-            Arrays.sort(nes, sNrElemComparator);
-            for (i = 0; i < nes.length; i++)
-                vs[i] = (Video)nes[i].tag;
-        }
-        return vs;
-    }
-
     private void
     cachingVideo(final String vid) {
         File cacheFile = getCachedVideo(vid);
@@ -1444,7 +1410,7 @@ UnexpectedExceptionHandler.Evidence {
     private void
     startVideo(Video v, boolean recovery) {
         if (null != v)
-            startVideo(v.v.ytvid, v.v.title, (int)v.v.volume, recovery);
+            startVideo(v.v.ytvid, v.v.title, (int) v.v.volume, recovery);
     }
 
     private void
@@ -2143,6 +2109,40 @@ UnexpectedExceptionHandler.Evidence {
         return YTHacker.YTQUALITY_SCORE_LOWEST;
     }
 
+    /**
+     * Closing cursor is caller's responsibility.
+     * @param c Cursor that is created by using "sVideoProjectionToPlay"
+     *          Closing cursor is this function's responsibility.
+     */
+    public static Video[]
+    getVideos(Cursor c, boolean shuffle) {
+        if (!c.moveToFirst())
+            return new Video[0];
+
+        Video[] vs = new Video[c.getCount()];
+        int i = 0;
+        do {
+            vs[i++] = new Video(c.getString(COLI_VID_YTVID),
+            c.getString(COLI_VID_TITLE),
+            c.getInt(COLI_VID_VOLUME),
+            0);
+        } while (c.moveToNext());
+
+        if (!shuffle)
+            Arrays.sort(vs, sVideoTitleComparator);
+        else {
+            // This is shuffled case!
+            Random r = new Random(System.currentTimeMillis());
+            NrElem[] nes = new NrElem[vs.length];
+            for (i = 0; i < nes.length; i++)
+                nes[i] = new NrElem(r.nextInt(), vs[i]);
+            Arrays.sort(nes, sNrElemComparator);
+            for (i = 0; i < nes.length; i++)
+                vs[i] = (Video)nes[i].tag;
+        }
+        return vs;
+    }
+
     public void
     addVideosStateListener(Object key, VideosStateListener listener) {
         eAssert(null != listener);
@@ -2291,8 +2291,7 @@ UnexpectedExceptionHandler.Evidence {
 
     /**
      * Get volume of video-on-play
-     * @return
-     *   -1 : for error
+     * @return -1 : for error
      */
     public int
     getVideoVolume() {
@@ -2303,8 +2302,7 @@ UnexpectedExceptionHandler.Evidence {
 
     /**
      *
-     * @param pos
-     *   milliseconds.
+     * @param pos milliseconds.
      */
     public void
     playerSeekTo(int pos) {
