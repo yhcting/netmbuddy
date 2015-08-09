@@ -1,64 +1,39 @@
-/******************************************************************************
- * Copyright (C) 2012, 2013, 2014, 2015
- * Younghyung Cho. <yhcting77@gmail.com>
- * All rights reserved.
- *
- * This file is part of NetMBuddy
- *
- * This program is licensed under the FreeBSD license
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * The views and conclusions contained in the software and documentation
- * are those of the authors and should not be interpreted as representing
- * official policies, either expressed or implied, of the FreeBSD Project.
- *****************************************************************************/
-
-package free.yhc.netmbuddy.core;
-
-import static free.yhc.netmbuddy.utils.Utils.eAssert;
-
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
 import java.net.URLDecoder;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import android.net.Uri;
-import android.os.AsyncTask;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpHost;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.params.ClientPNames;
+import org.apache.http.client.params.CookiePolicy;
+import org.apache.http.conn.params.ConnRoutePNames;
+import org.apache.http.conn.scheme.PlainSocketFactory;
+import org.apache.http.conn.scheme.Scheme;
+import org.apache.http.conn.scheme.SchemeRegistry;
+import org.apache.http.conn.ssl.SSLSocketFactory;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.params.HttpConnectionParams;
+import org.apache.http.params.HttpParams;
+import org.apache.http.params.HttpProtocolParams;
 
-import free.yhc.netmbuddy.utils.HttpUtils;
-import free.yhc.netmbuddy.utils.Utils;
 
-//
-// This is main class for HACKING Youtube protocol.
-//
-public class YTHacker {
-    private static final boolean DBG = false;
-    private static final Utils.Logger P = new Utils.Logger(YTHacker.class);
+public class YTHackTest {
+    //
+    // This is main class for HACKING Youtube protocol.
+    //
+    private static final boolean DBG = true;
 
     public static final String HTTP_UASTRING
         = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.134 Safari/537.36";
@@ -90,26 +65,8 @@ public class YTHacker {
     private static final Pattern sYtUrlGenerate204Pattern
         = Pattern.compile(".*\"(http(s)?:.+/generate_204[^\"]*)\".*");
 
-    private final NetLoader mLoader = new NetLoader();
     private final String mYtvid;
-    private final Object mUser;
-    private final YtHackListener mListener;
-    // NOTE
-    // mBgTask used as "private final" to avoid synchronizing issue.
-    // If not, 'mBgTask' should be initialized with 'null'.
-    // And, code for using 'mBgTask' always should be like this.
-    //     if (null != mBgTask)
-    //         mBgTask.xxxxx
-    private final AsyncTask<Void, Void, Err> mBgTask;
-
     private YtVideoHtmlResult mYtr = null;
-    private boolean mCancelled = false;
-
-    public interface YtHackListener {
-        void onPreHack(YTHacker ythack, String ytvid, Object user);
-        void onHackCancelled(YTHacker ythack, String ytvid, Object user);
-        void onPostHack(YTHacker ythack, Err result, NetLoader loader, String ytvid, Object user);
-    }
 
     public enum Err {
         NO_ERR,
@@ -144,6 +101,18 @@ public class YTHacker {
         }
     }
 
+    private static class P {
+    	static void
+    	w(String s) {
+    		System.out.println(s);
+    	}
+
+    	static void
+    	v(String s) {
+    		System.out.println(s);
+    	}
+    }
+
     // See Youtube web(html) interface
     private enum ElemQuality {
         SMALL,
@@ -160,7 +129,7 @@ public class YTHacker {
         }
     }
 
-    private static class ElemType {
+    public static class ElemType {
         enum StreamType {
             AUDIO,
             VIDEO;
@@ -243,7 +212,7 @@ public class YTHacker {
         }
     }
 
-    private static class ElemSize {
+    public static class ElemSize {
         int w;
         int h;
         ElemSize(int w, int h) {
@@ -267,7 +236,7 @@ public class YTHacker {
         }
     }
 
-    private static class YtVideoElem {
+    public static class YtVideoElem {
         String  url = "";
         int tag = YTITAG_INVALID;
         ElemType type = null;
@@ -286,7 +255,7 @@ public class YTHacker {
             try {
                 ytString = URLDecoder.decode(ytString, "UTF-8");
             } catch (UnsupportedEncodingException e) {
-                eAssert(false);
+                assert(false);
             }
 
             String sig = null;
@@ -343,35 +312,16 @@ public class YTHacker {
         }
     }
 
-    private static class YtVideoHtmlResult {
+    public static class YtVideoHtmlResult {
         long tmstamp = 0; // System time in milli.
-        // video is playable on specified 'UA String'(based on html-parsing)
-        boolean playable = true;
+        boolean playable = true; // video is playable on specified 'UA String'
         String generate_204_url = ""; // url including generate 204
         YtVideoElem[] vids = new YtVideoElem[0];
     }
 
-    private static Err
-    map(NetLoader.Err err) {
-        switch (err) {
-        case NO_ERR:
-            return Err.NO_ERR;
-
-        case IO_NET:
-        case HTTPGET:
-            return Err.IO_NET;
-
-        case INTERRUPTED:
-            return Err.INTERRUPTED;
-
-        default:
-            return Err.UNKNOWN;
-        }
-    }
-
     private static String
     getYtUri(String ytvid) {
-        eAssert(YTVID_LENGTH == ytvid.length());
+        assert(YTVID_LENGTH == ytvid.length());
         return "watch?v=" + ytvid;
     }
 
@@ -416,6 +366,131 @@ public class YTHacker {
         return YTQUALITY_SCORE_LOWEST;
     }
 
+    //=======================================================================
+    //
+    //
+    //
+    // ======================================================================
+    public static class HttpRespContent {
+        public int stcode; // status code
+        public InputStream stream;
+        public String type;
+        HttpRespContent(int aStcode, InputStream aStream, String aType) {
+            stcode = aStcode;
+            stream = aStream;
+            type = aType;
+        }
+    }
+
+    private static HttpClient
+    newHttpClient(@SuppressWarnings("unused") String proxyHost,
+                  @SuppressWarnings("unused") int port,
+                  String uastring) {
+        // TODO Proxy is NOT supported yet. These are ignored.
+    	// to test on proxy
+    	HttpHost proxy = new HttpHost("168.219.61.252", 8080);
+        HttpClient hc = new DefaultHttpClient();
+        hc.getParams().setParameter(ConnRoutePNames.DEFAULT_PROXY, proxy);
+        HttpParams params = hc.getParams();
+        HttpConnectionParams.setConnectionTimeout(params, 500);
+        HttpConnectionParams.setSoTimeout(params, 500);
+        if (null != uastring)
+            HttpProtocolParams.setUserAgent(hc.getParams(), uastring);
+        params.setParameter(ClientPNames.COOKIE_POLICY, CookiePolicy.RFC_2109);
+
+        // Set scheme registry
+        SchemeRegistry registry = hc.getConnectionManager().getSchemeRegistry();
+        registry.register(new Scheme("http", PlainSocketFactory.getSocketFactory(), 80));
+        registry.register(new Scheme("https", SSLSocketFactory.getSocketFactory(), 443));
+        return hc;
+    }
+
+    public HttpRespContent
+    getHttpContent(HttpClient client, URI uri)
+        throws LocalException  {
+        int retry = 3;
+        while (0 < retry--) {
+            try {
+                HttpGet httpGet = new HttpGet(uri.toString());
+                if (DBG) P.v("executing request: " + httpGet.getRequestLine().toString());
+                //logI("uri: " + httpGet.getURI().toString());
+                //logI("target: " + httpTarget.getHostName());
+                HttpResponse httpResp = client.execute(httpGet);
+                if (DBG) P.v("NetLoader HTTP response status line : " + httpResp.getStatusLine().toString());
+
+                int statusCode = httpResp.getStatusLine().getStatusCode();
+
+                InputStream contentStream = null;
+                String contentType = null;
+                if (204 != statusCode) {
+                    HttpEntity httpEntity = httpResp.getEntity();
+
+                    if (null == httpEntity) {
+                        if (DBG) P.w("Unexpected NULL entity");
+                        assert(false);
+                    }
+                    contentStream = httpEntity.getContent();
+                    try {
+                        contentType = httpResp.getFirstHeader("Content-Type").getValue().toLowerCase();
+                    } catch (NullPointerException e) {
+                        // Unexpected response data.
+                        if (DBG) P.v("NetLoader IOException : " + e.getMessage());
+                        throw new LocalException(Err.IO_NET);
+                    }
+                }
+
+                switch (statusCode) {
+                case 200:
+                case 204:
+                    // This is expected response. let's move forward
+                    break;
+
+                default:
+                    // Unexpected response
+                    if (DBG) {
+                        final BufferedReader reader = new BufferedReader(new InputStreamReader(contentStream));
+                        String line;
+                        while ((line = reader.readLine()) != null) {
+                            P.w(line);
+                        }
+                        reader.close();
+                        P.w("Unexpected Response  status code : " + httpResp.getStatusLine().getStatusCode());
+
+                    }
+                }
+
+                return new HttpRespContent(statusCode, contentStream, contentType);
+            } catch (ClientProtocolException e) {
+                if (DBG) P.v("NetLoader ClientProtocolException : " + e.getMessage());
+                throw new LocalException(Err.UNKNOWN);
+            } catch (IllegalArgumentException e) {
+                if (DBG) P.v("Illegal Argument Exception : " + e.getMessage() + "\n"
+                     + "URI : " + uri.toString());
+                throw new LocalException(Err.IO_NET);
+            } catch (UnknownHostException e) {
+                if (DBG) P.v("NetLoader UnknownHostException : Maybe timeout?" + e.getMessage());
+
+                if (0 >= retry)
+                    throw new LocalException(Err.IO_NET);
+
+                // continue next retry after some time.
+                try {
+                    Thread.sleep(300);
+                } catch (InterruptedException ie) {
+                    throw new LocalException(Err.IO_NET);
+                }
+            } catch (IOException e) {
+                if (DBG) P.v("NetLoader IOException : " + e.getMessage());
+                throw new LocalException(Err.IO_NET);
+            } catch (Exception e) {
+                if (DBG) P.v("NetLoader IllegalStateException : " + e.getMessage());
+                throw new LocalException(Err.UNKNOWN);
+            }
+        }
+        assert(false);
+        return null;
+    }
+
     private static boolean
     isPlayableOnDevice(YtVideoElem ve) {
         // NOTE:
@@ -431,12 +506,14 @@ public class YTHacker {
     private static boolean
     verifyYtVideoHtmlResult(YtVideoHtmlResult ytr) {
         return ytr.vids.length > 0
-               && Utils.isValidValue(ytr.generate_204_url);
+               && null != ytr.generate_204_url
+               && !ytr.generate_204_url.isEmpty();
     }
 
     private static YtVideoHtmlResult
     parseYtVideoHtml(BufferedReader brdr)
             throws LocalException {
+    	String htmlText = "";
         YtVideoHtmlResult result = new YtVideoHtmlResult();
         String line = "";
         while (null != line) {
@@ -448,10 +525,14 @@ public class YTHacker {
 
             if (null == line)
                 break;
+
+            htmlText += line + "\n";
+
             if (line.contains("\"player-unavailable\"")) {
-                // This is unavailable video on the specified UA string
-                result.playable = false;
-                break;
+            	// This is unavailable video on the specified UA string
+            	result.playable = false;
+            	if (DBG) P.v("This video is NOT playable");
+            	break;
             } else if (line.contains("/generate_204")) {
                 Matcher m = sYtUrlGenerate204Pattern.matcher(line);
                 if (m.matches()) {
@@ -475,34 +556,25 @@ public class YTHacker {
                 }
             }
         }
+        if (DBG) P.v(htmlText);
         result.tmstamp = System.currentTimeMillis();
         return result;
     }
 
-    private void
-    preExecute() {
-        mLoader.open(HTTP_UASTRING);
-        if (null != mListener)
-            mListener.onPreHack(this, mYtvid, mUser);
-    }
-
-    private Err
-    doMainWork() {
-        if (!Utils.isNetworkAvailable())
-            return Err.NETWORK_UNAVAILABLE;
-
-        NetLoader.HttpRespContent content;
+    public Err
+    startHack() {
         Err err = Err.NO_ERR;
         YtVideoHtmlResult ytr = null;
+        HttpClient hc = newHttpClient("", 0, HTTP_UASTRING);
         try {
             do {
                 // Read and parse html web page of video.
-                content = mLoader.getHttpContent(Uri.parse(getYtVideoPageUrl(mYtvid)));
-                if (HttpUtils.SC_OK != content.stcode) {
+            	HttpRespContent content = getHttpContent(hc, URI.create(getYtVideoPageUrl(mYtvid)));
+                if (200 != content.stcode) {
                     err = Err.IO_NET;
                     break;
                 }
-                eAssert(content.type.toLowerCase().startsWith("text/html"));
+                assert(content.type.toLowerCase().startsWith("text/html"));
                 ytr = parseYtVideoHtml(new BufferedReader(new InputStreamReader(content.stream)));
                 if (!verifyYtVideoHtmlResult(ytr)) {
                     // this is invalid result value.
@@ -517,9 +589,9 @@ public class YTHacker {
                 // NOTE
                 // HACK youtube protocol!
                 // Do dummy 'GET' request with generate_204 url.
-                content = mLoader.getHttpContent(Uri.parse(ytr.generate_204_url));
-                if (HttpUtils.SC_NO_CONTENT != content.stcode) {
-                    if (HttpUtils.SC_OK == content.stcode)
+                content = getHttpContent(hc, URI.create(ytr.generate_204_url));
+                if (204 != content.stcode) {
+                    if (200 == content.stcode)
                         // This is unexpected! One of following reasons may lead to this state
                         // - Youtube server doing something bad.
                         // - Youtube's video request protocol is changed.
@@ -537,33 +609,12 @@ public class YTHacker {
                     ve.qscore = getPolicyQualityScore(ve);
 
             } while (false);
-        } catch (NetLoader.LocalException e){
-            err = map(e.error());
         } catch (LocalException e) {
             err = e.error();
         }
 
-        if (Err.NO_ERR != err)
-            mLoader.close();
-
         mYtr = ytr;
         return err;
-    }
-
-    private void
-    postExecute(Err result) {
-        if (mCancelled) {
-            mLoader.close();
-
-            if (null != mListener)
-                mListener.onHackCancelled(this, mYtvid, mUser);
-        } else {
-            if (Err.NO_ERR == result && hasHackedResult())
-                RTState.get().cachingYtHacker(this);
-
-            if (null != mListener)
-                mListener.onPostHack(this, result, mLoader, mYtvid, mUser);
-        }
     }
 
     /**
@@ -601,43 +652,9 @@ public class YTHacker {
                score;
     }
 
-    public YTHacker(String ytvid, Object user,
-                    YtHackListener hackListener) {
+    public YTHackTest(String ytvid) {
         // loader should "opened loader"
         mYtvid = ytvid;
-        mUser = user;
-        mListener = hackListener;
-        mBgTask = new AsyncTask<Void, Void, Err>() {
-            @Override
-            protected void
-            onPreExecute() {
-                preExecute();
-            }
-
-            @Override
-            protected Err
-            doInBackground(Void... dummy) {
-                return doMainWork();
-            }
-
-            @Override
-            protected void
-            onPostExecute(Err result) {
-                postExecute(result);
-            }
-
-            @Override
-            public void
-            onCancelled() {
-                if (null != mListener)
-                    mListener.onHackCancelled(YTHacker.this, mYtvid, mUser);
-            }
-        };
-    }
-
-    public NetLoader
-    getNetLoader() {
-        return mLoader;
     }
 
     public boolean
@@ -652,8 +669,13 @@ public class YTHacker {
 
     public long
     getHackTimeStamp() {
-        eAssert(hasHackedResult());
+        assert(hasHackedResult());
         return mYtr.tmstamp;
+    }
+
+    public YtVideoElem[]
+    getVideoElems() {
+    	return mYtr.vids;
     }
 
     /**
@@ -664,9 +686,8 @@ public class YTHacker {
      */
     public YtVideo
     getVideo(int quality, boolean exact) {
-        eAssert(0 <= quality && quality <= 100);
-       if (null == mYtr
-           || !mYtr.playable)
+        assert(0 <= quality && quality <= 100);
+        if (null == mYtr)
             return null;
 
         // Select video that has closest quality score
@@ -690,25 +711,5 @@ public class YTHacker {
         else
             return new YtVideo(ve.url,
                                ve.type.type == ElemType.StreamType.VIDEO);
-    }
-
-    public Err
-    start() {
-        preExecute();
-        Err result = doMainWork();
-        postExecute(result);
-        return result;
-    }
-
-    public void
-    startAsync() {
-        mBgTask.execute();
-    }
-
-    public void
-    forceCancel() {
-        mCancelled = true;
-        mLoader.close();
-        mBgTask.cancel(true);
     }
 }

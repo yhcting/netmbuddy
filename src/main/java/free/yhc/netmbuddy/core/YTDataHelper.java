@@ -49,6 +49,7 @@ import android.os.Message;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
+import free.yhc.netmbuddy.utils.HttpUtils;
 import free.yhc.netmbuddy.utils.ImageUtils;
 import free.yhc.netmbuddy.utils.Utils;
 import free.yhc.netmbuddy.ytapiv3.YTApiFacade;

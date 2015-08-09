@@ -63,6 +63,8 @@ import org.apache.http.params.HttpParams;
 import org.apache.http.params.HttpProtocolParams;
 
 import android.net.Uri;
+
+import free.yhc.netmbuddy.utils.HttpUtils;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class NetLoader {

@@ -49,6 +49,8 @@ import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
 import android.os.Process;
+
+import free.yhc.netmbuddy.utils.HttpUtils;
 import free.yhc.netmbuddy.utils.Utils;
 
 public class YTDownloader {
