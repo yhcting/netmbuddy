@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014, 2015
+ * Copyright (C) 2012, 2013, 2014, 2015, 2016
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -61,7 +61,7 @@ public class YTHacker {
     private static final Utils.Logger P = new Utils.Logger(YTHacker.class);
 
     public static final String HTTP_UASTRING
-        = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.134 Safari/537.36";
+        = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.75 Safari/537.36";
 
     public static final int YTQUALITY_SCORE_MAXIMUM = 100;
     public static final int YTQUALITY_SCORE_HIGHEST = 100;
@@ -439,6 +439,7 @@ public class YTHacker {
             throws LocalException {
         YtVideoHtmlResult result = new YtVideoHtmlResult();
         String line = "";
+        String content = "";
         while (null != line) {
             try {
                 line = brdr.readLine();
@@ -448,10 +449,20 @@ public class YTHacker {
 
             if (null == line)
                 break;
+
+            content += line + "\n";
             if (line.contains("\"player-unavailable\"")) {
+                // Ignore below checking.
+                // In some use-cases, player may be unavailable for this device.
+                // (In the web page source, 'div' 'player-unavailable' is observed.)
+                // But, I found that video is still playable!.
+                // Something changed in Youtube web page source.
+                // Anyway, this is just workaround and works for most cases.
+                //
                 // This is unavailable video on the specified UA string
-                result.playable = false;
-                break;
+                //result.playable = false;
+                //break;
+                ;
             } else if (line.contains("/generate_204")) {
                 Matcher m = sYtUrlGenerate204Pattern.matcher(line);
                 if (m.matches()) {
@@ -475,6 +486,7 @@ public class YTHacker {
                 }
             }
         }
+        P.i(content);
         result.tmstamp = System.currentTimeMillis();
         return result;
     }
@@ -577,12 +589,14 @@ public class YTHacker {
      */
     public static String
     getYtVideoThumbnailUrl(String ytvid) {
-        return "http://i.ytimg.com/vi/" + ytvid + "/default.jpg";
+        // These days, https is used by default
+        return "https://i.ytimg.com/vi/" + ytvid + "/default.jpg";
     }
 
     public static String
     getYtVideoPageUrl(String ytvid) {
-        return "http://" + getYtHost() + "/" + getYtUri(ytvid);
+        // These days, https is used by default.
+        return "https://" + getYtHost() + "/" + getYtUri(ytvid);
     }
 
     public static int

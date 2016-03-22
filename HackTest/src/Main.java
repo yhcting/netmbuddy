@@ -21,7 +21,7 @@ public class Main {
 
 	public static void
 	main(String[] args) {
-		YTHackTest ht = new YTHackTest("QDz6M8MWOio");
+		YTHackTest ht = new YTHackTest("uJ374_1FAfM");
 		if (YTHackTest.Err.NO_ERR != ht.startHack())
 			System.out.println("ERROR : HACK");
 		else {

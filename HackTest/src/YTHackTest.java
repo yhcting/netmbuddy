@@ -36,8 +36,7 @@ public class YTHackTest {
     private static final boolean DBG = true;
 
     public static final String HTTP_UASTRING
-        = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.134 Safari/537.36";
-
+        = "Mozilla/5.0 (Linux; U; Android 2.2; en-us; Nexus One Build/FRF91) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile Safari/533.1";
     public static final int YTQUALITY_SCORE_MAXIMUM = 100;
     public static final int YTQUALITY_SCORE_HIGHEST = 100;
     public static final int YTQUALITY_SCORE_HIGH    = 80;
@@ -529,10 +528,17 @@ public class YTHackTest {
             htmlText += line + "\n";
 
             if (line.contains("\"player-unavailable\"")) {
-            	// This is unavailable video on the specified UA string
-            	result.playable = false;
-            	if (DBG) P.v("This video is NOT playable");
-            	break;
+                // Ignore below checking.
+                // In some use-cases, player may be unavailable for this device.
+                // (In the web page source, 'div' 'player-unavailable' is observed.)
+                // But, I found that video is still playable!.
+                // Something changed in Youtube web page source.
+                // Anyway, this is just workaround and works for most cases.
+                //
+                // This is unavailable video on the specified UA string
+                //result.playable = false;
+                //break;
+                ;
             } else if (line.contains("/generate_204")) {
                 Matcher m = sYtUrlGenerate204Pattern.matcher(line);
                 if (m.matches()) {
@@ -628,12 +634,12 @@ public class YTHackTest {
      */
     public static String
     getYtVideoThumbnailUrl(String ytvid) {
-        return "http://i.ytimg.com/vi/" + ytvid + "/default.jpg";
+        return "https://i.ytimg.com/vi/" + ytvid + "/default.jpg";
     }
 
     public static String
     getYtVideoPageUrl(String ytvid) {
-        return "http://" + getYtHost() + "/" + getYtUri(ytvid);
+        return "https://" + getYtHost() + "/" + getYtUri(ytvid);
     }
 
     public static int
