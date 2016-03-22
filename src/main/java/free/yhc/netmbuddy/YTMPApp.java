@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014, 2015
+ * Copyright (C) 2012, 2013, 2014, 2015, 2016
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -105,9 +105,9 @@ public class YTMPApp extends Application {
     private void
     checkAppUpgrade(Context context) {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-        int prevVer = prefs.getInt(PREF_KEY_APP_VERSION, -1);
         try {
             PackageInfo pi = context.getPackageManager().getPackageInfo(context.getPackageName(), -1);
+            int prevVer = prefs.getInt(PREF_KEY_APP_VERSION, pi.versionCode);
             if (pi.versionCode > prevVer) {
                 onAppUpgrade(context, prevVer, pi.versionCode);
                 SharedPreferences.Editor prefEd = prefs.edit();
@@ -133,6 +133,10 @@ public class YTMPApp extends Application {
     onCreate() {
         super.onCreate();
         Context context = getApplicationContext();
+
+        // Set preference to default values
+        PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
+
         checkAppUpgrade(context);
 
         Utils.init(context);

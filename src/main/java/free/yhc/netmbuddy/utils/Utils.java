@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014, 2015
+ * Copyright (C) 2012, 2013, 2014, 2015, 2016
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -249,7 +249,6 @@ public class Utils {
         sAppContext = aAppContext;
         sUiHandler = new Handler();
         sPrefs = PreferenceManager.getDefaultSharedPreferences(getAppContext());
-
     }
 
     // ========================================================================
@@ -590,7 +589,7 @@ public class Utils {
 
     private static boolean
     isPrefUseWifiOnly() {
-        return getBooleanPreference(getResString(R.string.csuse_wifi_only), true);
+        return getBooleanPreference(getResString(R.string.csuse_wifi_only), false);
     }
 
     public static int
