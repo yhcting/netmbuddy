@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014, 2015
+ * Copyright (C) 2012, 2013, 2014, 2015, 2016
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -241,6 +241,7 @@ public class NotiManager {
          * Below way is deprecated but works well better than using recommended way - notification builder.
          * (See commends below about using builder)
          */
+        /*
         Notification n = new Notification(ntype.getIcon(), null, System.currentTimeMillis());
         n.setLatestEventInfo(Utils.getAppContext(),
                              Utils.getResString(R.string.app_name),
@@ -250,20 +251,20 @@ public class NotiManager {
         n.flags = 0;
 
         return n;
-        /* Below code generates "java.lang.NoClassDefFoundError : android.support.v4.app.NotificationCompat$Builder"
-         * So, comment out!
-         * (Damn Android!
-         *
+        */
+        /* At some cases, below code generates
+         * "java.lang.NoClassDefFoundError : android.support.v4.app.NotificationCompat$Builder"
+         * But, anyway it works at this moment.
+         */
         NotificationCompat.Builder nbldr = new NotificationCompat.Builder(Utils.getAppContext());
         nbldr.setSmallIcon(ntype.getIcon())
              .setTicker(null)
-             .setContentTitle(title)
-             .setContentText(desc)
+             .setContentTitle(videoTitle)
+             .setContentText("")
              .setAutoCancel(true)
              .setContentIntent(piContent)
              .setDeleteIntent(piDelete);
         return nbldr.build();
-        */
     }
 
     Notification
