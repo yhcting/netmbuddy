@@ -439,7 +439,6 @@ public class YTHacker {
             throws LocalException {
         YtVideoHtmlResult result = new YtVideoHtmlResult();
         String line = "";
-        String content = "";
         while (null != line) {
             try {
                 line = brdr.readLine();
@@ -450,7 +449,6 @@ public class YTHacker {
             if (null == line)
                 break;
 
-            content += line + "\n";
             if (line.contains("\"player-unavailable\"")) {
                 // Ignore below checking.
                 // In some use-cases, player may be unavailable for this device.
@@ -486,7 +484,6 @@ public class YTHacker {
                 }
             }
         }
-        P.i(content);
         result.tmstamp = System.currentTimeMillis();
         return result;
     }
