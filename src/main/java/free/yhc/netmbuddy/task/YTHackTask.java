@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014, 2015, 2016
+ * Copyright (C) 2016
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -34,34 +34,42 @@
  * official policies, either expressed or implied, of the FreeBSD Project.
  *****************************************************************************/
 
-package free.yhc.netmbuddy.core;
+package free.yhc.netmbuddy.task;
 
-import static free.yhc.netmbuddy.utils.Utils.eAssert;
+import android.os.Handler;
+import android.support.annotation.NonNull;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.net.ConnectException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import android.net.Uri;
-import android.os.AsyncTask;
+import free.yhc.abaselib.AppEnv;
+import free.yhc.baselib.Logger;
+import free.yhc.baselib.adapter.HandlerAdapter;
+import free.yhc.baselib.async.HelperHandler;
+import free.yhc.baselib.async.ThreadEx;
+import free.yhc.baselib.async.TmTask;
+import free.yhc.baselib.exception.UnsupportedFormatException;
+import free.yhc.baselib.net.NetConnHttp;
+import free.yhc.baselib.net.NetReadTask;
+import free.yhc.netmbuddy.core.PolicyConstant;
+import free.yhc.netmbuddy.core.RTState;
+import free.yhc.netmbuddy.utils.ReportUtil;
+import free.yhc.netmbuddy.utils.Util;
 
-import free.yhc.netmbuddy.utils.HttpUtils;
-import free.yhc.netmbuddy.utils.Utils;
-
-//
-// This is main class for HACKING Youtube protocol.
-//
-public class YTHacker {
-    private static final boolean DBG = false;
-    private static final Utils.Logger P = new Utils.Logger(YTHacker.class);
-
-    public static final String HTTP_UASTRING
-        = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.75 Safari/537.36";
+public class YTHackTask extends TmTask<Void> {
+    private static final boolean DBG = Logger.DBG_DEFAULT;
+    private static final Logger P = Logger.create(YTHackTask.class, Logger.LOGLV_DEFAULT);
 
     public static final int YTQUALITY_SCORE_MAXIMUM = 100;
     public static final int YTQUALITY_SCORE_HIGHEST = 100;
@@ -78,7 +86,7 @@ public class YTHacker {
     private static final int YTITAG_INVALID = -1;
 
     private static final Pattern sYtUrlStreamMapPattern
-        = Pattern.compile(".*\"url_encoded_fmt_stream_map\":\\s*\"([^\"]+)\".*");
+            = Pattern.compile(".*\"url_encoded_fmt_stream_map\":\\s*\"([^\"]+)\".*");
 
     // [ Small talk... ]
     // Why "generate_204"?
@@ -88,53 +96,19 @@ public class YTHacker {
     // So, this URL is a kind of special URL that creates 204 response
     //   and notify to server that preparing real-contents.
     private static final Pattern sYtUrlGenerate204Pattern
-        = Pattern.compile(".*\"(http(s)?:.+/generate_204[^\"]*)\".*");
+            = Pattern.compile(".*\"(http(s)?:.+/generate_204[^\"]*)\".*");
 
-    private final NetLoader mLoader = new NetLoader();
+
     private final String mYtvid;
-    private final Object mUser;
-    private final YtHackListener mListener;
-    // NOTE
-    // mBgTask used as "private final" to avoid synchronizing issue.
-    // If not, 'mBgTask' should be initialized with 'null'.
-    // And, code for using 'mBgTask' always should be like this.
-    //     if (null != mBgTask)
-    //         mBgTask.xxxxx
-    private final AsyncTask<Void, Void, Err> mBgTask;
 
-    private YtVideoHtmlResult mYtr = null;
-    private boolean mCancelled = false;
+    private YtVideoPageInfo mYtvpi = null;
+    private Object mOpaque = null;
 
-    public interface YtHackListener {
-        void onPreHack(YTHacker ythack, String ytvid, Object user);
-        void onHackCancelled(YTHacker ythack, String ytvid, Object user);
-        void onPostHack(YTHacker ythack, Err result, NetLoader loader, String ytvid, Object user);
-    }
-
-    public enum Err {
-        NO_ERR,
-        IO_NET,
-        NETWORK_UNAVAILABLE,
-        PARSE_HTML,
-        INTERRUPTED,
-        UNKNOWN,   // err inside module
-    }
-
-    public static class LocalException extends java.lang.Exception {
-        static final long serialVersionUID = 0; // to make compiler be happy
-
-        private final Err _mErr;
-
-        public LocalException(Err err) {
-            _mErr = err;
-        }
-
-        public Err
-        error() {
-            return _mErr;
-        }
-    }
-
+    ///////////////////////////////////////////////////////////////////////////
+    //
+    //
+    //
+    ///////////////////////////////////////////////////////////////////////////
     public static class YtVideo {
         public final String url;
         public final boolean video; // is video type?
@@ -184,30 +158,30 @@ public class YTHacker {
             static StreamFormat
             parse (String format) {
                 switch (format) {
-                    case "mp4":
-                        return MP4;
-                    case "x-flv":
-                        return FLV;
-                    case "webm":
-                        return WEBM;
-                    case "3gpp":
-                        return x3GPP;
+                case "mp4":
+                    return MP4;
+                case "x-flv":
+                    return FLV;
+                case "webm":
+                    return WEBM;
+                case "3gpp":
+                    return x3GPP;
                 }
                 return null;
             }
         }
 
         private static final Pattern _mPat = Pattern.compile(
-            "^"
-            + "([\\w\\-]+)"  // type (video / audio) - group(1)
-            + "(?:\\%2F|/)"  // delimiter
-            + "([\\w\\-]+)"  // format (mp4, 3gp ...) - group(2)
-            + "(?:"			 // section for codecs
-                + "(?:\\%3B|;)\\+codecs\\%3D" // delimiter
-                + "\\%22" 	 // start of codec string
-                    + "(.*)" // codec string. - group(3) [optional]
-                + "\\%22"    // end of codec string
-            + ")?.*$"		 // remains
+                "^"
+                        + "([\\w\\-]+)"  // type (video / audio) - group(1)
+                        + "(?:\\%2F|/)"  // delimiter
+                        + "([\\w\\-]+)"  // format (mp4, 3gp ...) - group(2)
+                        + "(?:"			 // section for codecs
+                        + "(?:\\%3B|;)\\+codecs\\%3D" // delimiter
+                        + "\\%22" 	 // start of codec string
+                        + "(.*)" // codec string. - group(3) [optional]
+                        + "\\%22"    // end of codec string
+                        + ")?.*$"		 // remains
         );
 
 
@@ -233,7 +207,7 @@ public class YTHacker {
             StreamType type = StreamType.parse(ty);
             StreamFormat format = StreamFormat.parse(fmt);
             if (null == type
-                || null == format)
+                    || null == format)
                 return null;
             ElemType et = new ElemType();
             et.type = type;
@@ -286,7 +260,7 @@ public class YTHacker {
             try {
                 ytString = URLDecoder.decode(ytString, "UTF-8");
             } catch (UnsupportedEncodingException e) {
-                eAssert(false);
+                P.bug(false);
             }
 
             String sig = null;
@@ -317,14 +291,14 @@ public class YTHacker {
 
             // Mandatory fields : url, tag and type.
             if (ve.url.isEmpty()
-                || YTITAG_INVALID == ve.tag
-                || null == ve.type)
+                    || YTITAG_INVALID == ve.tag
+                    || null == ve.type)
                 return null; // Not supported video.
 
             if (null != sig)
                 ve.url += "&signature=" + sig;
             else
-                if (DBG) P.w("NO SIGNATURE in URL STRING!!!");
+            if (DBG) P.w("NO SIGNATURE in URL STRING!!!");
 
 
             ve.qscore = getPolicyQualityScore(ve);
@@ -343,7 +317,7 @@ public class YTHacker {
         }
     }
 
-    private static class YtVideoHtmlResult {
+    private static class YtVideoPageInfo {
         long tmstamp = 0; // System time in milli.
         // video is playable on specified 'UA String'(based on html-parsing)
         boolean playable = true;
@@ -351,27 +325,14 @@ public class YTHacker {
         YtVideoElem[] vids = new YtVideoElem[0];
     }
 
-    private static Err
-    map(NetLoader.Err err) {
-        switch (err) {
-        case NO_ERR:
-            return Err.NO_ERR;
-
-        case IO_NET:
-        case HTTPGET:
-            return Err.IO_NET;
-
-        case INTERRUPTED:
-            return Err.INTERRUPTED;
-
-        default:
-            return Err.UNKNOWN;
-        }
-    }
-
+    ///////////////////////////////////////////////////////////////////////////
+    //
+    //
+    //
+    ///////////////////////////////////////////////////////////////////////////
     private static String
-    getYtUri(String ytvid) {
-        eAssert(YTVID_LENGTH == ytvid.length());
+    getYtUrl(String ytvid) {
+        P.bug(YTVID_LENGTH == ytvid.length());
         return "watch?v=" + ytvid;
     }
 
@@ -384,9 +345,9 @@ public class YTHacker {
     getPolicyQualityScore(YtVideoElem ve) {
         if (null != ve.quality) {
             switch (ve.quality) {
-                case SMALL: return YTQUALITY_SCORE_LOW;
-                case MEDIUM: return YTQUALITY_SCORE_MIDLOW;
-                case HD720: return YTQUALITY_SCORE_HIGH;
+            case SMALL: return YTQUALITY_SCORE_LOW;
+            case MEDIUM: return YTQUALITY_SCORE_MIDLOW;
+            case HD720: return YTQUALITY_SCORE_HIGH;
             }
         }
 
@@ -424,28 +385,22 @@ public class YTHacker {
         //
         // See : "http://developer.android.com/guide/appendix/media-formats.html" for details
         return ve.type.type == ElemType.StreamType.VIDEO
-               && (ve.type.format == ElemType.StreamFormat.MP4
-                   || ve.type.format == ElemType.StreamFormat.x3GPP);
+                && (ve.type.format == ElemType.StreamFormat.MP4
+                || ve.type.format == ElemType.StreamFormat.x3GPP);
     }
 
     private static boolean
-    verifyYtVideoHtmlResult(YtVideoHtmlResult ytr) {
-        return ytr.vids.length > 0
-               && Utils.isValidValue(ytr.generate_204_url);
+    verifyYtVideoPageInfo(YtVideoPageInfo ytvpi) {
+        return ytvpi.vids.length > 0
+                && Util.isValidValue(ytvpi.generate_204_url);
     }
 
-    private static YtVideoHtmlResult
-    parseYtVideoHtml(BufferedReader brdr)
-            throws LocalException {
-        YtVideoHtmlResult result = new YtVideoHtmlResult();
+    private static YtVideoPageInfo
+    parseYtVideoPageHtml(BufferedReader brdr) throws IOException {
+        YtVideoPageInfo ytvpi = new YtVideoPageInfo();
         String line = "";
         while (null != line) {
-            try {
-                line = brdr.readLine();
-            } catch (IOException e) {
-                throw new LocalException(Err.IO_NET);
-            }
-
+            line = brdr.readLine();
             if (null == line)
                 break;
 
@@ -460,14 +415,13 @@ public class YTHacker {
                 // This is unavailable video on the specified UA string
                 //result.playable = false;
                 //break;
-                ;
             } else if (line.contains("/generate_204")) {
                 Matcher m = sYtUrlGenerate204Pattern.matcher(line);
                 if (m.matches()) {
                     line = m.group(1);
                     line = line.replaceAll("\\\\u0026", "&");
                     line = line.replaceAll("\\\\", "");
-                    result.generate_204_url = line;
+                    ytvpi.generate_204_url = line;
                 }
             } else if (line.contains("\"url_encoded_fmt_stream_map\":")) {
                 Matcher m = sYtUrlStreamMapPattern.matcher(line);
@@ -480,108 +434,76 @@ public class YTHacker {
                         if (null != ve)
                             al.add(ve);
                     }
-                    result.vids = al.toArray(new YtVideoElem[al.size()]);
+                    ytvpi.vids = al.toArray(new YtVideoElem[al.size()]);
                 }
             }
         }
-        result.tmstamp = System.currentTimeMillis();
-        return result;
+        ytvpi.tmstamp = System.currentTimeMillis();
+        return ytvpi;
     }
 
-    private void
-    preExecute() {
-        mLoader.open(HTTP_UASTRING);
-        if (null != mListener)
-            mListener.onPreHack(this, mYtvid, mUser);
-    }
-
-    private Err
-    doMainWork() {
-        if (!Utils.isNetworkAvailable())
-            return Err.NETWORK_UNAVAILABLE;
-
-        NetLoader.HttpRespContent content;
-        Err err = Err.NO_ERR;
-        YtVideoHtmlResult ytr = null;
-        try {
-            do {
-                // Read and parse html web page of video.
-                content = mLoader.getHttpContent(Uri.parse(getYtVideoPageUrl(mYtvid)));
-                if (HttpUtils.SC_OK != content.stcode) {
-                    err = Err.IO_NET;
-                    break;
+    ///////////////////////////////////////////////////////////////////////////
+    //
+    //
+    //
+    ///////////////////////////////////////////////////////////////////////////
+    @Override
+    protected void
+    onEarlyPostRun (Void result, Exception ex) {
+        if (null == ex) {
+            P.bug(hasHackedResult());
+            AppEnv.getUiHandler().post(new Runnable() {
+                @Override
+                public void run() {
+                    // This should be called at UI handler thread
+                    RTState.get().cachingYtHack(YTHackTask.this);
                 }
-                eAssert(content.type.toLowerCase().startsWith("text/html"));
-                ytr = parseYtVideoHtml(new BufferedReader(new InputStreamReader(content.stream)));
-                if (!verifyYtVideoHtmlResult(ytr)) {
-                    // this is invalid result value.
-                    // Ignore this result.
-                    // If not, this may cause mis-understanding that hacking is successful.
-                    // Note that "hasHackedResult()" uses "null != mYtr".
-                    ytr = null;
-                    err = Err.PARSE_HTML;
-                    break;
-                }
-
-                // NOTE
-                // HACK youtube protocol!
-                // Do dummy 'GET' request with generate_204 url.
-                content = mLoader.getHttpContent(Uri.parse(ytr.generate_204_url));
-                if (HttpUtils.SC_NO_CONTENT != content.stcode) {
-                    if (HttpUtils.SC_OK == content.stcode)
-                        // This is unexpected! One of following reasons may lead to this state
-                        // - Youtube server doing something bad.
-                        // - Youtube's video request protocol is changed.
-                        // - Something unexpected.
-                        err = Err.PARSE_HTML;
-                    else
-                        err = Err.IO_NET;
-                    // 'mYtr' is NOT available in this case!
-                    ytr = null;
-                    break;
-                }
-                // Now all are ready to download!
-                // This is good moment to calculate quality score of each available elements.
-                for (YtVideoElem ve : ytr.vids)
-                    ve.qscore = getPolicyQualityScore(ve);
-
-            } while (false);
-        } catch (NetLoader.LocalException e){
-            err = map(e.error());
-        } catch (LocalException e) {
-            err = e.error();
-        }
-
-        if (Err.NO_ERR != err)
-            mLoader.close();
-
-        mYtr = ytr;
-        return err;
-    }
-
-    private void
-    postExecute(Err result) {
-        if (mCancelled) {
-            mLoader.close();
-
-            if (null != mListener)
-                mListener.onHackCancelled(this, mYtvid, mUser);
-        } else {
-            if (Err.NO_ERR == result && hasHackedResult())
-                RTState.get().cachingYtHacker(this);
-
-            if (null != mListener)
-                mListener.onPostHack(this, result, mLoader, mYtvid, mUser);
+            });
         }
     }
 
+    public YTHackTask(
+            @NonNull String name,
+            @NonNull HandlerAdapter owner,
+            int priority,
+            boolean interruptOnCancel,
+            @NonNull String ytvid) {
+        super(name, owner, priority, interruptOnCancel);
+        mYtvid = ytvid;
+    }
+
+    public static class Builder<B extends Builder>
+            extends TmTask.Builder<B, YTHackTask> {
+        private final String mYtvid;
+        public Builder(@NonNull String ytvid) {
+            super();
+            mName = tmId(ytvid);
+            mOwner = HelperHandler.get();
+            mPriority = ThreadEx.TASK_PRIORITY_NORM;
+            mInterruptOnCancel = true;
+            mYtvid = ytvid;
+        }
+
+        @Override
+        @NonNull
+        public YTHackTask
+        create() {
+            return new YTHackTask(mName, mOwner, mPriority, mInterruptOnCancel, mYtvid);
+        }
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    //
+    //
+    //
+    ///////////////////////////////////////////////////////////////////////////
     /**
      * NOTE
      * This is based on experimental result.
      * There is no official API regarding getting thumbnail via Youtube video id.
      * So, it is NOT 100% guaranteed that correct url is returned.
      * But, I'm strongly sure that return value is valid and correct based on my experience.
-     * That's the reason why this function is member of 'YTHacker'(Not YTSearchHeler).
+     * That's the reason why this function is member of 'YTHackTask'(Not YTDataAdapter).
      * @param ytvid Youtube video id
      */
     public static String
@@ -593,69 +515,56 @@ public class YTHacker {
     public static String
     getYtVideoPageUrl(String ytvid) {
         // These days, https is used by default.
-        return "https://" + getYtHost() + "/" + getYtUri(ytvid);
+        return "https://" + getYtHost() + "/" + getYtUrl(ytvid);
     }
 
     public static int
     getQScorePreferLow(int qscore) {
         int score = qscore - 1;
         return score < YTQUALITY_SCORE_MINIMUM?
-               YTQUALITY_SCORE_MINIMUM:
-               score;
+                YTQUALITY_SCORE_MINIMUM:
+                score;
     }
 
     public static int
     getQScorePreferHigh(int qscore) {
         int score = qscore + 1;
         return score > YTQUALITY_SCORE_MAXIMUM?
-               YTQUALITY_SCORE_MAXIMUM:
-               score;
+                YTQUALITY_SCORE_MAXIMUM:
+                score;
     }
 
-    public YTHacker(String ytvid, Object user,
-                    YtHackListener hackListener) {
-        // loader should "opened loader"
-        mYtvid = ytvid;
-        mUser = user;
-        mListener = hackListener;
-        mBgTask = new AsyncTask<Void, Void, Err>() {
-            @Override
-            protected void
-            onPreExecute() {
-                preExecute();
-            }
-
-            @Override
-            protected Err
-            doInBackground(Void... dummy) {
-                return doMainWork();
-            }
-
-            @Override
-            protected void
-            onPostExecute(Err result) {
-                postExecute(result);
-            }
-
-            @Override
-            public void
-            onCancelled() {
-                if (null != mListener)
-                    mListener.onHackCancelled(YTHacker.this, mYtvid, mUser);
-            }
-        };
+    //=========================================================================
+    //
+    //=========================================================================
+    @NonNull
+    public static String
+    tmId(@NonNull String ytvid) {
+        return YTHackTask.class.getSimpleName() + ":" + ytvid;
     }
 
-    public NetLoader
-    getNetLoader() {
-        return mLoader;
+    @NonNull
+    public String
+    tmId() {
+        return tmId(mYtvid);
+    }
+
+    public void
+    setOpaque(Object opaque) {
+        mOpaque = opaque;
+    }
+
+    public Object
+    getOpaque() {
+        return mOpaque;
     }
 
     public boolean
     hasHackedResult() {
-        return null != mYtr;
+        return null != mYtvpi;
     }
 
+    @NonNull
     public String
     getYtvid() {
         return mYtvid;
@@ -663,8 +572,8 @@ public class YTHacker {
 
     public long
     getHackTimeStamp() {
-        eAssert(hasHackedResult());
-        return mYtr.tmstamp;
+        P.bug(hasHackedResult());
+        return mYtvpi.tmstamp;
     }
 
     /**
@@ -675,17 +584,17 @@ public class YTHacker {
      */
     public YtVideo
     getVideo(int quality, boolean exact) {
-        eAssert(0 <= quality && quality <= 100);
-       if (null == mYtr
-           || !mYtr.playable)
+        P.bug(0 <= quality && quality <= 100);
+        if (null == mYtvpi
+                || !mYtvpi.playable)
             return null;
 
         // Select video that has closest quality score
         YtVideoElem ve = null;
         int curgap = -1;
-        for (YtVideoElem e : mYtr.vids) {
+        for (YtVideoElem e : mYtvpi.vids) {
             if (YTQSCORE_INVALID != e.qscore
-                && isPlayableOnDevice(e)) {
+                    && isPlayableOnDevice(e)) {
                 int qgap = quality - e.qscore;
                 qgap = qgap < 0? -qgap: qgap;
                 if (null == ve || qgap < curgap) {
@@ -696,30 +605,80 @@ public class YTHacker {
         }
 
         if (null == ve
-            || (exact && 0 != curgap))
+                || (exact && 0 != curgap))
             return null;
         else
             return new YtVideo(ve.url,
                                ve.type.type == ElemType.StreamType.VIDEO);
     }
+    ///////////////////////////////////////////////////////////////////////////
+    //
+    //
+    //
+    ///////////////////////////////////////////////////////////////////////////
+    @Override
+    protected Void
+    doAsync() throws IOException, InterruptedException, UnsupportedFormatException {
+        if (DBG) P.v("Hack: " + mYtvid);
+        if (!Util.isNetworkAvailable())
+            throw new ConnectException("Network unavailable");
 
-    public Err
-    start() {
-        preExecute();
-        Err result = doMainWork();
-        postExecute(result);
-        return result;
-    }
+        YtVideoPageInfo ytvpi;
+        URL url = new URL(getYtVideoPageUrl(mYtvid));
+        NetConnHttp conn = Util.createNetConnHttp(url, PolicyConstant.YTHACK_UASTRING);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream(4096);
+        NetReadTask.Builder<NetReadTask.Builder> nrb = new NetReadTask.Builder<>(conn, baos);
+        try {
+            nrb.create().startSync();
+        } catch (InterruptedException | IOException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+        ytvpi = parseYtVideoPageHtml(new BufferedReader(new InputStreamReader(bais)));
+        if (!verifyYtVideoPageInfo(ytvpi)) {
+            // this is invalid result value.
+            // Ignore this result.
+            // If not, this may cause mis-understanding that hacking is successful.
+            // Note that "hasHackedResult()" uses "null != mYtr".
+            if (DBG) P.w("Parse yt video page fails: Page");
+            throw new UnsupportedFormatException();
+        }
+        if (DBG) ReportUtil.storeYtPage(baos.toString());
 
-    public void
-    startAsync() {
-        mBgTask.execute();
-    }
+        // NOTE
+        // HACK youtube protocol!
+        // Do dummy 'GET' request with generate_204 url.
+        try {
+            url = new URL(ytvpi.generate_204_url);
+        } catch (MalformedURLException e) {
+            if (DBG) {
+                P.w("Invalid generate_204_url");
+                P.w("204 url: " + ytvpi.generate_204_url);
+                P.w(baos.toString());
+            }
+            throw new UnsupportedFormatException();
+        }
 
-    public void
-    forceCancel() {
-        mCancelled = true;
-        mLoader.close();
-        mBgTask.cancel(true);
+        conn = Util.createNetConnHttp(url, PolicyConstant.YTHACK_UASTRING);
+        baos = new ByteArrayOutputStream();
+        nrb = new NetReadTask.Builder<>(conn, baos);
+        try {
+            nrb.create().startSync();
+        } catch (InterruptedException | IOException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        // TODO check : if 204 gives valid result... it's unexpected!!
+
+        // Now all are ready to download!
+        // This is good moment to calculate quality score of each available elements.
+        for (YtVideoElem ve : ytvpi.vids)
+            ve.qscore = getPolicyQualityScore(ve);
+
+        mYtvpi = ytvpi;
+        return null;
     }
 }

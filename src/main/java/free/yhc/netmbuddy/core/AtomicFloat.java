@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014, 2015
+ * Copyright (C) 2012, 2013, 2014, 2015, 2016
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -34,37 +34,15 @@
  * official policies, either expressed or implied, of the FreeBSD Project.
  *****************************************************************************/
 
-/*****************************************************************************
- *    Copyright (C) 2012, 2013 Younghyung Cho. <yhcting77@gmail.com>
- *
- *    This file is part of YTMPlayer.
- *
- *    This program is free software: you can redistribute it and/or modify
- *    it under the terms of the GNU Lesser General Public License as
- *    published by the Free Software Foundation either version 3 of the
- *    License, or (at your option) any later version.
- *
- *    This program is distributed in the hope that it will be useful,
- *    but WITHOUT ANY WARRANTY; without even the implied warranty of
- *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *    GNU Lesser General Public License
- *    (<http://www.gnu.org/licenses/lgpl.html>) for more details.
- *
- *    You should have received a copy of the GNU General Public License
- *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *****************************************************************************/
-
 package free.yhc.netmbuddy.core;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import free.yhc.netmbuddy.utils.Utils;
+import free.yhc.baselib.Logger;
 
 public class AtomicFloat extends Number {
-    @SuppressWarnings("unused")
-    private static final boolean DBG = false;
-    @SuppressWarnings("unused")
-    private static final Utils.Logger P = new Utils.Logger(AtomicFloat.class);
+    private static final boolean DBG = Logger.DBG_DEFAULT;
+    private static final Logger P = Logger.create(AtomicFloat.class, Logger.LOGLV_DEFAULT);
 
     private AtomicInteger mBits;
 

@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014, 2015
+ * Copyright (C) 2012, 2013, 2014, 2015, 2016
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -37,14 +37,8 @@
 package free.yhc.netmbuddy.core;
 
 import android.os.Environment;
-import free.yhc.netmbuddy.utils.Utils;
 
-public class Policy {
-    @SuppressWarnings("unused")
-    private static final boolean DBG = false;
-    @SuppressWarnings("unused")
-    private static final Utils.Logger P = new Utils.Logger(Policy.class);
-
+public class PolicyConstant {
     public static final String APPBASENAME = "netmbuddy";
     public static final String EXTSTORAGE_DIR = Environment.getExternalStorageDirectory().getPath() + "/";
     public static final String APPDATA_DIR = EXTSTORAGE_DIR + APPBASENAME + "/";
@@ -53,6 +47,7 @@ public class Policy {
     public static final String APPDATA_CACHEDIR = APPDATA_DIR + "cache/";
     // Downloaded video directory
     public static final String APPDATA_VIDDIR = APPDATA_DIR + "videos/";
+    public static final String APPDATA_PARSELOG = APPDATA_LOGDIR + "last_page";
     public static final String APPDATA_ERRLOG = APPDATA_LOGDIR + "last_error";
     public static final String EXTERNAL_DBFILE = APPDATA_DIR + APPBASENAME + ".db";
 
@@ -67,11 +62,6 @@ public class Policy {
     public static final int DEFAULT_VIDEO_VOLUME = 50;
     public static final int YTSEARCH_MAX_RESULTS = 20; //YTApiFacade.MAX_RESULTS_PER_PAGE; // 1 ~ 50
 
-    // Performance for loading thumbnail
-    public static final int YTSEARCH_MAX_LOAD_THUMBNAIL_THREAD = 4;
-    public static final int YTIMPORT_MAX_LOAD_THUMBNAIL_THREAD = 10;
-    public static final int YTSEARCH_MAX_CHECK_VIDEOID_THREAD = 4;
-
     // --------------------------------------------------------------------
     // Youtube Hack
     // --------------------------------------------------------------------
@@ -82,6 +72,15 @@ public class Policy {
     // So, this is just experimental value!
     public static final int YTHACK_REUSE_TIMEOUT = 5 * 60 * 1000; // 5 minutes
     public static final int YTHACK_CACHE_SIZE = 10; // large enough to hit cache for current active video.
+
+    // < Reason why we don't use default UA string >
+    // Using fixed UA string is better for debugging and preserving compatibility.
+    // (UA string of Linux desktop)
+    public static final String YTHACK_UASTRING
+            = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.75 Safari/537.36";
+    // Sample UA string for Samsung Galaxy S6 Edge
+    //        = "Mozilla/5.0 (Linux; Android 5.1.1; SM-G928X Build/LMY47X) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.83 Mobile Safari/537.36";
+
 
     // --------------------------------------------------------------------
     // Youtube Player

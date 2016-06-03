@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014, 2015
+ * Copyright (C) 2012, 2013, 2014, 2015, 2016
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -36,25 +36,28 @@
 
 package free.yhc.netmbuddy;
 
-import static free.yhc.netmbuddy.utils.Utils.eAssert;
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.support.annotation.NonNull;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
 
-import free.yhc.netmbuddy.core.YTDataAdapter;
-import free.yhc.netmbuddy.core.YTDataHelper;
-import free.yhc.netmbuddy.utils.UiUtils;
-import free.yhc.netmbuddy.utils.Utils;
+import java.net.MalformedURLException;
+import java.net.URL;
 
-public abstract class YTSearchAdapter<T> extends BaseAdapter implements
-YTDataHelper.ThumbnailRespReceiver {
-    @SuppressWarnings("unused")
-    private static final boolean DBG = false;
-    @SuppressWarnings("unused")
-    private static final Utils.Logger P = new Utils.Logger(YTSearchAdapter.class);
+import free.yhc.abaselib.AppEnv;
+import free.yhc.baselib.Logger;
+import free.yhc.baselib.async.TmTask;
+import free.yhc.abaselib.util.AUtil;
+import free.yhc.netmbuddy.core.TaskManager;
+import free.yhc.netmbuddy.task.YTThumbnailTask;
+import free.yhc.netmbuddy.utils.UxUtil;
+
+public abstract class YTSearchAdapter<T> extends BaseAdapter {
+    private static final boolean DBG = Logger.DBG_DEFAULT;
+    private static final Logger P = Logger.create(YTSearchAdapter.class, Logger.LOGLV_DEFAULT);
 
     // So, assign one of them as view tag's key value.
     protected static final int VTAGKEY_VALID = R.id.content;
@@ -65,7 +68,24 @@ YTDataHelper.ThumbnailRespReceiver {
     protected T[] mItems;
 
     private Bitmap[] mThumbnails;
-    private YTDataHelper mHelper;
+    private final YTThumbnailTask.EventListener<YTThumbnailTask, Bitmap> mThumbnailTaskEventListener
+            = new YTThumbnailTask.EventListener<YTThumbnailTask, Bitmap>() {
+        @Override
+        public void
+        onPostRun(@NonNull YTThumbnailTask task,
+                  Bitmap result,
+                  Exception ex) {
+            if (null == result)
+                // set to thumbthing else?
+                return;
+            // View is NOT reused here.
+            // So, I don't need to worry about issues comes from reusing view in the list.
+            int i = (Integer)task.getOpaque();
+            ImageView iv = (ImageView)mItemViews[i].findViewById(R.id.thumbnail);
+            mThumbnails[i] = result;
+            iv.setImageBitmap(result);
+        }
+    };
 
     YTSearchAdapter(Context context,
                     int rowLayout,
@@ -76,33 +96,43 @@ YTDataHelper.ThumbnailRespReceiver {
         mItems = items;
         mItemViews = new View[mItems.length];
         for (int i = 0; i < mItemViews.length; i++)
-            mItemViews[i] = UiUtils.inflateLayout(Utils.getAppContext(), rowLayout);
+            mItemViews[i] = AUtil.inflateLayout(rowLayout);
 
+        TaskManager tm = TaskManager.get();
         mThumbnails = new Bitmap[mItems.length];
-        mHelper = new YTDataHelper();
-        mHelper.setThumbnailRespRecevier(this);
-        mHelper.open();
         for (int i = 0; i < mItemViews.length; i++) {
             // NOTE!
             // IMPORTANT! : DO NOT put R.drawable.ic_unknown_image at layout!
             // Because of 'memory optimization' for thumbnail bitmap,
             //   putting drawable at Layout may lead to "Exception : try to used recycled bitmap ...".
-            // See comments at UiUtils.setThumbnailImageView() for details.
+            // See comments at UxUtil.setThumbnailImageView() for details.
             // Initialize thumbnail to ic_unknown_image
             mThumbnails[i] = null;
             if (null == getThumnailUrl(mItems[i]))
                 continue;
 
-            UiUtils.setThumbnailImageView((ImageView) mItemViews[i].findViewById(R.id.thumbnail), null);
+            UxUtil.setThumbnailImageView((ImageView)mItemViews[i].findViewById(R.id.thumbnail), null);
             setViewInvalid(mItemViews[i]);
-            final YTDataHelper.ThumbnailReq req
-                = new YTDataHelper.ThumbnailReq(i,
-                                                getThumnailUrl(mItems[i]),
-                                                mCxt.getResources().getDimensionPixelSize(R.dimen.thumbnail_width),
-                                                mCxt.getResources().getDimensionPixelSize(R.dimen.thumbnail_height));
-            mHelper.requestThumbnailAsync(req);
+            URL url;
+            try {
+                url = new URL(getThumnailUrl(mItems[i]));
+            } catch (MalformedURLException e) {
+                if (DBG) P.w("MalformedURL?: " + getThumnailUrl(mItems[i]));
+                continue;
+            }
+            YTThumbnailTask t = YTThumbnailTask.create(
+                    url,
+                    AUtil.getResources().getDimensionPixelSize(R.dimen.thumbnail_width),
+                    AUtil.getResources().getDimensionPixelSize(R.dimen.thumbnail_height),
+                    i);
+            t.addEventListener(AppEnv.getUiHandlerAdapter(),mThumbnailTaskEventListener);
+            if (!tm.addTask(t,
+                            t,
+                            this,
+                            null)) {
+                if (DBG) P.w("Fail to add thumbnail download task");
+            }
         }
-
     }
 
     protected abstract String
@@ -145,16 +175,16 @@ YTDataHelper.ThumbnailRespReceiver {
      */
     public void
     cleanup() {
-        eAssert(Utils.isUiThread());
+        P.bug(AUtil.isUiThread());
         for (int i = 0; i < mThumbnails.length; i++) {
             if (null != mThumbnails[i]) {
                 mThumbnails[i].recycle();
                 mThumbnails[i] = null;
             }
         }
-        if (null != mHelper)
-            mHelper.close(true);
-        mHelper = null;
+        TaskManager tm = TaskManager.get();
+        for (TmTask t : tm.getTasks(this))
+            tm.cancelTask(t);
     }
 
     public T[]
@@ -169,26 +199,6 @@ YTDataHelper.ThumbnailRespReceiver {
             return mThumbnails[pos];
         return null;
     }
-
-    @Override
-    public void
-    onResponse(YTDataHelper helper, YTDataHelper.ThumbnailReq req, YTDataHelper.ThumbnailResp resp) {
-        if (mHelper != helper)
-            return; // invalid callback.
-
-        //noinspection StatementWithEmptyBody
-        if (YTDataAdapter.Err.NO_ERR != resp.err) {
-            // TODO set to something else...
-        } else {
-            // View is NOT reused here.
-            // So, I don't need to worry about issues comes from reusing view in the list.
-            int i = (Integer)resp.opaque;
-            ImageView iv = (ImageView)mItemViews[i].findViewById(R.id.thumbnail);
-            mThumbnails[i] = resp.bm;
-            iv.setImageBitmap(resp.bm);
-        }
-    }
-
 
     @Override
     public int

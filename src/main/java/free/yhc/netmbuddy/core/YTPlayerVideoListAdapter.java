@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014, 2015
+ * Copyright (C) 2012, 2013, 2014, 2015, 2016
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -36,8 +36,6 @@
 
 package free.yhc.netmbuddy.core;
 
-import static free.yhc.netmbuddy.utils.Utils.eAssert;
-
 import java.util.HashMap;
 
 import android.content.Context;
@@ -45,15 +43,15 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
+
+import free.yhc.baselib.Logger;
+import free.yhc.abaselib.util.AUtil;
 import free.yhc.netmbuddy.R;
-import free.yhc.netmbuddy.utils.UiUtils;
-import free.yhc.netmbuddy.utils.Utils;
+import free.yhc.netmbuddy.utils.Util;
 
 public class YTPlayerVideoListAdapter extends BaseAdapter {
-    @SuppressWarnings("unused")
-    private static final boolean DBG = false;
-    @SuppressWarnings("unused")
-    private static final Utils.Logger P = new Utils.Logger(YTPlayerVideoListAdapter.class);
+    private static final boolean DBG = Logger.DBG_DEFAULT;
+    private static final Logger P = Logger.create(YTPlayerVideoListAdapter.class, Logger.LOGLV_DEFAULT);
 
     private final int mActiveTextColor;
     private final int mInactiveTextColor;
@@ -77,7 +75,7 @@ public class YTPlayerVideoListAdapter extends BaseAdapter {
 
     YTPlayerVideoListAdapter(Context context, YTPlayer.Video[] vs) {
         super();
-        eAssert(null != vs);
+        P.bug(null != vs);
         mContext = context;
         mVs = vs;
         mActiveTextColor = context.getResources().getColor(R.color.title_text_color_new);
@@ -89,10 +87,10 @@ public class YTPlayerVideoListAdapter extends BaseAdapter {
         if (pos == mActivePos)
             return;
 
-        View v = Utils.findKey(mView2PosMap, mActivePos);
+        View v = Util.findKey(mView2PosMap, mActivePos);
         if (null != v)
             setToInactive(v);
-        v = Utils.findKey(mView2PosMap, pos);
+        v = Util.findKey(mView2PosMap, pos);
         if (null != v)
             setToActive(v);
 
@@ -106,7 +104,7 @@ public class YTPlayerVideoListAdapter extends BaseAdapter {
 
     void
     setVidArray(YTPlayer.Video[] vs) {
-        eAssert(null != vs);
+        P.bug(null != vs);
         mVs = vs;
     }
 
@@ -135,7 +133,7 @@ public class YTPlayerVideoListAdapter extends BaseAdapter {
         if (null != convertView)
             v = convertView;
         else
-            v = UiUtils.inflateLayout(mContext, R.layout.mplayer_ldrawer_row);
+            v = AUtil.inflateLayout(R.layout.mplayer_ldrawer_row);
 
         mView2PosMap.put(v, position);
 

@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014, 2015
+ * Copyright (C) 2012, 2013, 2014, 2015, 2016
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -40,9 +40,8 @@ import android.support.annotation.NonNull;
 
 import java.io.File;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.zip.ZipInputStream;
 
-import free.yhc.netmbuddy.utils.Utils;
+import free.yhc.baselib.Logger;
 
 // ============================================================================
 //
@@ -50,10 +49,8 @@ import free.yhc.netmbuddy.utils.Utils;
 //
 // ============================================================================
 public class Share {
-    @SuppressWarnings("unused")
-    private static final boolean DBG = false;
-    @SuppressWarnings("unused")
-    private static final Utils.Logger P = new Utils.Logger(Share.class);
+    private static final boolean DBG = Logger.DBG_DEFAULT;
+    private static final Logger P = Logger.create(Share.class, Logger.LOGLV_DEFAULT);
 
     public interface OnProgressListener {
         void onPreProgress(int maxProg);
@@ -122,17 +119,6 @@ public class Share {
         public AtomicInteger success = new AtomicInteger(0);
         // # of fails to import.
         public AtomicInteger fail = new AtomicInteger(0);
-    }
-
-    // ========================================================================
-    //
-    // Interfaces
-    //
-    // ========================================================================
-    @NonNull
-    public static ImporterI
-    buildImporter(ZipInputStream zis) {
-        return new Importer(zis);
     }
 
     @NonNull

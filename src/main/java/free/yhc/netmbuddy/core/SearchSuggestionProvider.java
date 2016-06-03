@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014, 2015
+ * Copyright (C) 2012, 2013, 2014, 2015, 2016
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -38,13 +38,13 @@ package free.yhc.netmbuddy.core;
 
 import android.content.SearchRecentSuggestionsProvider;
 import android.provider.SearchRecentSuggestions;
-import free.yhc.netmbuddy.utils.Utils;
+
+import free.yhc.abaselib.AppEnv;
+import free.yhc.baselib.Logger;
 
 public class SearchSuggestionProvider extends SearchRecentSuggestionsProvider {
-    @SuppressWarnings("unused")
-    private static final boolean DBG = false;
-    @SuppressWarnings("unused")
-    private static final Utils.Logger P = new Utils.Logger(SearchSuggestionProvider.class);
+    private static final boolean DBG = Logger.DBG_DEFAULT;
+    private static Logger P = null;
 
     private final static String AUTHORITY = "free.yhc.netmbuddy";
     private final static int MODE = DATABASE_MODE_QUERIES;
@@ -53,10 +53,20 @@ public class SearchSuggestionProvider extends SearchRecentSuggestionsProvider {
         setupSuggestions(AUTHORITY, MODE);
     }
 
+    /* This provider is called before initializing application.
+     *
+     *   > at android.app.ActivityThread.installProvider(ActivityThread.java:5141)
+     *   > at android.app.ActivityThread.installContentProviders(ActivityThread.java:4748)
+     */
+    public static void
+    init() {
+        P = Logger.create(SearchSuggestionProvider.class, Logger.LOGLV_DEFAULT);
+    }
+
     public static void
     saveRecentQuery(String query) {
         SearchRecentSuggestions suggestions
-            = new SearchRecentSuggestions(Utils.getAppContext(),
+            = new SearchRecentSuggestions(AppEnv.getAppContext(),
                                           AUTHORITY,
                                           MODE);
         suggestions.saveRecentQuery(query, null);
@@ -65,7 +75,7 @@ public class SearchSuggestionProvider extends SearchRecentSuggestionsProvider {
     public static void
     clearHistory() {
         SearchRecentSuggestions suggestions
-            = new SearchRecentSuggestions(Utils.getAppContext(),
+            = new SearchRecentSuggestions(AppEnv.getAppContext(),
                                           AUTHORITY,
                                           MODE);
         suggestions.clearHistory();

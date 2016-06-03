@@ -13,7 +13,7 @@
         <item>@string/normal</item>
         <item>@string/low</item>
     </string-array>
-    <!-- Value should match Utils.PrefQuality enum name -->
+    <!-- Value should match Util.PrefQuality enum name -->
     <string-array name="pref_3level_value">
         <item>@string/csHIGH</item>
         <item>@string/csNORMAL</item>
@@ -26,7 +26,7 @@
         <item>@string/high</item>
         <item>@string/veryhigh</item>
     </string-array>
-    <!-- Value should match Utils.PrefQuality enum name -->
+    <!-- Value should match Util.PrefQuality enum name -->
     <string-array name="strarr_pref_quality_value">
         <item>@string/csLOW</item>
         <item>@string/csMIDLOW</item>

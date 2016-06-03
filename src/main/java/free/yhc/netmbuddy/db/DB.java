@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014, 2015
+ * Copyright (C) 2012, 2013, 2014, 2015, 2016
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -35,8 +35,6 @@
  *****************************************************************************/
 package free.yhc.netmbuddy.db;
 
-import static free.yhc.netmbuddy.utils.Utils.eAssert;
-
 import java.io.File;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -48,15 +46,15 @@ import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
+import free.yhc.abaselib.AppEnv;
+import free.yhc.baselib.Logger;
 import free.yhc.netmbuddy.core.UnexpectedExceptionHandler;
-import free.yhc.netmbuddy.utils.Utils;
+import free.yhc.netmbuddy.utils.Util;
 
 public class DB implements
 UnexpectedExceptionHandler.Evidence {
-    @SuppressWarnings("unused")
-    private static final boolean DBG = false;
-    @SuppressWarnings("unused")
-    private static final Utils.Logger P = new Utils.Logger(DB.class);
+    private static final boolean DBG = Logger.DBG_DEFAULT;
+    private static final Logger P = Logger.create(DB.class, Logger.LOGLV_DEFAULT);
 
     public static final long INVALID_PLAYLIST_ID = -1;
     public static final int INVALID_VOLUME = -1;
@@ -131,7 +129,7 @@ UnexpectedExceptionHandler.Evidence {
 
     private class DBOpenHelper extends SQLiteOpenHelper {
         DBOpenHelper() {
-            super(Utils.getAppContext(), NAME, null, getVersion());
+            super(AppEnv.getAppContext(), NAME, null, getVersion());
         }
 
         @Override
@@ -205,7 +203,7 @@ UnexpectedExceptionHandler.Evidence {
 
     public void
     open() {
-        eAssert(null == mDb && null == mDbOpenHelper);
+        P.bug(null == mDb && null == mDbOpenHelper);
         mDbOpenHelper = new DBOpenHelper();
         mDb = mDbOpenHelper.getWritableDatabase();
     }
@@ -227,8 +225,8 @@ UnexpectedExceptionHandler.Evidence {
     // ======================================================================
     private static boolean
     isValidVideoData(DMVideo v) {
-         return (Utils.isValidValue(v.ytvid)
-                 && Utils.isValidValue(v.title));
+         return (Util.isValidValue(v.ytvid)
+                 && Util.isValidValue(v.title));
     }
 
     // ----------------------------------------------------------------------
@@ -309,14 +307,14 @@ UnexpectedExceptionHandler.Evidence {
     private int
     updateVideo(ColVideo where, Object wherev,
                 ColVideo[] fields, Object[] vs) {
-        eAssert(fields.length == vs.length);
+        P.bug(fields.length == vs.length);
         ContentValues cvs = new ContentValues();
         for (int i = 0; i < fields.length; i++) {
             try {
                 Method m = cvs.getClass().getMethod("put", String.class, vs[i].getClass());
                 m.invoke(cvs, fields[i].getName(), vs[i]);
             } catch (Exception e) {
-                eAssert(false);
+                P.bug(false);
             }
         }
 
@@ -354,7 +352,7 @@ UnexpectedExceptionHandler.Evidence {
     private void
     incVideoReference(long id) {
         long rcnt = getVideoInfoLong(id, ColVideo.REFCOUNT);
-        eAssert(rcnt >= 0);
+        P.bug(rcnt >= 0);
         rcnt++;
         updateVideo(id, new ColVideo[] { ColVideo.REFCOUNT }, new Long[] { rcnt });
     }
@@ -362,7 +360,7 @@ UnexpectedExceptionHandler.Evidence {
     private void
     decVideoReference(long id) {
         long rcnt = getVideoInfoLong(id, ColVideo.REFCOUNT);
-        eAssert(rcnt >= 0);
+        P.bug(rcnt >= 0);
         rcnt--;
         if (0 == rcnt)
             deleteVideo(id);
@@ -373,7 +371,7 @@ UnexpectedExceptionHandler.Evidence {
     private long
     getVideoInfoLong(long id, ColVideo col) {
         Cursor c = queryVideos(new ColVideo[] { col }, ColVideo.ID, id);
-        eAssert(c.getCount() > 0);
+        P.bug(c.getCount() > 0);
         c.moveToFirst();
         long r = c.getLong(0);
         c.close();
@@ -412,7 +410,7 @@ UnexpectedExceptionHandler.Evidence {
                             null);
 
             // NOTE
-            // "eAssert(0 == r || 1 == r);" is expected.
+            // "P.bug(0 == r || 1 == r);" is expected.
             // But, who knows? (may from unknown bug...)
             // To increase code tolerance, case that "r > 1" is also handled here.
             while (r-- > 0) {
@@ -459,7 +457,7 @@ UnexpectedExceptionHandler.Evidence {
     private void
     incPlaylistSize(long plid) {
         long sz = (Long)getPlaylistInfo(plid, ColPlaylist.SIZE);
-        eAssert(sz >= 0);
+        P.bug(sz >= 0);
         sz++;
         updatePlaylistSize(plid, sz);
     }
@@ -467,7 +465,7 @@ UnexpectedExceptionHandler.Evidence {
     private void
     decPlaylistSize(long plid) {
         long sz = (Long)getPlaylistInfo(plid, ColPlaylist.SIZE);
-        eAssert(sz > 0);
+        P.bug(sz > 0);
         sz--;
         updatePlaylistSize(plid, sz);
     }
@@ -627,7 +625,7 @@ UnexpectedExceptionHandler.Evidence {
 
     public int
     updatePlaylist(long plid, ColPlaylist[] fields, Object[] vs) {
-        eAssert(fields.length == vs.length);
+        P.bug(fields.length == vs.length);
         ContentValues cvs = new ContentValues();
         try {
             for (int i = 0; i < fields.length; i++) {
@@ -635,7 +633,7 @@ UnexpectedExceptionHandler.Evidence {
                 m.invoke(cvs, fields[i].getName(), vs[i]);
             }
         } catch (Exception e) {
-            eAssert(false);
+            P.bug(false);
         }
         int r = mDb.update(TABLE_PLAYLIST,
                            cvs,
@@ -662,7 +660,7 @@ UnexpectedExceptionHandler.Evidence {
             r = mDb.delete(TABLE_PLAYLIST,
                            ColPlaylist.ID.getName() + " = " + id,
                            null);
-            eAssert(0 == r || 1 == r);
+            P.bug(0 == r || 1 == r);
             if (r > 0) {
                 c = mDb.query(getVideoRefTableName(id),
                               new String[] { ColVideoRef.VIDEOID.getName() },
@@ -711,14 +709,11 @@ UnexpectedExceptionHandler.Evidence {
      */
     public Object
     getPlaylistInfo(long plid, ColPlaylist col) {
-        Cursor c = queryPlaylist(plid, col);
-        try {
+        try (Cursor c = queryPlaylist(plid, col)) {
             if (c.moveToFirst())
                 return DBUtils.getCursorVal(c, col);
             else
                 return null;
-        } finally {
-            c.close();
         }
     }
 
@@ -780,7 +775,7 @@ UnexpectedExceptionHandler.Evidence {
             return Err.UNKNOWN;
 
         Cursor c = queryVideos(new ColVideo[] { ColVideo.ID }, ColVideo.VIDEOID, v.ytvid);
-        eAssert(0 == c.getCount() || 1 == c.getCount());
+        P.bug(0 == c.getCount() || 1 == c.getCount());
         long vid;
         if (c.getCount() <= 0) {
             c.close();
@@ -813,8 +808,8 @@ UnexpectedExceptionHandler.Evidence {
 
     public int
     updateVideoTitle(long vid, String title) {
-        eAssert(null != title
-                && !title.isEmpty());
+        P.bug(null != title
+            && !title.isEmpty());
         return updateVideo(ColVideo.ID, vid, ColVideo.TITLE, title);
     }
 
@@ -933,7 +928,7 @@ UnexpectedExceptionHandler.Evidence {
      */
     public Cursor
     queryVideos(long plid, ColVideo[] cols, ColVideo colOrderBy, boolean asc) {
-        eAssert(cols.length > 0);
+        P.bug(cols.length > 0);
         return mDb.rawQuery(DBUtils.buildQueryVideosSQL(plid, cols, null, null, colOrderBy, asc), null);
     }
 
@@ -965,7 +960,7 @@ UnexpectedExceptionHandler.Evidence {
     @SuppressWarnings("unused")
     public Cursor
     queryVideo(long vid, ColVideo[] cols) {
-        eAssert(cols.length > 0);
+        P.bug(cols.length > 0);
         return mDb.query(TABLE_VIDEO,
                          DBUtils.getColNames(cols),
                          ColVideo.ID.getName() + " = " + vid,
@@ -979,7 +974,7 @@ UnexpectedExceptionHandler.Evidence {
                              ColVideo.ID.getName() + " = " + vid,
                              null, null, null, null);
         if (!c.moveToFirst())
-            eAssert(false);
+            P.bug(false);
         DMVideo v = new DMVideo();
         v.setData(cols, c);
         c.close();
@@ -998,7 +993,7 @@ UnexpectedExceptionHandler.Evidence {
                              DBUtils.getColNames(new ColVideo[] { col }),
                              ColVideo.VIDEOID.getName() + " = " + DatabaseUtils.sqlEscapeString(ytvid),
                              null, null, null, null);
-        eAssert(0 == c.getCount() || 1 == c.getCount());
+        P.bug(0 == c.getCount() || 1 == c.getCount());
         try {
             if (c.moveToFirst())
                 return DBUtils.getCursorVal(c, col);
@@ -1015,7 +1010,7 @@ UnexpectedExceptionHandler.Evidence {
                              DBUtils.getColNames(new ColVideo[] { col }),
                              ColVideo.ID.getName() + " = " + vid,
                              null, null, null, null);
-        eAssert(0 == c.getCount() || 1 == c.getCount());
+        P.bug(0 == c.getCount() || 1 == c.getCount());
         try {
             if (c.moveToFirst())
                 return DBUtils.getCursorVal(c, col);
@@ -1046,7 +1041,7 @@ UnexpectedExceptionHandler.Evidence {
         } while (plc.moveToNext());
         plc.close();
 
-        return Utils.convertArrayLongTolong(pls.toArray(new Long[pls.size()]));
+        return Util.convertArrayLongTolong(pls.toArray(new Long[pls.size()]));
     }
 
     // ----------------------------------------------------------------------

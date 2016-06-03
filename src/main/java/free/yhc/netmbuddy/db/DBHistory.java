@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014, 2015
+ * Copyright (C) 2012, 2013, 2014, 2015, 2016
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -36,13 +36,11 @@
 
 package free.yhc.netmbuddy.db;
 
-import free.yhc.netmbuddy.utils.Utils;
+import free.yhc.baselib.Logger;
 
 class DBHistory {
-    @SuppressWarnings("unused")
-    private static final boolean DBG = false;
-    @SuppressWarnings("unused")
-    private static final Utils.Logger P = new Utils.Logger(DBHistory.class);
+    private static final boolean DBG = Logger.DBG_DEFAULT;
+    private static final Logger P = Logger.create(DBHistory.class, Logger.LOGLV_DEFAULT);
 
     static final String[] sTables = {
         DB.getPlaylistTableName(),  // playlist table at index 0

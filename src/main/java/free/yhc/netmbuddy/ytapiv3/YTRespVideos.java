@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2015
+ * Copyright (C) 2015, 2016
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -41,21 +41,17 @@ import android.net.Uri;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import free.yhc.netmbuddy.core.YTDataAdapter;
-import free.yhc.netmbuddy.utils.Utils;
-
-import static free.yhc.netmbuddy.utils.Utils.eAssert;
+import free.yhc.baselib.Logger;
+import free.yhc.baselib.exception.BadResponseException;
 
 public class YTRespVideos extends YTResp {
-    @SuppressWarnings("unused")
-    private static final boolean DBG = false;
-    @SuppressWarnings("unused")
-    private static final Utils.Logger P = new Utils.Logger(YTRespVideos.class);
+    private static final boolean DBG = Logger.DBG_DEFAULT;
+    private static final Logger P = Logger.create(YTRespVideos.class, Logger.LOGLV_DEFAULT);
 
     static String
     getRequestUrl(String[] ytvids) {
-        eAssert(ytvids.length > 0
-                && ytvids.length <= YTApiFacade.MAX_RESULTS_PER_PAGE);
+        P.bug(ytvids.length > 0
+              && ytvids.length <= YTApiFacade.MAX_RESULTS_PER_PAGE);
 
         String ids = ytvids[0];
         for (int i = 1; i < ytvids.length; i++)
@@ -75,12 +71,12 @@ public class YTRespVideos extends YTResp {
     YTRespVideos() { }
 
     static YTResp.VideoListResponse
-    parse(byte[] data) throws YTDataAdapter.YTApiException {
+    parse(byte[] data) throws BadResponseException {
         JSONObject jo;
         try {
             jo = new JSONObject(new String(data));
         } catch (JSONException e) {
-            throw new YTDataAdapter.YTApiException(YTDataAdapter.Err.BAD_RESPONSE);
+            throw new BadResponseException(e);
         }
         YTResp.VideoListResponse resp = new VideoListResponse();
         resp.set(jo);

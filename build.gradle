@@ -2,23 +2,22 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 23
-    buildToolsVersion '23.0.0'
-    useLibrary 'org.apache.http.legacy'
+    buildToolsVersion '23.0.3'
     defaultConfig {
         applicationId "free.yhc.netmbuddy"
-        minSdkVersion 15
+        minSdkVersion 19
         targetSdkVersion 23
         versionCode 31
         versionName "2.0.0-alpha"
     }
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_7
-        targetCompatibility JavaVersion.VERSION_1_7
-    }
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
+        }
+        debug {
+            debuggable true
+            minifyEnabled false
         }
     }
     productFlavors {
@@ -26,5 +25,9 @@ android {
 }
 
 dependencies {
-    compile 'com.android.support:support-v4:23.0.0'
+    compile 'junit:junit:4.12'
+    compile 'com.android.support:appcompat-v7:23.3.0'
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile project(':Baselib')
+    compile project(':ABaselib')
 }

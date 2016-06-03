@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014, 2015
+ * Copyright (C) 2012, 2013, 2014, 2015, 2016
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -36,7 +36,6 @@
 
 package free.yhc.netmbuddy.db;
 
-import static free.yhc.netmbuddy.utils.Utils.eAssert;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.DatabaseUtils;
@@ -44,14 +43,13 @@ import android.provider.BaseColumns;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import free.yhc.baselib.Logger;
 import free.yhc.netmbuddy.db.DB.Col;
-import free.yhc.netmbuddy.utils.Utils;
+import free.yhc.netmbuddy.utils.Util;
 
 public class DBUtils {
-    @SuppressWarnings("unused")
-    private static final boolean DBG = false;
-    @SuppressWarnings("unused")
-    private static final Utils.Logger P = new Utils.Logger(DBUtils.class);
+    private static final boolean DBG = Logger.DBG_DEFAULT;
+    private static final Logger P = Logger.create(DBUtils.class, Logger.LOGLV_DEFAULT);
 
     /**
      * Convert Col[] to string[] of column's name
@@ -77,7 +75,7 @@ public class DBUtils {
             cvs.put(col.getName(), (byte[])value);
             break;
         default:
-            eAssert(false);
+            P.bug(false);
         }
     }
 
@@ -146,7 +144,7 @@ public class DBUtils {
     buildQueryVideosSQL(long plid, ColVideo[] cols,
                         ColVideo field, Object value,
                         ColVideo colOrderBy, boolean asc) {
-        eAssert(cols.length > 0);
+        P.bug(cols.length > 0);
 
         String sql = "SELECT ";
         String sel = "";
@@ -224,8 +222,8 @@ public class DBUtils {
     private static String
     encodeBookmark(DB.Bookmark bm) {
         // NOTE : Check strictly to keep DB safe!!!
-        eAssert(bm.pos > 0
-                && Utils.isValidValue(bm.name));
+        P.bug(bm.pos > 0
+                && Util.isValidValue(bm.name));
         return ((Integer)bm.pos).toString() // to avoid implicit casting to 'char' type,
                                             //   because following DB.BOOKMARK_NAME_DELIMIETER is 'char'.
                + DB.BOOKMARK_NAME_DELIMIETER
@@ -318,9 +316,7 @@ public class DBUtils {
         } else if ("blob".equals(col.getType()))
             return c.getBlob(i);
         else {
-            eAssert(false);
-            return null;
+            throw new AssertionError();
         }
     }
-
 }

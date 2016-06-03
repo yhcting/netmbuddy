@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014, 2015
+ * Copyright (C) 2012, 2013, 2014, 2015, 2016
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -36,18 +36,14 @@
 
 package free.yhc.netmbuddy;
 
-import static free.yhc.netmbuddy.utils.Utils.eAssert;
-
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.zip.ZipInputStream;
 
 import android.R.style;
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -57,236 +53,68 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 
+import free.yhc.baselib.Logger;
+import free.yhc.abaselib.ux.DialogTask;
 import free.yhc.netmbuddy.core.UnexpectedExceptionHandler;
-import free.yhc.netmbuddy.share.Share;
-import free.yhc.netmbuddy.utils.UiUtils;
-import free.yhc.netmbuddy.utils.Utils;
+import free.yhc.netmbuddy.share.ImportJob;
+import free.yhc.netmbuddy.utils.UxUtil;
 
 public class ImportShareActivity extends Activity implements
 UnexpectedExceptionHandler.Evidence {
-    private static final boolean DBG = false;
-    private static final Utils.Logger P = new Utils.Logger(ImportShareActivity.class);
+    private static final boolean DBG = Logger.DBG_DEFAULT;
+    private static final Logger P = Logger.create(ImportShareActivity.class, Logger.LOGLV_DEFAULT);
 
-    private DiagAsyncTask mDiagTask = null;
-    private AlertDialog mDiag = null;
+    private DialogTask mDiagTask = null;
     private ZipInputStream mZis = null;
 
-    /**
-     * Cancel is NOT ALLOWED.
-     */
-    private class Preparer extends DiagAsyncTask.Worker {
-        private final Share.ImporterI _mImporter;
-        private Share.ImportPrepareResult _mResult = null;
-
-        Preparer(Share.ImporterI importer) {
-            _mImporter = importer;
-        }
-
-        Share.ImportPrepareResult
-        result() {
-            return _mResult;
-        }
-
-        @Override
-        public Err
-        doBackgroundWork(final DiagAsyncTask task) {
-            _mResult = _mImporter.prepare();
-            return Err.map(_mResult.err);
-        }
-
-        @Override
-        public void
-        onPostExecute(DiagAsyncTask task, Err result) {
-            if (Err.NO_ERR != result)
-                UiUtils.showTextToast(ImportShareActivity.this, result.getMessage());
-        }
-    }
-
-    private class Importer extends DiagAsyncTask.Worker {
-        private final Share.ImporterI _mImporter;
-        @SuppressWarnings("unused")
-        private final Share.ImportPrepareResult _mIpr;
-
-        private Share.ImportResult _mResult = null;
-
-        Importer(Share.ImporterI importer, Share.ImportPrepareResult ipr) {
-            _mIpr = ipr;
-            _mImporter = importer;
-        }
-
-        private CharSequence
-        getReportText(boolean cancelled) {
-            int success;
-            int fail;
-            Share.ImportResult r = _mResult;
-            if (null != r) {
-                success = r.success.get();
-                fail = r.fail.get();
-            } else {
-                if (DBG) P.e("Unexpected Error (returned result is null!)\n" +
-                             "   recovered");
-                return "<null> data";
-            }
-
-            CharSequence title = " [ " + Utils.getResString(R.string.app_name) + " ]\n"
-                                 + Utils.getResString(R.string.import_) + " : "
-                                 + Utils.getResString(cancelled?
-                                                      R.string.cancelled:
-                                                      R.string.done)
-                                 + "\n"
-                                 + r.message;
-            if (Share.Err.NO_ERR != r.err)
-                title = title + "\n" + Utils.getResString(Err.map(r.err).getMessage());
-
-            return title + "\n"
-                   + "  " + Utils.getResString(R.string.done) + " : " + success + "\n"
-                   + "  " + Utils.getResString(R.string.error) + " : " + fail;
-        }
-
-        private void
-        onEnd(boolean cancelled) {
-            UiUtils.showTextToast(ImportShareActivity.this, getReportText(cancelled), true);
-        }
-
-        @Override
-        public void
-        onPreExecute(DiagAsyncTask task) {
-        }
-
-        @Override
-        public Err
-        doBackgroundWork(final DiagAsyncTask task) {
-            Share.OnProgressListener listener = new Share.OnProgressListener() {
-                @Override
-                public void
-                onProgress(int prog) {
-                    task.publishProgress(prog);
-                }
-
-                @Override
-                public void
-                onPreProgress(int maxProg) {
-                    task.publishPreProgress(maxProg);
-                }
-            };
-            _mResult = _mImporter.execute(null, listener);
-            return Err.NO_ERR;
-        }
-
-        @Override
-        public void
-        onCancel(DiagAsyncTask task) {
-            _mImporter.cancel();
-        }
-
-        @Override
-        public void
-        onPostExecute(DiagAsyncTask task, Err result) {
-            onEnd(false);
-        }
-
-        @Override
-        public void
-        onCancelled(DiagAsyncTask task) {
-            onEnd(true);
-        }
-    }
-
     private void
-    prepareImport() {
+    importShare(final ZipInputStream zis) {
         if (null == mZis) {
-            UiUtils.showTextToast(this, R.string.msg_fail_to_access_data);
+            UxUtil.showTextToast(R.string.msg_fail_to_access_data);
             finish();
             return;
         }
 
-        final Share.ImporterI importer = Share.buildImporter(mZis);
-        final Preparer preparer = new Preparer(importer);
-        mDiagTask = new DiagAsyncTask(this,
-                                      preparer,
-                                      DiagAsyncTask.Style.SPIN,
-                                      R.string.preparing,
-                                      true);
-        mDiagTask.setTitle(R.string.app_name);
-        mDiagTask.setOnDismissListener(new DialogInterface.OnDismissListener() {
-            @Override
-            public void
-            onDismiss(DialogInterface dialog) {
-                Share.ImportPrepareResult ipr = preparer.result();
-                if (null == ipr
-                    || Share.Err.NO_ERR != ipr.err)
-                    finish();
-                else
-                    startImport(importer, ipr);
-            }
-        });
-        mDiagTask.run();
-    }
-
-    private void
-    startImport(final Share.ImporterI importer, final Share.ImportPrepareResult ipr) {
         CharSequence msg = getResources().getText(R.string.msg_confirm_import_share) + "\n";
-        switch (ipr.type) {
-        case PLAYLIST:
-            msg = msg + "[ " + getResources().getText(R.string.playlist) + " ]\n";
-            break;
-        }
-        msg = msg + ipr.message;
-
-        final AtomicBoolean cancelled = new AtomicBoolean(true);
-        UiUtils.ConfirmAction action = new UiUtils.ConfirmAction() {
+        UxUtil.ConfirmAction action = new UxUtil.ConfirmAction() {
             @Override
             public void
-            onOk(Dialog dialog) {
-                cancelled.set(false);
-                doImport(importer, ipr);
+            onPositive(@NonNull Dialog dialog) {
+                doImport(zis);
             }
 
             @Override
             public void
-            onCancel(Dialog dialog) {
+            onNegative(@NonNull Dialog dialog) {
                 finish();
             }
         };
-
-        mDiag = UiUtils.buildConfirmDialog(this,
-                                           getResources().getText(R.string.app_name),
-                                           msg,
-                                           action);
-        mDiag.setOnDismissListener(new DialogInterface.OnDismissListener() {
-            @Override
-            public void
-            onDismiss(DialogInterface dialog) {
-                mDiag = null;
-                if (cancelled.get())
-                    finish();
-            }
-        });
-        mDiag.show();
+        UxUtil.buildConfirmDialog(this,
+                                  getResources().getText(R.string.app_name),
+                                  msg,
+                                  action)
+                .show();
     }
 
     private void
-    doImport(Share.ImporterI importer, Share.ImportPrepareResult ipr) {
-        mDiagTask = new DiagAsyncTask(this,
-                                      new Importer(importer, ipr),
-                                      DiagAsyncTask.Style.PROGRESS,
-                                      getResources().getText(R.string.importing_share) + "\n"
-                                          + getResources().getText(R.string.msg_warn_background_not_allowed),
-                                      true,
-                                      // Importing SHOULD NOT be cancelled by INTERRUPT.
-                                      // Canceling by interrupt causes early return before
-                                      //   importing is 'really' finished.
-                                      // In that case, ImportResult value is NOT CORRECT!
-                                      false);
-        mDiagTask.setTitle(R.string.app_name);
-        mDiagTask.setOnDismissListener(new DialogInterface.OnDismissListener() {
+    doImport(final ZipInputStream zis) {
+        DialogTask.Builder<DialogTask.Builder> b
+                = new DialogTask.Builder<>(this, ImportJob.create(zis));
+        b.setStyle(DialogTask.Style.PROGRESS);
+        b.setTitle(R.string.app_name);
+        b.setMessage(getResources().getText(R.string.importing_share) + "\n"
+                     + getResources().getText(R.string.msg_warn_background_not_allowed));
+        b.setCancelButtonText(R.string.cancel);
+        b.setOnDismissListener(new DialogInterface.OnDismissListener() {
             @Override
             public void
             onDismiss(DialogInterface dialog) {
                 finish();
             }
         });
-        mDiagTask.run();
+        mDiagTask = b.create();
+        if (!mDiagTask.start())
+            P.bug();
     }
 
     @Override
@@ -301,7 +129,8 @@ UnexpectedExceptionHandler.Evidence {
         super.onCreate(savedInstanceState);
         UnexpectedExceptionHandler.get().registerModule(this);
         Uri uri = getIntent().getData();
-        eAssert(null != uri);
+        P.bug(null != uri);
+        assert null != uri;
         InputStream is = null;
         try {
             if ("file".equals(uri.getScheme()))
@@ -309,15 +138,15 @@ UnexpectedExceptionHandler.Evidence {
             else if ("content".equals(uri.getScheme()))
                 is = getContentResolver().openInputStream(uri);
             else
-                eAssert(false);
+                P.bug(false);
         } catch (FileNotFoundException | SecurityException e) {
-            UiUtils.showTextToast(this, R.string.msg_fail_to_access_data);
+            UxUtil.showTextToast(R.string.msg_fail_to_access_data);
             finish();
             return;
         }
 
         mZis = new ZipInputStream(is);
-        prepareImport();
+        importShare(mZis);
     }
 
     @Override
@@ -342,16 +171,13 @@ UnexpectedExceptionHandler.Evidence {
     protected void
     onStop() {
         if (null != mDiagTask)
-            mDiagTask.userCancel();
+            mDiagTask.cancel();
         super.onStop();
     }
 
     @Override
     protected void
     onDestroy() {
-        if (null != mDiag)
-            mDiag.dismiss();
-
         if (null != mDiagTask)
             mDiagTask.forceDismissDialog();
 

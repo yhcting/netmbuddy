@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014, 2015
+ * Copyright (C) 2012, 2013, 2014, 2015, 2016
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -36,41 +36,58 @@
 
 package free.yhc.netmbuddy;
 
-import static free.yhc.netmbuddy.utils.Utils.eAssert;
-
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.view.ContextMenu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 
+import static free.yhc.abaselib.util.UxUtil.showTextToast;
+
+import free.yhc.abaselib.AppEnv;
+import free.yhc.baselib.Logger;
+import free.yhc.baselib.async.Task;
+import free.yhc.baselib.async.TmTask;
+import free.yhc.abaselib.util.AUtil;
+import free.yhc.abaselib.util.ImgUtil;
+import free.yhc.abaselib.ux.DialogTask;
 import free.yhc.netmbuddy.core.UnexpectedExceptionHandler;
 import free.yhc.netmbuddy.core.YTDataAdapter;
-import free.yhc.netmbuddy.core.YTDataHelper;
 import free.yhc.netmbuddy.db.DB;
 import free.yhc.netmbuddy.core.YTPlayer;
-import free.yhc.netmbuddy.db.DBHelper;
 import free.yhc.netmbuddy.db.DMVideo;
-import free.yhc.netmbuddy.utils.ImageUtils;
-import free.yhc.netmbuddy.utils.UiUtils;
-import free.yhc.netmbuddy.utils.Utils;
+import free.yhc.netmbuddy.task.YTVideoListTask;
+import free.yhc.netmbuddy.utils.UxUtil;
+import free.yhc.netmbuddy.utils.Util;
 
 public abstract class YTVideoSearchActivity extends YTSearchActivity implements
-DBHelper.CheckDupDoneReceiver,
 UnexpectedExceptionHandler.Evidence {
-    @SuppressWarnings("unused")
-    private static final boolean DBG = false;
-    @SuppressWarnings("unused")
-    private static final Utils.Logger P = new Utils.Logger(YTVideoSearchActivity.class);
+    private static final boolean DBG = Logger.DBG_DEFAULT;
+    private static final Logger P = Logger.create(YTVideoSearchActivity.class, Logger.LOGLV_DEFAULT);
 
     private final DB mDb = DB.get();
     private final YTPlayer mMp = YTPlayer.get();
 
     private View.OnClickListener mToolBtnSearchAction;
-    private DBHelper mDbHelper;
+    private DBCheckDupTask mDbCheckDupTask = null;
+
+    private final DBCheckDupTask.EventListener<DBCheckDupTask, boolean[]> mDbCheckDupTaskListener
+            = new DBCheckDupTask.EventListener<DBCheckDupTask, boolean[]>() {
+        @Override
+        public void
+        onPostRun(@NonNull DBCheckDupTask task,
+                  boolean[] result,
+                  Exception ex) {
+            Err err = Err.NO_ERR;
+            if (null != ex)
+                err = Err.DB_UNKNOWN;
+            checkDupDone(task, task.getVideos(), result, err);
+        }
+    };
 
     private YTVideoSearchAdapter.CheckStateListener mAdapterCheckListener
         = new YTVideoSearchAdapter.CheckStateListener() {
@@ -109,6 +126,50 @@ UnexpectedExceptionHandler.Evidence {
         }
     }
 
+    private class DBCheckDupTask extends TmTask<boolean[]> {
+        private final YTDataAdapter.Video[] mVids;
+        private final Object mOpaque;
+
+        DBCheckDupTask(@NonNull YTDataAdapter.Video[] vids, Object opaque) {
+            mVids = vids;
+            mOpaque = opaque;
+        }
+
+        public YTDataAdapter.Video[]
+        getVideos() {
+            return mVids;
+        }
+
+        public Object
+        getOpaque() {
+            return mOpaque;
+        }
+
+        @Override
+        @NonNull
+        public boolean[]
+        doAsync()
+                throws InterruptedException {
+            // TODO : Should I check "entries[i].available" flag???
+            boolean[] r = new boolean[mVids.length];
+            publishProgressInit(r.length);
+            publishProgress(0);
+            for (int i = 0; i < r.length; i++) {
+                r[i] = DB.get().containsVideo(mVids[i].id);
+                if (isCancel())
+                    throw new InterruptedException("Task is cancelled");
+                publishProgress(i + 1);
+            }
+            return r;
+        }
+    }
+
+
+    ///////////////////////////////////////////////////////////////////////////
+    //
+    //
+    //
+    ///////////////////////////////////////////////////////////////////////////
     private YTVideoSearchAdapter
     getAdapter() {
         return (YTVideoSearchAdapter)mListv.getAdapter();
@@ -116,7 +177,7 @@ UnexpectedExceptionHandler.Evidence {
 
     private void
     onContextMenuAddTo(final int position) {
-        UiUtils.OnPlaylistSelected action = new UiUtils.OnPlaylistSelected() {
+        UxUtil.OnPlaylistSelected action = new UxUtil.OnPlaylistSelected() {
             @Override
             public void
             onPlaylist(long plid, Object user) {
@@ -124,7 +185,7 @@ UnexpectedExceptionHandler.Evidence {
                 int volume = getAdapter().getItemVolume(pos);
                 int msg = addToPlaylist(getAdapter(), plid, pos, volume);
                 if (0 != msg)
-                    UiUtils.showTextToast(YTVideoSearchActivity.this, msg);
+                    showTextToast(msg);
             }
 
             @Override
@@ -133,13 +194,13 @@ UnexpectedExceptionHandler.Evidence {
 
         };
 
-        UiUtils.buildSelectPlaylistDialog(mDb,
-                                          this,
-                                          R.string.add_to,
-                                          null,
-                                          action,
-                                          DB.INVALID_PLAYLIST_ID,
-                                          position)
+        UxUtil.buildSelectPlaylistDialog(mDb,
+                                         this,
+                                         R.string.add_to,
+                                         null,
+                                         action,
+                                         DB.INVALID_PLAYLIST_ID,
+                                         position)
                .show();
     }
 
@@ -152,7 +213,7 @@ UnexpectedExceptionHandler.Evidence {
 
     private void
     onContextMenuPlayVideo(final int position) {
-        UiUtils.playAsVideo(this, getAdapter().getItemVideoId(position));
+        UxUtil.playAsVideo(this, getAdapter().getItemVideoId(position));
     }
 
     private void
@@ -165,27 +226,31 @@ UnexpectedExceptionHandler.Evidence {
 
     private void
     onContextMenuSearchSimilarTitles(final int position) {
-        UiUtils.showSimilarTitlesDialog(this, getAdapter().getItemTitle(position));
+        UxUtil.showSimilarTitlesDialog(this, getAdapter().getItemTitle(position));
     }
 
     private void
     checkDupAsync(Object tag, YTDataAdapter.Video[] vids) {
-        mDbHelper.close();
+        if (null != mDbCheckDupTask) {
+            mDbCheckDupTask.removeEventListener(mDbCheckDupTaskListener);
+            mTm.cancelTask(mDbCheckDupTask, null);
+        }
 
-        // Create new instance whenever it used to know owner of each callback.
-        mDbHelper = new DBHelper();
-        mDbHelper.setCheckDupDoneReceiver(this);
-        mDbHelper.open();
-        mDbHelper.checkDupAsync(new DBHelper.CheckDupArg(tag, vids));
+        mDbCheckDupTask = new DBCheckDupTask(vids, tag);
+        mDbCheckDupTask.addEventListener(AppEnv.getUiHandlerAdapter(), mDbCheckDupTaskListener);
+        if (!mTm.addTask(
+                mDbCheckDupTask,
+                mDbCheckDupTask,
+                this,
+                null)) {
+            P.bug(false); // This is UNEXPECTED!
+        }
     }
 
     private void
-    checkDupDoneNewEntries(DBHelper.CheckDupArg arg, boolean[] results) {
-        @SuppressWarnings("unused")
-        YTDataHelper.VideoListReq req = (YTDataHelper.VideoListReq)arg.tag;
-
+    checkDupDoneNewEntries(YTDataAdapter.Video[] vids, boolean[] results) {
         // helper's event receiver is changed to adapter in adapter's constructor.
-        YTVideoSearchAdapter adapter = new YTVideoSearchAdapter(this, arg.vids);
+        YTVideoSearchAdapter adapter = new YTVideoSearchAdapter(this, vids);
         adapter.setCheckStateListener(getAdapterCheckStateListener());
         // First request is done!
         // Now we know total Results.
@@ -197,6 +262,28 @@ UnexpectedExceptionHandler.Evidence {
         // Cleanup before as soon as possible to secure memories.
         if (null != oldAdapter)
             oldAdapter.cleanup();
+    }
+
+    private void
+    checkDupDone(DBCheckDupTask task, YTDataAdapter.Video[] vids,
+                 boolean[] results, Err err) {
+        if (task != mDbCheckDupTask)
+            return; //new task is already started. Ignore this result.
+
+        if (Err.NO_ERR != err
+                || results.length != vids.length) {
+            enableContentText(R.string.err_db_unknown);
+            return;
+        }
+
+        enableContentList();
+        if (null != getAdapter()
+                && vids == getAdapter().getItems())
+            // Entry is same with current adapter.
+            // That means 'dup. checking is done for exsiting entries"
+            applyDupCheckResults(getAdapter(), results);
+        else
+            checkDupDoneNewEntries(vids, results);
     }
 
     private void
@@ -215,9 +302,9 @@ UnexpectedExceptionHandler.Evidence {
 
         final String[] userMenu = new String[menuTextIds.length];
         for (int i = 0; i < menuTextIds.length; i++)
-            userMenu[i] = Utils.getResString(menuTextIds[i]);
+            userMenu[i] = AUtil.getResString(menuTextIds[i]);
 
-        UiUtils.OnPlaylistSelected action = new UiUtils.OnPlaylistSelected() {
+        UxUtil.OnPlaylistSelected action = new UxUtil.OnPlaylistSelected() {
             @Override
             public void
             onPlaylist(final long plid, Object user) {
@@ -227,25 +314,25 @@ UnexpectedExceptionHandler.Evidence {
             @Override
             public void
             onUserMenu(int pos, Object user) {
-                eAssert(0 <= pos && pos < menuTextIds.length);
+                P.bug(0 <= pos && pos < menuTextIds.length);
                 switch (menuTextIds[pos]) {
                 case R.string.append_to_playq:
                     appendCheckMusicsToPlayQ();
                     break;
 
                 default:
-                    eAssert(false);
+                    P.bug(false);
                 }
             }
         };
 
-        UiUtils.buildSelectPlaylistDialog(mDb,
-                                          this,
-                                          R.string.add_to,
-                                          userMenu,
-                                          action,
-                                          DB.INVALID_PLAYLIST_ID,
-                                          null)
+        UxUtil.buildSelectPlaylistDialog(mDb,
+                                         this,
+                                         R.string.add_to,
+                                         userMenu,
+                                         action,
+                                         DB.INVALID_PLAYLIST_ID,
+                                         null)
                .show();
     }
 
@@ -259,28 +346,17 @@ UnexpectedExceptionHandler.Evidence {
         for (int i = 0; i < checkedItems.length; i++) {
             int pos = checkedItems[i];
             if (null == adpr.getItemThumbnail(pos)) {
-                UiUtils.showTextToast(this, R.string.msg_no_all_thumbnail);
+                showTextToast(R.string.msg_no_all_thumbnail);
                 return;
             }
             itemVolumes[i] = adpr.getItemVolume(pos);
         }
 
-        DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
-            private int failedCnt = 0;
-
+        Task<Void> t = new Task<Void>() {
             @Override
-            public void
-            onPostExecute(DiagAsyncTask task, Err result) {
-                adpr.cleanChecked();
-                if (failedCnt > 0) {
-                    CharSequence msg = getResources().getText(R.string.msg_fails_to_add);
-                    UiUtils.showTextToast(YTVideoSearchActivity.this, msg + " : " + failedCnt);
-                }
-            }
-
-            @Override
-            public Err
-            doBackgroundWork(DiagAsyncTask task) {
+            protected Void
+            doAsync() {
+                int failedCnt = 0;
                 mDb.beginTransaction();
                 try {
                     for (int i = 0; i < checkedItems.length; i++) {
@@ -293,16 +369,27 @@ UnexpectedExceptionHandler.Evidence {
                 } finally {
                     mDb.endTransaction();
                 }
-                return Err.NO_ERR;
+
+                final int failedCnt_ = failedCnt;
+                AppEnv.getUiHandler().post(new Runnable() {
+                    @Override
+                    public void run() {
+                        adpr.cleanChecked();
+                        if (failedCnt_ > 0) {
+                            CharSequence msg = getResources().getText(R.string.msg_fails_to_add);
+                            showTextToast(msg + " : " + failedCnt_);
+                        }
+                    }
+                });
+                return null;
             }
         };
 
-        new DiagAsyncTask(this,
-                          worker,
-                          DiagAsyncTask.Style.SPIN,
-                          R.string.adding)
-            .run();
-
+        DialogTask.Builder<DialogTask.Builder> b
+                = new DialogTask.Builder<>(this, t);
+        b.setMessage(R.string.adding);
+        if (!b.create().start())
+            P.bug();
     }
 
     private void
@@ -319,11 +406,11 @@ UnexpectedExceptionHandler.Evidence {
         adpr.cleanChecked();
     }
 
-    // ========================================================================
+    ///////////////////////////////////////////////////////////////////////////
     //
     //
     //
-    // ========================================================================
+    ///////////////////////////////////////////////////////////////////////////
     protected void
     onCreateInternal(String title, String text) {
       mToolBtnSearchAction = new View.OnClickListener() {
@@ -374,7 +461,7 @@ UnexpectedExceptionHandler.Evidence {
         // And lots of functions of YTPlayer instance, requires running on UI Context
         //   to avoid synchronization issue.
         // So, volume should be gotten out of this function.
-        eAssert(plid >= 0);
+        P.bug(plid >= 0);
 
         Bitmap bm = adapter.getItemThumbnail(pos);
         if (null == bm) {
@@ -384,7 +471,7 @@ UnexpectedExceptionHandler.Evidence {
         final YTDataAdapter.Video ytv = (YTDataAdapter.Video)adapter.getItem(pos);
         DMVideo v = new DMVideo();
         v.setYtData(ytv);
-        v.setThumbnail(ImageUtils.compressBitmap(bm));
+        v.setThumbnail(ImgUtil.compressToJpeg(bm));
         v.setPreferenceData(volume, "");
         DB.Err err = mDb.insertVideoToPlaylist(plid, v);
         if (DB.Err.NO_ERR != err) {
@@ -405,16 +492,16 @@ UnexpectedExceptionHandler.Evidence {
         return 0;
     }
 
-    // ========================================================================
+    ///////////////////////////////////////////////////////////////////////////
     //
     //
     //
-    // ========================================================================
+    ///////////////////////////////////////////////////////////////////////////
     @Override
     protected void
     onListItemClick(View view, int position, long itemId) {
-        if (!Utils.isNetworkAvailable()) {
-            UiUtils.showTextToast(this, Err.IO_NET.getMessage());
+        if (!Util.isNetworkAvailable()) {
+            showTextToast(Err.IO_NET.getMessage());
             return;
         }
 
@@ -424,42 +511,18 @@ UnexpectedExceptionHandler.Evidence {
 
     @Override
     protected void
-    onSearchResponse(YTDataHelper helper,
-                     YTDataHelper.VideoListReq req,
-                     YTDataHelper.VideoListResp resp) {
-        checkDupAsync(req, resp.yt.vids);
+    onSearchResponse(@NonNull YTVideoListTask ytvl,
+                     @NonNull YTDataAdapter.VideoListReq req,
+                     @NonNull YTDataAdapter.VideoListResp resp,
+                     @NonNull Err err) {
+        checkDupAsync(req, resp.vids);
     }
 
-    @Override
-    public void
-    checkDupDone(DBHelper helper, DBHelper.CheckDupArg arg,
-                 boolean[] results, DBHelper.Err err) {
-        if (helper != mDbHelper) {
-            helper.close(); // this is dangling helper
-            return; // invalid callback.
-        }
-
-        if (DBHelper.Err.NO_ERR != err
-        || results.length != arg.vids.length) {
-            enableContentText(R.string.err_db_unknown);
-            return;
-        }
-
-        enableContentList();
-        if (null != getAdapter()
-            && arg.vids == getAdapter().getItems())
-            // Entry is same with current adapter.
-            // That means 'dup. checking is done for exsiting entries"
-            applyDupCheckResults(getAdapter(), results);
-        else
-            checkDupDoneNewEntries(arg, results);
-    }
-
-    // ========================================================================
+    ///////////////////////////////////////////////////////////////////////////
     //
     //
     //
-    // ========================================================================
+    ///////////////////////////////////////////////////////////////////////////
     @Override
     public void
     onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
@@ -469,7 +532,7 @@ UnexpectedExceptionHandler.Evidence {
         AdapterView.AdapterContextMenuInfo mInfo = (AdapterView.AdapterContextMenuInfo)menuInfo;
 
         // menu 'videos of same channel' is useless if we are already in the same-type-search
-        boolean visible = Utils.isValidValue(getAdapter().getItemChannelTitle(mInfo.position))
+        boolean visible = Util.isValidValue(getAdapter().getItemChannelTitle(mInfo.position))
                           && YTDataAdapter.ReqType.VID_CHANNEL != getSearchType();
         menu.findItem(R.id.videos_of_same_channel).setVisible(visible);
     }
@@ -508,7 +571,6 @@ UnexpectedExceptionHandler.Evidence {
         super.onCreate(savedInstanceState);
 
         UnexpectedExceptionHandler.get().registerModule(this);
-        mDbHelper = new DBHelper();
     }
 
     @Override
@@ -516,7 +578,7 @@ UnexpectedExceptionHandler.Evidence {
     onResume() {
         super.onResume();
 
-        mMp.addOnDbUpdatedListener(this, mOnPlayerUpdateDbListener);
+        mMp.addOnDbUpdatedListener(mOnPlayerUpdateDbListener);
         if (mDb.isRegisteredToVideoTableWatcher(this)) {
             if (mDb.isVideoTableUpdated(this)
             && null != getAdapter()) {
@@ -530,7 +592,7 @@ UnexpectedExceptionHandler.Evidence {
     @Override
     public void
     onPause() {
-        mMp.removeOnDbUpdatedListener(this);
+        mMp.removeOnDbUpdatedListener(mOnPlayerUpdateDbListener);
         mDb.registerToVideoTableWatcher(this);
         super.onPause();
     }
@@ -538,7 +600,6 @@ UnexpectedExceptionHandler.Evidence {
     @Override
     protected void
     onDestroy() {
-        mDbHelper.close();
         mDb.unregisterToVideoTableWatcher(this);
         UnexpectedExceptionHandler.get().unregisterModule(this);
         super.onDestroy();

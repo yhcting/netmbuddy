@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014, 2015
+ * Copyright (C) 2012, 2013, 2014, 2015, 2016
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -36,9 +36,7 @@
 
 package free.yhc.netmbuddy.core;
 
-import static free.yhc.netmbuddy.utils.Utils.eAssert;
-
-import java.util.Iterator;
+import java.util.LinkedHashSet;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -51,6 +49,7 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.res.Resources;
+import android.support.annotation.NonNull;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
@@ -61,7 +60,12 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.SeekBar;
 import android.widget.TextView;
-import free.yhc.netmbuddy.DiagAsyncTask;
+
+import free.yhc.abaselib.AppEnv;
+import free.yhc.baselib.Logger;
+import free.yhc.baselib.async.Task;
+import free.yhc.abaselib.util.AUtil;
+import free.yhc.abaselib.ux.DialogTask;
 import free.yhc.netmbuddy.Err;
 import free.yhc.netmbuddy.R;
 import free.yhc.netmbuddy.db.ColVideo;
@@ -69,17 +73,20 @@ import free.yhc.netmbuddy.db.DB;
 import free.yhc.netmbuddy.core.YTPlayer.DBUpdateType;
 import free.yhc.netmbuddy.core.YTPlayer.Video;
 import free.yhc.netmbuddy.db.DMVideo;
-import free.yhc.netmbuddy.utils.UiUtils;
-import free.yhc.netmbuddy.utils.Utils;
-import free.yhc.netmbuddy.utils.YTUtils;
+import free.yhc.netmbuddy.utils.Util;
+import free.yhc.netmbuddy.utils.UxUtil;
+import free.yhc.netmbuddy.utils.YTUtil;
 import free.yhc.netmbuddy.widget.SlidingDrawer;
+
+import static free.yhc.abaselib.AppEnv.getUiHandler;
+import static free.yhc.abaselib.util.AUtil.isUiThread;
+import static free.yhc.abaselib.util.UxUtil.showTextToast;
+import static free.yhc.abaselib.util.UxUtil.ConfirmAction;
 
 public class YTPlayerUI implements
 OnSharedPreferenceChangeListener {
-    @SuppressWarnings("unused")
-    private static final boolean DBG = false;
-    @SuppressWarnings("unused")
-    private static final Utils.Logger P = new Utils.Logger(YTPlayerUI.class);
+    private static final boolean DBG = Logger.DBG_DEFAULT;
+    private static final Logger P = Logger.create(YTPlayerUI.class, Logger.LOGLV_DEFAULT);
 
     private static final int SEEKBAR_MAX = 1000;
 
@@ -87,18 +94,17 @@ OnSharedPreferenceChangeListener {
     // ------------------------------------------------------------------------
     //
     // ------------------------------------------------------------------------
-    private final Resources mRes = Utils.getAppContext().getResources();
+    private final Resources mRes = AppEnv.getAppContext().getResources();
     private final DB mDb = DB.get();
     private final UpdateProgress mUpdateProg = new UpdateProgress();
     private final YTPlayer mMp;
     private final TimeTickReceiver mTTRcvr = new TimeTickReceiver();
 
-
     // ------------------------------------------------------------------------
     // UI Control.
     // ------------------------------------------------------------------------
     private Activity mVActivity = null;
-    private KBLinkedList<YTPlayer.OnDBUpdatedListener> mDbUpdatedListenerl = new KBLinkedList<>();
+    private LinkedHashSet<YTPlayer.OnDBUpdatedListener> mDbUpdatedListenerl = new LinkedHashSet<>();
     private LinearLayout mPlayerv = null;
     private LinearLayout mPlayerLDrawer = null;
 
@@ -107,6 +113,96 @@ OnSharedPreferenceChangeListener {
     // For extra Button
     private YTPlayer.ToolButton mToolBtn = null;
 
+    ///////////////////////////////////////////////////////////////////////////
+    //
+    //
+    //
+    ///////////////////////////////////////////////////////////////////////////
+    private final YTPlayer.PlayerStateListener mPlayerStateListener = new YTPlayer.PlayerStateListener() {
+        @Override
+        public void
+        onStateChanged(YTPlayer.MPState from, int fromFlag,
+                       YTPlayer.MPState to, int toFlag) {
+            pvConfigureAll(mPlayerv, mPlayerLDrawer, from, fromFlag, to, toFlag);
+            notiConfigure(from, fromFlag, to, toFlag);
+        }
+
+        @Override
+        public void
+        onBufferingChanged(int percent) {
+            mUpdateProg.updateSecondary(percent);
+        }
+    };
+
+    private final YTPlayer.VideosStateListener mVideoStateListener = new YTPlayer.VideosStateListener() {
+        @Override
+        public void
+        onStopped(YTPlayer.StopState state) {
+            boolean      needToNotification = true;
+            CharSequence msg = "";
+            switch (state) {
+            case DONE:
+                needToNotification = false;
+                msg = mRes.getText(R.string.msg_playing_done);
+                break;
+
+            case FORCE_STOPPED:
+                needToNotification = false;
+                msg = mRes.getText(R.string.msg_playing_stopped);
+                break;
+
+            case NETWORK_UNAVAILABLE:
+                msg = mRes.getText(R.string.err_network_unavailable);
+                break;
+
+            case UNKNOWN_ERROR:
+                msg = mRes.getText(R.string.msg_playing_err_unknown);
+                break;
+            }
+
+            if (null != mPlayerv) {
+                TextView titlev = (TextView)mPlayerv.findViewById(R.id.mplayer_title);
+                pvSetTitle(titlev, mRes.getText(R.string.msg_playing_done));
+            }
+
+            if (needToNotification)
+                NotiManager.get().putPlayerNotification(NotiManager.NotiType.ALERT, (String)msg);
+        }
+
+        @Override
+        public void
+        onStarted() {
+            if (null != mPlayerv)
+                pvEnableLDrawer(mPlayerLDrawer);
+        }
+
+        @Override
+        public void
+        onPlayQChanged() {
+            // Control button should be re-checked due to 'next' and 'prev' button.
+            if (null != mPlayerv)
+                pvConfigureControl((ViewGroup)mPlayerv.findViewById(R.id.mplayer_control),
+                                   YTPlayer.MPState.INVALID, YTPlayer.MPSTATE_FLAG_IDLE,
+                                   mMp.playerGetState(), mMp.playerGetStateFlag());
+
+            if (null == mPlayerLDrawer)
+                return;
+
+            if (mMp.hasActiveVideo()) {
+                ListView lv = (ListView)mPlayerLDrawer.findViewById(R.id.mplayer_list);
+                YTPlayerVideoListAdapter adapter = (YTPlayerVideoListAdapter)lv.getAdapter();
+                if (null != adapter)
+                    adapter.setVidArray(mMp.getVideoList());
+            } else
+                pvDisableLDrawer(mPlayerLDrawer);
+        }
+    };
+
+    ///////////////////////////////////////////////////////////////////////////
+    //
+    //
+    //
+    ///////////////////////////////////////////////////////////////////////////
     public static class TimeTickReceiver extends BroadcastReceiver {
         private YTPlayerUI _mYtpui = null;
 
@@ -119,7 +215,7 @@ OnSharedPreferenceChangeListener {
         public void
         onReceive(Context context, Intent intent) {
             // To minimize time spending in 'Broadcast Receiver'.
-            Utils.getUiHandler().post(new Runnable() {
+            getUiHandler().post(new Runnable() {
                 @Override
                 public void
                 run() {
@@ -153,7 +249,7 @@ OnSharedPreferenceChangeListener {
         private void
         resetProgressView() {
             if (null != _mSeekbar) {
-                _mMaxposv.setText(Utils.secsToMinSecText(mMp.playerGetDuration() / 1000));
+                _mMaxposv.setText(Util.secsToMinSecText(mMp.playerGetDuration() / 1000));
                 update(1, 0);
                 updateSecondary(0);
             }
@@ -174,13 +270,13 @@ OnSharedPreferenceChangeListener {
 
         void
         setProgressView(ViewGroup progv) {
-            eAssert(Utils.isUiThread());
-            eAssert(null != progv.findViewById(R.id.mplayer_progress));
+            P.bug(isUiThread());
+            P.bug(null != progv.findViewById(R.id.mplayer_progress));
             _mCurposv = (TextView)progv.findViewById(R.id.mplayer_curpos);
             _mMaxposv = (TextView)progv.findViewById(R.id.mplayer_maxpos);
             _mSeekbar = (SeekBar)progv.findViewById(R.id.mplayer_seekbar);
             if (null != _mSeekbar) {
-                _mMaxposv.setText(Utils.secsToMinSecText(mMp.playerGetDuration() / 1000));
+                _mMaxposv.setText(Util.secsToMinSecText(mMp.playerGetDuration() / 1000));
                 update(mMp.playerGetDuration(), _mLastProgress);
                 updateSecondary(_mLastSecondaryProgress);
             }
@@ -189,7 +285,7 @@ OnSharedPreferenceChangeListener {
         void
         start() {
             //logI("Progress Start");
-            _mMaxposv.setText(Utils.secsToMinSecText(mMp.playerGetDuration() / 1000));
+            _mMaxposv.setText(Util.secsToMinSecText(mMp.playerGetDuration() / 1000));
             update(mMp.playerGetDuration(), _mLastProgress);
             updateSecondary(_mLastSecondaryProgress);
             run();
@@ -197,19 +293,19 @@ OnSharedPreferenceChangeListener {
 
         void
         resume() {
-            Utils.getUiHandler().removeCallbacks(this);
-            Utils.getUiHandler().postDelayed(this, UPDATE_INTERVAL_MS);
+            getUiHandler().removeCallbacks(this);
+            getUiHandler().postDelayed(this, UPDATE_INTERVAL_MS);
         }
 
         void
         pause() {
-            Utils.getUiHandler().removeCallbacks(this);
+            getUiHandler().removeCallbacks(this);
         }
 
         void
         stop() {
             //logI("Progress End");
-            Utils.getUiHandler().removeCallbacks(this);
+            getUiHandler().removeCallbacks(this);
             resetProgressView();
         }
 
@@ -221,7 +317,7 @@ OnSharedPreferenceChangeListener {
                 int curPv = (durms > 0)? (int)(curms * (long)SEEKBAR_MAX / durms)
                                                : 0;
                 _mSeekbar.setProgress(curPv);
-                _mCurposv.setText(Utils.secsToMinSecText(curms / 1000));
+                _mCurposv.setText(Util.secsToMinSecText(curms / 1000));
                 _mLastProgress = curPv;
             }
         }
@@ -243,7 +339,7 @@ OnSharedPreferenceChangeListener {
         public void
         run() {
             update(mMp.playerGetDuration(), mMp.playerGetPosition());
-            Utils.getUiHandler().postDelayed(this, UPDATE_INTERVAL_MS);
+            getUiHandler().postDelayed(this, UPDATE_INTERVAL_MS);
         }
     }
 
@@ -356,7 +452,7 @@ OnSharedPreferenceChangeListener {
         case PREPARED:
         case PAUSED:
         case STARTED:
-            eAssert(null != videoTitle);
+            P.bug(null != videoTitle);
             if (mMp.isPlayerBuffering()
                 || mMp.isPlayerSeeking())
                 videoTitle = "(" + mRes.getText(R.string.buffering) + ") " + videoTitle;
@@ -369,7 +465,7 @@ OnSharedPreferenceChangeListener {
             break;
 
         default:
-            if (Utils.isValidValue(videoTitle))
+            if (Util.isValidValue(videoTitle))
                 pvSetTitle(titlev, "(" + mRes.getText(R.string.preparing) + ") " + videoTitle);
             else
                 pvSetTitle(titlev, "");
@@ -454,7 +550,7 @@ OnSharedPreferenceChangeListener {
                 // - Double-touch while playing video stops videos.
                 final long sessionId = mMp.getPlayerSessionId();
                 final Activity activity = mVActivity;
-                Utils.getUiHandler().postDelayed(new Runnable() {
+                getUiHandler().postDelayed(new Runnable() {
                     @Override
                     public void
                     run() {
@@ -468,7 +564,7 @@ OnSharedPreferenceChangeListener {
                             playv.setTag(PlayBtnState.START);
                         }
                     }
-                }, Policy.YTPLAYER_DOUBLE_TOUCH_INTERVAL);
+                }, PolicyConstant.YTPLAYER_DOUBLE_TOUCH_INTERVAL);
 
             } else {
                 pvEnableButton(playv, R.drawable.ic_media_play);
@@ -559,7 +655,7 @@ OnSharedPreferenceChangeListener {
         if (null == playerLDrawer
             || !mMp.hasActiveVideo())
             return; // nothing to do
-        eAssert(null != mVActivity);
+        P.bug(null != mVActivity);
 
         ListView lv = (ListView)playerLDrawer.findViewById(R.id.mplayer_list);
         SlidingDrawer drawer = (SlidingDrawer)playerLDrawer.findViewById(R.id.mplayer_ldrawer);
@@ -575,7 +671,7 @@ OnSharedPreferenceChangeListener {
         if (null == playerLDrawer
             || View.GONE == playerLDrawer.getVisibility())
             return; // nothing to do
-        eAssert(null != mVActivity);
+        P.bug(null != mVActivity);
         ListView lv = (ListView)playerLDrawer.findViewById(R.id.mplayer_list);
         lv.setAdapter(null);
         SlidingDrawer drawer = (SlidingDrawer)playerLDrawer.findViewById(R.id.mplayer_ldrawer);
@@ -610,7 +706,7 @@ OnSharedPreferenceChangeListener {
                    YTPlayer.MPState from, int fromFlag,
                    YTPlayer.MPState to,   int toFlag) {
         if (null == playerv) {
-            eAssert(null == playerLDrawer);
+            P.bug(null == playerLDrawer);
             return; // nothing to do
         }
 
@@ -625,7 +721,7 @@ OnSharedPreferenceChangeListener {
 
     private void
     pvMoreControlDetailInfo(long vid) {
-        UiUtils.showVideoDetailInfo(mVActivity, vid);
+        UxUtil.showVideoDetailInfo(mVActivity, vid);
     }
 
     private void
@@ -633,16 +729,16 @@ OnSharedPreferenceChangeListener {
         final int posms = mMp.playerGetPosition();
 
         if (0 == posms) {
-            UiUtils.showTextToast(mVActivity, R.string.msg_fail_set_bookmark);
+            showTextToast(R.string.msg_fail_set_bookmark);
             return;
         }
 
-        final String title = Utils.getResString(R.string.set_bookmark)
+        final String title = AUtil.getResString(R.string.set_bookmark)
                              + " : "
-                             + Utils.secsToMinSecText(posms / 1000)
-                             + Utils.getResString(R.string.seconds);
+                             + Util.secsToMinSecText(posms / 1000)
+                             + AUtil.getResString(R.string.seconds);
 
-        UiUtils.EditTextAction action = new UiUtils.EditTextAction() {
+        UxUtil.EditTextAction action = new UxUtil.EditTextAction() {
             @Override
             public void
             prepare(Dialog dialog, EditText edit) { }
@@ -652,29 +748,29 @@ OnSharedPreferenceChangeListener {
             onOk(Dialog dialog, EditText edit) {
                 String bmname = edit.getText().toString();
                 if (bmname.contains("" + DB.BOOKMARK_DELIMITER)) {
-                    String msg = Utils.getResString(R.string.msg_forbidden_characters) + "\n"
+                    String msg = AUtil.getResString(R.string.msg_forbidden_characters) + "\n"
                                  + "    " + DB.BOOKMARK_DELIMITER;
-                    UiUtils.showTextToast(mVActivity, msg);
-                    UiUtils.buildOneLineEditTextDialog(mVActivity,
-                                                       title,
-                                                       bmname,
-                                                       "",
-                                                       this)
+                    showTextToast(msg);
+                    UxUtil.buildOneLineEditTextDialog(mVActivity,
+                                                      title,
+                                                      bmname,
+                                                      "",
+                                                      this)
                            .show();
                 } else
                     mDb.addBookmark(vid, bmname, posms);
             }
         };
 
-        UiUtils.buildOneLineEditTextDialogWithHint(mVActivity,
-                                                   title,
-                                                   R.string.enter_bookmark_name,
-                                                   action)
+        UxUtil.buildOneLineEditTextDialogWithHint(mVActivity,
+                                                  title,
+                                                  R.string.enter_bookmark_name,
+                                                  action)
                .show();
     }
 
     private void
-    pvMoreControlAddToWithYtid(final UiUtils.OnPostExecuteListener listener,
+    pvMoreControlAddToWithYtid(final UxUtil.OnPostExecuteListener listener,
                                final Object tag,
                                final long plid,
                                final YTPlayer.Video video) {
@@ -682,62 +778,68 @@ OnSharedPreferenceChangeListener {
         if (mMp.getActiveVideo() == video)
             volume = mMp.playerGetVolume();
         else
-            volume = Policy.DEFAULT_VIDEO_VOLUME;
+            volume = PolicyConstant.DEFAULT_VIDEO_VOLUME;
 
-        DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
-            @Override
-            public void
-            onPostExecute(DiagAsyncTask task, Err result) {
-                listener.onPostExecute(result, tag);
-            }
-
-            @Override
-            public Err
-            doBackgroundWork(DiagAsyncTask task) {
-                eAssert(null != video.v);
+        Task<Void> t = new Task<Void>() {
+            private Err
+            doExecute() {
+                P.bug(null != video.v);
                 DMVideo v = new DMVideo();
                 v.copy(video.v);
-                eAssert(Utils.isValidValue(v.ytvid));
-                if (!YTUtils.fillYtDataAndThumbnail(v))
+                P.bug(Util.isValidValue(v.ytvid));
+                if (!YTUtil.fillYtDataAndThumbnail(v))
                     return Err.IO_NET;
                 v.setPreferenceData(volume, "");
                 DB.Err dberr = DB.get().insertVideoToPlaylist(plid, v);
                 return Err.map(dberr);
             }
+
+            @Override
+            @NonNull
+            protected Void
+            doAsync() {
+                final Err err = doExecute();
+                AppEnv.getUiHandler().post(new Runnable() {
+                    @Override
+                    public void run() {
+                        listener.onPostExecute(err, tag);
+                    }
+                });
+                return null;
+            }
         };
 
-        new DiagAsyncTask(mVActivity,
-                          worker,
-                          DiagAsyncTask.Style.SPIN,
-                          Utils.getResString(R.string.adding),
-                          true)
-            .run();
+        DialogTask.Builder<DialogTask.Builder> b
+                = new DialogTask.Builder<>(mVActivity, t);
+        b.setCancelButtonText(R.string.cancel);
+        b.setMessage(AUtil.getResString(R.string.adding));
+        if (!b.create().start())
+            P.bug();
     }
 
     private void
     pvMoreControlAddTo(Long vid, final Video video) {
-        final UiUtils.OnPostExecuteListener listener = new UiUtils.OnPostExecuteListener() {
+        final UxUtil.OnPostExecuteListener listener = new UxUtil.OnPostExecuteListener() {
             @Override
             public void
             onPostExecute(Err result, Object tag) {
                 if (Err.NO_ERR != result)
                     return;
 
-                Iterator<YTPlayer.OnDBUpdatedListener> iter = mDbUpdatedListenerl.iterator();
-                while (iter.hasNext())
-                    iter.next().onDbUpdated(DBUpdateType.PLAYLIST);
+                for (YTPlayer.OnDBUpdatedListener l : mDbUpdatedListenerl)
+                    l.onDbUpdated(DBUpdateType.PLAYLIST);
             }
         };
 
         if (null != vid) {
-            UiUtils.addVideosTo(mVActivity,
-                                null,
-                                listener,
-                                UiUtils.PLID_INVALID,
-                                new long[] { vid },
-                                false);
+            UxUtil.addVideosTo(mVActivity,
+                               null,
+                               listener,
+                               UxUtil.PLID_INVALID,
+                               new long[] { vid },
+                               false);
         } else {
-            UiUtils.OnPlaylistSelected action = new UiUtils.OnPlaylistSelected() {
+            UxUtil.OnPlaylistSelected action = new UxUtil.OnPlaylistSelected() {
                 @Override
                 public void
                 onPlaylist(long plid, Object tag) {
@@ -750,20 +852,20 @@ OnSharedPreferenceChangeListener {
             };
 
             // exclude current playlist
-            UiUtils.buildSelectPlaylistDialog(DB.get(),
-                                              mVActivity,
-                                              R.string.add_to,
-                                              null,
-                                              action,
-                                              UiUtils.PLID_INVALID,
-                                              null)
+            UxUtil.buildSelectPlaylistDialog(DB.get(),
+                                             mVActivity,
+                                             R.string.add_to,
+                                             null,
+                                             action,
+                                             UxUtil.PLID_INVALID,
+                                             null)
                    .show();
         }
     }
 
     private void
     pvMoreControlDelete(final Long vid, final String ytvid) {
-        final UiUtils.OnPostExecuteListener listener = new UiUtils.OnPostExecuteListener() {
+        final UxUtil.OnPostExecuteListener listener = new UxUtil.OnPostExecuteListener() {
             @Override
             public void
             onPostExecute(Err result, Object tag) {
@@ -772,37 +874,36 @@ OnSharedPreferenceChangeListener {
 
                 mMp.removeVideo(ytvid);
                 if (null != vid) {
-                    Iterator<YTPlayer.OnDBUpdatedListener> iter = mDbUpdatedListenerl.iterator();
-                    while (iter.hasNext())
-                        iter.next().onDbUpdated(DBUpdateType.PLAYLIST);
+                    for (YTPlayer.OnDBUpdatedListener l : mDbUpdatedListenerl)
+                        l.onDbUpdated(DBUpdateType.PLAYLIST);
                 }
             }
         };
 
         if (null == vid) {
-            UiUtils.ConfirmAction action = new UiUtils.ConfirmAction() {
+            ConfirmAction action = new ConfirmAction() {
                 @Override
                 public void
-                onOk(Dialog dialog) {
+                onPositive(@NonNull Dialog dialog) {
                     listener.onPostExecute(Err.NO_ERR, null);
                 }
 
                 @Override
                 public void
-                onCancel(Dialog dialog) { }
+                onNegative(@NonNull Dialog dialog) { }
             };
-            UiUtils.buildConfirmDialog(mVActivity,
-                                       R.string.delete,
-                                       R.string.msg_delete_musics_completely,
-                                       action)
+            UxUtil.buildConfirmDialog(mVActivity,
+                                      R.string.delete,
+                                      R.string.msg_delete_musics_completely,
+                                      action)
                    .show();
 
         } else {
-            UiUtils.deleteVideos(mVActivity,
-                                 null,
-                                 listener,
-                                 UiUtils.PLID_UNKNOWN,
-                                 new long[] { vid });
+            UxUtil.deleteVideos(mVActivity,
+                                null,
+                                listener,
+                                UxUtil.PLID_UNKNOWN,
+                                new long[] { vid });
         }
     }
 
@@ -828,7 +929,7 @@ OnSharedPreferenceChangeListener {
 
         final CharSequence[] items = new CharSequence[opts.length];
         for (int i = 0; i < opts.length; i++)
-            items[i] = Utils.getResString(opts[i]);
+            items[i] = AUtil.getResString(opts[i]);
 
         AlertDialog.Builder builder = new AlertDialog.Builder(mVActivity);
         builder.setTitle(R.string.player_extra_control_title);
@@ -850,7 +951,7 @@ OnSharedPreferenceChangeListener {
                     break;
 
                 case R.string.bookmarks:
-                    UiUtils.showBookmarkDialog(mVActivity, video.v.ytvid, video.v.title);
+                    UxUtil.showBookmarkDialog(mVActivity, video.v.ytvid, video.v.title);
                     break;
 
                 case R.string.add_to:
@@ -866,7 +967,7 @@ OnSharedPreferenceChangeListener {
                     break;
 
                 default:
-                    eAssert(false);
+                    P.bug(false);
                 }
             }
         });
@@ -946,31 +1047,16 @@ OnSharedPreferenceChangeListener {
     private void
     pvSetupStatusBar(@SuppressWarnings("unused") ViewGroup playerv) {
         updateStatusAutoStopSet(mMp.isAutoStopSet(), mMp.getAutoStopTime());
-        onSharedPreferenceChanged(Utils.getSharedPreference(), Utils.getResString(R.string.csquality));
-        onSharedPreferenceChanged(Utils.getSharedPreference(), Utils.getResString(R.string.csrepeat));
-        onSharedPreferenceChanged(Utils.getSharedPreference(), Utils.getResString(R.string.csshuffle));
+        onSharedPreferenceChanged(Util.getSharedPreference(), AUtil.getResString(R.string.csquality));
+        onSharedPreferenceChanged(Util.getSharedPreference(), AUtil.getResString(R.string.csrepeat));
+        onSharedPreferenceChanged(Util.getSharedPreference(), AUtil.getResString(R.string.csshuffle));
     }
 
     private void
     pvInit(ViewGroup playerv,
            ViewGroup playerLDrawer,
            @SuppressWarnings("unused") SurfaceView surfacev) {
-        mMp.addPlayerStateListener(this, new YTPlayer.PlayerStateListener() {
-            @Override
-            public void
-            onStateChanged(YTPlayer.MPState from, int fromFlag,
-                           YTPlayer.MPState to,   int toFlag) {
-                pvConfigureAll(mPlayerv, mPlayerLDrawer, from, fromFlag, to, toFlag);
-                notiConfigure(from, fromFlag, to, toFlag);
-            }
-
-            @Override
-            public void
-            onBufferingChanged(int percent) {
-                mUpdateProg.updateSecondary(percent);
-            }
-        });
-
+        mMp.addPlayerStateListener(mPlayerStateListener);
         ViewGroup progv = (ViewGroup)playerv.findViewById(R.id.mplayer_progress);
         SeekBar sb = (SeekBar)progv.findViewById(R.id.mplayer_seekbar);
         sb.setMax(SEEKBAR_MAX);
@@ -1005,70 +1091,7 @@ OnSharedPreferenceChangeListener {
                 }
             });
 
-            mMp.addVideosStateListener(this, new YTPlayer.VideosStateListener() {
-                @Override
-                public void
-                onStopped(YTPlayer.StopState state) {
-                    boolean      needToNotification = true;
-                    CharSequence msg = "";
-                    switch (state) {
-                    case DONE:
-                        needToNotification = false;
-                        msg = mRes.getText(R.string.msg_playing_done);
-                        break;
-
-                    case FORCE_STOPPED:
-                        needToNotification = false;
-                        msg = mRes.getText(R.string.msg_playing_stopped);
-                        break;
-
-                    case NETWORK_UNAVAILABLE:
-                        msg = mRes.getText(R.string.err_network_unavailable);
-                        break;
-
-                    case UNKNOWN_ERROR:
-                        msg = mRes.getText(R.string.msg_playing_err_unknown);
-                        break;
-                    }
-
-                    if (null != mPlayerv) {
-                        TextView titlev = (TextView)mPlayerv.findViewById(R.id.mplayer_title);
-                        pvSetTitle(titlev, mRes.getText(R.string.msg_playing_done));
-                    }
-
-                    if (needToNotification)
-                        NotiManager.get().putPlayerNotification(NotiManager.NotiType.ALERT, (String)msg);
-                }
-
-                @Override
-                public void
-                onStarted() {
-                    if (null != mPlayerv)
-                        pvEnableLDrawer(mPlayerLDrawer);
-                }
-
-                @Override
-                public void
-                onChanged() {
-                    // Control button should be re-checked due to 'next' and 'prev' button.
-                    if (null != mPlayerv)
-                        pvConfigureControl((ViewGroup)mPlayerv.findViewById(R.id.mplayer_control),
-                                           YTPlayer.MPState.INVALID, YTPlayer.MPSTATE_FLAG_IDLE,
-                                           mMp.playerGetState(), mMp.playerGetStateFlag());
-
-                    if (null == mPlayerLDrawer)
-                        return;
-
-                    if (mMp.hasActiveVideo()) {
-                        ListView lv = (ListView)mPlayerLDrawer.findViewById(R.id.mplayer_list);
-                        YTPlayerVideoListAdapter adapter = (YTPlayerVideoListAdapter)lv.getAdapter();
-                        if (null != adapter)
-                            adapter.setVidArray(mMp.getVideoList());
-                    } else
-                        pvDisableLDrawer(mPlayerLDrawer);
-                }
-            });
-
+            mMp.addVideosStateListener(mVideoStateListener);
             final SlidingDrawer drawer = (SlidingDrawer)playerLDrawer.findViewById(R.id.mplayer_ldrawer);
             drawer.setOnDrawerOpenListener(new SlidingDrawer.OnDrawerOpenListener() {
                 @Override
@@ -1110,12 +1133,12 @@ OnSharedPreferenceChangeListener {
     @Override
     public void
     onSharedPreferenceChanged(SharedPreferences prefs, String key) {
-        if (key.equals(Utils.getResString(R.string.csshuffle))) {
-            updateStatusShuffle(Utils.isPrefSuffle());
-        } else if (key.equals(Utils.getResString(R.string.csrepeat))) {
-            updateStatusRepeat(Utils.isPrefRepeat());
-        } else if (key.equals(Utils.getResString(R.string.csquality))) {
-            updateStatusQuality(Utils.getPrefQuality());
+        if (key.equals(AUtil.getResString(R.string.csshuffle))) {
+            updateStatusShuffle(Util.isPrefSuffle());
+        } else if (key.equals(AUtil.getResString(R.string.csrepeat))) {
+            updateStatusRepeat(Util.isPrefRepeat());
+        } else if (key.equals(AUtil.getResString(R.string.csquality))) {
+            updateStatusQuality(Util.getPrefQuality());
         }
     }
 
@@ -1136,7 +1159,7 @@ OnSharedPreferenceChangeListener {
             long tmLeft = timeMillis - System.currentTimeMillis();
             if (tmLeft < 0)
                 tmLeft = 0;
-            String tmText = Utils.millisToHourMinText(tmLeft) + Utils.getResString(R.string.minutes);
+            String tmText = Util.millisToHourMinText(tmLeft) + AUtil.getResString(R.string.minutes);
             iv.setImageResource(R.drawable.status_autostop_on);
             tv.setVisibility(View.VISIBLE);
             tv.setText(tmText);
@@ -1147,7 +1170,7 @@ OnSharedPreferenceChangeListener {
     }
 
     private void
-    updateStatusQuality(Utils.PrefQuality quality) {
+    updateStatusQuality(Util.PrefQuality quality) {
         if (null == mPlayerv)
             return;
 
@@ -1201,17 +1224,17 @@ OnSharedPreferenceChangeListener {
         if (null == sInstance)
             sInstance = this;
         else
-            eAssert(false); // This SHOULD BE SINGLETON (Only YTPlayer has this!)
+            P.bug(false); // This SHOULD BE SINGLETON (Only YTPlayer has this!)
     }
 
     void
-    addOnDbUpdatedListener(Object key, YTPlayer.OnDBUpdatedListener listener) {
-        mDbUpdatedListenerl.add(key, listener);
+    addOnDbUpdatedListener(YTPlayer.OnDBUpdatedListener listener) {
+        mDbUpdatedListenerl.add(listener);
     }
 
     void
-    removeOnDbUpdatedListener(Object key) {
-        mDbUpdatedListenerl.remove(key);
+    removeOnDbUpdatedListener(YTPlayer.OnDBUpdatedListener listener) {
+        mDbUpdatedListenerl.remove(listener);
     }
 
     void
@@ -1224,7 +1247,7 @@ OnSharedPreferenceChangeListener {
             && activity != mVActivity)
             unsetController(mVActivity);
 
-        Utils.getSharedPreference().registerOnSharedPreferenceChangeListener(this);
+        Util.getSharedPreference().registerOnSharedPreferenceChangeListener(this);
 
 
         // update notification by force
@@ -1244,11 +1267,11 @@ OnSharedPreferenceChangeListener {
         mToolBtn = toolBtn;
 
         if (null == mPlayerv) {
-            eAssert(null == mPlayerLDrawer);
+            P.bug(null == mPlayerLDrawer);
             return;
         }
 
-        eAssert(null != mPlayerv.findViewById(R.id.mplayer_layout_magic_id));
+        P.bug(null != mPlayerv.findViewById(R.id.mplayer_layout_magic_id));
         registerTimeTickReceiver();
         pvInit(playerv, playerLDrawer, surfacev);
     }
@@ -1256,7 +1279,7 @@ OnSharedPreferenceChangeListener {
     void
     unsetController(Activity activity) {
         if (activity == mVActivity) {
-            Utils.getSharedPreference().unregisterOnSharedPreferenceChangeListener(this);
+            Util.getSharedPreference().unregisterOnSharedPreferenceChangeListener(this);
             unregisterTimeTickReceiver();
             mPlayerv = null;
             mVActivity = null;
@@ -1280,7 +1303,7 @@ OnSharedPreferenceChangeListener {
     void
     notifyToUser(String msg) {
         if (null != mVActivity)
-            UiUtils.showTextToast(mVActivity, msg);
+            showTextToast(msg);
     }
 
     void
@@ -1310,7 +1333,7 @@ OnSharedPreferenceChangeListener {
 
         final boolean runningVideo;
         // Retrieve current volume
-        int curvol = Policy.DEFAULT_VIDEO_VOLUME;
+        int curvol = PolicyConstant.DEFAULT_VIDEO_VOLUME;
         if (mMp.isVideoPlaying()
             && mMp.getActiveVideo().v.ytvid.equals(ytvid)) {
             runningVideo = true;
@@ -1322,10 +1345,10 @@ OnSharedPreferenceChangeListener {
                 curvol = i.intValue();
         }
 
-        ViewGroup diagv = (ViewGroup)UiUtils.inflateLayout(mVActivity, R.layout.mplayer_vol_dialog);
+        ViewGroup diagv = (ViewGroup)AUtil.inflateLayout(R.layout.mplayer_vol_dialog);
         AlertDialog.Builder bldr = new AlertDialog.Builder(mVActivity);
         bldr.setView(diagv);
-        bldr.setTitle(Utils.getAppContext().getResources().getText(R.string.volume)
+        bldr.setTitle(AppEnv.getAppContext().getResources().getText(R.string.volume)
                       + " : " + title);
         final AlertDialog aDiag = bldr.create();
 

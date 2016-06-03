@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014, 2015
+ * Copyright (C) 2012, 2013, 2014, 2015, 2016
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -36,13 +36,12 @@
 
 package free.yhc.netmbuddy.scmp;
 
-import free.yhc.netmbuddy.utils.Utils;
+import free.yhc.baselib.Logger;
+import free.yhc.netmbuddy.utils.Util;
 
 public class SCmp {
-    @SuppressWarnings("unused")
-    private static final boolean DBG = false;
-    @SuppressWarnings("unused")
-    private static final Utils.Logger P = new Utils.Logger(SCmp.class);
+    private static final boolean DBG = Logger.DBG_DEFAULT;
+    private static final Logger P = Logger.create(SCmp.class, Logger.LOGLV_DEFAULT);
 
     private SCElemI mBaseElem;
 
@@ -61,7 +60,7 @@ public class SCmp {
         // Performance drop but better accuracy
         float s0 =  mBaseElem.similarity(es);
         float s1 = es.similarity(mBaseElem);
-        return Utils.max(s0, s1);
+        return Util.max(s0, s1);
     }
 
     @SuppressWarnings("unused")
@@ -75,6 +74,6 @@ public class SCmp {
         }
         float sim0 = estr0.similarity(estr1);
         float sim1 = estr1.similarity(estr0);
-        return Utils.max(sim0, sim1);
+        return Util.max(sim0, sim1);
     }
 }

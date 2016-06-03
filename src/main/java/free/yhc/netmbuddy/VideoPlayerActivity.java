@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014, 2015
+ * Copyright (C) 2012, 2013, 2014, 2015, 2016
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -57,28 +57,31 @@ import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import free.yhc.baselib.Logger;
+import free.yhc.abaselib.util.AUtil;
+import free.yhc.abaselib.util.ImgUtil;
 import free.yhc.netmbuddy.core.RTState;
 import free.yhc.netmbuddy.core.UnexpectedExceptionHandler;
-import free.yhc.netmbuddy.core.YTHacker;
 import free.yhc.netmbuddy.core.YTPlayer;
 import free.yhc.netmbuddy.core.YTPlayer.StopState;
-import free.yhc.netmbuddy.utils.ImageUtils;
-import free.yhc.netmbuddy.utils.UiUtils;
-import free.yhc.netmbuddy.utils.Utils;
+import free.yhc.netmbuddy.task.YTHackTask;
+import free.yhc.netmbuddy.utils.Util;
+import free.yhc.netmbuddy.utils.UxUtil;
 
 public class VideoPlayerActivity extends Activity implements
 YTPlayer.PlayerStateListener,
 YTPlayer.VideosStateListener,
 UnexpectedExceptionHandler.Evidence {
-    private static final boolean DBG = false;
-    private static final Utils.Logger P = new Utils.Logger(VideoPlayerActivity.class);
+    private static final boolean DBG = Logger.DBG_DEFAULT;
+    private static final Logger P = Logger.create(VideoPlayerActivity.class, Logger.LOGLV_DEFAULT);
 
     private static final boolean sNavUiCanBeHidden
         = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.ICE_CREAM_SANDWICH;
 
     private final YTPlayer mMp = YTPlayer.get();
     private SurfaceView mSurfv;
-    private Utils.PrefQuality mVQuality = Utils.getPrefQuality();
+    private Util.PrefQuality mVQuality = Util.getPrefQuality();
     private int mStatusBarHeight = 0;
 
     // If : Interface
@@ -195,7 +198,7 @@ UnexpectedExceptionHandler.Evidence {
         // So, we should get in advance when we are sure to get valid height of status bar.
         // mStatusBarHeight is used for that reason.
         // And onWindowFocusChanged is the right place to get status height.
-        Rect rect = Utils.getVisibleFrame(this);
+        Rect rect = Util.getVisibleFrame(this);
         int sw = rect.width();
         // default is full screen.
         int sh = rect.bottom;
@@ -215,7 +218,7 @@ UnexpectedExceptionHandler.Evidence {
 
         // Now, sw is always length of longer axis.
         int[] sz = new int[2];
-        ImageUtils.fitFixedRatio(sw, sh, vw, vh, sz);
+        ImgUtil.adjustFixedRatio(sz, true, sw, sh, vw, vh);
         holder.setFixedSize(sz[0], sz[1]);
 
         ViewGroup.LayoutParams lp = mSurfv.getLayoutParams();
@@ -321,14 +324,14 @@ UnexpectedExceptionHandler.Evidence {
 
     @SuppressLint("CommitPrefEdits")
     private void
-    doChangeVideoQuality(Utils.PrefQuality quality) {
+    doChangeVideoQuality(Util.PrefQuality quality) {
         SharedPreferences.Editor prefEdit = PreferenceManager.getDefaultSharedPreferences(getApplicationContext())
                                                              .edit();
-        prefEdit.putString(Utils.getResString(R.string.csquality), quality.name());
+        prefEdit.putString(AUtil.getResString(R.string.csquality), quality.name());
         prefEdit.commit();
 
         // Show toast to bottom of screen
-        UiUtils.showTextToastAtBottom(this, R.string.msg_post_changing_video_quality, false);
+        UxUtil.showTextToastAtBottom(R.string.msg_post_changing_video_quality, false);
         mMp.restartFromCurrentPosition();
     }
 
@@ -338,10 +341,10 @@ UnexpectedExceptionHandler.Evidence {
         if (null == ytvid)
             return;
 
-        YTHacker hack = RTState.get().getCachedYtHacker(ytvid);
+        YTHackTask hack = RTState.get().getCachedYtHack(ytvid);
         final ArrayList<Integer> opts = new ArrayList<>();
         int i;
-        for (Utils.PrefQuality q : Utils.PrefQuality.values()) {
+        for (Util.PrefQuality q : Util.PrefQuality.values()) {
             if (mVQuality != q
                 && null != hack
                 && null != hack.getVideo(YTPlayer.mapPrefToQScore(q), true))
@@ -358,7 +361,7 @@ UnexpectedExceptionHandler.Evidence {
             @Override
             public void
             onClick(DialogInterface dialog, int item) {
-                doChangeVideoQuality(Utils.PrefQuality.getMatchingQuality(opts.get(item)));
+                doChangeVideoQuality(Util.PrefQuality.getMatchingQuality(opts.get(item)));
             }
         });
         builder.create().show();
@@ -385,7 +388,7 @@ UnexpectedExceptionHandler.Evidence {
 
     @Override
     public void
-    onChanged() {
+    onPlayQChanged() {
 
     }
 
@@ -400,7 +403,7 @@ UnexpectedExceptionHandler.Evidence {
                    YTPlayer.MPState to, int toFlag) {
         switch (to) {
         case IDLE:
-            mVQuality = Utils.getPrefQuality();
+            mVQuality = Util.getPrefQuality();
             showLoadingSpinProgress();
             break;
 
@@ -463,8 +466,8 @@ UnexpectedExceptionHandler.Evidence {
         if (sNavUiCanBeHidden)
             setOnSystemUiVisibilityChangeListener();
 
-        mMp.addPlayerStateListener(this, this);
-        mMp.addVideosStateListener(this, this);
+        mMp.addPlayerStateListener(this);
+        mMp.addVideosStateListener(this);
     }
 
     @Override
@@ -507,7 +510,7 @@ UnexpectedExceptionHandler.Evidence {
             // So, height of status bar can be get.
             // See comments in fitVideoSurfaceToScreen() for details.
             if (0 == mStatusBarHeight) // if valid height is not gotten yet..
-                mStatusBarHeight = Utils.getStatusBarHeight(this);
+                mStatusBarHeight = Util.getStatusBarHeight(this);
 
             if (mDelayedSetIfVisibility) {
                 mDelayedSetIfVisibility = false;

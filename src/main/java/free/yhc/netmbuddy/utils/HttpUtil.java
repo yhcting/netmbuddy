@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014, 2015
+ * Copyright (C) 2012, 2013, 2014, 2015, 2016
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -36,11 +36,11 @@
 
 package free.yhc.netmbuddy.utils;
 
-public class HttpUtils {
-    @SuppressWarnings("unused")
-    private static final boolean DBG = false;
-    @SuppressWarnings("unused")
-    private static final Utils.Logger P = new Utils.Logger(HttpUtils.class);
+import free.yhc.baselib.Logger;
+
+public class HttpUtil {
+    private static final boolean DBG = Logger.DBG_DEFAULT;
+    private static final Logger P = Logger.create(HttpUtil.class, Logger.LOGLV_DEFAULT);
 
     // Statuc Codes
     // ============

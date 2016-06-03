@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014, 2015
+ * Copyright (C) 2012, 2013, 2014, 2015, 2016
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -40,55 +40,59 @@ import android.app.Notification;
 import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
+
+import free.yhc.abaselib.AppEnv;
+import free.yhc.baselib.Logger;
 import free.yhc.netmbuddy.core.YTPlayer.StopState;
-import free.yhc.netmbuddy.utils.Utils;
 
 public class YTPlayerLifeSupportService extends Service implements
 UnexpectedExceptionHandler.Evidence {
-    private static final boolean DBG = false;
-    private static final Utils.Logger P = new Utils.Logger(YTPlayerLifeSupportService.class);
+    private static final boolean DBG = Logger.DBG_DEFAULT;
+    private static final Logger P = Logger.create(YTPlayerLifeSupportService.class, Logger.LOGLV_DEFAULT);
 
     public static final String ACTION_START = "ytmplayer.intent.action.START_LIFE_SUPPORT";
+
+    private static final YTPlayer.VideosStateListener sVideoStateListener
+            = new YTPlayer.VideosStateListener() {
+        @Override
+        public void
+        onStopped(StopState state) {
+            YTPlayerLifeSupportService.stop();
+        }
+
+        @Override
+        public void
+        onStarted() {
+            YTPlayerLifeSupportService.stop();
+            YTPlayerLifeSupportService.start();
+        }
+
+        @Override
+        public void
+        onPlayQChanged() { }
+    };
 
     private static void
     start() {
         if (DBG) P.v("Enter");
-        Intent i = new Intent(Utils.getAppContext(),
+        Intent i = new Intent(AppEnv.getAppContext(),
                               YTPlayerLifeSupportService.class);
         i.setAction(ACTION_START);
-        Utils.getAppContext().startService(i);
+        AppEnv.getAppContext().startService(i);
     }
 
     private static void
     stop() {
         if (DBG) P.v("Enter");
-        Intent i = new Intent(Utils.getAppContext(),
+        Intent i = new Intent(AppEnv.getAppContext(),
                               YTPlayerLifeSupportService.class);
-        Utils.getAppContext().stopService(i);
+        AppEnv.getAppContext().stopService(i);
     }
 
     public static void
     init() {
-        final YTPlayer  mp = YTPlayer.get();
         // This callback will be never removed.
-        mp.addVideosStateListener(new Object(), new YTPlayer.VideosStateListener() {
-            @Override
-            public void
-            onStopped(StopState state) {
-                YTPlayerLifeSupportService.stop();
-            }
-
-            @Override
-            public void
-            onStarted() {
-                YTPlayerLifeSupportService.stop();
-                YTPlayerLifeSupportService.start();
-            }
-
-            @Override
-            public void
-            onChanged() { }
-        });
+        YTPlayer.get().addVideosStateListener(sVideoStateListener);
     }
 
     @Override

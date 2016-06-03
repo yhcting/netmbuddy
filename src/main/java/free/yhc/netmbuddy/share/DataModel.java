@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014, 2015
+ * Copyright (C) 2012, 2013, 2014, 2015, 2016
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -42,27 +42,25 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import static free.yhc.netmbuddy.utils.JsonUtils.jGetString;
-//import static free.yhc.netmbuddy.utils.JsonUtils.jGetStrings;
-import static free.yhc.netmbuddy.utils.JsonUtils.jGetInt;
-import static free.yhc.netmbuddy.utils.JsonUtils.jGetLong;
-//import static free.yhc.netmbuddy.utils.JsonUtils.jGetDouble;
-import static free.yhc.netmbuddy.utils.JsonUtils.jGetObject;
-import static free.yhc.netmbuddy.utils.JsonUtils.jGetObjects;
-//import static free.yhc.netmbuddy.utils.JsonUtils.jGetBoolean;
-//import static free.yhc.netmbuddy.utils.Utils.eAssert;
+import static free.yhc.netmbuddy.utils.JsonUtil.jGetString;
+//import static free.yhc.netmbuddy.utils.JsonUtil.jGetStrings;
+import static free.yhc.netmbuddy.utils.JsonUtil.jGetInt;
+import static free.yhc.netmbuddy.utils.JsonUtil.jGetLong;
+//import static free.yhc.netmbuddy.utils.JsonUtil.jGetDouble;
+import static free.yhc.netmbuddy.utils.JsonUtil.jGetObject;
+import static free.yhc.netmbuddy.utils.JsonUtil.jGetObjects;
+//import static free.yhc.netmbuddy.utils.JsonUtil.jGetBoolean;
 
+import free.yhc.baselib.Logger;
 import free.yhc.netmbuddy.db.ColPlaylist;
 import free.yhc.netmbuddy.db.ColVideo;
 import free.yhc.netmbuddy.db.DB;
-import free.yhc.netmbuddy.utils.JsonUtils.JsonModel;
-import free.yhc.netmbuddy.utils.Utils;
+import free.yhc.netmbuddy.utils.JsonUtil.JsonModel;
+import free.yhc.netmbuddy.utils.Util;
 
 public class DataModel {
-    @SuppressWarnings("unused")
-    private static final boolean DBG = false;
-    @SuppressWarnings("unused")
-    private static final Utils.Logger P = new Utils.Logger(DataModel.class);
+    private static final boolean DBG = Logger.DBG_DEFAULT;
+    private static final Logger P = Logger.create(DataModel.class, Logger.LOGLV_DEFAULT);
 
     static final int DATAMODEL_VERSION = 2; // current share data version.
 
@@ -224,7 +222,7 @@ public class DataModel {
             title = c.getString(c.getColumnIndex(ColPlaylist.TITLE.getName()));
             // thumbnail_ytvid is optional field.
             thumbnail_ytvid = c.getString(c.getColumnIndex(ColPlaylist.THUMBNAIL_YTVID.getName()));
-            if (!Utils.isValidValue(thumbnail_ytvid))
+            if (!Util.isValidValue(thumbnail_ytvid))
                 thumbnail_ytvid = null;
         }
 

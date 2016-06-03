@@ -37,23 +37,16 @@
 package free.yhc.netmbuddy.utils;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.text.DateFormat;
+import java.net.URL;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
-
-import org.apache.http.impl.cookie.DateParseException;
-import org.apache.http.impl.cookie.DateUtils;
 
 import android.app.Activity;
 import android.app.ActivityManager;
@@ -61,30 +54,29 @@ import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.res.Resources;
 import android.graphics.Rect;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.net.Uri;
-import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.util.Log;
 import android.view.Window;
+
+import free.yhc.abaselib.AppEnv;
+import free.yhc.baselib.Logger;
+import free.yhc.baselib.net.NetConn;
+import free.yhc.baselib.net.NetConnHttp;
+import free.yhc.abaselib.util.AUtil;
+import free.yhc.baselib.util.FileUtil;
+import free.yhc.abaselib.util.UxUtil;
 import free.yhc.netmbuddy.R;
 import free.yhc.netmbuddy.YTMPActivity;
-import free.yhc.netmbuddy.core.Policy;
+import free.yhc.netmbuddy.core.PolicyConstant;
 import free.yhc.netmbuddy.core.RTState;
 
-public class Utils {
-    @SuppressWarnings("unused")
-    private static final boolean DBG = false;
-    @SuppressWarnings("unused")
-    private static final Utils.Logger P = new Logger(Utils.class);
+public class Util extends free.yhc.baselib.util.Util {
+    private static final boolean DBG = Logger.DBG_DEFAULT;
+    private static final Logger P = Logger.create(free.yhc.netmbuddy.utils.Util.class, Logger.LOGLV_DEFAULT);
 
-    //private static final boolean DBG    = false;
-    private static final boolean LOGF = false;
     @SuppressWarnings("unused")
     private static final String TAG = "[NetMBuddy]";
 
@@ -94,18 +86,6 @@ public class Utils {
 
     // This is only for debugging.
     private static boolean sInitialized = false;
-
-    // For debugging
-    private static PrintWriter sLogWriter = null;
-    private static DateFormat sLogTimeDateFormat =
-            DateFormat.getDateTimeInstance(DateFormat.MEDIUM,
-                                           DateFormat.MEDIUM,
-                                           Locale.ENGLISH);
-
-    // Even if these two variables are not 'final', those should be handled like 'final'
-    //   because those are set only at init() function, and SHOULD NOT be changed.
-    private static Context sAppContext = null;
-    private static Handler sUiHandler = null;
 
     private static SharedPreferences sPrefs = null;
     private static TimeElemComparator sTimeElemComparator = new TimeElemComparator();
@@ -154,11 +134,11 @@ public class Utils {
     }
 
     public enum PrefTitleSimilarityThreshold {
-        VERYLOW (Policy.SIMILARITY_THRESHOLD_VERYLOW),
-        LOW     (Policy.SIMILARITY_THRESHOLD_LOW),
-        NORMAL  (Policy.SIMILARITY_THRESHOLD_NORMAL),
-        HIGH    (Policy.SIMILARITY_THRESHOLD_HIGH),
-        VERYHIGH(Policy.SIMILARITY_THRESHOLD_VERYHIGH);
+        VERYLOW (PolicyConstant.SIMILARITY_THRESHOLD_VERYLOW),
+        LOW     (PolicyConstant.SIMILARITY_THRESHOLD_LOW),
+        NORMAL  (PolicyConstant.SIMILARITY_THRESHOLD_NORMAL),
+        HIGH    (PolicyConstant.SIMILARITY_THRESHOLD_HIGH),
+        VERYHIGH(PolicyConstant.SIMILARITY_THRESHOLD_VERYHIGH);
 
         private float v;
 
@@ -204,51 +184,25 @@ public class Utils {
 
     public static void
     init(Context aAppContext) {
+        P.bug(!sInitialized);
+        sInitialized = true;
         // This is called first for module initialization.
         // So, ANY DEPENDENCY to other module is NOT allowed
-        eAssert(!sInitialized);
-        if (!sInitialized)
-            sInitialized = true;
+        sPrefs = PreferenceManager.getDefaultSharedPreferences(AppEnv.getAppContext());
+    }
 
+    public static void
+    initPostEssentialPermissions() throws IOException {
         //noinspection ResultOfMethodCallIgnored
-        new File(Policy.APPDATA_DIR).mkdirs();
+        new File(PolicyConstant.APPDATA_DIR).mkdirs();
         //noinspection ResultOfMethodCallIgnored
-        new File(Policy.APPDATA_VIDDIR).mkdirs();
-        //noinspection ResultOfMethodCallIgnored
-        new File(Policy.APPDATA_LOGDIR).mkdirs();
+        new File(PolicyConstant.APPDATA_VIDDIR).mkdirs();
 
         // Clear/Create cache directory!
-        File cacheF = new File(Policy.APPDATA_CACHEDIR);
-        FileUtils.removeFileRecursive(cacheF, cacheF);
+        File cacheF = new File(PolicyConstant.APPDATA_CACHEDIR);
+        FileUtil.removeFileRecursive(cacheF);
         //noinspection ResultOfMethodCallIgnored
         cacheF.mkdirs();
-
-        // Clear/Make temp directory!
-        File tempF = new File(Policy.APPDATA_TMPDIR);
-        FileUtils.removeFileRecursive(tempF, tempF);
-        //noinspection ResultOfMethodCallIgnored
-        tempF.mkdirs();
-
-        if (LOGF) {
-            //noinspection ResultOfMethodCallIgnored
-            new File(Policy.APPDATA_LOGDIR).mkdirs();
-            String dateText = DateFormat
-                                .getDateTimeInstance(DateFormat.MEDIUM,
-                                                     DateFormat.MEDIUM,
-                                                     Locale.ENGLISH)
-                                .format(new Date(System.currentTimeMillis()));
-            dateText = dateText.replace(' ', '_');
-            File logF = new File(Policy.APPDATA_LOGDIR + dateText + ".log");
-            try {
-                sLogWriter = new PrintWriter(new OutputStreamWriter(new FileOutputStream(logF)));
-            } catch (FileNotFoundException e) {
-                eAssert(false);
-            }
-        }
-
-        sAppContext = aAppContext;
-        sUiHandler = new Handler();
-        sPrefs = PreferenceManager.getDefaultSharedPreferences(getAppContext());
     }
 
     // ========================================================================
@@ -256,113 +210,6 @@ public class Utils {
     // Fundamentals
     //
     // ========================================================================
-    private enum LogLV{
-        V ("[V]", 6),
-        D ("[D]", 5),
-        I ("[I]", 4),
-        W ("[W]", 3),
-        E ("[E]", 2),
-        F ("[F]", 1);
-
-        private String pref; // prefix string
-        private int pri;  // priority
-        LogLV(String aPref, int aPri) {
-            pref = aPref;
-            pri = aPri;
-        }
-
-        @SuppressWarnings("unused")
-        String pref() {
-            return pref;
-        }
-
-        @SuppressWarnings("unused")
-        int pri() {
-            return pri;
-        }
-    }
-
-    public static class Logger {
-        private final Class<?> _mCls;
-        public Logger(Class<?> cls) {
-            _mCls = cls;
-        }
-        // For logging
-        public void v(String msg) { log(_mCls, LogLV.V, msg); }
-        @SuppressWarnings("unused")
-        public void d(String msg) { log(_mCls, LogLV.D, msg); }
-        public void i(String msg) { log(_mCls, LogLV.I, msg); }
-        public void w(String msg) { log(_mCls, LogLV.W, msg); }
-        public void e(String msg) { log(_mCls, LogLV.E, msg); }
-        @SuppressWarnings("unused")
-        public void f(String msg) { log(_mCls, LogLV.F, msg); }
-    }
-
-    private static void
-    log(Class<?> cls, LogLV lv, String msg) {
-        if (null == msg)
-            return;
-
-        StackTraceElement ste = Thread.currentThread().getStackTrace()[5];
-        msg = ste.getClassName() + "/" + ste.getMethodName() + "(" + ste.getLineNumber() + ") : " + msg;
-
-        //noinspection PointlessBooleanExpression
-        if (!LOGF) {
-            switch(lv) {
-            case V: Log.v(cls.getSimpleName(), msg); break;
-            case D: Log.d(cls.getSimpleName(), msg); break;
-            case I: Log.i(cls.getSimpleName(), msg); break;
-            case W: Log.w(cls.getSimpleName(), msg); break;
-            case E: Log.e(cls.getSimpleName(), msg); break;
-            case F: Log.wtf(cls.getSimpleName(), msg); break;
-            }
-        } else {
-            long timems = System.currentTimeMillis();
-            sLogWriter.printf("<%s:%03d> [%s] %s\n",
-                              sLogTimeDateFormat.format(new Date(timems)),
-                              timems % 1000,
-                              lv.name(),
-                              msg);
-            sLogWriter.flush();
-        }
-    }
-
-    // Assert
-    public static void
-    eAssert(boolean cond) {
-        if (!cond)
-            throw new AssertionError();
-    }
-
-    public static Context
-    getAppContext() {
-        return sAppContext;
-    }
-
-    public static Resources
-    getResources() {
-        return getAppContext().getResources();
-    }
-
-    public static String
-    getResString(int id) {
-        return getResources().getString(id);
-    }
-
-    public static Handler
-    getUiHandler() {
-        return sUiHandler;
-    }
-
-    public static boolean
-    isUiThread(Thread thread) {
-        return thread == sUiHandler.getLooper().getThread();
-    }
-
-    public static boolean
-    isUiThread() {
-        return isUiThread(Thread.currentThread());
-    }
     // ========================================================================
     //
     //
@@ -378,26 +225,9 @@ public class Utils {
         return !(null == v || v.length() <= 0);
     }
 
-    /**
-     * Is any available active network at this device?
-     */
-    public static boolean
-    isNetworkAvailable() {
-        ConnectivityManager cm = (ConnectivityManager)getAppContext().getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo ni;
-
-        if (isPrefUseWifiOnly())
-            ni = cm.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
-        else
-            ni = cm.getActiveNetworkInfo();
-
-        return null != ni
-               && ni.isConnectedOrConnecting();
-    }
-
     public static String
     getCurrentTopActivity() {
-        ActivityManager am = (ActivityManager)getAppContext().getSystemService(Context.ACTIVITY_SERVICE);
+        ActivityManager am = (ActivityManager)AppEnv.getAppContext().getSystemService(Context.ACTIVITY_SERVICE);
         List<ActivityManager.RunningTaskInfo> tasks = am.getRunningTasks(1);
         ActivityManager.RunningTaskInfo ar = tasks.get(0);
         return ar.topActivity.getClassName();
@@ -405,38 +235,22 @@ public class Utils {
 
     public static boolean
     isAppForeground() {
-        return getCurrentTopActivity().startsWith(getAppContext().getPackageName() + ".");
+        return getCurrentTopActivity().startsWith(AppEnv.getAppContext().getPackageName() + ".");
     }
 
     public static void
     resumeApp() {
-        Intent intent = new Intent(Utils.getAppContext(), YTMPActivity.class);
+        Intent intent = new Intent(AppEnv.getAppContext(), YTMPActivity.class);
         intent.setAction(Intent.ACTION_MAIN);
         intent.addCategory(Intent.CATEGORY_LAUNCHER);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        Utils.getAppContext().startActivity(intent);
+        AppEnv.getAppContext().startActivity(intent);
     }
     // ------------------------------------------------------------------------
     //
     //
     //
     // ------------------------------------------------------------------------
-    public static long[]
-    convertArrayLongTolong(Long[] L) {
-        long[] l = new long[L.length];
-        for (int i = 0; i < L.length; i++)
-            l[i] = L[i];
-        return l;
-    }
-
-    public static int[]
-    convertArrayIntegerToint(Integer[] I) {
-        int[] i = new int[I.length];
-        for (int j = 0; j < I.length; j++)
-            i[j] = I[j];
-        return i;
-    }
-
     // ------------------------------------------------------------------------
     //
     // Date
@@ -446,42 +260,6 @@ public class Utils {
     removeLeadingTrailingWhiteSpace(String s) {
         s = s.replaceFirst("^\\s+", "");
         return s.replaceFirst("\\s+$", "");
-    }
-
-    @SuppressWarnings("unused")
-    public static Date
-    parseDateString(String dateString) {
-        dateString = removeLeadingTrailingWhiteSpace(dateString);
-        Date date = null;
-        try {
-            date = DateUtils.parseDate(dateString, sDateFormats);
-        } catch (DateParseException ignored) { }
-        return date;
-    }
-
-    // ------------------------------------------------------
-    // To handle generic array
-    // ------------------------------------------------------
-    @SuppressWarnings("unused")
-    public static <T> T[]
-    toArray(List<T> list, T[] a) {
-        if (a.length < list.size())
-            //noinspection unchecked
-            a = (T[])java.lang.reflect.Array.newInstance(a.getClass().getComponentType(), list.size());
-        return list.toArray(a);
-    }
-
-    @SuppressWarnings("unused")
-    public static <T> T[]
-    toArray(List<T> list, Class<T> k) {
-        //noinspection unchecked
-        return list.toArray((T[])java.lang.reflect.Array.newInstance(k, list.size()));
-    }
-
-    public static <T> T[]
-    newArray(Class<T> k, int size) {
-        //noinspection unchecked
-        return (T[])java.lang.reflect.Array.newInstance(k, size);
     }
 
     // ------------------------------------------------------------------------
@@ -521,82 +299,82 @@ public class Utils {
 
     public static boolean
     isPrefSuffle() {
-        return getBooleanPreference(getResString(R.string.csshuffle), false);
+        return getBooleanPreference(AUtil.getResString(R.string.csshuffle), false);
     }
 
     public static boolean
     isPrefRepeat() {
-        return getBooleanPreference(getResString(R.string.csrepeat), false);
+        return getBooleanPreference(AUtil.getResString(R.string.csrepeat), false);
     }
 
     @NonNull
     public static PrefQuality
     getPrefQuality() {
-        String v = getStringPreference(getResString(R.string.csquality),
-                                       getResString(R.string.csNORMAL));
+        String v = getStringPreference(AUtil.getResString(R.string.csquality),
+                                       AUtil.getResString(R.string.csNORMAL));
         for (PrefQuality q : PrefQuality.values()) {
             if (q.name().equals(v))
                 return q;
         }
-        eAssert(false);
-        return null;
+        P.bug(false);
+        return PrefQuality.LOW;
     }
 
     public static float
     getPrefTitleSimilarityThreshold() {
-        String v = getStringPreference(getResString(R.string.cstitle_similarity_threshold),
-                                       getResString(R.string.csNORMAL));
+        String v = getStringPreference(AUtil.getResString(R.string.cstitle_similarity_threshold),
+                                       AUtil.getResString(R.string.csNORMAL));
         for (PrefTitleSimilarityThreshold q : PrefTitleSimilarityThreshold.values()) {
             if (q.name().equals(v))
                 return q.getValue();
         }
-        eAssert(false);
-        return Policy.SIMILARITY_THRESHOLD_NORMAL;
+        P.bug(false);
+        return PolicyConstant.SIMILARITY_THRESHOLD_NORMAL;
     }
 
     @SuppressWarnings("unused")
     public static PrefLevel
     getPrefMemConsumption() {
         // See preference.xml for meaning of each number value.
-        String lv = sPrefs.getString(getResString(R.string.csmem_consumption),
-                getResString(R.string.csNORMAL));
-        if (getResString(R.string.csLOW).equals(lv))
+        String lv = sPrefs.getString(AUtil.getResString(R.string.csmem_consumption),
+                                     AUtil.getResString(R.string.csNORMAL));
+        if (AUtil.getResString(R.string.csLOW).equals(lv))
             return PrefLevel.LOW;
-        else if (getResString(R.string.csNORMAL).equals(lv))
+        else if (AUtil.getResString(R.string.csNORMAL).equals(lv))
             return PrefLevel.NORMAL;
-        else if (getResString(R.string.csHIGH).equals(lv))
+        else if (AUtil.getResString(R.string.csHIGH).equals(lv))
             return PrefLevel.HIGH;
         else {
-            eAssert(false);
+            P.bug(false);
             return PrefLevel.NORMAL;
         }
     }
 
     public static boolean
     isPrefLockScreen() {
-        return getBooleanPreference(getResString(R.string.cslockscreen), false);
+        return getBooleanPreference(AUtil.getResString(R.string.cslockscreen), false);
     }
 
     public static boolean
     isPrefStopOnBack() {
-        return getBooleanPreference(getResString(R.string.csstop_on_back), true);
+        return getBooleanPreference(AUtil.getResString(R.string.csstop_on_back), true);
     }
 
     public static boolean
     isPrefErrReport() {
-        return getBooleanPreference(getResString(R.string.cserr_report), true);
+        return getBooleanPreference(AUtil.getResString(R.string.cserr_report), true);
     }
 
     private static boolean
     isPrefUseWifiOnly() {
-        return getBooleanPreference(getResString(R.string.csuse_wifi_only), false);
+        return getBooleanPreference(AUtil.getResString(R.string.csuse_wifi_only), false);
     }
 
     public static int
     getPrefTtsValue() {
         int value = 0;
         try {
-            value = Integer.parseInt(sPrefs.getString(getResString(R.string.cstitle_tts), "0"));
+            value = Integer.parseInt(sPrefs.getString(AUtil.getResString(R.string.cstitle_tts), "0"));
         } catch (NumberFormatException ignored) { }
         return value;
     }
@@ -617,73 +395,12 @@ public class Utils {
     }
     // ------------------------------------------------------------------------
     //
-    // Min Max
+    //
     //
     // ------------------------------------------------------------------------
     public static float
     max(float f0, float f1) {
         return (f0 < f1)? f1: f0;
-    }
-
-    // ------------------------------------------------------------------------
-    //
-    // Bit mask handling
-    //
-    // ------------------------------------------------------------------------
-    public static long
-    bitClear(long flag, long mask) {
-        return flag & ~mask;
-    }
-
-    @SuppressWarnings("unused")
-    public static long
-    bitSet(long flag, long value, long mask) {
-        flag = bitClear(flag, mask);
-        return flag | (value & mask);
-    }
-
-    public static boolean
-    bitCompare(long flag, long value, long mask) {
-        return value == (flag & mask);
-    }
-
-    @SuppressWarnings("unused")
-    public static boolean
-    bitIsSet(long flag, long mask) {
-        return bitCompare(flag, mask, mask);
-    }
-
-    @SuppressWarnings("unused")
-    public static boolean
-    bitIsClear(long flag, long mask) {
-        return bitCompare(flag, 0, mask);
-    }
-
-    public static int
-    bitClear(int flag, int mask) {
-        return flag & ~mask;
-    }
-
-    public static int
-    bitSet(int flag, int value, int mask) {
-        flag = bitClear(flag, mask);
-        return flag | (value & mask);
-    }
-
-    public static boolean
-    bitCompare(int flag, int value, int mask) {
-        return value == (flag & mask);
-    }
-
-    public static boolean
-    bitIsSet(int flag, int mask) {
-        return bitCompare(flag, mask, mask);
-    }
-
-    @SuppressWarnings("unused")
-    public static boolean
-    bitIsClear(int flag, int mask) {
-        return bitCompare(flag, 0, mask);
     }
 
     // ------------------------------------------------------------------------
@@ -698,14 +415,14 @@ public class Utils {
         secs -= h * 60 * 60;
         int m = secs / 60;
         secs -= m * 60;
-        return String.format("%02d:%02d:%02d", h, m, secs);
+        return String.format(Locale.getDefault(), "%02d:%02d:%02d", h, m, secs);
     }
 
     public static String
     secsToMinSecText(int secs) {
         int m = secs / 60;
         secs -= m * 60;
-        return String.format("%02d:%02d", m, secs);
+        return String.format(Locale.getDefault(), "%02d:%02d", m, secs);
     }
 
     public static String
@@ -714,7 +431,7 @@ public class Utils {
         int m = s / 60;
         int h = m / 60;
         m -= h * 60;
-        return String.format("%02d:%02d", h, m);
+        return String.format(Locale.getDefault(), "%02d:%02d", h, m);
     }
 
     public static void
@@ -756,11 +473,34 @@ public class Utils {
     // Other android specifics.
     //
     // ------------------------------------------------------------------------
+    public static boolean
+    isNetworkAvailable() {
+        return NetConn.isNetConnected(isPrefUseWifiOnly()? NetConn.TYPE_WIFI: NetConn.TYPE_ANY);
+    }
+
+    public static NetConnHttp
+    createNetConnHttp(URL url, String uastring) throws IOException {
+        NetConnHttp.Builder bldr = NetConnHttp.Builder.newBuilder(url);
+        if (isPrefUseWifiOnly())
+            bldr.setNetType(NetConn.TYPE_WIFI);
+        if (null != uastring)
+            bldr.setUastring(uastring);
+        return bldr.create();
+    }
+
+    public static NetConn
+    createNetConn(URL url) throws IOException {
+        NetConn.Builder bldr = NetConn.Builder.newBuilder(url);
+        if (isPrefUseWifiOnly())
+            bldr.setNetType(NetConn.TYPE_WIFI);
+        return bldr.create();
+    }
+
     @SuppressWarnings("unused")
     public static boolean
     copyAssetFile(String dest, String assetFile) {
         try {
-            InputStream is = Utils.getAppContext().getAssets().open(assetFile);
+            InputStream is = AppEnv.getAppContext().getAssets().open(assetFile);
             FileOutputStream os = new FileOutputStream(new File(dest));
             copy(os, is);
             is.close();
@@ -779,7 +519,7 @@ public class Utils {
              String subject,
              String text,
              File attachment) {
-        if (!Utils.isNetworkAvailable())
+        if (!free.yhc.netmbuddy.utils.Util.isNetworkAvailable())
             return;
 
         Intent intent = new Intent(Intent.ACTION_SEND);
@@ -793,7 +533,7 @@ public class Utils {
         try {
             context.startActivity(intent);
         } catch (ActivityNotFoundException e) {
-            UiUtils.showTextToast(context, R.string.msg_fail_find_app);
+            UxUtil.showTextToast(R.string.msg_fail_find_app);
         }
     }
 

@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014, 2015
+ * Copyright (C) 2012, 2013, 2014, 2015, 2016
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -36,8 +36,6 @@
 
 package free.yhc.netmbuddy;
 
-import static free.yhc.netmbuddy.utils.Utils.eAssert;
-
 import android.app.Activity;
 import android.app.SearchManager;
 import android.content.Intent;
@@ -56,19 +54,23 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import free.yhc.netmbuddy.core.Policy;
-import free.yhc.netmbuddy.core.SearchSuggestionProvider;
-import free.yhc.netmbuddy.core.YTDataAdapter;
-import free.yhc.netmbuddy.core.YTDataHelper;
-import free.yhc.netmbuddy.core.YTPlayer;
-import free.yhc.netmbuddy.utils.Utils;
+import java.io.IOException;
+import java.net.ConnectException;
 
-public abstract class YTSearchActivity extends Activity implements
-YTDataHelper.VideoListRespReceiver {
-    @SuppressWarnings("unused")
-    private static final boolean DBG = false;
-    @SuppressWarnings("unused")
-    private static final Utils.Logger P = new Utils.Logger(YTSearchActivity.class);
+import free.yhc.abaselib.AppEnv;
+import free.yhc.baselib.Logger;
+import free.yhc.baselib.exception.BadResponseException;
+import free.yhc.abaselib.util.AUtil;
+import free.yhc.netmbuddy.core.PolicyConstant;
+import free.yhc.netmbuddy.core.SearchSuggestionProvider;
+import free.yhc.netmbuddy.core.TaskManager;
+import free.yhc.netmbuddy.core.YTDataAdapter;
+import free.yhc.netmbuddy.core.YTPlayer;
+import free.yhc.netmbuddy.task.YTVideoListTask;
+
+public abstract class YTSearchActivity extends Activity {
+    private static final boolean DBG = Logger.DBG_DEFAULT;
+    private static final Logger P = Logger.create(YTSearchActivity.class, Logger.LOGLV_DEFAULT);
 
     public static final String KEY_TITLE = "searctitle";
     public static final String KEY_TEXT = "searchtext";
@@ -77,6 +79,7 @@ YTDataHelper.VideoListRespReceiver {
     public static final String KEY_PREV_PAGETOKEN = "prev_pagetoken";
 
     protected final YTPlayer mMp = YTPlayer.get();
+    protected final TaskManager mTm = TaskManager.get();
     protected ListView mListv = null;
 
     private String mText = null;
@@ -84,7 +87,35 @@ YTDataHelper.VideoListRespReceiver {
     private String mCurPageToken = null;
     private String mNextPageToken = null;
     private String mPrevPageToken = null;
-    private YTDataHelper mSearchHelper = null;
+    private YTVideoListTask mVLTask = null;
+
+    private final YTVideoListTask.EventListener<YTVideoListTask, YTDataAdapter.VideoListResp> mVLTaskListener
+            = new YTVideoListTask.EventListener<YTVideoListTask, YTDataAdapter.VideoListResp>() {
+        @Override
+        public void
+        onPostRun(@NonNull YTVideoListTask task,
+                  YTDataAdapter.VideoListResp result,
+                  Exception ex) {
+            Err err = Err.NO_ERR;
+            if (null != ex) {
+                /* This may be slower than instanceof... But, it's easy to read
+                 * This is literally, exceptional case. So, it doesn't happened frequently.
+                 */
+                try { throw ex; }
+                catch (ConnectException e) {
+                    err = Err.NETWORK_UNAVAILABLE;
+                } catch (IOException | BadResponseException e) {
+                    err = Err.IO_NET;
+                } catch (InterruptedException e) {
+                    err = Err.CANCELLED;
+                } catch (Exception e) {
+                    if (DBG) P.w(P.stackTrace(e));
+                    err = Err.UNKNOWN;
+                }
+            }
+            handleYtVideoListResponse(task, task.getRequest(), result, err);
+        }
+    };
 
     // ========================================================================
     //
@@ -137,7 +168,7 @@ YTDataHelper.VideoListRespReceiver {
 
     protected TextView
     enableContentText(int resid) {
-        return enableContentText(Utils.getResString(resid));
+        return enableContentText(AUtil.getResString(resid));
     }
 
     protected TextView
@@ -228,9 +259,10 @@ YTDataHelper.VideoListRespReceiver {
     onListItemClick(View view, int position, long itemId);
 
     protected abstract void
-    onSearchResponse(YTDataHelper helper,
-                     YTDataHelper.VideoListReq req,
-                     YTDataHelper.VideoListResp resp);
+    onSearchResponse(@NonNull YTVideoListTask ytvl,
+                     @NonNull YTDataAdapter.VideoListReq req,
+                     @NonNull YTDataAdapter.VideoListResp resp,
+                     @NonNull Err err);
 
     // ========================================================================
     //
@@ -241,43 +273,46 @@ YTDataHelper.VideoListRespReceiver {
     searchTypeString(YTDataAdapter.ReqType reqType) {
         switch (reqType) {
         case VID_KEYWORD:
-            return Utils.getResString(R.string.keyword);
+            return AUtil.getResString(R.string.keyword);
         case VID_CHANNEL:
-            return Utils.getResString(R.string.channel);
+            return AUtil.getResString(R.string.channel);
         }
-        eAssert(false);
+        P.bug(false);
         return null;
     }
 
+
+    private void
+    handleYtVideoListResponse(
+            @NonNull YTVideoListTask ytvl,
+            @NonNull YTDataAdapter.VideoListReq req,
+            @NonNull YTDataAdapter.VideoListResp resp,
+            @NonNull Err err) {
+        P.bug(null != mVLTask);
+        if (mVLTask != ytvl)
+            return; // new Task is already started! Ignore this result.
+        if (!handleSearchResult(ytvl, req, resp, err))
+            return; // There is an error in search
+        onSearchResponse(ytvl, req, resp, err);
+    }
+
     private boolean
-    handleSearchResult(YTDataHelper helper,
-                       @SuppressWarnings("unused") YTDataHelper.VideoListReq req,
-                       YTDataHelper.VideoListResp resp) {
-        if (mSearchHelper != helper) {
-            helper.close(true); // this is dangling helper.
-            return false;
-        }
+    handleSearchResult(@NonNull @SuppressWarnings("unused") YTVideoListTask ytvl,
+                       @NonNull @SuppressWarnings("unused") YTDataAdapter.VideoListReq req,
+                       @NonNull YTDataAdapter.VideoListResp resp,
+                       @NonNull Err err) {
+        P.bug(AUtil.isUiThread());
+        if (Err.NO_ERR == err
+            && resp.vids.length <= 0)
+            err = Err.NO_MATCH;
 
-        Err r = Err.NO_ERR;
-        do {
-            if (YTDataAdapter.Err.NO_ERR != resp.err) {
-                r = Err.map(resp.err);
-                break;
-            }
-
-            if (resp.yt.vids.length <= 0) {
-                r = Err.NO_MATCH;
-                break;
-            }
-        } while (false);
-
-        if (Err.NO_ERR != r) {
+        if (Err.NO_ERR != err) {
             mPrevPageToken = mNextPageToken = null;
-            enableContentText(r.getMessage());
+            enableContentText(err.getMessage());
             return false;
         }
-        mPrevPageToken = resp.yt.page.prevPageToken;
-        mNextPageToken = resp.yt.page.nextPageToken;
+        mPrevPageToken = resp.page.prevPageToken;
+        mNextPageToken = resp.page.nextPageToken;
         enableNaviBar(null != mPrevPageToken, "", null != mNextPageToken);
         return true;
     }
@@ -286,31 +321,29 @@ YTDataHelper.VideoListRespReceiver {
     loadPage(String title, String text, String pageToken) {
         disableNaviBar();
         // close helper to cancel all existing work.
-        if (null != mSearchHelper)
-            mSearchHelper.close(true);
-
-        // Create new helper instance to know owner instance at callback from helper.
-        mSearchHelper = new YTDataHelper();
-        mSearchHelper.setVideoListRespRecevier(this);
-        // open again to support new search.
-        mSearchHelper.open();
+        if (null != mVLTask) {
+            mVLTask.removeEventListener(mVLTaskListener);
+            mTm.cancelTask(mVLTask, null);
+        }
 
         mTitle = title;
         mText = text;
         mCurPageToken = pageToken;
-        YTDataAdapter.VideoListReq ytreq
-            = new YTDataAdapter.VideoListReq(getSearchType(),
-                                             text,
-                                             pageToken,
-                                             Policy.YTSEARCH_MAX_RESULTS);
-        YTDataHelper.VideoListReq req
-            = new YTDataHelper.VideoListReq(null, ytreq);
-        YTDataAdapter.Err err = mSearchHelper.requestVideoListAsync(req);
+        YTDataAdapter.VideoListReq ytreq = new YTDataAdapter.VideoListReq(
+                getSearchType(),
+                text,
+                pageToken,
+                PolicyConstant.YTSEARCH_MAX_RESULTS);
+        mVLTask  = YTVideoListTask.create(ytreq, null);
+        mVLTask.addEventListener(AppEnv.getUiHandlerAdapter(), mVLTaskListener);
         setTitleText(searchTypeString(getSearchType()) + " : " + title);
-        if (YTDataAdapter.Err.NO_ERR == err)
+        if (mTm.addTask(mVLTask,
+                        mVLTask, // id
+                        this, // type
+                        null))
             enableContentLoading();
         else
-            enableContentText(Err.map(err).getMessage());
+            enableContentText(Err.UNKNOWN.getMessage());
     }
 
     protected void
@@ -321,21 +354,6 @@ YTDataHelper.VideoListRespReceiver {
     protected void
     startNewSearch(final String title, final String text) {
         loadPage(title, text, "");
-    }
-
-    // ========================================================================
-    //
-    // Implementing interfaces
-    //
-    // ========================================================================
-    @Override
-    public final void
-    onResponse(YTDataHelper helper,
-               YTDataHelper.VideoListReq req,
-               YTDataHelper.VideoListResp resp) {
-        if (!handleSearchResult(helper, req, resp))
-            return; // There is an error in search
-        onSearchResponse(helper, req, resp);
     }
 
     // ========================================================================
@@ -397,7 +415,7 @@ YTDataHelper.VideoListRespReceiver {
             public void
             onClick(View v) {
                 if (null == mPrevPageToken) {
-                    eAssert(false); // This is UNEXPECTED.
+                    P.bug(false); // This is UNEXPECTED.
                     return;
                 }
                 loadPage(mTitle, mText, mPrevPageToken);
@@ -409,7 +427,7 @@ YTDataHelper.VideoListRespReceiver {
             public void
             onClick(View v) {
                 if (null == mNextPageToken) {
-                    eAssert(false); // This is UNEXPECTED.
+                    P.bug(false); // This is UNEXPECTED.
                     return;
                 }
                 loadPage(mTitle, mText, mNextPageToken);
@@ -433,7 +451,7 @@ YTDataHelper.VideoListRespReceiver {
         SearchSuggestionProvider.saveRecentQuery(query);
         disableContent();
         disableNaviBar();
-        Utils.getUiHandler().post(new Runnable() {
+        AppEnv.getUiHandler().post(new Runnable() {
             @Override
             public void
             run() {

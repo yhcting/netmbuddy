@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014, 2015
+ * Copyright (C) 2012, 2013, 2014, 2015, 2016
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -50,15 +50,15 @@ import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
-import free.yhc.netmbuddy.utils.ReportUtils;
-import free.yhc.netmbuddy.utils.Utils;
+
+import free.yhc.abaselib.AppEnv;
+import free.yhc.baselib.Logger;
+import free.yhc.netmbuddy.utils.ReportUtil;
 
 public class UnexpectedExceptionHandler implements
 UncaughtExceptionHandler {
-    @SuppressWarnings("unused")
-    private static final boolean DBG = false;
-    @SuppressWarnings("unused")
-    private static final Utils.Logger P = new Utils.Logger(UnexpectedExceptionHandler.class);
+    private static final boolean DBG = Logger.DBG_DEFAULT;
+    private static final Logger P = Logger.create(UnexpectedExceptionHandler.class, Logger.LOGLV_DEFAULT);
 
     private static final String UNKNOWN = "unknown";
 
@@ -70,7 +70,7 @@ UncaughtExceptionHandler {
     //   before any other module is instantiated
     //
     // Dependency on only following modules are allowed
-    // - Utils
+    // - Util
     private final Thread.UncaughtExceptionHandler mOldHandler = Thread.getDefaultUncaughtExceptionHandler();
     private final LinkedList<Evidence> mMods = new LinkedList<>();
     private final PackageReport mPr = new PackageReport();
@@ -166,7 +166,7 @@ UncaughtExceptionHandler {
     }
 
     private UnexpectedExceptionHandler() {
-        setEnvironmentInfo(Utils.getAppContext());
+        setEnvironmentInfo(AppEnv.getAppContext());
     }
     // ========================
     // Publics
@@ -221,7 +221,7 @@ UncaughtExceptionHandler {
         report.append(sw.toString());
         pw.close();
 
-        ReportUtils.storeErrReport(report.toString());
+        ReportUtil.storeErrReport(report.toString());
         mOldHandler.uncaughtException(thread, ex);
     }
 }

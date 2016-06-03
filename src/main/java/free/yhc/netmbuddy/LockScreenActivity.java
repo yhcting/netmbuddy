@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014, 2015
+ * Copyright (C) 2012, 2013, 2014, 2015, 2016
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -46,19 +46,20 @@ import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+
+import free.yhc.abaselib.AppEnv;
+import free.yhc.baselib.Logger;
 import free.yhc.netmbuddy.core.NotiManager;
 import free.yhc.netmbuddy.core.UnexpectedExceptionHandler;
 import free.yhc.netmbuddy.core.YTPlayer;
 import free.yhc.netmbuddy.core.YTPlayer.StopState;
-import free.yhc.netmbuddy.utils.Utils;
+import free.yhc.netmbuddy.utils.Util;
 
 public class LockScreenActivity extends Activity implements
 YTPlayer.VideosStateListener,
 UnexpectedExceptionHandler.Evidence {
-    @SuppressWarnings("unused")
-    private static final boolean DBG = false;
-    @SuppressWarnings("unused")
-    private static final Utils.Logger P = new Utils.Logger(LockScreenActivity.class);
+    private static final boolean DBG = Logger.DBG_DEFAULT;
+    private static final Logger P = Logger.create(LockScreenActivity.class, Logger.LOGLV_DEFAULT);
 
     static final String INTENT_KEY_APP_FOREGROUND = "app_foreground";
 
@@ -72,20 +73,20 @@ UnexpectedExceptionHandler.Evidence {
             IntentFilter filter = new IntentFilter();
             filter.addAction(Intent.ACTION_SCREEN_ON);
             ScreenMonitor rcvr = new ScreenMonitor();
-            Utils.getAppContext().registerReceiver(rcvr, filter);
+            AppEnv.getAppContext().registerReceiver(rcvr, filter);
         }
 
         @Override
         public void
         onReceive(Context context, Intent intent) {
-            Intent i = new Intent(Utils.getAppContext(), LockScreenActivity.class);
+            Intent i = new Intent(AppEnv.getAppContext(), LockScreenActivity.class);
             i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
                        | Intent.FLAG_ACTIVITY_SINGLE_TOP
                        | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
             if (Intent.ACTION_SCREEN_ON.equals(intent.getAction())) {
-                i.putExtra(INTENT_KEY_APP_FOREGROUND, Utils.isAppForeground());
+                i.putExtra(INTENT_KEY_APP_FOREGROUND, Util.isAppForeground());
                 if (YTPlayer.get().hasActiveVideo()) {
-                    if (Utils.isPrefLockScreen())
+                    if (Util.isPrefLockScreen())
                         context.startActivity(i);
                 } else
                     NotiManager.get().removePlayerNotification();
@@ -132,7 +133,7 @@ UnexpectedExceptionHandler.Evidence {
 
     @Override
     public void
-    onChanged() {
+    onPlayQChanged() {
 
     }
 
@@ -164,7 +165,7 @@ UnexpectedExceptionHandler.Evidence {
             }
         });
 
-        mMp.addVideosStateListener(this, this);
+        mMp.addVideosStateListener(this);
     }
 
     @Override

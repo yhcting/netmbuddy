@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014, 2015
+ * Copyright (C) 2012, 2013, 2014, 2015, 2016
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -36,8 +36,6 @@
 
 package free.yhc.netmbuddy;
 
-import static free.yhc.netmbuddy.utils.Utils.eAssert;
-
 import java.util.HashMap;
 import java.util.HashSet;
 
@@ -46,17 +44,20 @@ import android.view.View;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.TextView;
+
+import free.yhc.abaselib.AppEnv;
+import free.yhc.baselib.Logger;
 import free.yhc.netmbuddy.db.DB;
-import free.yhc.netmbuddy.core.Policy;
+import free.yhc.netmbuddy.core.PolicyConstant;
 import free.yhc.netmbuddy.core.YTPlayer;
 import free.yhc.netmbuddy.core.YTDataAdapter;
-import free.yhc.netmbuddy.utils.Utils;
+import free.yhc.netmbuddy.utils.Util;
+
+import static free.yhc.abaselib.util.AUtil.isUiThread;
 
 public class YTVideoSearchAdapter extends YTSearchAdapter<YTDataAdapter.Video> {
-    @SuppressWarnings("unused")
-    private static final boolean DBG = false;
-    @SuppressWarnings("unused")
-    private static final Utils.Logger P = new Utils.Logger(YTVideoSearchAdapter.class);
+    private static final boolean DBG = Logger.DBG_DEFAULT;
+    private static final Logger P = Logger.create(YTVideoSearchAdapter.class, Logger.LOGLV_DEFAULT);
 
     // Check Button Tag Key
     private static final int VTAGKEY_POS = R.drawable.btncheck_on;
@@ -90,18 +91,18 @@ public class YTVideoSearchAdapter extends YTSearchAdapter<YTDataAdapter.Video> {
     private void
     setToNew(View v) {
         TextView titlev = (TextView)v.findViewById(R.id.title);
-        titlev.setTextColor(Utils.getAppContext().getResources().getColor(R.color.title_text_color_new));
+        titlev.setTextColor(AppEnv.getAppContext().getResources().getColor(R.color.title_text_color_new));
     }
 
     private void
     setToDup(View v) {
         TextView titlev = (TextView)v.findViewById(R.id.title);
-        titlev.setTextColor(Utils.getAppContext().getResources().getColor(R.color.title_text_color_existing));
+        titlev.setTextColor(AppEnv.getAppContext().getResources().getColor(R.color.title_text_color_existing));
     }
 
     private void
     setToChecked(int pos) {
-        eAssert(Utils.isUiThread());
+        P.bug(isUiThread());
         mCheckedMap.put(pos, System.currentTimeMillis());
         if (null != mCheckListener)
             mCheckListener.onStateChanged(mCheckedMap.size(), pos, true);
@@ -109,7 +110,7 @@ public class YTVideoSearchAdapter extends YTSearchAdapter<YTDataAdapter.Video> {
 
     private void
     setToUnchecked(int pos) {
-        eAssert(Utils.isUiThread());
+        P.bug(isUiThread());
         mCheckedMap.remove(pos);
         if (null != mCheckListener)
             mCheckListener.onStateChanged(mCheckedMap.size(), pos, false);
@@ -148,7 +149,7 @@ public class YTVideoSearchAdapter extends YTSearchAdapter<YTDataAdapter.Video> {
     @Override
     protected void
     setItemView(int position, View v, YTDataAdapter.Video vid) {
-        eAssert(null != v);
+        P.bug(null != v);
 
         if (!verifyVideo(vid))
             v.setVisibility(View.INVISIBLE);
@@ -159,7 +160,7 @@ public class YTVideoSearchAdapter extends YTSearchAdapter<YTDataAdapter.Video> {
 
         tv = (TextView)v.findViewById(R.id.playtime);
         if (0 <= vid.playTimeSec) {
-            text = Utils.secsToMinSecText(vid.playTimeSec);
+            text = Util.secsToMinSecText(vid.playTimeSec);
             tv.setText(text);
         } else
             tv.setVisibility(View.INVISIBLE);
@@ -199,7 +200,7 @@ public class YTVideoSearchAdapter extends YTSearchAdapter<YTDataAdapter.Video> {
     @SuppressWarnings("unused")
     public String
     getItemPlaytime(int pos) {
-        return Utils.secsToMinSecText(mItems[pos].playTimeSec);
+        return Util.secsToMinSecText(mItems[pos].playTimeSec);
     }
 
     @SuppressWarnings("unused")
@@ -228,7 +229,7 @@ public class YTVideoSearchAdapter extends YTSearchAdapter<YTDataAdapter.Video> {
             volume = ytp.getVideoVolume();
 
         if (DB.INVALID_VOLUME == volume)
-            volume = Policy.DEFAULT_VIDEO_VOLUME;
+            volume = PolicyConstant.DEFAULT_VIDEO_VOLUME;
 
         return volume;
     }
@@ -256,12 +257,12 @@ public class YTVideoSearchAdapter extends YTSearchAdapter<YTDataAdapter.Video> {
     public int[]
     getCheckedItem() {
         //noinspection ToArrayCallWithZeroLengthArrayArgument
-        return Utils.convertArrayIntegerToint(mCheckedMap.keySet().toArray(new Integer[0]));
+        return Util.convertArrayIntegerToint(mCheckedMap.keySet().toArray(new Integer[0]));
     }
 
     public int[]
     getCheckItemSortedByTime() {
-        Object[] objs = Utils.getSortedKeyOfTimeMap(mCheckedMap);
+        Object[] objs = Util.getSortedKeyOfTimeMap(mCheckedMap);
         int[] poss = new int[objs.length];
         for (int i = 0; i < poss.length; i++)
             poss[i] = (int)objs[i];

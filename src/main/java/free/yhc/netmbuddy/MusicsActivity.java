@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014, 2015
+ * Copyright (C) 2012, 2013, 2014, 2015, 2016
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -36,7 +36,6 @@
 
 package free.yhc.netmbuddy;
 
-import static free.yhc.netmbuddy.utils.Utils.eAssert;
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.Intent;
@@ -54,19 +53,20 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
+
+import free.yhc.abaselib.AppEnv;
+import free.yhc.baselib.Logger;
 import free.yhc.netmbuddy.db.ColPlaylist;
 import free.yhc.netmbuddy.db.DB;
 import free.yhc.netmbuddy.core.UnexpectedExceptionHandler;
 import free.yhc.netmbuddy.core.YTPlayer;
-import free.yhc.netmbuddy.utils.UiUtils;
-import free.yhc.netmbuddy.utils.Utils;
+import free.yhc.netmbuddy.utils.Util;
+import free.yhc.netmbuddy.utils.UxUtil;
 
 public class MusicsActivity extends Activity implements
 UnexpectedExceptionHandler.Evidence {
-    @SuppressWarnings("unused")
-    private static final boolean DBG = false;
-    @SuppressWarnings("unused")
-    private static final Utils.Logger P = new Utils.Logger(MusicsActivity.class);
+    private static final boolean DBG = Logger.DBG_DEFAULT;
+    private static final Logger P = Logger.create(MusicsActivity.class, Logger.LOGLV_DEFAULT);
 
     public static final String MAP_KEY_PLAYLIST_ID  = "playlistid";
     public static final String MAP_KEY_TITLE = "title";
@@ -87,7 +87,7 @@ UnexpectedExceptionHandler.Evidence {
     private final OnPlayerUpdateDBListener mOnPlayerUpdateDbListener
         = new OnPlayerUpdateDBListener();
 
-    private long mPlid = UiUtils.PLID_INVALID;
+    private long mPlid = UxUtil.PLID_INVALID;
     private ListView mListv = null;
 
     private class OnPlayerUpdateDBListener implements YTPlayer.OnDBUpdatedListener {
@@ -110,8 +110,8 @@ UnexpectedExceptionHandler.Evidence {
 
     private void
     startVideos(YTPlayer.Video[] vs) {
-        if (!Utils.isNetworkAvailable()) {
-            UiUtils.showTextToast(this, Err.IO_NET.getMessage());
+        if (!Util.isNetworkAvailable()) {
+            UxUtil.showTextToast(Err.IO_NET.getMessage());
             return;
         }
         mMp.startVideos(vs);
@@ -129,12 +129,12 @@ UnexpectedExceptionHandler.Evidence {
         for (int i = 0; i < mids.length; i++)
             mids[i] = adpr.getItemId(poss[i]);
 
-        UiUtils.OnPostExecuteListener listener = new UiUtils.OnPostExecuteListener() {
+        UxUtil.OnPostExecuteListener listener = new UxUtil.OnPostExecuteListener() {
             @Override
             public void
             onPostExecute(Err result, Object user) {
                 if (Err.NO_ERR != result)
-                    UiUtils.showTextToast(MusicsActivity.this, result.getMessage());
+                    UxUtil.showTextToast(result.getMessage());
 
                 if (move)
                     getAdapter().reloadCursorAsync();
@@ -143,12 +143,12 @@ UnexpectedExceptionHandler.Evidence {
             }
         };
 
-        UiUtils.addVideosTo(this, null, listener, mPlid, mids, move);
+        UxUtil.addVideosTo(this, null, listener, mPlid, mids, move);
     }
 
     private void
     deleteMusics(final long[] mids) {
-        UiUtils.OnPostExecuteListener listener = new UiUtils.OnPostExecuteListener() {
+        UxUtil.OnPostExecuteListener listener = new UxUtil.OnPostExecuteListener() {
             @Override
             public void
             onPostExecute(Err result, Object tag) {
@@ -156,20 +156,20 @@ UnexpectedExceptionHandler.Evidence {
                     getAdapter().reloadCursorAsync();
             }
         };
-        UiUtils.deleteVideos(this, null, listener, mPlid, mids);
+        UxUtil.deleteVideos(this, null, listener, mPlid, mids);
     }
 
     private void
     setToPlaylistThumbnail(@SuppressWarnings("unused") long mid,
                            int pos) {
-        eAssert(UiUtils.isUserPlaylist(mPlid));
+        P.bug(UxUtil.isUserPlaylist(mPlid));
         byte[] data = getAdapter().getMusicThumbnail(pos);
         mDb.updatePlaylist(mPlid,
                            new ColPlaylist[] { ColPlaylist.THUMBNAIL,
                                                ColPlaylist.THUMBNAIL_YTVID },
                            new Object[] { data,
                                           getAdapter().getMusicYtid(pos) });
-        UiUtils.setThumbnailImageView(((ImageView)findViewById(R.id.thumbnail)), data);
+        UxUtil.setThumbnailImageView(((ImageView)findViewById(R.id.thumbnail)), data);
     }
 
     private void
@@ -185,7 +185,7 @@ UnexpectedExceptionHandler.Evidence {
         MusicsAdapter adpr = getAdapter();
         int[] poss = adpr.getCheckedMusicsSortedByTime();
         if (0 == poss.length) {
-            UiUtils.showTextToast(this, R.string.msg_no_items_selected);
+            UxUtil.showTextToast(R.string.msg_no_items_selected);
             return;
         }
 
@@ -201,7 +201,7 @@ UnexpectedExceptionHandler.Evidence {
         MusicsAdapter adpr = getAdapter();
         int[] poss = adpr.getCheckedMusicsSortedByTime();
         if (0 == poss.length) {
-            UiUtils.showTextToast(this, R.string.msg_no_items_selected);
+            UxUtil.showTextToast(R.string.msg_no_items_selected);
             return;
         }
 
@@ -213,7 +213,7 @@ UnexpectedExceptionHandler.Evidence {
 
         adpr.cleanChecked();
 
-        UiUtils.showTextToast(this, R.string.msg_appended_to_playq);
+        UxUtil.showTextToast(R.string.msg_appended_to_playq);
     }
 
     private void
@@ -221,7 +221,7 @@ UnexpectedExceptionHandler.Evidence {
         MusicsAdapter adpr = getAdapter();
         int[] poss = adpr.getCheckedMusics();
         if (0 == poss.length) {
-            UiUtils.showTextToast(this, R.string.msg_no_items_selected);
+            UxUtil.showTextToast(R.string.msg_no_items_selected);
             return;
         }
 
@@ -233,7 +233,7 @@ UnexpectedExceptionHandler.Evidence {
         MusicsAdapter adpr = getAdapter();
         int[] poss = adpr.getCheckedMusics();
         if (0 == poss.length) {
-            UiUtils.showTextToast(this, R.string.msg_no_items_selected);
+            UxUtil.showTextToast(R.string.msg_no_items_selected);
             return;
         }
 
@@ -245,7 +245,7 @@ UnexpectedExceptionHandler.Evidence {
         MusicsAdapter adpr = getAdapter();
         int[] poss = adpr.getCheckedMusics();
         if (0 == poss.length) {
-            UiUtils.showTextToast(this, R.string.msg_no_items_selected);
+            UxUtil.showTextToast(R.string.msg_no_items_selected);
             return;
         }
 
@@ -320,7 +320,7 @@ UnexpectedExceptionHandler.Evidence {
 
     private void
     onContextMenuRename(final long id, final int pos) {
-        UiUtils.EditTextAction action = new UiUtils.EditTextAction() {
+        UxUtil.EditTextAction action = new UxUtil.EditTextAction() {
             @Override
             public void
             prepare(Dialog dialog, EditText edit) { }
@@ -333,10 +333,10 @@ UnexpectedExceptionHandler.Evidence {
             }
         };
 
-        UiUtils.buildOneLineEditTextDialog(this,
-                                           R.string.rename,
-                                           getAdapter().getMusicTitle(pos),
-                                           action)
+        UxUtil.buildOneLineEditTextDialog(this,
+                                          R.string.rename,
+                                          getAdapter().getMusicTitle(pos),
+                                          action)
                .show();
 
     }
@@ -344,22 +344,22 @@ UnexpectedExceptionHandler.Evidence {
     private void
     onContextMenuPlayVideo(@SuppressWarnings("unused") final long id,
                            final int pos) {
-        UiUtils.playAsVideo(this, getAdapter().getMusicYtid(pos));
+        UxUtil.playAsVideo(this, getAdapter().getMusicYtid(pos));
     }
 
     private void
     onContextMenuDetailInfo(final long id,
                             @SuppressWarnings("unused") final int pos) {
-        UiUtils.showVideoDetailInfo(this, id);
+        UxUtil.showVideoDetailInfo(this, id);
     }
 
     private void
     onContextMenuBookmarks(@SuppressWarnings("unused") final long id,
                            final int pos) {
 
-        UiUtils.showBookmarkDialog(this,
-                                   getAdapter().getMusicYtid(pos),
-                                   getAdapter().getMusicTitle(pos));
+        UxUtil.showBookmarkDialog(this,
+                                  getAdapter().getMusicYtid(pos),
+                                  getAdapter().getMusicTitle(pos));
     }
 
     private void
@@ -373,7 +373,7 @@ UnexpectedExceptionHandler.Evidence {
     private void
     onContextMenuSearchSimilarTitles(@SuppressWarnings("unused") final long id,
                                      final int pos) {
-        UiUtils.showSimilarTitlesDialog(this, getAdapter().getMusicTitle(pos));
+        UxUtil.showSimilarTitlesDialog(this, getAdapter().getMusicTitle(pos));
     }
 
     @Override
@@ -440,7 +440,7 @@ UnexpectedExceptionHandler.Evidence {
             onContextMenuSearchSimilarTitles(info.id, info.position);
             return true;
         }
-        eAssert(false);
+        P.bug(false);
         return false;
     }
 
@@ -452,10 +452,10 @@ UnexpectedExceptionHandler.Evidence {
         inflater.inflate(R.menu.musics_context, menu);
         AdapterContextMenuInfo mInfo = (AdapterContextMenuInfo)menuInfo;
 
-        boolean visible = UiUtils.isUserPlaylist(mPlid);
+        boolean visible = UxUtil.isUserPlaylist(mPlid);
         menu.findItem(R.id.plthumbnail).setVisible(visible);
 
-        visible = Utils.isValidValue(getAdapter().getMusicChannel(mInfo.position));
+        visible = Util.isValidValue(getAdapter().getMusicChannel(mInfo.position));
         menu.findItem(R.id.videos_of_same_channel).setVisible(visible);
     }
 
@@ -467,22 +467,22 @@ UnexpectedExceptionHandler.Evidence {
         setContentView(R.layout.musics);
 
         String searchWord = null;
-        mPlid = getIntent().getLongExtra(MAP_KEY_PLAYLIST_ID, UiUtils.PLID_INVALID);
-        eAssert(UiUtils.PLID_INVALID != mPlid);
+        mPlid = getIntent().getLongExtra(MAP_KEY_PLAYLIST_ID, UxUtil.PLID_INVALID);
+        P.bug(UxUtil.PLID_INVALID != mPlid);
 
-        if (UiUtils.isUserPlaylist(mPlid)) {
+        if (UxUtil.isUserPlaylist(mPlid)) {
             String title = getIntent().getStringExtra(MAP_KEY_TITLE);
             ((TextView)findViewById(R.id.title)).setText(title);
 
             byte[] imgdata = getIntent().getByteArrayExtra(MAP_KEY_THUMBNAIL);
-            UiUtils.setThumbnailImageView(((ImageView)findViewById(R.id.thumbnail)), imgdata);
-        } else if (UiUtils.PLID_RECENT_PLAYED == mPlid) {
+            UxUtil.setThumbnailImageView(((ImageView)findViewById(R.id.thumbnail)), imgdata);
+        } else if (UxUtil.PLID_RECENT_PLAYED == mPlid) {
             ((TextView)findViewById(R.id.title)).setText(R.string.recently_played);
             ((ImageView)findViewById(R.id.thumbnail)).setImageResource(R.drawable.ic_recently_played_up);
-        } else if (UiUtils.PLID_SEARCHED == mPlid) {
+        } else if (UxUtil.PLID_SEARCHED == mPlid) {
             String word = getIntent().getStringExtra(MAP_KEY_KEYWORD);
             searchWord = (null == word)? "": word;
-            String title = Utils.getAppContext().getResources().getText(R.string.keyword) + " : " + word;
+            String title = AppEnv.getAppContext().getResources().getText(R.string.keyword) + " : " + word;
             ((TextView)findViewById(R.id.title)).setText(title);
             ((ImageView)findViewById(R.id.thumbnail)).setImageResource(R.drawable.ic_search_list_up);
         }
@@ -490,7 +490,7 @@ UnexpectedExceptionHandler.Evidence {
         setupToolButtons();
 
         mListv = (ListView)findViewById(R.id.list);
-        //mListv.setEmptyView(UiUtils.inflateLayout(this, R.layout.ytsearch_empty_list));
+        //mListv.setEmptyView(AUtil.inflateLayout(this, R.layout.ytsearch_empty_list));
         registerForContextMenu(mListv);
         mListv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -516,7 +516,7 @@ UnexpectedExceptionHandler.Evidence {
                           (ViewGroup)findViewById(R.id.list_drawer),
                           null,
                           mMp.getVideoToolButton());
-        mMp.addOnDbUpdatedListener(this, mOnPlayerUpdateDbListener);
+        mMp.addOnDbUpdatedListener(mOnPlayerUpdateDbListener);
         if (mMp.hasActiveVideo())
             playerv.setVisibility(View.VISIBLE);
         else
@@ -526,7 +526,7 @@ UnexpectedExceptionHandler.Evidence {
     @Override
     protected void
     onPause() {
-        mMp.removeOnDbUpdatedListener(this);
+        mMp.removeOnDbUpdatedListener(mOnPlayerUpdateDbListener);
         mMp.unsetController(this);
         super.onPause();
     }
@@ -551,7 +551,7 @@ UnexpectedExceptionHandler.Evidence {
             return;
 
         // TODO : NOT implemented yet
-        eAssert(false);
+        P.bug(false);
         //noinspection StatementWithEmptyBody
         switch (requestCode) {
 

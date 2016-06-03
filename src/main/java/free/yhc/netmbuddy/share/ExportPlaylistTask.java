@@ -37,26 +37,24 @@
 package free.yhc.netmbuddy.share;
 
 import android.database.Cursor;
-
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.util.zip.ZipOutputStream;
+import android.support.annotation.NonNull;
 
 import org.json.JSONObject;
 
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.zip.ZipOutputStream;
+
 import free.yhc.baselib.Logger;
+import free.yhc.baselib.async.TmTask;
 import free.yhc.abaselib.util.AUtil;
 import free.yhc.baselib.util.FileUtil;
 import free.yhc.netmbuddy.R;
 import free.yhc.netmbuddy.core.PolicyConstant;
 import free.yhc.netmbuddy.db.DB;
-import free.yhc.netmbuddy.share.Share.Err;
-import free.yhc.netmbuddy.share.Share.ExporterI;
-import free.yhc.netmbuddy.share.Share.Type;
+
 
 // Format
 // JSON-ROOT
@@ -66,82 +64,74 @@ import free.yhc.netmbuddy.share.Share.Type;
 //         * Json.sPlaylistProjectionForShare fields
 //         * Json.FVIDEOS <JSONArray>
 //             + Json.sVideoProjectionForShare fields
-class ExporterPlaylist implements ExporterI {
+public class ExportPlaylistTask extends TmTask<Void> {
     private static final boolean DBG = Logger.DBG_DEFAULT;
-    private static final Logger P = Logger.create(ExporterPlaylist.class, Logger.LOGLV_DEFAULT);
+    private static final Logger P = Logger.create(ExportPlaylistTask.class, Logger.LOGLV_DEFAULT);
 
-    private final File _mFout;
-    private final long _mPlid;
+    private final File mFout;
+    private final long mPlid;
 
-    ExporterPlaylist(File fout, long plid) {
-        _mFout = fout;
-        _mPlid = plid;
+    ///////////////////////////////////////////////////////////////////////////
+    //
+    //
+    //
+    ///////////////////////////////////////////////////////////////////////////
+    protected ExportPlaylistTask(@NonNull File fout, long plid) {
+        mFout = fout;
+        mPlid = plid;
     }
 
-    private static Err
-    exportShareJson(ZipOutputStream zos, JSONObject jo, String shareName) {
-        ByteArrayInputStream bais;
-        try {
-            bais = new ByteArrayInputStream(jo.toString().getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            return Err.UNKNOWN;
-        }
-
-        try {
-            FileUtil.zip(zos, bais, shareName);
-        } catch (IOException e) {
-            return Err.IO_FILE;
-        } finally {
-            try {
-                bais.close();
-            } catch (IOException ignored) { }
-        }
-        return Err.NO_ERR;
+    ///////////////////////////////////////////////////////////////////////////
+    //
+    //
+    //
+    ///////////////////////////////////////////////////////////////////////////
+    @NonNull
+    public static ExportPlaylistTask
+    create(@NonNull File fout, long plid) {
+        return new ExportPlaylistTask(fout, plid);
     }
 
+    /**
+     * @throws IOException (FileNotFoundException)
+     */
     @Override
-    public Err
-    execute() {
+    @NonNull
+    protected Void
+    doAsync() throws IOException {
         DB db = DB.get();
 
         // Meta data
         // -------------
         DataModel.Meta dmmeta = new DataModel.Meta();
-        dmmeta.type = Type.PLAYLIST;
+        dmmeta.type = Share.Type.PLAYLIST;
 
         // Playlist data
         // -------------
         DataModel.Playlist dmpl = new DataModel.Playlist();
-        Cursor c = null;
-        try {
-            c = db.queryPlaylist(_mPlid, DataModel.Playlist.sDBProjection);
+        try (Cursor c = db.queryPlaylist(mPlid, DataModel.Playlist.sDBProjection)) {
             if (!c.moveToFirst())
-                return Err.PARAMETER;
+                throw new IllegalArgumentException();
             dmpl.set(c);
-        } finally {
-            if (null != c)
-                c.close();
         }
 
         // Video data in this playlist
         // ---------------------------
-        c = db.queryVideos(_mPlid,
-                           DataModel.Video.sDBProjection,
-                           null,
-                           false);
-        if (!c.moveToFirst()) {
-            c.close();
-            return Err.PARAMETER;
+        DataModel.Video[] dmvs;
+        try (Cursor c = db.queryVideos(
+                mPlid,
+                DataModel.Video.sDBProjection,
+                null,
+                false)) {
+            if (!c.moveToFirst())
+                throw new IllegalArgumentException();
+            dmvs = new DataModel.Video[c.getCount()];
+            int i = 0;
+            do {
+                dmvs[i] = new DataModel.Video();
+                dmvs[i].set(c);
+            } while (c.moveToNext());
         }
-
-        DataModel.Video[] dmvs = new DataModel.Video[c.getCount()];
-        int i = 0;
-        do {
-            dmvs[i] = new DataModel.Video();
-            dmvs[i].set(c);
-        } while (c.moveToNext());
-        c.close();
-
 
         DataModel.Root dr = new DataModel.Root();
         dr.meta = dmmeta;
@@ -150,28 +140,19 @@ class ExporterPlaylist implements ExporterI {
 
         JSONObject jo = dr.toJson();
         if (null == jo)
-            return Err.UNKNOWN;
+            throw new AssertionError();
 
-        String shareName
-            = FileUtil.pathNameEscapeString(AUtil.getResString(R.string.playlist)
-                                             + "_"
-                                             + dr.pl.title
-                                             + "."
-                                             + PolicyConstant.SHARE_FILE_EXTENTION);
-        ZipOutputStream zos;
-        try {
-            zos = new ZipOutputStream(new FileOutputStream(_mFout));
-        } catch (FileNotFoundException e) {
-            return Err.IO_FILE;
+        String shareName = FileUtil.pathNameEscapeString(
+                AUtil.getResString(R.string.playlist)
+                        + "_"
+                        + dr.pl.title
+                        + "."
+                        + PolicyConstant.SHARE_FILE_EXTENTION);
+        try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(mFout));
+             ByteArrayInputStream bais = new ByteArrayInputStream(jo.toString().getBytes("UTF-8"))) {
+            FileUtil.zip(zos, bais, shareName);
         }
-
-        Err err = exportShareJson(zos, jo, shareName);
-        try {
-            zos.close();
-        } catch (IOException e) {
-            return Err.IO_FILE;
-        }
-
-        return err;
+        return null;
     }
+
 }

@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014, 2015
+ * Copyright (C) 2012, 2013, 2014, 2015, 2016
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -42,20 +42,22 @@ import java.io.FileWriter;
 import java.io.IOException;
 
 import android.content.Context;
+
+import free.yhc.baselib.Logger;
+import free.yhc.abaselib.util.AUtil;
+import free.yhc.baselib.util.FileUtil;
 import free.yhc.netmbuddy.R;
-import free.yhc.netmbuddy.core.Policy;
+import free.yhc.netmbuddy.core.PolicyConstant;
 
-public class ReportUtils {
-    @SuppressWarnings("unused")
-    private static final boolean DBG = false;
-    @SuppressWarnings("unused")
-    private static final Utils.Logger P = new Utils.Logger(ReportUtils.class);
+public class ReportUtil {
+    private static final boolean DBG = Logger.DBG_DEFAULT;
+    private static final Logger P = Logger.create(ReportUtil.class, Logger.LOGLV_DEFAULT);
 
-    private static final File sErrLogFile = new File(Policy.APPDATA_ERRLOG);
+    private static final File sErrLogFile = new File(PolicyConstant.APPDATA_ERRLOG);
 
     private static String
     getSubjectPrefix() {
-        return "[ " + Utils.getResString(R.string.app_name) + " ] ";
+        return "[ " + AUtil.getResString(R.string.app_name) + " ] ";
     }
 
     private static void
@@ -79,21 +81,27 @@ public class ReportUtils {
      */
     private static void
     sendReportMail(Context context, File reportf, String subject) {
-        if (!Utils.isNetworkAvailable())
+        if (!Util.isNetworkAvailable())
             return;
 
         if (!reportf.exists())
             return; // nothing to do
+        String report;
+        try {
+            report = FileUtil.readTextFile(reportf) + "\n\n";
+        } catch (IOException e) {
+            // ignore htis report
+            return;
+        }
 
-        String report = FileUtils.readTextFile(reportf) + "\n\n";
         // we successfully read all log files.
         // let's clean it.
         cleanReportFile(reportf);
-        Utils.sendMail(context,
-                       Policy.REPORT_RECEIVER,
-                       subject,
-                       report,
-                       null);
+        Util.sendMail(context,
+                      PolicyConstant.REPORT_RECEIVER,
+                      subject,
+                      report,
+                      null);
     }
 
     /**
@@ -101,9 +109,14 @@ public class ReportUtils {
      */
     public static void
     storeErrReport(String report) {
-        if (!Utils.isPrefErrReport())
+        if (!Util.isPrefErrReport())
             return;
-        storeReport(new File(Policy.APPDATA_ERRLOG), report);
+        storeReport(new File(PolicyConstant.APPDATA_ERRLOG), report);
+    }
+
+    public static void
+    storeYtPage(String page) {
+        storeReport(new File(PolicyConstant.APPDATA_PARSELOG), page);
     }
 
     /**
@@ -111,7 +124,7 @@ public class ReportUtils {
      */
     public static void
     sendErrReport(Context context) {
-        if (!Utils.isPrefErrReport())
+        if (!Util.isPrefErrReport())
             return;
         sendReportMail(context,
                        sErrLogFile,
@@ -120,10 +133,10 @@ public class ReportUtils {
 
     public static void
     sendFeedback(Context context) {
-        Utils.sendMail(context,
-                       Policy.REPORT_RECEIVER,
-                       getSubjectPrefix() + context.getResources().getText(R.string.feedback),
-                       "",
-                       null);
+        Util.sendMail(context,
+                      PolicyConstant.REPORT_RECEIVER,
+                      getSubjectPrefix() + context.getResources().getText(R.string.feedback),
+                      "",
+                      null);
     }
 }

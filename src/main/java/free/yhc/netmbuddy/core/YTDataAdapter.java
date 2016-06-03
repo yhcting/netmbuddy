@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2015
+ * Copyright (C) 2015, 2016
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -38,7 +38,7 @@ package free.yhc.netmbuddy.core;
 
 import java.util.Date;
 
-import free.yhc.netmbuddy.utils.Utils;
+import free.yhc.baselib.Logger;
 
 /**
  * Youtube data adapter between data API and NetMBuddy.
@@ -68,10 +68,8 @@ import free.yhc.netmbuddy.utils.Utils;
  *
  */
 public class YTDataAdapter {
-    @SuppressWarnings("unused")
-    private static final boolean DBG = false;
-    @SuppressWarnings("unused")
-    private static final Utils.Logger P = new Utils.Logger(YTDataAdapter.class);
+    private static final boolean DBG = Logger.DBG_DEFAULT;
+    private static final Logger P = Logger.create(YTDataAdapter.class, Logger.LOGLV_DEFAULT);
 
     public enum Err {
         NO_ERR,
@@ -90,7 +88,7 @@ public class YTDataAdapter {
     }
 
 
-    public static class YTApiException extends java.lang.Exception {
+    public static class YTApiException extends Exception {
         static final long serialVersionUID = 0; // to make compiler be happy
 
         private final Err _mErr;

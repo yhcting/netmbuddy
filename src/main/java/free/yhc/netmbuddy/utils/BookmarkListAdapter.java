@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014, 2015
+ * Copyright (C) 2012, 2013, 2014, 2015, 2016
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -36,21 +36,21 @@
 
 package free.yhc.netmbuddy.utils;
 
-import static free.yhc.netmbuddy.utils.Utils.eAssert;
 import android.content.Context;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import free.yhc.baselib.Logger;
+import free.yhc.abaselib.util.AUtil;
 import free.yhc.netmbuddy.R;
 import free.yhc.netmbuddy.db.DB;
 
 class BookmarkListAdapter extends BaseAdapter {
-    @SuppressWarnings("unused")
-    private static final boolean DBG = false;
-    @SuppressWarnings("unused")
-    private static final Utils.Logger P = new Utils.Logger(BookmarkListAdapter.class);
+    private static final boolean DBG = Logger.DBG_DEFAULT;
+    private static final Logger P = Logger.create(BookmarkListAdapter.class, Logger.LOGLV_DEFAULT);
 
     private final Context mContext;
     private final OnItemAction mOnItemAction;
@@ -65,8 +65,8 @@ class BookmarkListAdapter extends BaseAdapter {
                         DB.Bookmark[] bms,
                         OnItemAction onItemAction) {
         super();
-        eAssert(null != bms
-                && null != onItemAction);
+        P.bug(null != bms
+              && null != onItemAction);
         mContext = context;
         mBms = bms;
         mOnItemAction = onItemAction;
@@ -74,7 +74,7 @@ class BookmarkListAdapter extends BaseAdapter {
 
     void
     removeItem(int pos) {
-        eAssert(0 <= pos && pos < mBms.length);
+        P.bug(0 <= pos && pos < mBms.length);
         DB.Bookmark[] bms = new DB.Bookmark[mBms.length - 1];
 
         // Clone bookmark array except for item at 'pos'.
@@ -116,7 +116,7 @@ class BookmarkListAdapter extends BaseAdapter {
         if (null != convertView)
             v = convertView;
         else
-            v = UiUtils.inflateLayout(mContext, R.layout.bookmark_row);
+            v = AUtil.inflateLayout(R.layout.bookmark_row);
 
         DB.Bookmark bm = mBms[position];
         ImageView delv = (ImageView)v.findViewById(R.id.delete);
@@ -130,7 +130,7 @@ class BookmarkListAdapter extends BaseAdapter {
             }
         });
 
-        tv.setText("[" + Utils.secsToMinSecText(bm.pos / 1000) + "] " + bm.name);
+        tv.setText("[" + Util.secsToMinSecText(bm.pos / 1000) + "] " + bm.name);
         return v;
     }
 }

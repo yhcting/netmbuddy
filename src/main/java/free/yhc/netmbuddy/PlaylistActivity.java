@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014, 2015
+ * Copyright (C) 2012, 2013, 2014, 2015, 2016
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -36,11 +36,10 @@
 
 package free.yhc.netmbuddy;
 
-import static free.yhc.netmbuddy.utils.Utils.eAssert;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -51,6 +50,7 @@ import android.content.res.Configuration;
 import android.database.Cursor;
 import android.graphics.Typeface;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.MenuInflater;
@@ -63,35 +63,42 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
+
+import free.yhc.abaselib.AppEnv;
+import free.yhc.baselib.Logger;
+import free.yhc.baselib.async.Task;
+import free.yhc.baselib.async.TmTask;
+import free.yhc.baselib.async.TmTaskGroup;
+import free.yhc.baselib.exception.BadResponseException;
+import free.yhc.abaselib.util.AUtil;
+import free.yhc.abaselib.ux.DialogTask;
 import free.yhc.netmbuddy.PlaylistAdapter.ItemButton;
-import free.yhc.netmbuddy.core.MultiThreadRunner;
-import free.yhc.netmbuddy.core.YTDataAdapter;
+import free.yhc.netmbuddy.core.TaskManager;
 import free.yhc.netmbuddy.db.ColPlaylist;
 import free.yhc.netmbuddy.db.ColVideo;
 import free.yhc.netmbuddy.db.DB;
-import free.yhc.netmbuddy.core.Policy;
+import free.yhc.netmbuddy.core.PolicyConstant;
 import free.yhc.netmbuddy.core.SearchSuggestionProvider;
 import free.yhc.netmbuddy.core.UnexpectedExceptionHandler;
 import free.yhc.netmbuddy.core.YTPlayer;
-import free.yhc.netmbuddy.db.DMVideo;
-import free.yhc.netmbuddy.share.Share;
-import free.yhc.netmbuddy.utils.ReportUtils;
-import free.yhc.netmbuddy.utils.UiUtils;
-import free.yhc.netmbuddy.utils.Utils;
+import free.yhc.netmbuddy.share.ExportPlaylistTask;
+import free.yhc.netmbuddy.utils.ReportUtil;
+import free.yhc.netmbuddy.utils.Util;
+import free.yhc.netmbuddy.utils.UxUtil;
 import free.yhc.netmbuddy.ytapiv3.YTApiFacade;
 
+import static free.yhc.abaselib.util.AUtil.isUiThread;
+
 public class PlaylistActivity extends Activity implements
-UnexpectedExceptionHandler.Evidence {
-    @SuppressWarnings("unused")
-    private static final boolean DBG = false;
-    @SuppressWarnings("unused")
-    private static final Utils.Logger P = new Utils.Logger(PlaylistActivity.class);
+        UnexpectedExceptionHandler.Evidence {
+    private static final boolean DBG = Logger.DBG_DEFAULT;
+    private static final Logger P = Logger.create(PlaylistActivity.class, Logger.LOGLV_DEFAULT);
 
     private final DB mDb = DB.get();
     private final YTPlayer mMp = YTPlayer.get();
 
     private final OnPlayerUpdateDBListener mOnPlayerUpdateDbListener
-        = new OnPlayerUpdateDBListener();
+            = new OnPlayerUpdateDBListener();
 
     private ListView mListv;
 
@@ -108,60 +115,31 @@ UnexpectedExceptionHandler.Evidence {
         }
     }
 
-    private static class DeleteInvalidVideoJob extends MultiThreadRunner.Job<Boolean> {
-        private final long _mVid;
-        private final String _mYtvid;
-        private final AtomicInteger _mDeleted;
-
-        DeleteInvalidVideoJob(long vid, String ytvid,
-                              AtomicInteger deleted) {
-            super(true, 1.0f);
-            _mVid = vid;
-            _mYtvid = ytvid;
-            _mDeleted = deleted;
-        }
-
-        @Override
-        public Boolean
-        doJob() {
-            try {
-                if (null == YTApiFacade.requestVideoInfo(_mYtvid)
-                    // This is invalid video.
-                    && 0 < DB.get().deleteVideoFromAllPlaylist(_mVid)) {
-                    _mDeleted.incrementAndGet();
-                    return true;
-                }
-            } catch (YTDataAdapter.YTApiException ignored) { }
-            return false;
-        }
-    }
-
     private PlaylistAdapter
     getAdapter() {
         return (PlaylistAdapter)mListv.getAdapter();
     }
 
     /**
-     * Closing cursor is this functions responsibility.
-     * DO NOT close cursor by caller.
+     * Closing cursor is this functions responsibility. DO NOT close cursor by caller.
      */
     private void
     playMusics(Cursor c) {
-        if (!Utils.isNetworkAvailable()) {
-            UiUtils.showTextToast(this, Err.IO_NET.getMessage());
+        if (!Util.isNetworkAvailable()) {
+            UxUtil.showTextToast(Err.IO_NET.getMessage());
             c.close();
             return;
         }
 
         if (!c.moveToFirst()) {
-            UiUtils.showTextToast(this, R.string.msg_empty_playlist);
+            UxUtil.showTextToast(R.string.msg_empty_playlist);
             c.close();
             return;
         }
 
         ViewGroup playerv = (ViewGroup)findViewById(R.id.player);
         playerv.setVisibility(View.VISIBLE);
-        mMp.startVideos(c, Utils.isPrefSuffle());
+        mMp.startVideos(c, Util.isPrefSuffle());
 
     }
 
@@ -173,102 +151,139 @@ UnexpectedExceptionHandler.Evidence {
     private void
     playAllMusics(@SuppressWarnings("unused") View anchor) {
         playMusics(mDb.queryVideos(YTPlayer.sVideoProjectionToPlay, null, false));
-        UiUtils.showTextToast(this, R.string.msg_play_all_musics);
+        UxUtil.showTextToast(R.string.msg_play_all_musics);
     }
 
     private void
     copyPlaylist(final long dstPlid, final long srcPlid) {
         // Below three variables are reserved for future use - user feedback.
 
-        DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
-            private int _mSCnt = 0;    // inserted count
-            private int _mDupCnt = 0;    // duplicated cont
-            private int _mFCnt = 0;    // failure count
-
-            @Override
-            public Err
-            doBackgroundWork(DiagAsyncTask task) {
-                Cursor c = mDb.queryVideos(srcPlid,
-                                           new ColVideo[] { ColVideo.ID },
-                                           null,
-                                           false);
-                if (!c.moveToFirst()) {
-                    c.close();
-                    return Err.NO_ERR;
-                }
-
-                mDb.beginTransaction();
-                try {
-                    do {
-                        switch (mDb.insertVideoToPlaylist(dstPlid, c.getLong(0))) {
-                        case NO_ERR:        _mSCnt++;   break;
-                        case DUPLICATED:    _mDupCnt++; break;
-                        default:            _mFCnt++;
-                        }
-                    } while (c.moveToNext());
-                    mDb.setTransactionSuccessful();
-                } finally {
-                    mDb.endTransaction();
-                    c.close();
-                }
-                return Err.NO_ERR;
-            }
-
-            @Override
-            public void
-            onPostExecute(DiagAsyncTask task, Err result) {
-                String msg  = Utils.getResString(R.string.done) + " : " + _mSCnt + "\n"
-                              + Utils.getResString(R.string.duplication) + " : " + _mDupCnt + "\n"
-                              + Utils.getResString(R.string.error) + " : " + _mFCnt;
-                UiUtils.showTextToast(PlaylistActivity.this, msg);
+        Task<Void> t = new Task<Void>() {
+            private void
+            postExecute(final int sCnt, final int dupCnt, final int fCnt) {
+                String msg = AUtil.getResString(R.string.done) + " : " + sCnt + "\n"
+                        + AUtil.getResString(R.string.duplication) + " : " + dupCnt + "\n"
+                        + AUtil.getResString(R.string.error) + " : " + fCnt;
+                UxUtil.showTextToast(msg);
                 getAdapter().reloadCursorAsync();
             }
-        };
 
-        new DiagAsyncTask(this,
-                worker,
-                DiagAsyncTask.Style.SPIN,
-                R.string.copying)
-            .run();
+            @Override
+            public Void
+            doAsync() {
+                int sCnt = 0; // inserted count
+                int dupCnt = 0; // duplicated cont
+                int fCnt = 0; // failure count
+                try (Cursor c = mDb.queryVideos(srcPlid,
+                                                new ColVideo[]{ColVideo.ID},
+                                                null,
+                                                false)) {
+                    if (!c.moveToFirst())
+                        return null;
+
+                    mDb.beginTransaction();
+                    try {
+                        do {
+                            switch (mDb.insertVideoToPlaylist(dstPlid, c.getLong(0))) {
+                            case NO_ERR:
+                                sCnt++;
+                                break;
+                            case DUPLICATED:
+                                dupCnt++;
+                                break;
+                            default:
+                                fCnt++;
+                            }
+                        } while (c.moveToNext());
+                        mDb.setTransactionSuccessful();
+                    } finally {
+                        mDb.endTransaction();
+                    }
+                }
+
+                final int sCnt_ = sCnt;
+                final int dupCnt_ = dupCnt;
+                final int fCnt_ = fCnt;
+                AppEnv.getUiHandler().post(new Runnable() {
+                    @Override
+                    public void run() {
+                        postExecute(sCnt_, dupCnt_, fCnt_);
+                    }
+                });
+                return null;
+            }
+        };
+        DialogTask.Builder<DialogTask.Builder> b
+                = new DialogTask.Builder<>(this, t);
+        b.setMessage(R.string.copying);
+        if (!b.create().start())
+            P.bug();
     }
 
-    private int
-    deleteInvalidVideos(final DiagAsyncTask task) {
-        MultiThreadRunner mtrun = new MultiThreadRunner(Utils.getUiHandler(),
-                                                        Policy.YTSEARCH_MAX_CHECK_VIDEOID_THREAD);
-        mtrun.setOnProgressListener(new MultiThreadRunner.OnProgressListener() {
-            @Override
-            public void
-            onProgress(float prog) {
-                task.publishProgress((int) prog);
+    private void
+    deleteInvalidVideos() {
+        final AtomicInteger nrDeleted = new AtomicInteger(0);
+        TmTask[] tasks = new TmTask[0];
+        try (Cursor c = mDb.queryVideos(
+                new ColVideo[]{ColVideo.ID, ColVideo.VIDEOID}, null, false)) {
+            if (c.moveToFirst()) {
+                tasks = new TmTask[c.getCount()];
+                // FIXME : if number of videos is too large, OOM may be issued.
+                // But, even if # of videos is 10000, and 1k is required per video,
+                // Memory requirement is only 10M.
+                // So, at this moment, OOM is not considered yet.
+                int i = 0;
+                do {
+                    final long vid = c.getLong(0);
+                    final String ytvid = c.getString(1);
+                    tasks[i++] = new TmTask<Void>() {
+                        @Override
+                        protected Void
+                        doAsync() {
+                            try {
+                                if (null == YTApiFacade.requestVideoInfo(ytvid)
+                                        // This is invalid video.
+                                        && 0 < DB.get().deleteVideoFromAllPlaylist(vid)) {
+                                    nrDeleted.incrementAndGet();
+                                }
+                            } catch (IOException | BadResponseException | InterruptedException ignored) {
+                            }
+                            return null;
+                        }
+                    };
+                } while (c.moveToNext());
             }
-        });
-        Cursor c = mDb.queryVideos(new ColVideo[]{ColVideo.ID, ColVideo.VIDEOID},
-                                   null, false);
-        eAssert(null != c);
-        if (!c.moveToFirst()) {
-            c.close();
-            // empty cursor. Nothing to do.
-            return 0;
         }
 
-        int nrvideos = c.getCount();
-        AtomicInteger deleted = new AtomicInteger();
-        task.publishPreProgress(nrvideos);
-        // FIXME : if number of videos is too large, OOM may be issued.
-        // But, even if # of videos is 10000, and 1k is required per video,
-        // Memory requirement is only 10M.
-        // So, at this moment, OOM is not considered yet.
-        do {
-            mtrun.appendJob(new DeleteInvalidVideoJob(c.getLong(0), c.getString(1), deleted));
-        } while (c.moveToNext());
-        c.close();
+        final int nrTotal = tasks.length;
+        TmTaskGroup.Builder<TmTaskGroup.Builder> ttgb
+                = new TmTaskGroup.Builder<>(TaskManager.get());
+        ttgb.setName("DeleteInvalidVideos")
+            .setTasks(tasks);
+        DialogTask.Builder<DialogTask.Builder> db
+                = new DialogTask.Builder<>(PlaylistActivity.this, ttgb.create());
+        db.setStyle(DialogTask.Style.PROGRESS);
+        DialogTask diag = db.create();
+        diag.addEventListener(AppEnv.getUiHandlerAdapter(), new DialogTask.EventListener<DialogTask, Object>() {
+            private void
+            handleDone() {
+                String msg = nrDeleted + " " + AUtil.getResString(R.string.msg_invalid_videos_deleted);
+                UxUtil.showTextToast(msg);
+            }
 
-        try {
-            mtrun.waitAllDone();
-        } catch (InterruptedException ignored) { }
+            @Override
+            public void
+            onPostRun(@NonNull DialogTask task, Object result, Exception ex) {
+                handleDone();
+            }
 
-        return deleted.get();
+            public void
+            onCancelled(@NonNull DialogTask task, Object param) {
+                handleDone();
+            }
+        });
+        if (!diag.start())
+            P.bug();
     }
 
     // ------------------------------------------------------------------------
@@ -282,9 +297,10 @@ UnexpectedExceptionHandler.Evidence {
     // This function MUST COVER ALL USE-CASE regarding DB ACCESS.
     private void
     stopDbAccess() {
-        eAssert(!Utils.isUiThread());
+        P.bug(!isUiThread());
         final Object uiWait = new Object();
-        Utils.getUiHandler().post(new Runnable() {
+        final AtomicReference<Boolean> uiFlag = new AtomicReference<>(false);
+        AppEnv.getUiHandler().post(new Runnable() {
             @Override
             public void
             run() {
@@ -294,6 +310,7 @@ UnexpectedExceptionHandler.Evidence {
                 // (Updating playtime)
                 YTPlayer.get().stopVideos();
                 synchronized (uiWait) {
+                    uiFlag.set(true);
                     uiWait.notifyAll();
                 }
             }
@@ -302,8 +319,10 @@ UnexpectedExceptionHandler.Evidence {
         //noinspection SynchronizationOnLocalVariableOrMethodParameter
         synchronized (uiWait) {
             try {
-                uiWait.wait();
-            } catch (InterruptedException ignored) { }
+                while (!uiFlag.get())
+                    uiWait.wait();
+            } catch (InterruptedException ignored) {
+            }
         }
 
         // Wait for sometime that existing DB operation is completed.
@@ -312,7 +331,8 @@ UnexpectedExceptionHandler.Evidence {
         //noinspection EmptyCatchBlock
         try {
             Thread.sleep(2000);
-        } catch (InterruptedException ignored) { }
+        } catch (InterruptedException ignored) {
+        }
     }
 
     private Err
@@ -349,7 +369,7 @@ UnexpectedExceptionHandler.Evidence {
     // ------------------------------------------------------------------------
     private void
     onMenuMoreAppInfo(@SuppressWarnings("unused") View anchor) {
-        View v = UiUtils.inflateLayout(this, R.layout.info_dialog);
+        View v = AUtil.inflateLayout(R.layout.info_dialog);
         ((ImageView)v.findViewById(R.id.image)).setImageResource(R.drawable.appinfo_pic);
         AlertDialog.Builder bldr = new AlertDialog.Builder(this);
         bldr.setView(v);
@@ -359,7 +379,7 @@ UnexpectedExceptionHandler.Evidence {
 
     private void
     onMenuMoreLicense(@SuppressWarnings("unused") View anchor) {
-        View v = UiUtils.inflateLayout(this, R.layout.info_dialog);
+        View v = AUtil.inflateLayout(R.layout.info_dialog);
         v.findViewById(R.id.image).setVisibility(View.GONE);
         TextView tv = ((TextView)v.findViewById(R.id.text));
         tv.setTypeface(Typeface.MONOSPACE);
@@ -373,178 +393,165 @@ UnexpectedExceptionHandler.Evidence {
     private void
     onMenuMoreClearSearchHistory(@SuppressWarnings("unused") View anchor) {
         SearchSuggestionProvider.clearHistory();
-        UiUtils.showTextToast(this, R.string.msg_search_history_cleared);
+        UxUtil.showTextToast(R.string.msg_search_history_cleared);
     }
 
     private void
     onMenuMoreDeleteInvalidVideos(@SuppressWarnings("unused") View anchor) {
         CharSequence title = getResources().getText(R.string.delete_invalid_videos);
         CharSequence msg = getResources().getText(R.string.msg_delete_invalid_videos);
-        UiUtils.buildConfirmDialog(this, title, msg, new UiUtils.ConfirmAction() {
+        UxUtil.buildConfirmDialog(this, title, msg, new UxUtil.ConfirmAction() {
             @Override
             public void
-            onOk(Dialog dialog) {
-                DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
-                    @Override
-                    public void
-                    onPostExecute(DiagAsyncTask task,
-                                  @SuppressWarnings("unused") Err result) {
-                        int nrDeleted = (Integer)task.getTag();
-                        String msg = nrDeleted + " " + Utils.getResString(R.string.msg_invalid_videos_deleted);
-                        UiUtils.showTextToast(PlaylistActivity.this, msg);
-                    }
-
-                    @Override
-                    public Err
-                    doBackgroundWork(DiagAsyncTask task) {
-                        int nrDeleted = deleteInvalidVideos(task);
-                        task.setTag(nrDeleted);
-                        return Err.NO_ERR;
-                    }
-                };
-                new DiagAsyncTask(PlaylistActivity.this,
-                                  worker,
-                                  DiagAsyncTask.Style.PROGRESS,
-                                  R.string.delete_invalid_videos)
-                    .run();
+            onPositive(@NonNull Dialog dialog) {
+                deleteInvalidVideos();
             }
+
             @Override
             public void
-            onCancel(Dialog dialog) { }
+            onNegative(@NonNull Dialog dialog) {
+            }
         }).show();
     }
 
     private void
     onMenuMoreDbImport(@SuppressWarnings("unused") View anchor) {
-        final File exDbf = new File(Policy.EXTERNAL_DBFILE);
+        final File exDbf = new File(PolicyConstant.EXTERNAL_DBFILE);
         // Actual import!
         CharSequence title = getResources().getText(R.string.import_);
         CharSequence msg = getResources().getText(R.string.database) + " <= " + exDbf.getAbsolutePath();
-        UiUtils.buildConfirmDialog(this, title, msg, new UiUtils.ConfirmAction() {
+        UxUtil.buildConfirmDialog(this, title, msg, new UxUtil.ConfirmAction() {
             @Override
             public void
-            onOk(Dialog dialog) {
+            onPositive(@NonNull Dialog dialog) {
                 // Check external DB file.
                 if (!exDbf.canRead()) {
-                    UiUtils.showTextToast(PlaylistActivity.this, R.string.msg_fail_access_exdb);
+                    UxUtil.showTextToast(R.string.msg_fail_access_exdb);
                     return;
                 }
-
-                DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
+                Task<Void> t = new Task<Void>() {
                     @Override
-                    public void
-                    onPostExecute(DiagAsyncTask task, Err result) {
-                        if (Err.NO_ERR == result)
-                            getAdapter().reloadCursorAsync();
-                        else
-                            UiUtils.showTextToast(PlaylistActivity.this, result.getMessage());
-                    }
-
-                    @Override
-                    public Err
-                    doBackgroundWork(DiagAsyncTask task) {
-                        return importDbInBackground(exDbf);
+                    protected Void
+                    doAsync() {
+                        final Err r = importDbInBackground(exDbf);
+                        AppEnv.getUiHandler().post(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (Err.NO_ERR == r)
+                                    getAdapter().reloadCursorAsync();
+                                else
+                                    UxUtil.showTextToast(r.getMessage());
+                            }
+                        });
+                        return null;
                     }
                 };
-                new DiagAsyncTask(PlaylistActivity.this,
-                                  worker,
-                                  DiagAsyncTask.Style.SPIN,
-                                  R.string.importing_db)
-                    .run();
+
+                DialogTask.Builder<DialogTask.Builder> b
+                        = new DialogTask.Builder<>(PlaylistActivity.this, t);
+                b.setMessage(R.string.importing_db);
+                if (!b.create().start())
+                    P.bug();
             }
 
             @Override
             public void
-            onCancel(Dialog dialog) { }
+            onNegative(@NonNull Dialog dialog) {
+            }
         }).show();
     }
 
     private void
     onMenuMoreDbMerge(@SuppressWarnings("unused") View anchor) {
-        final File exDbf = new File(Policy.EXTERNAL_DBFILE);
+        final File exDbf = new File(PolicyConstant.EXTERNAL_DBFILE);
         // Actual import!
         CharSequence title = getResources().getText(R.string.merge);
         CharSequence msg = getResources().getText(R.string.database) + " <= " + exDbf.getAbsolutePath();
-        UiUtils.buildConfirmDialog(this, title, msg, new UiUtils.ConfirmAction() {
+        UxUtil.buildConfirmDialog(this, title, msg, new UxUtil.ConfirmAction() {
             @Override
             public void
-            onOk(Dialog dialog) {
+            onPositive(@NonNull Dialog dialog) {
                 // Check external DB file.
                 if (!exDbf.canRead()) {
-                    UiUtils.showTextToast(PlaylistActivity.this, R.string.msg_fail_access_exdb);
+                    UxUtil.showTextToast(R.string.msg_fail_access_exdb);
                     return;
                 }
 
-                DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
+                Task<Void> t = new Task<Void>() {
                     @Override
-                    public void
-                    onPostExecute(DiagAsyncTask task, Err result) {
-                        if (Err.NO_ERR == result)
-                            getAdapter().reloadCursorAsync();
-                        else
-                            UiUtils.showTextToast(PlaylistActivity.this, result.getMessage());
-                    }
+                    public Void
+                    doAsync() {
+                        final Err r = mergeDbInBackground(exDbf);
+                        AppEnv.getUiHandler().post(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (Err.NO_ERR == r)
+                                    getAdapter().reloadCursorAsync();
+                                else
+                                    UxUtil.showTextToast(r.getMessage());
 
-                    @Override
-                    public Err
-                    doBackgroundWork(DiagAsyncTask task) {
-                        return mergeDbInBackground(exDbf);
+                            }
+                        });
+                        return null;
                     }
                 };
-                new DiagAsyncTask(PlaylistActivity.this,
-                                  worker,
-                                  DiagAsyncTask.Style.SPIN,
-                                  R.string.merging_db)
-                    .run();
+                DialogTask.Builder<DialogTask.Builder> b
+                        = new DialogTask.Builder<>(PlaylistActivity.this, t);
+                b.setMessage(R.string.merging_db);
+                if (!b.create().start())
+                    P.bug();
             }
 
             @Override
             public void
-            onCancel(Dialog dialog) { }
+            onNegative(@NonNull Dialog dialog) {
+            }
         }).show();
     }
 
     private void
     onMenuMoreDbExport(@SuppressWarnings("unused") View anchor) {
-        final File exDbf = new File(Policy.EXTERNAL_DBFILE);
+        final File exDbf = new File(PolicyConstant.EXTERNAL_DBFILE);
         // Actual import!
         CharSequence title = getResources().getText(R.string.export);
         CharSequence msg = getResources().getText(R.string.database) + " => " + exDbf.getAbsolutePath();
-        UiUtils.buildConfirmDialog(this, title, msg, new UiUtils.ConfirmAction() {
+        UxUtil.buildConfirmDialog(this, title, msg, new UxUtil.ConfirmAction() {
             @Override
             public void
-            onOk(Dialog dialog) {
+            onPositive(@NonNull Dialog dialog) {
                 // Check external DB file.
                 if (exDbf.exists() && !exDbf.canWrite()) {
-                    UiUtils.showTextToast(PlaylistActivity.this, R.string.msg_fail_access_exdb);
+                    UxUtil.showTextToast(R.string.msg_fail_access_exdb);
                     return;
                 }
 
-                DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
+                Task<Void> t = new Task<Void>() {
                     @Override
-                    public void
-                    onPostExecute(DiagAsyncTask task, Err result) {
-                        if (Err.NO_ERR != result) {
-                            UiUtils.showTextToast(PlaylistActivity.this, result.getMessage());
+                    protected Void
+                    doAsync() {
+                        final Err r = exportDbInBackground(exDbf);
+                        if (Err.NO_ERR != r) {
+                            AppEnv.getUiHandler().post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    UxUtil.showTextToast(r.getMessage());
+                                }
+                            });
                         }
-                    }
-
-                    @Override
-                    public Err
-                    doBackgroundWork(DiagAsyncTask task) {
-                        return exportDbInBackground(exDbf);
+                        return null;
                     }
                 };
-                new DiagAsyncTask(PlaylistActivity.this,
-                worker,
-                DiagAsyncTask.Style.SPIN,
-                R.string.exporting_db)
-                .run();
+
+                DialogTask.Builder<DialogTask.Builder> b
+                        = new DialogTask.Builder<>(PlaylistActivity.this, t);
+                b.setMessage(R.string.exporting_db);
+                if (!b.create().start())
+                    P.bug();
             }
 
             @Override
             public void
-            onCancel(Dialog dialog) {
+            onNegative(@NonNull Dialog dialog) {
             }
         }).show();
     }
@@ -554,9 +561,9 @@ UnexpectedExceptionHandler.Evidence {
         final int[] menus = {
                 R.string.export,
                 R.string.import_,
-                R.string.merge };
+                R.string.merge};
 
-        UiUtils.OnMenuSelected action = new UiUtils.OnMenuSelected() {
+        UxUtil.OnMenuSelected action = new UxUtil.OnMenuSelected() {
             @Override
             public void
             onSelected(int pos, int menuTitle) {
@@ -574,16 +581,16 @@ UnexpectedExceptionHandler.Evidence {
                     break;
 
                 default:
-                    eAssert(false);
+                    P.bug(false);
                 }
             }
         };
 
-        UiUtils.buildPopupMenuDialog(this,
-                                     action,
-                                     R.string.database,
-                                     menus)
-               .show();
+        UxUtil.buildPopupMenuDialog(this,
+                                    action,
+                                    R.string.database,
+                                    menus)
+                .show();
     }
 
     private void
@@ -594,9 +601,9 @@ UnexpectedExceptionHandler.Evidence {
     private void
     onMenuMoreYtSearch(final View anchor) {
         final int[] menus = {
-                R.string.channel_videos };
+                R.string.channel_videos};
 
-        UiUtils.OnMenuSelected action = new UiUtils.OnMenuSelected() {
+        UxUtil.OnMenuSelected action = new UxUtil.OnMenuSelected() {
             @Override
             public void
             onSelected(int pos, int menuTitle) {
@@ -605,25 +612,25 @@ UnexpectedExceptionHandler.Evidence {
                     onMenuMoreYtSearchChannel(anchor);
                     break;
                 default:
-                    eAssert(false);
+                    P.bug(false);
                 }
             }
         };
 
-        UiUtils.buildPopupMenuDialog(this,
-                                     action,
-                                     R.string.ytsearch,
-                                     menus)
-               .show();
+        UxUtil.buildPopupMenuDialog(this,
+                                    action,
+                                    R.string.ytsearch,
+                                    menus)
+                .show();
     }
 
     private void
     onMenuMoreSendOpinion(@SuppressWarnings("unused") View anchor) {
-        if (!Utils.isNetworkAvailable()) {
-            UiUtils.showTextToast(this, R.string.err_network_unavailable);
+        if (!Util.isNetworkAvailable()) {
+            UxUtil.showTextToast(R.string.err_network_unavailable);
             return;
         }
-        ReportUtils.sendFeedback(this);
+        ReportUtil.sendFeedback(this);
     }
 
     private void
@@ -634,22 +641,34 @@ UnexpectedExceptionHandler.Evidence {
                 R.string.time20m,
                 R.string.time30m,
                 R.string.time1h,
-                R.string.time2h };
+                R.string.time2h};
 
-        UiUtils.OnMenuSelected action = new UiUtils.OnMenuSelected() {
+        UxUtil.OnMenuSelected action = new UxUtil.OnMenuSelected() {
             @Override
             public void
             onSelected(int pos, int menuTitle) {
                 long timems = 0;
                 switch (menuTitle) {
-                case R.string.off:      timems = 0;                     break;
-                case R.string.time10m:  timems = 10 * 60 * 1000;        break;
-                case R.string.time20m:  timems = 20 * 60 * 1000;        break;
-                case R.string.time30m:  timems = 30 * 60 * 1000;        break;
-                case R.string.time1h:   timems = 60 * 60 * 1000;        break;
-                case R.string.time2h:   timems = 2 * 60 * 60 * 1000;    break;
+                case R.string.off:
+                    timems = 0;
+                    break;
+                case R.string.time10m:
+                    timems = 10 * 60 * 1000;
+                    break;
+                case R.string.time20m:
+                    timems = 20 * 60 * 1000;
+                    break;
+                case R.string.time30m:
+                    timems = 30 * 60 * 1000;
+                    break;
+                case R.string.time1h:
+                    timems = 60 * 60 * 1000;
+                    break;
+                case R.string.time2h:
+                    timems = 2 * 60 * 60 * 1000;
+                    break;
                 default:
-                    eAssert(false);
+                    P.bug(false);
                 }
 
                 if (0 < timems)
@@ -659,11 +678,11 @@ UnexpectedExceptionHandler.Evidence {
             }
         };
 
-        UiUtils.buildPopupMenuDialog(this,
-                                     action,
-                                     R.string.autostop,
-                                     menus)
-               .show();
+        UxUtil.buildPopupMenuDialog(this,
+                                    action,
+                                    R.string.autostop,
+                                    menus)
+                .show();
     }
 
     private void
@@ -677,9 +696,9 @@ UnexpectedExceptionHandler.Evidence {
                 R.string.dbmore,
                 //R.string.ytsearchmore,
                 R.string.feedback,
-                R.string.autostop };
+                R.string.autostop};
 
-        UiUtils.OnMenuSelected action = new UiUtils.OnMenuSelected() {
+        UxUtil.OnMenuSelected action = new UxUtil.OnMenuSelected() {
             @Override
             public void
             onSelected(int pos, int menuTitle) {
@@ -688,7 +707,7 @@ UnexpectedExceptionHandler.Evidence {
                     if (mMp.hasActiveVideo())
                         onMenuMoreAutoStop(anchor);
                     else
-                        UiUtils.showTextToast(PlaylistActivity.this, R.string.msg_autostop_not_allowed);
+                        UxUtil.showTextToast(R.string.msg_autostop_not_allowed);
                     break;
 
                 case R.string.feedback:
@@ -720,16 +739,16 @@ UnexpectedExceptionHandler.Evidence {
                     break;
 
                 default:
-                    eAssert(false);
+                    P.bug(false);
                 }
             }
         };
 
-        UiUtils.buildPopupMenuDialog(this,
-                                     action,
-                                     -1,
-                                     menus)
-               .show();
+        UxUtil.buildPopupMenuDialog(this,
+                                    action,
+                                    -1,
+                                    menus)
+                .show();
     }
 
     private void
@@ -747,7 +766,7 @@ UnexpectedExceptionHandler.Evidence {
             public void
             onClick(View v) {
                 Intent i = new Intent(PlaylistActivity.this, MusicsActivity.class);
-                i.putExtra(MusicsActivity.MAP_KEY_PLAYLIST_ID, UiUtils.PLID_RECENT_PLAYED);
+                i.putExtra(MusicsActivity.MAP_KEY_PLAYLIST_ID, UxUtil.PLID_RECENT_PLAYED);
                 startActivity(i);
             }
         });
@@ -788,10 +807,12 @@ UnexpectedExceptionHandler.Evidence {
 
     private void
     onContextMenuRename(final AdapterContextMenuInfo info) {
-        UiUtils.EditTextAction action = new UiUtils.EditTextAction() {
+        UxUtil.EditTextAction action = new UxUtil.EditTextAction() {
             @Override
             public void
-            prepare(Dialog dialog, EditText edit) { }
+            prepare(Dialog dialog, EditText edit) {
+            }
+
             @Override
             public void
             onOk(Dialog dialog, EditText edit) {
@@ -800,61 +821,61 @@ UnexpectedExceptionHandler.Evidence {
                 getAdapter().reloadCursorAsync();
             }
         };
-        AlertDialog diag = UiUtils.buildOneLineEditTextDialog(this,
-                                                              R.string.enter_new_name,
-                                                              getAdapter().getItemTitle(info.position),
-                                                              action);
+        AlertDialog diag = UxUtil.buildOneLineEditTextDialog(this,
+                                                             R.string.enter_new_name,
+                                                             getAdapter().getItemTitle(info.position),
+                                                             action);
         diag.show();
     }
 
     private void
     onContextMenuDeleteDo(final long plid) {
-        DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
+        Task<Void> t = new Task<Void>() {
             @Override
-            public void
-            onPostExecute(DiagAsyncTask task, Err result) {
-                getAdapter().reloadCursor();
-            }
-
-            @Override
-            public Err
-            doBackgroundWork(DiagAsyncTask task) {
+            public Void
+            doAsync() {
                 mDb.deletePlaylist(plid);
-                return Err.NO_ERR;
+                AppEnv.getUiHandler().post(new Runnable() {
+                    @Override
+                    public void run() {
+                        getAdapter().reloadCursor();
+                    }
+                });
+                return null;
             }
         };
-        new DiagAsyncTask(this,
-                          worker,
-                          DiagAsyncTask.Style.SPIN,
-                          R.string.deleting)
-            .run();
+        DialogTask.Builder<DialogTask.Builder> b
+                = new DialogTask.Builder<>(this, t);
+        b.setMessage(R.string.deleting);
+        if (!b.create().start())
+            P.bug();
     }
 
     private void
     onContextMenuDelete(final AdapterContextMenuInfo info) {
-        UiUtils.ConfirmAction action = new UiUtils.ConfirmAction() {
+        UxUtil.ConfirmAction action = new UxUtil.ConfirmAction() {
             @Override
             public void
-            onOk(Dialog dialog) {
+            onPositive(@NonNull Dialog dialog) {
                 onContextMenuDeleteDo(info.id);
             }
 
             @Override
             public void
-            onCancel(Dialog dialog) { }
+            onNegative(@NonNull Dialog dialog) {
+            }
         };
-        UiUtils.buildConfirmDialog(this,
-                                   R.string.delete,
-                                   R.string.msg_delete_playlist,
-                                   action)
-               .show();
+        UxUtil.buildConfirmDialog(this,
+                                  R.string.delete,
+                                  R.string.msg_delete_playlist,
+                                  action)
+                .show();
     }
-
 
 
     private void
     onContextMenuCopyTo(final AdapterContextMenuInfo info) {
-        UiUtils.OnPlaylistSelected action = new UiUtils.OnPlaylistSelected() {
+        UxUtil.OnPlaylistSelected action = new UxUtil.OnPlaylistSelected() {
             @Override
             public void
             onPlaylist(final long plid, final Object user) {
@@ -863,105 +884,119 @@ UnexpectedExceptionHandler.Evidence {
 
             @Override
             public void
-            onUserMenu(int pos, Object user) { }
+            onUserMenu(int pos, Object user) {
+            }
         };
 
-        UiUtils.buildSelectPlaylistDialog(DB.get(),
-                                          this,
-                                          R.string.copy_to,
-                                          null,
-                                          action,
-                                          info.id,
-                                          null)
-               .show();
+        UxUtil.buildSelectPlaylistDialog(DB.get(),
+                                         this,
+                                         R.string.copy_to,
+                                         null,
+                                         action,
+                                         info.id,
+                                         null)
+                .show();
     }
 
     private void
     onContextMenuShare(final AdapterContextMenuInfo info) {
         if (0 >= (Long)mDb.getPlaylistInfo(info.id, ColPlaylist.SIZE)) {
-            UiUtils.showTextToast(this, R.string.msg_empty_playlist);
+            UxUtil.showTextToast(R.string.msg_empty_playlist);
             return;
         }
 
         final File fTmp;
         try {
-            fTmp = File.createTempFile(Utils.getResString(R.string.share_pl_attachment),
-                                       "." + Policy.SHARE_FILE_EXTENTION,
-                                       new File(Policy.APPDATA_TMPDIR));
+            fTmp = File.createTempFile(AUtil.getResString(R.string.share_pl_attachment),
+                                       "." + PolicyConstant.SHARE_FILE_EXTENTION,
+                                       new File(PolicyConstant.APPDATA_TMPDIR));
         } catch (IOException e) {
-            UiUtils.showTextToast(this, R.string.err_io_file);
+            UxUtil.showTextToast(R.string.err_io_file);
             return;
         }
 
-        final Share.ExporterI exporter = Share.buildPlayerlistExporter(fTmp, info.id);
+        final ExportPlaylistTask exportTask = ExportPlaylistTask.create(fTmp, info.id);
 
-        DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
-            @Override
-            public void
-            onPostExecute(DiagAsyncTask task, Err result) {
-                if (Err.NO_ERR != result) {
-                    UiUtils.showTextToast(PlaylistActivity.this, result.getMessage());
+        Task<Void> t = new Task<Void>() {
+            private void
+            postExecute(Err r) {
+                if (Err.NO_ERR != r) {
+                    UxUtil.showTextToast(r.getMessage());
                     return;
                 }
 
                 String plTitle = (String)DB.get().getPlaylistInfo(info.id, ColPlaylist.TITLE);
-                Utils.sendMail(PlaylistActivity.this,
-                               null,
-                               Utils.getResString(R.string.share_pl_email_subject) + ":" + plTitle,
-                               Utils.getResString(R.string.share_pl_email_text),
-                               fTmp);
+                Util.sendMail(PlaylistActivity.this,
+                              null,
+                              AUtil.getResString(R.string.share_pl_email_subject) + ":" + plTitle,
+                              AUtil.getResString(R.string.share_pl_email_text),
+                              fTmp);
             }
 
             @Override
-            public Err
-            doBackgroundWork(DiagAsyncTask task) {
-                Share.Err err = exporter.execute();
-                if (Share.Err.NO_ERR != err) {
+            protected Void
+            doAsync() {
+                Err err = Err.NO_ERR;
+                try {
+                    exportTask.startSync();
+                } catch (IOException e) {
                     //noinspection ResultOfMethodCallIgnored
                     fTmp.delete();
-                    return Err.map(err);
+                    err = Err.IO_FILE;
+                } catch (Exception e) {
+                    err = Err.UNKNOWN;
                 }
-                return Err.NO_ERR;
+
+                final Err r = err;
+                AppEnv.getUiHandler().post(new Runnable() {
+                    @Override
+                    public void run() {
+                        postExecute(r);
+                    }
+                });
+                return null;
             }
         };
 
-        new DiagAsyncTask(this,
-                          worker,
-                          DiagAsyncTask.Style.SPIN,
-                          R.string.preparing)
-            .run();
+        DialogTask.Builder<DialogTask.Builder> b
+                = new DialogTask.Builder<>(this, t);
+        b.setMessage(R.string.preparing);
+        if (!b.create().start())
+            P.bug();
     }
 
     private void
     onContextMenuAppendToPlayQ(final AdapterContextMenuInfo info) {
         final long plid = info.id;
-        DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
-            private YTPlayer.Video[] _mVids = null;
+        Task<Void> t = new Task<Void>() {
             @Override
-            public void
-            onPostExecute(DiagAsyncTask task, Err result) {
-                if (null != _mVids)
-                    YTPlayer.get().appendToPlayQ(_mVids);
-            }
-
-            @Override
-            public Err
-            doBackgroundWork(DiagAsyncTask task) {
-                Cursor c = DB.get().queryVideos(plid,
-                                                YTPlayer.sVideoProjectionToPlay,
-                                                null,
-                                                false);
-                _mVids = YTPlayer.getVideos(c, Utils.isPrefSuffle());
-                c.close();
-                return Err.NO_ERR;
+            protected Void
+            doAsync() {
+                final YTPlayer.Video[] vids;
+                try (Cursor c = DB.get().queryVideos(
+                        plid,
+                        YTPlayer.sVideoProjectionToPlay,
+                        null,
+                        false)) {
+                    vids = YTPlayer.getVideos(c, Util.isPrefSuffle());
+                }
+                if (null != vids) {
+                    AppEnv.getUiHandler().post(new Runnable() {
+                        @Override
+                        public void run() {
+                            YTPlayer.get().appendToPlayQ(vids);
+                        }
+                    });
+                }
+                return null;
             }
         };
-        new DiagAsyncTask(this,
-                          worker,
-                          DiagAsyncTask.Style.SPIN,
-                          R.string.append_to_playq)
-            .run();
 
+        DialogTask.Builder<DialogTask.Builder> b
+                = new DialogTask.Builder<>(this, t);
+        b.setMessage(R.string.append_to_playq);
+        if (!b.create().start())
+            P.bug();
     }
 
 
@@ -1003,7 +1038,7 @@ UnexpectedExceptionHandler.Evidence {
             onContextMenuAppendToPlayQ(info);
             return true;
         }
-        eAssert(false);
+        P.bug(false);
         return false;
     }
 
@@ -1022,7 +1057,7 @@ UnexpectedExceptionHandler.Evidence {
         super.onCreate(savedInstanceState);
         UnexpectedExceptionHandler.get().registerModule(this);
 
-        ReportUtils.sendErrReport(this);
+        ReportUtil.sendErrReport(this);
         setContentView(R.layout.playlist);
         mListv = (ListView)findViewById(R.id.list);
         registerForContextMenu(mListv);
@@ -1038,7 +1073,7 @@ UnexpectedExceptionHandler.Evidence {
         PlaylistAdapter adapter = new PlaylistAdapter(this, new PlaylistAdapter.OnItemButtonClickListener() {
             @Override
             public void onClick(int pos, ItemButton button) {
-                //eAssert(PlaylistAdapter.ItemButton.LIST == button);
+                //P.bug(PlaylistAdapter.ItemButton.LIST == button);
                 Intent i = new Intent(PlaylistActivity.this, MusicsActivity.class);
                 PlaylistAdapter adapter = getAdapter();
                 i.putExtra(MusicsActivity.MAP_KEY_PLAYLIST_ID, adapter.getItemId(pos));
@@ -1050,7 +1085,6 @@ UnexpectedExceptionHandler.Evidence {
         mListv.setAdapter(adapter);
         mListv.setEmptyView(findViewById(R.id.empty_list));
         adapter.reloadCursorAsync();
-
     }
 
     @Override
@@ -1063,7 +1097,7 @@ UnexpectedExceptionHandler.Evidence {
         String query = intent.getStringExtra(SearchManager.QUERY);
         SearchSuggestionProvider.saveRecentQuery(query);
         Intent i = new Intent(PlaylistActivity.this, MusicsActivity.class);
-        i.putExtra(MusicsActivity.MAP_KEY_PLAYLIST_ID, UiUtils.PLID_SEARCHED);
+        i.putExtra(MusicsActivity.MAP_KEY_PLAYLIST_ID, UxUtil.PLID_SEARCHED);
         i.putExtra(MusicsActivity.MAP_KEY_KEYWORD, query);
         startActivity(i);
     }
@@ -1078,7 +1112,7 @@ UnexpectedExceptionHandler.Evidence {
                           (ViewGroup)findViewById(R.id.list_drawer),
                           null,
                           mMp.getVideoToolButton());
-        mMp.addOnDbUpdatedListener(this, mOnPlayerUpdateDbListener);
+        mMp.addOnDbUpdatedListener(mOnPlayerUpdateDbListener);
         if (mMp.hasActiveVideo())
             playerv.setVisibility(View.VISIBLE);
         else
@@ -1094,7 +1128,7 @@ UnexpectedExceptionHandler.Evidence {
     @Override
     protected void
     onPause() {
-        mMp.removeOnDbUpdatedListener(this);
+        mMp.removeOnDbUpdatedListener(mOnPlayerUpdateDbListener);
         mMp.unsetController(this);
         mDb.registerToPlaylistTableWatcher(this);
         super.onPause();
@@ -1124,7 +1158,7 @@ UnexpectedExceptionHandler.Evidence {
     @Override
     public void
     onBackPressed() {
-        if (Utils.isPrefStopOnBack())
+        if (Util.isPrefStopOnBack())
             // stop playing if exit via back-key.
             mMp.stopVideos();
         super.onBackPressed();

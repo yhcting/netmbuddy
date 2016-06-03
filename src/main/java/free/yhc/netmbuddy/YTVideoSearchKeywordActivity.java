@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014, 2015
+ * Copyright (C) 2012, 2013, 2014, 2015, 2016
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -37,16 +37,15 @@
 package free.yhc.netmbuddy;
 
 import android.os.Bundle;
+
+import free.yhc.baselib.Logger;
 import free.yhc.netmbuddy.core.UnexpectedExceptionHandler;
 import free.yhc.netmbuddy.core.YTDataAdapter;
-import free.yhc.netmbuddy.utils.Utils;
 
 public class YTVideoSearchKeywordActivity extends YTVideoSearchActivity implements
 UnexpectedExceptionHandler.Evidence {
-    @SuppressWarnings("unused")
-    private static final boolean DBG = false;
-    @SuppressWarnings("unused")
-    private static final Utils.Logger P = new Utils.Logger(YTVideoSearchKeywordActivity.class);
+    private static final boolean DBG = Logger.DBG_DEFAULT;
+    private static final Logger P = Logger.create(YTVideoSearchKeywordActivity.class, Logger.LOGLV_DEFAULT);
 
     @Override
     protected int

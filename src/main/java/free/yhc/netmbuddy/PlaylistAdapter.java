@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014, 2015
+ * Copyright (C) 2012, 2013, 2014, 2015, 2016
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -36,23 +36,24 @@
 
 package free.yhc.netmbuddy;
 
-import static free.yhc.netmbuddy.utils.Utils.eAssert;
 import android.content.Context;
 import android.database.Cursor;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.ResourceCursorAdapter;
 import android.widget.TextView;
+
+import free.yhc.abaselib.AppEnv;
+import free.yhc.baselib.Logger;
+import free.yhc.baselib.async.Task;
+import free.yhc.abaselib.ux.DialogTask;
 import free.yhc.netmbuddy.db.ColPlaylist;
 import free.yhc.netmbuddy.db.DB;
-import free.yhc.netmbuddy.utils.UiUtils;
-import free.yhc.netmbuddy.utils.Utils;
+import free.yhc.netmbuddy.utils.UxUtil;
 
 public class PlaylistAdapter extends ResourceCursorAdapter {
-    @SuppressWarnings("unused")
-    private static final boolean DBG = false;
-    @SuppressWarnings("unused")
-    private static final Utils.Logger P = new Utils.Logger(PlaylistAdapter.class);
+    private static final boolean DBG = Logger.DBG_DEFAULT;
+    private static final Logger P = Logger.create(PlaylistAdapter.class, Logger.LOGLV_DEFAULT);
 
     private static final int LAYOUT = R.layout.playlist_row;
 
@@ -103,26 +104,26 @@ public class PlaylistAdapter extends ResourceCursorAdapter {
 
     public void
     reloadCursorAsync() {
-        DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
-            private Cursor newCursor;
+        Task<Void> t = new Task<Void>() {
             @Override
-            public void
-            onPostExecute(DiagAsyncTask task, Err result) {
-                changeCursor(newCursor);
-            }
-
-            @Override
-            public Err
-            doBackgroundWork(DiagAsyncTask task) {
-                newCursor = createCursor();
-                return Err.NO_ERR;
+            protected Void
+            doAsync() {
+                final Cursor c = createCursor();
+                AppEnv.getUiHandler().post(new Runnable() {
+                    @Override
+                    public void run() {
+                        changeCursor(c);
+                    }
+                });
+                return null;
             }
         };
-        new DiagAsyncTask(mContext,
-                          worker,
-                          DiagAsyncTask.Style.SPIN,
-                          R.string.loading)
-            .run();
+
+        DialogTask.Builder<DialogTask.Builder> b
+                = new DialogTask.Builder<>(mContext, t);
+        b.setMessage(R.string.loading);
+        if (!b.create().start())
+            P.bug();
     }
 
     public String
@@ -130,7 +131,7 @@ public class PlaylistAdapter extends ResourceCursorAdapter {
         Cursor c = getCursor();
         if (c.moveToPosition(pos))
             return c.getString(COLI_TITLE);
-        eAssert(false);
+        P.bug(false);
         return null;
     }
 
@@ -139,7 +140,7 @@ public class PlaylistAdapter extends ResourceCursorAdapter {
         Cursor c = getCursor();
         if (c.moveToPosition(pos))
             return (byte[])DB.get().getPlaylistInfo(c.getLong(COLI_ID), ColPlaylist.THUMBNAIL);
-        eAssert(false);
+        P.bug(false);
         return null;
     }
 
@@ -156,6 +157,6 @@ public class PlaylistAdapter extends ResourceCursorAdapter {
         titlev.setText(cur.getString(COLI_TITLE));
         nritemsv.setText(cur.getLong(COLI_SIZE) + "");
         byte[] thumbnailData = (byte[])DB.get().getPlaylistInfo(cur.getLong(COLI_ID), ColPlaylist.THUMBNAIL);
-        UiUtils.setThumbnailImageView(thumbnailv, thumbnailData);
+        UxUtil.setThumbnailImageView(thumbnailv, thumbnailData);
     }
 }

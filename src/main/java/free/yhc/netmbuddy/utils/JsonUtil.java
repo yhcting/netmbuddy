@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2015
+ * Copyright (C) 2015, 2016
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -42,23 +42,21 @@ import org.json.JSONObject;
 
 import java.lang.reflect.Array;
 
-import static free.yhc.netmbuddy.utils.Utils.eAssert;
+import free.yhc.baselib.Logger;
 
-public class JsonUtils {
-    @SuppressWarnings("unused")
-    private static final boolean DBG = false;
-    @SuppressWarnings("unused")
-    private static final Utils.Logger P = new Utils.Logger(JsonUtils.class);
+public class JsonUtil {
+    private static final boolean DBG = Logger.DBG_DEFAULT;
+    private static final Logger P = Logger.create(JsonUtil.class, Logger.LOGLV_DEFAULT);
 
     public static abstract class JsonModel {
         public void
         set(JSONObject jo) {
-            eAssert(false); // Not implemented yet.
+            P.bug(false); // Not implemented yet.
         }
 
         public JSONObject
         toJson() {
-            eAssert(false); // Not implemented yet.
+            P.bug(false); // Not implemented yet.
             return null;
         }
     }
@@ -213,13 +211,13 @@ public class JsonUtils {
                 try {
                     r[i] = cls.newInstance();
                 } catch (InstantiationException | IllegalAccessException e) {
-                    eAssert(false);
+                    P.bug(false);
                 }
                 r[i].set(ja.getJSONObject(i));
             }
             return r;
         } catch (JSONException e) {
-            eAssert(false);
+            P.bug(false);
         }
         return null;
     }

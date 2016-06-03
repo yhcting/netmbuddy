@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014, 2015
+ * Copyright (C) 2012, 2013, 2014, 2015, 2016
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -36,8 +36,6 @@
 
 package free.yhc.netmbuddy.db;
 
-import static free.yhc.netmbuddy.utils.Utils.eAssert;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -50,17 +48,19 @@ import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
+
+import free.yhc.abaselib.AppEnv;
+import free.yhc.baselib.Logger;
+import free.yhc.abaselib.util.AUtil;
 import free.yhc.netmbuddy.R;
 import free.yhc.netmbuddy.db.DB.Err;
 import free.yhc.netmbuddy.db.DBHistory.FieldNType;
-import free.yhc.netmbuddy.core.Policy;
-import free.yhc.netmbuddy.utils.Utils;
+import free.yhc.netmbuddy.core.PolicyConstant;
+import free.yhc.netmbuddy.utils.Util;
 
 class DBManager {
-    @SuppressWarnings("unused")
-    private static final boolean DBG = false;
-    @SuppressWarnings("unused")
-    private static final Utils.Logger P = new Utils.Logger(DBManager.class);
+    private static final boolean DBG = Logger.DBG_DEFAULT;
+    private static final Logger P = Logger.create(DBManager.class, Logger.LOGLV_DEFAULT);
 
     private static final String sTableAndroidMetadata = "android_metadata";
     private static final String sStmtAndroidMetadata = "CREATE TABLE android_metadata (locale TEXT)";
@@ -136,7 +136,7 @@ class DBManager {
         try {
             fis = new FileInputStream(fSrc);
             fos = new FileOutputStream(fDst);
-            Utils.copy(fos, fis);
+            Util.copy(fos, fis);
         } catch (InterruptedException e) {
             // Unexpected interrupt!!
             err = Err.INTERRUPTED;
@@ -190,7 +190,7 @@ class DBManager {
         // DB version starts from 1. And array index starts from 0.
         int dbVersion = db.getVersion();
         FieldNType[][] ftHistory = DBHistory.sFieldNType[dbVersion - 1];
-        eAssert(DBHistory.sTables.length == ftHistory.length);
+        P.bug(DBHistory.sTables.length == ftHistory.length);
         for (int i = 0; i < DBHistory.sTables.length; i++) {
             stmt = map.get(DBHistory.sTables[i]);
             if (null == stmt)
@@ -275,7 +275,7 @@ class DBManager {
         // Let's do real importing.
         DB.get().close();
         try {
-            File inDbf = Utils.getAppContext().getDatabasePath(DB.getName());
+            File inDbf = AppEnv.getAppContext().getDatabasePath(DB.getName());
             File inDbfBackup = new File(inDbf.getAbsolutePath() + "____backup");
 
             if (!inDbf.renameTo(inDbfBackup)) {
@@ -323,7 +323,7 @@ class DBManager {
             String plTitle = excPl.getString(plColiTitle);
             while (db.containsPlaylist(plTitle)) {
                 i++;
-                plTitle = excPl.getString(plColiTitle)+ "_" + Utils.getResString(R.string.merge) + i;
+                plTitle = excPl.getString(plColiTitle)+ "_" + AUtil.getResString(R.string.merge) + i;
             }
 
             // Playlist title is chosen.
@@ -350,7 +350,7 @@ class DBManager {
                                          ColVideo.ID.getName() + " = " + excVref.getLong(0),
                                          null, null, null, null);
                 if (!excV.moveToFirst())
-                    eAssert(false);
+                    P.bug(false);
 
                 final int vColiVid = excV.getColumnIndex(ColVideo.VIDEOID.getName());
 
@@ -388,7 +388,7 @@ class DBManager {
         File fTmp = null;
         err = Err.IO_FILE;
         try {
-            fTmp = File.createTempFile("mergeDBTempFile", null, new File(Policy.APPDATA_TMPDIR));
+            fTmp = File.createTempFile("mergeDBTempFile", null, new File(PolicyConstant.APPDATA_TMPDIR));
             err = copyAndUpgrade(fTmp, exDbf);
             exDbf = fTmp;
         } catch (IOException e) {
@@ -456,11 +456,11 @@ class DBManager {
 
         DB.get().close();
 
-        File inDbf = Utils.getAppContext().getDatabasePath(DB.getName());
+        File inDbf = AppEnv.getAppContext().getDatabasePath(DB.getName());
         try {
             FileInputStream fis = new FileInputStream(inDbf);
             FileOutputStream fos = new FileOutputStream(exDbf);
-            Utils.copy(fos, fis);
+            Util.copy(fos, fis);
             fis.close();
             fos.close();
         } catch (InterruptedException e) {

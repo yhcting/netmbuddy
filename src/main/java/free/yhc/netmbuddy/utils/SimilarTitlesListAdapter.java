@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014, 2015
+ * Copyright (C) 2012, 2013, 2014, 2015, 2016
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -43,16 +43,17 @@ import android.widget.BaseAdapter;
 import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import free.yhc.baselib.Logger;
+import free.yhc.abaselib.util.AUtil;
 import free.yhc.netmbuddy.R;
 import free.yhc.netmbuddy.db.ColVideo;
 import free.yhc.netmbuddy.db.DB;
 import free.yhc.netmbuddy.db.DMVideo;
 
 class SimilarTitlesListAdapter extends BaseAdapter {
-    @SuppressWarnings("unused")
-    private static final boolean DBG = false;
-    @SuppressWarnings("unused")
-    private static final Utils.Logger P = new Utils.Logger(SimilarTitlesListAdapter.class);
+    private static final boolean DBG = Logger.DBG_DEFAULT;
+    private static final Logger P = Logger.create(SimilarTitlesListAdapter.class, Logger.LOGLV_DEFAULT);
 
     private final DB mDb;
     private Context mContext;
@@ -92,7 +93,7 @@ class SimilarTitlesListAdapter extends BaseAdapter {
         if (null != convertView)
             v = convertView;
         else
-            v = UiUtils.inflateLayout(mContext, R.layout.similar_titles_row);
+            v = AUtil.inflateLayout(R.layout.similar_titles_row);
 
         CheckBox checkv = (CheckBox)v.findViewById(R.id.checkbtn);
         ImageView thumbnailv = (ImageView)v.findViewById(R.id.thumbnail);
@@ -106,17 +107,17 @@ class SimilarTitlesListAdapter extends BaseAdapter {
         // NOTE: To reduce cursor's window size, thumbnail is excluded from main adapter cursor.
         DMVideo dbv = mDb.getVideoInfo(mVids[position], DMVideo.sDBProjectionWithoutThumbnail);
         titlev.setText(dbv.title);
-        if (Utils.isValidValue(dbv.channelTitle)) {
+        if (Util.isValidValue(dbv.channelTitle)) {
             channelv.setVisibility(View.VISIBLE);
             channelv.setText(dbv.channelTitle);
         } else
             channelv.setVisibility(View.GONE);
         uploadtmv.setVisibility(View.GONE);
-        playtmv.setText(Utils.secsToMinSecText((int)dbv.playtime));
+        playtmv.setText(Util.secsToMinSecText((int)dbv.playtime));
 
         // NOTE: Load thumbnail separately from main adapter cursor
         byte[] thumbnailData = (byte[])DB.get().getVideoInfo(dbv.id, ColVideo.THUMBNAIL);
-        UiUtils.setThumbnailImageView(thumbnailv, thumbnailData);
+        UxUtil.setThumbnailImageView(thumbnailv, thumbnailData);
         return v;
     }
 }

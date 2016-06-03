@@ -37,7 +37,6 @@
 package free.yhc.netmbuddy;
 
 import free.yhc.netmbuddy.db.DB;
-import free.yhc.netmbuddy.core.YTHacker;
 import free.yhc.netmbuddy.core.YTDataAdapter;
 import free.yhc.netmbuddy.share.Share;
 
@@ -69,28 +68,11 @@ public enum Err {
     YTPARSEHTML                 (R.string.err_ytparsehtml),
     YTNOT_SUPPORTED_VIDFORMAT   (R.string.err_ytnot_supported_vidformat),
     YTINVALID_PARAM             (R.string.err_ytinvalid_param),
+    ESSENTIAL_PERM              (R.string.err_essential_perm),
     NOT_IMPLEMENTED             (R.string.err_not_implemented),
     END_OF_DATA                 (R.string.err_end_of_data);
 
     private final int mMsg;
-
-    public static Err
-    map(YTHacker.Err err) {
-        switch (err) {
-        case NO_ERR:
-            return NO_ERR;
-        case IO_NET:
-            return IO_NET;
-        case NETWORK_UNAVAILABLE:
-            return NETWORK_UNAVAILABLE;
-        case PARSE_HTML:
-            return YTPARSEHTML;
-        case INTERRUPTED:
-            return INTERRUPTED;
-        default:
-            return UNKNOWN;
-        }
-    }
 
     public static Err
     map(DB.Err err) {

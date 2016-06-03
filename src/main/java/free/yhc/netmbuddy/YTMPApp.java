@@ -36,36 +36,55 @@
 
 package free.yhc.netmbuddy;
 
+import android.Manifest;
 import android.app.Application;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.Configuration;
 import android.content.res.Resources;
+import android.os.Handler;
+import android.os.Process;
 import android.preference.PreferenceManager;
+import android.support.v4.content.ContextCompat;
+
+import java.io.File;
+import java.io.IOException;
+
+import free.yhc.abaselib.ABaselib;
+import free.yhc.abaselib.AppEnv;
+import free.yhc.abaselib.util.AUtil;
+import free.yhc.baselib.Logger;
+import free.yhc.netmbuddy.core.PolicyConstant;
+import free.yhc.netmbuddy.core.SearchSuggestionProvider;
+import free.yhc.netmbuddy.core.TaskManager;
 import free.yhc.netmbuddy.db.DB;
 import free.yhc.netmbuddy.core.NotiManager;
 import free.yhc.netmbuddy.core.RTState;
 import free.yhc.netmbuddy.core.UnexpectedExceptionHandler;
 import free.yhc.netmbuddy.core.YTPlayer;
 import free.yhc.netmbuddy.core.YTPlayerLifeSupportService;
-import free.yhc.netmbuddy.utils.Utils;
+import free.yhc.netmbuddy.utils.Util;
 
 public class YTMPApp extends Application {
-    @SuppressWarnings("unused")
-    private static final boolean DBG = false;
-    @SuppressWarnings("unused")
-    private static final Utils.Logger P = new Utils.Logger(YTMPApp.class);
+    private static final boolean DBG = Logger.DBG_DEFAULT;
+    private static Logger P = null;
 
     @SuppressWarnings("FieldCanBeLocal")
     private static String PREF_KEY_APP_VERSION = "app_version";
 
-    // ========================================================================
+    private static final String[] ESSENTIAL_PERMISSIONS = {
+            Manifest.permission.WRITE_EXTERNAL_STORAGE,
+            Manifest.permission.READ_PHONE_STATE,
+    };
+
+    ///////////////////////////////////////////////////////////////////////////
     //
     // App version upgrade handling
     //
-    // ========================================================================
+    ///////////////////////////////////////////////////////////////////////////
     private void
     convertOnOffPreferenceToBoolean(SharedPreferences prefs,
                                     SharedPreferences.Editor prefEd,
@@ -117,11 +136,42 @@ public class YTMPApp extends Application {
         } catch (NameNotFoundException ignore) { }
     }
 
-    // ========================================================================
+    ///////////////////////////////////////////////////////////////////////////
     //
     //
     //
-    // ========================================================================
+    ///////////////////////////////////////////////////////////////////////////
+    public static boolean
+    hasEssentialPermissions() {
+        // App requires few dangerous permissions.
+        return PackageManager.PERMISSION_GRANTED == ContextCompat.checkSelfPermission(
+                AppEnv.getAppContext(),
+                android.Manifest.permission.WRITE_EXTERNAL_STORAGE);
+    }
+
+    public static String[]
+    getEssentialPermissions() {
+        return ESSENTIAL_PERMISSIONS;
+    }
+
+    public static void
+    initApplicationPostEssentialPermissions() {
+        try {
+            ABaselib.initLibraryWithExternalStoragePermission(PolicyConstant.APPDATA_TMPDIR);
+            //noinspection ResultOfMethodCallIgnored
+            new File(PolicyConstant.APPDATA_LOGDIR).mkdirs();
+            Util.initPostEssentialPermissions();
+        } catch (IOException e) {
+            //UxUtil.showTextToast(R.string.err_io_file);
+            throw new AssertionError("Unexpected");
+        }
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    //
+    //
+    //
+    ///////////////////////////////////////////////////////////////////////////
     @Override
     public void
     onConfigurationChanged(Configuration newConfig) {
@@ -133,14 +183,20 @@ public class YTMPApp extends Application {
     onCreate() {
         super.onCreate();
         Context context = getApplicationContext();
+        ABaselib.initLibrary(
+                context,
+                new Handler(),
+                null);
+        P = Logger.create(YTMPApp.class, Logger.LOGLV_DEFAULT);
 
+        SearchSuggestionProvider.init();
         // Set preference to default values
         PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
 
         checkAppUpgrade(context);
 
-        Utils.init(context);
-
+        Util.init(context);
+        TaskManager.get();
         // register default customized uncaught exception handler for error collecting.
         Thread.setDefaultUncaughtExceptionHandler(UnexpectedExceptionHandler.get());
 

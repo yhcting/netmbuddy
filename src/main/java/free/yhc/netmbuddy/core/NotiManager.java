@@ -36,7 +36,6 @@
 
 package free.yhc.netmbuddy.core;
 
-import static free.yhc.netmbuddy.utils.Utils.eAssert;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -45,13 +44,17 @@ import android.content.Context;
 import android.content.Intent;
 import android.support.v4.app.NotificationCompat;
 import android.widget.RemoteViews;
+
+import free.yhc.abaselib.AppEnv;
+import free.yhc.baselib.Logger;
+import free.yhc.abaselib.util.AUtil;
 import free.yhc.netmbuddy.R;
 import free.yhc.netmbuddy.YTMPActivity;
-import free.yhc.netmbuddy.utils.Utils;
+import free.yhc.netmbuddy.utils.Util;
 
 public class NotiManager {
-    private static final boolean DBG = false;
-    private static final Utils.Logger P = new Utils.Logger(NotiManager.class);
+    private static final boolean DBG = Logger.DBG_DEFAULT;
+    private static final Logger P = Logger.create(NotiManager.class, Logger.LOGLV_DEFAULT);
 
     private static final String NOTI_INTENT_DELETE
         = "ytmplayer.intent.action.NOTIFICATION_DELETE";
@@ -64,7 +67,7 @@ public class NotiManager {
 
     // active notification set.
     private final NotificationManager mNm
-        = (NotificationManager)Utils.getAppContext().getSystemService(Context.NOTIFICATION_SERVICE);
+        = (NotificationManager)AppEnv.getAppContext().getSystemService(Context.NOTIFICATION_SERVICE);
     private Notification mLastPlayerNotification = null;
 
     // NOTE
@@ -119,7 +122,7 @@ public class NotiManager {
         @Override
         public void
         onReceive(Context context, final Intent intent) {
-            Utils.getUiHandler().post(new Runnable() {
+            AppEnv.getUiHandler().post(new Runnable() {
                 @Override
                 public void
                 run() {
@@ -144,9 +147,10 @@ public class NotiManager {
         else if (NOTI_INTENT_ACTION.equals(action)) {
             String typeName = intent.getStringExtra("type");
             if (DBG) P.v("Intent action type : " + typeName);
-            eAssert(null != typeName);
+            P.bug(null != typeName);
             NotiType nt = NotiType.valueOf(typeName);
-            eAssert(null != nt);
+            P.bug(null != nt);
+            assert null != nt;
             switch (nt) {
             case BASE:
                 // Ignore this action!!
@@ -170,109 +174,57 @@ public class NotiManager {
                 break;
 
             case IMPORT:
-                Utils.resumeApp();
+                Util.resumeApp();
                 break;
 
             default:
-                eAssert(false);
+                P.bug(false);
             }
         }
     }
 
-    private Notification
-    buildNotificationICS(NotiType ntype, CharSequence videoTitle) {
-        RemoteViews rv = new RemoteViews(Utils.getAppContext().getPackageName(),
+    Notification
+    buildNotification(NotiType ntype, CharSequence videoTitle) {
+        RemoteViews rv = new RemoteViews(AppEnv.getAppContext().getPackageName(),
                                          R.layout.player_notification);
-        NotificationCompat.Builder nbldr = new NotificationCompat.Builder(Utils.getAppContext());
+        NotificationCompat.Builder nbldr = new NotificationCompat.Builder(AppEnv.getAppContext());
 
         rv.setTextViewText(R.id.title, videoTitle);
 
-        Intent intent = new Intent(Utils.getAppContext(), NotiManager.NotiIntentReceiver.class);
+        Intent intent = new Intent(AppEnv.getAppContext(), NotiManager.NotiIntentReceiver.class);
         intent.setAction(NOTI_INTENT_ACTION);
         intent.putExtra("type", ntype.name());
-        PendingIntent pi = PendingIntent.getBroadcast(Utils.getAppContext(), 0, intent,
+        PendingIntent pi = PendingIntent.getBroadcast(AppEnv.getAppContext(), 0, intent,
                                                       PendingIntent.FLAG_UPDATE_CURRENT);
         rv.setImageViewResource(R.id.action, ntype.getIcon());
         rv.setOnClickPendingIntent(R.id.action, pi);
 
-        intent = new Intent(Utils.getAppContext(), NotiManager.NotiIntentReceiver.class);
+        intent = new Intent(AppEnv.getAppContext(), NotiManager.NotiIntentReceiver.class);
         intent.setAction(NOTI_INTENT_STOP_PLAYER);
-        pi = PendingIntent.getBroadcast(Utils.getAppContext(), 0, intent,
+        pi = PendingIntent.getBroadcast(AppEnv.getAppContext(), 0, intent,
                                         PendingIntent.FLAG_UPDATE_CURRENT);
         rv.setImageViewResource(R.id.stop, R.drawable.ic_media_stop);
         rv.setOnClickPendingIntent(R.id.stop, pi);
 
-        intent = new Intent(Utils.getAppContext(), NotiManager.NotiIntentReceiver.class);
+        intent = new Intent(AppEnv.getAppContext(), NotiManager.NotiIntentReceiver.class);
         intent.setAction(NOTI_INTENT_DELETE);
-        PendingIntent piDelete = PendingIntent.getBroadcast(Utils.getAppContext(), 0, intent,
+        PendingIntent piDelete = PendingIntent.getBroadcast(AppEnv.getAppContext(), 0, intent,
                                                             PendingIntent.FLAG_UPDATE_CURRENT);
 
-        intent = new Intent(Utils.getAppContext(), YTMPActivity.class);
+        intent = new Intent(AppEnv.getAppContext(), YTMPActivity.class);
         intent.setAction(Intent.ACTION_MAIN);
         intent.addCategory(Intent.CATEGORY_LAUNCHER);
-        PendingIntent piContent = PendingIntent.getActivity(Utils.getAppContext(), 0, intent,
+        PendingIntent piContent = PendingIntent.getActivity(AppEnv.getAppContext(), 0, intent,
                                                             PendingIntent.FLAG_UPDATE_CURRENT);
 
         nbldr.setContent(rv)
              .setContentIntent(piContent)
              .setDeleteIntent(piDelete)
+             .setWhen(System.currentTimeMillis())
              .setAutoCancel(true)
              .setSmallIcon(ntype.getIcon())
              .setTicker(null);
         return nbldr.build();
-    }
-
-    private Notification
-    buildNotificationGB(NotiType ntype, CharSequence videoTitle) {
-        Intent intent = new Intent(Utils.getAppContext(), NotiManager.NotiIntentReceiver.class);
-        intent.setAction(NOTI_INTENT_DELETE);
-        PendingIntent piDelete = PendingIntent.getBroadcast(Utils.getAppContext(), 0, intent,
-                                                            PendingIntent.FLAG_UPDATE_CURRENT);
-
-        intent = new Intent(Utils.getAppContext(), NotiManager.NotiIntentReceiver.class);
-        intent.setAction(NOTI_INTENT_ACTION);
-        intent.putExtra("type", ntype.name());
-        PendingIntent piContent = PendingIntent.getBroadcast(Utils.getAppContext(), 0, intent,
-                                                             PendingIntent.FLAG_UPDATE_CURRENT);
-
-        /*
-         * TODO : This is depcreated API.
-         * NOTE
-         * Below way is deprecated but works well better than using recommended way - notification builder.
-         * (See commends below about using builder)
-         */
-        /*
-        Notification n = new Notification(ntype.getIcon(), null, System.currentTimeMillis());
-        n.setLatestEventInfo(Utils.getAppContext(),
-                             Utils.getResString(R.string.app_name),
-                             videoTitle,
-                             piContent);
-        n.deleteIntent = piDelete;
-        n.flags = 0;
-
-        return n;
-        */
-        /* At some cases, below code generates
-         * "java.lang.NoClassDefFoundError : android.support.v4.app.NotificationCompat$Builder"
-         * But, anyway it works at this moment.
-         */
-        NotificationCompat.Builder nbldr = new NotificationCompat.Builder(Utils.getAppContext());
-        nbldr.setSmallIcon(ntype.getIcon())
-             .setTicker(null)
-             .setContentTitle(videoTitle)
-             .setContentText("")
-             .setAutoCancel(true)
-             .setContentIntent(piContent)
-             .setDeleteIntent(piDelete);
-        return nbldr.build();
-    }
-
-    Notification
-    buildNotification(NotiType ntype, CharSequence videoTitle) {
-        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.ICE_CREAM_SANDWICH)
-            return buildNotificationGB(ntype, videoTitle);
-        else
-            return buildNotificationICS(ntype, videoTitle);
     }
 
     public static NotiManager
@@ -290,7 +242,7 @@ public class NotiManager {
     public void
     removeNotification(NotiType type) {
         // To avoid unexpected race-condition.
-        eAssert(Utils.isUiThread());
+        P.bug(AUtil.isUiThread());
         // Player notification shares same notification id.
         mNm.cancel(type.getId());
     }
@@ -304,7 +256,7 @@ public class NotiManager {
     public void
     putNotification(NotiType type, String videoTitle) {
         // To avoid unexpected race-condition.
-        eAssert(Utils.isUiThread());
+        P.bug(AUtil.isUiThread());
         // Set event time.
         Notification n = buildNotification(type, videoTitle);
         n.when = System.currentTimeMillis();

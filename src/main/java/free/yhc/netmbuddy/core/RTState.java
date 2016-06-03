@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014, 2015
+ * Copyright (C) 2012, 2013, 2014, 2015, 2016
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -36,26 +36,24 @@
 
 package free.yhc.netmbuddy.core;
 
-import static free.yhc.netmbuddy.utils.Utils.eAssert;
-
 import java.util.HashMap;
 
 import android.support.v4.util.LruCache;
-import free.yhc.netmbuddy.utils.Utils;
+
+import free.yhc.baselib.Logger;
+import free.yhc.netmbuddy.task.YTHackTask;
 
 public class RTState implements
 UnexpectedExceptionHandler.Evidence {
-    @SuppressWarnings("unused")
-    private static final boolean DBG = false;
-    @SuppressWarnings("unused")
-    private static final Utils.Logger P = new Utils.Logger(RTState.class);
+    private static final boolean DBG = Logger.DBG_DEFAULT;
+    private static final Logger P = Logger.create(RTState.class, Logger.LOGLV_DEFAULT);
 
     private static RTState sInstance = null;
 
     // TODO Proxy string should be changed if user changes proxy setting.
     private String mProxy = "";
     private HashMap<String, MapValue> mOverridingPref = new HashMap<>();
-    private LruCache<String, YTHacker> mHackerCache = new LruCache<>(Policy.YTHACK_CACHE_SIZE);
+    private LruCache<String, YTHackTask> mHackCache = new LruCache<>(PolicyConstant.YTHACK_CACHE_SIZE);
 
     private static class MapValue {
         Object owner;
@@ -94,17 +92,17 @@ UnexpectedExceptionHandler.Evidence {
 
     /**
      *
-     * @param hacker should be successfully hacked object.
+     * @param hack should be successfully hacked object.
      */
     public void
-    cachingYtHacker(YTHacker hacker) {
-        eAssert(hacker.hasHackedResult());
-        mHackerCache.put(hacker.getYtvid(), hacker);
+    cachingYtHack(YTHackTask hack) {
+        P.bug(hack.hasHackedResult());
+        mHackCache.put(hack.getYtvid(), hack);
     }
 
-    public YTHacker
-    getCachedYtHacker(String ytvid) {
-        return mHackerCache.get(ytvid);
+    public YTHackTask
+    getCachedYtHack(String ytvid) {
+        return mHackCache.get(ytvid);
     }
 
     @SuppressWarnings("unused")

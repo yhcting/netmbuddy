@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2015
+ * Copyright (C) 2015, 2016
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -36,23 +36,20 @@
 
 package free.yhc.netmbuddy.ytapiv3;
 
-import android.net.Uri;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.net.MalformedURLException;
 
-import static free.yhc.netmbuddy.utils.Utils.eAssert;
-
-import free.yhc.netmbuddy.core.NetLoader;
+import free.yhc.baselib.Logger;
+import free.yhc.baselib.exception.BadResponseException;
 import free.yhc.netmbuddy.core.YTDataAdapter;
-import free.yhc.netmbuddy.utils.Utils;
+import free.yhc.netmbuddy.utils.YTUtil;
 
 public class YTApiFacade {
-    @SuppressWarnings("unused")
-    private static final boolean DBG = false;
-    @SuppressWarnings("unused")
-    private static final Utils.Logger P = new Utils.Logger(YTApiFacade.class);
+    private static final boolean DBG = Logger.DBG_DEFAULT;
+    private static final Logger P = Logger.create(YTApiFacade.class, Logger.LOGLV_DEFAULT);
 
     public static final int MAX_RESULTS_PER_PAGE = 50;
     public static final int MAX_AVAILABLE_RESULTS_FOR_QUERY = 1000000;
@@ -61,28 +58,6 @@ public class YTApiFacade {
     // This is NetMBuddy default(temporal) key.
     // Please use your own "CHROME APP" Youtube api key (NOT Android App API key!)
     static final String API_KEY = "AIzaSyD2upYAFQK4WhZ_FjoeJpCsiKgRoN3OKq4";
-    // UA String matching above API_KEY
-    static final String API_KEY_UASTRING
-        = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.134 Safari/537.36";
-
-
-    private static byte[]
-    loadUrl(String urlStr) throws NetLoader.LocalException  {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        Uri uri = Uri.parse(urlStr);
-        NetLoader loader = new NetLoader().open(API_KEY_UASTRING);
-        try {
-            loader.readHttpData(baos, uri);
-        } finally {
-            loader.close();
-        }
-
-        byte[] data = baos.toByteArray();
-        try {
-            baos.close();
-        } catch (IOException ignored) { }
-        return data;
-    }
 
     // =======================================================================
     //
@@ -92,13 +67,16 @@ public class YTApiFacade {
     //
     // =======================================================================
     public static boolean
-    isValidYtVideo(String ytvid) throws YTDataAdapter.YTApiException {
+    isValidYtVideo(String ytvid)
+            throws InterruptedException, IOException, BadResponseException {
         return null != requestVideoInfo(ytvid);
     }
 
+    @NonNull
     public static YTDataAdapter.VideoListResp
-    requestVideoList(YTDataAdapter.VideoListReq req) throws YTDataAdapter.YTApiException {
-        String requrl;
+    requestVideoList(YTDataAdapter.VideoListReq req)
+            throws InterruptedException, IOException, BadResponseException {
+        String requrl = "";
         switch (req.type) {
         case VID_KEYWORD:
             requrl = YTRespSearch.getVideoSearchRequestUrl("", req.hint, req.pageToken, req.pageSize);
@@ -107,31 +85,20 @@ public class YTApiFacade {
             requrl = YTRespSearch.getVideoSearchRequestUrl(req.hint, "", req.pageToken, req.pageSize);
             break;
         default:
-            eAssert(false);
-            return null;
+            P.bug(false);
         }
 
-        byte[] data;
-        try {
-            data = loadUrl(requrl);
-        } catch (NetLoader.LocalException e) {
-            throw new YTDataAdapter.YTApiException(YTDataAdapter.Err.IO_NET);
-        }
-        YTResp.SearchListResponse slresp = YTRespSearch.parse(data);
+        YTResp.SearchListResponse slresp = YTRespSearch.parse(YTUtil.loadYtDataUrl(requrl));
         if (null == slresp.items
             || slresp.items.length > slresp.pageInfo.totalResults)
-            throw new YTDataAdapter.YTApiException(YTDataAdapter.Err.BAD_RESPONSE);
+            throw new BadResponseException();
 
         YTDataAdapter.VideoListResp ytvl;
         if (slresp.items.length > 0) {
             String[] ytvids = new String[slresp.items.length];
             for (int i = 0; i < ytvids.length; i++)
                 ytvids[i] = slresp.items[i].id.videoId;
-            try {
-                data = loadUrl(YTRespVideos.getRequestUrl(ytvids));
-            } catch (NetLoader.LocalException e) {
-                throw new YTDataAdapter.YTApiException(YTDataAdapter.Err.IO_NET);
-            }
+            byte[] data = YTUtil.loadYtDataUrl(YTRespVideos.getRequestUrl(ytvids));
             YTResp.VideoListResponse vlresp = YTRespVideos.parse(data);
             ytvl = vlresp.makeAdapterData();
         } else {
@@ -148,16 +115,19 @@ public class YTApiFacade {
      *
      * @param ytvid youtube video id
      * @return null if youtube video id is invalid(unavailable) one.
-     * @throws YTDataAdapter.YTApiException
+     * @throws InterruptedException
+     * @throws IOException (MalformedURLException...)
      */
     @Nullable
     public static YTDataAdapter.Video
-    requestVideoInfo(String ytvid) throws YTDataAdapter.YTApiException {
+    requestVideoInfo(String ytvid)
+            throws InterruptedException, IOException, BadResponseException {
         byte[] data;
         try {
-            data = loadUrl(YTRespVideos.getRequestUrl(new String[] { ytvid }));
-        } catch (NetLoader.LocalException e) {
-            throw new YTDataAdapter.YTApiException(YTDataAdapter.Err.IO_NET);
+            data = YTUtil.loadYtDataUrl(YTRespVideos.getRequestUrl(new String[]{ytvid}));
+        } catch (MalformedURLException e) {
+            // This is Unexpected!
+            throw new AssertionError();
         }
         YTResp.VideoListResponse vlresp = YTRespVideos.parse(data);
         YTDataAdapter.VideoListResp resp = vlresp.makeAdapterData();

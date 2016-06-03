@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014, 2015
+ * Copyright (C) 2012, 2013, 2014, 2015, 2016
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -36,15 +36,13 @@
 
 package free.yhc.netmbuddy.core;
 
-import static free.yhc.netmbuddy.utils.Utils.eAssert;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.Random;
 
 import android.app.Activity;
@@ -71,15 +69,21 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
+
+import free.yhc.abaselib.AppEnv;
+import free.yhc.baselib.Logger;
+import free.yhc.baselib.exception.UnsupportedFormatException;
+import free.yhc.abaselib.util.AUtil;
+import free.yhc.baselib.util.FileUtil;
+import free.yhc.netmbuddy.Err;
 import free.yhc.netmbuddy.R;
 import free.yhc.netmbuddy.VideoPlayerActivity;
 import free.yhc.netmbuddy.db.ColVideo;
 import free.yhc.netmbuddy.db.DB;
-import free.yhc.netmbuddy.core.YTDownloader.DnArg;
-import free.yhc.netmbuddy.core.YTDownloader.DownloadDoneReceiver;
 import free.yhc.netmbuddy.db.DMVideo;
-import free.yhc.netmbuddy.utils.FileUtils;
-import free.yhc.netmbuddy.utils.Utils;
+import free.yhc.netmbuddy.task.YTDownloadTask;
+import free.yhc.netmbuddy.task.YTHackTask;
+import free.yhc.netmbuddy.utils.Util;
 
 public class YTPlayer implements
 MediaPlayer.OnBufferingUpdateListener,
@@ -95,8 +99,8 @@ SurfaceHolder.Callback,
 TextToSpeech.OnInitListener,
 SharedPreferences.OnSharedPreferenceChangeListener,
 UnexpectedExceptionHandler.Evidence {
-    private static final boolean DBG = false;
-    private static final Utils.Logger P = new Utils.Logger(YTPlayer.class);
+    private static final boolean DBG = Logger.DBG_DEFAULT;
+    private static final Logger P = Logger.create(YTPlayer.class, Logger.LOGLV_DEFAULT);
 
     public static final ColVideo[] sVideoProjectionToPlay
         = new ColVideo[] { ColVideo.VIDEOID,
@@ -113,7 +117,7 @@ UnexpectedExceptionHandler.Evidence {
     static final int MPSTATE_FLAG_BUFFERING = 0x2;
 
     private static final String WLTAG = "YTPlayer";
-    private static final int PLAYER_ERR_RETRY = Policy.YTPLAYER_RETRY_ON_ERROR;
+    private static final int PLAYER_ERR_RETRY = PolicyConstant.YTPLAYER_RETRY_ON_ERROR;
 
     private static final Comparator<NrElem> sNrElemComparator = new Comparator<NrElem>() {
         @Override
@@ -136,13 +140,14 @@ UnexpectedExceptionHandler.Evidence {
         }
     };
 
-    private static File sCacheDir = new File(Policy.APPDATA_CACHEDIR);
+    private static File sCacheDir = new File(PolicyConstant.APPDATA_CACHEDIR);
     private static YTPlayer sInstance = null;
 
     // ------------------------------------------------------------------------
     //
     // ------------------------------------------------------------------------
     private final DB mDb = DB.get();
+    private final TaskManager mTm = TaskManager.get();
     private final YTPlayerUI mUi = new YTPlayerUI(this); // for UI control
     private final AutoStop mAutoStop = new AutoStop();
     private final StartVideoRecovery mStartVideoRecovery = new StartVideoRecovery();
@@ -165,11 +170,10 @@ UnexpectedExceptionHandler.Evidence {
     private SurfaceHolder mSurfHolder = null; // To support video
     private boolean mSurfReady = false;
     private boolean mVSzReady = false;
-    private int mMpVol = Policy.DEFAULT_VIDEO_VOLUME; // Current volume of media player.
-    private YTHacker mYtHack = null;
-    private NetLoader mLoader = null;
-    // assign dummy instance to remove "if (null != mYtDnr)"
-    private YTDownloader mYtDnr = new YTDownloader();
+    private int mMpVol = PolicyConstant.DEFAULT_VIDEO_VOLUME; // Current volume of media player.
+    // mYtHackTask and mYtCachingTask are set as invalid initial instance to avoid checking 'null'
+    private YTHackTask mYtHackTask;
+    private YTDownloadTask mYtCachingTask;
     private TextToSpeech mTts = null;
     private TTSState mTtsState = TTSState.NOTUSED;
 
@@ -183,8 +187,41 @@ UnexpectedExceptionHandler.Evidence {
     // ------------------------------------------------------------------------
     // Listeners
     // ------------------------------------------------------------------------
-    private KBLinkedList<VideosStateListener> mVStateLsnrl = new KBLinkedList<>();
-    private KBLinkedList<PlayerStateListener> mPStateLsnrl = new KBLinkedList<>();
+    private LinkedHashSet<VideosStateListener> mVStateLsnrl = new LinkedHashSet<>();
+    private LinkedHashSet<PlayerStateListener> mPStateLsnrl = new LinkedHashSet<>();
+
+    private final YTHackTask.EventListener<YTHackTask, Void> mYtHackTaskListener
+            = new YTHackTask.EventListener<YTHackTask, Void>() {
+        @Override
+        public void
+        onPostRun(@NonNull YTHackTask task,
+                  Void result,
+                  Exception ex) {
+            if (null == ex) {
+                prepareVideoStreamingFromYtHack(task);
+            } else if (ex instanceof IOException) {
+                if (DBG) P.i("Fail YTHackTask! recovery!");
+                mStartVideoRecovery.executeRecoveryStart(mVlm.getActiveVideo());
+            } else {
+                int errmsg;
+                if (ex instanceof InterruptedException)
+                    errmsg = Err.INTERRUPTED.getMessage();
+                else if (ex instanceof UnsupportedFormatException)
+                    errmsg = Err.PARSER_UNKNOWN.getMessage();
+                else
+                    errmsg = Err.UNKNOWN.getMessage();
+                // NOTE : Dirty!!!
+                // But, extremely exceptional case that model referencing UI code
+                mUi.notifyToUser(AUtil.getResString(errmsg));
+            }
+            startNext(); // Move to next video.
+        }
+    };
+
+    private enum TaskType {
+        CACHING,
+        HACK,
+    }
 
     public interface VideosStateListener {
         /**
@@ -198,7 +235,7 @@ UnexpectedExceptionHandler.Evidence {
         /**
          * video-queue of the player is changed.
          */
-        void onChanged();
+        void onPlayQChanged();
     }
 
     public interface PlayerStateListener {
@@ -235,6 +272,7 @@ UnexpectedExceptionHandler.Evidence {
         DONE,
         FORCE_STOPPED,
         NETWORK_UNAVAILABLE,
+        FAIL_PLAYING,
         UNKNOWN_ERROR
     }
 
@@ -257,6 +295,7 @@ UnexpectedExceptionHandler.Evidence {
     public static class Video {
         public final DMVideo v;
         public final int startpos; // Starting position(milliseconds) of this video.
+
         public Video(String ytvid, String title, int volume, int startpos) {
             v = new DMVideo();
             v.ytvid = ytvid;
@@ -264,9 +303,15 @@ UnexpectedExceptionHandler.Evidence {
             v.volume = volume;
             this.startpos = startpos;
         }
-        public Video(DMVideo v, int startpos) {
+
+        public Video(@NonNull DMVideo v, int startpos) {
             this.v = v;
             this.startpos = startpos;
+        }
+
+        public String infoString() {
+            P.bug(null != v.ytvid && null != v.title);
+            return String.format("%s(%s)", v.ytvid, v.title);
         }
     }
 
@@ -365,7 +410,7 @@ UnexpectedExceptionHandler.Evidence {
             switch (state) {
             case WHSTATE_UNPLUG:
             case WHSTATE_PLUG:
-                Utils.getUiHandler().post(new Runnable() {
+                AppEnv.getUiHandler().post(new Runnable() {
                     @Override
                     public void
                     run() {
@@ -405,7 +450,7 @@ UnexpectedExceptionHandler.Evidence {
                 && millis > 0) {
                 _mTm = System.currentTimeMillis() + millis;
                 mUi.updateStatusAutoStopSet(true, _mTm);
-                Utils.getUiHandler().postDelayed(this, millis);
+                AppEnv.getUiHandler().postDelayed(this, millis);
             }
         }
 
@@ -413,7 +458,7 @@ UnexpectedExceptionHandler.Evidence {
         unset() {
             mUi.updateStatusAutoStopSet(false, 0);
             _mTm = 0;
-            Utils.getUiHandler().removeCallbacks(this);
+            AppEnv.getUiHandler().removeCallbacks(this);
         }
 
         boolean
@@ -434,19 +479,19 @@ UnexpectedExceptionHandler.Evidence {
 
         void
         cancel() {
-            Utils.getUiHandler().removeCallbacks(this);
+            AppEnv.getUiHandler().removeCallbacks(this);
         }
 
         // USE THIS FUNCTION
         void
         executeRecoveryStart(Video v, long delays) {
-            eAssert(Utils.isUiThread());
+            P.bug(AUtil.isUiThread());
             cancel();
             _mV = v;
             if (delays > 0)
-                Utils.getUiHandler().postDelayed(this, delays);
+                AppEnv.getUiHandler().postDelayed(this, delays);
             else
-                Utils.getUiHandler().post(this);
+                AppEnv.getUiHandler().post(this);
         }
 
         void
@@ -458,38 +503,39 @@ UnexpectedExceptionHandler.Evidence {
         @Override
         public void
         run() {
-            eAssert(Utils.isUiThread());
+            P.bug(AUtil.isUiThread());
             if (null != _mV)
                 startVideo(_mV, true);
         }
     }
 
-    // ========================================================================
+    ///////////////////////////////////////////////////////////////////////////
     //
     //
     //
-    // ========================================================================
+    ///////////////////////////////////////////////////////////////////////////
+
     static {
         IntentFilter receiverFilter = new IntentFilter(Intent.ACTION_HEADSET_PLUG);
         WiredHeadsetMonitor receiver = new WiredHeadsetMonitor();
-        Utils.getAppContext().registerReceiver(receiver, receiverFilter);
+        AppEnv.getAppContext().registerReceiver(receiver, receiverFilter);
     }
 
-    // ========================================================================
+    ///////////////////////////////////////////////////////////////////////////
     //
     //
     //
-    // ========================================================================
+    ///////////////////////////////////////////////////////////////////////////
     private void
     acquireLocks() {
         if (null != mWl)
             return; // already locked nothing to do
 
-        eAssert(null == mWfl);
-        mWl = ((PowerManager)Utils.getAppContext().getSystemService(Context.POWER_SERVICE))
+        P.bug(null == mWfl);
+        mWl = ((PowerManager)AppEnv.getAppContext().getSystemService(Context.POWER_SERVICE))
                 .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, WLTAG);
         // Playing youtube requires high performance wifi for high quality media play.
-        mWfl = ((WifiManager)Utils.getAppContext().getSystemService(Context.WIFI_SERVICE))
+        mWfl = ((WifiManager)AppEnv.getAppContext().getSystemService(Context.WIFI_SERVICE))
                 .createWifiLock(WifiManager.WIFI_MODE_FULL, WLTAG);
         mWl.acquire();
         mWfl.acquire();
@@ -500,7 +546,7 @@ UnexpectedExceptionHandler.Evidence {
         if (null == mWl)
             return;
 
-        eAssert(null != mWfl);
+        P.bug(null != mWfl);
         mWl.release();
         mWfl.release();
 
@@ -549,12 +595,12 @@ UnexpectedExceptionHandler.Evidence {
 
     private void
     mpSetStateFlagBit(int mask) {
-        mpSetStateFlag(Utils.bitSet(mMpSFlag, mask, mask));
+        mpSetStateFlag(Util.bitSet(mMpSFlag, mask, mask));
     }
 
     private void
     mpClearStateFlagBit(int mask) {
-        mpSetStateFlag(Utils.bitClear(mMpSFlag, mask));
+        mpSetStateFlag(Util.bitClear(mMpSFlag, mask));
     }
 
     private void
@@ -572,10 +618,12 @@ UnexpectedExceptionHandler.Evidence {
 
     private void
     mpNewInstance() {
+        P.bug(AUtil.isUiThread());
         mMp = new MediaPlayer();
+        if (DBG) P.v("MP" + System.identityHashCode(mMp) + " newInstance");
         mMpSessId++;
         mMpSurfAttached = false;
-        mMpVol = Policy.DEFAULT_VIDEO_VOLUME;
+        mMpVol = PolicyConstant.DEFAULT_VIDEO_VOLUME;
         initMediaPlayer(mMp);
         mpSetState(MPState.IDLE);
         mpSetStateFlag(MPSTATE_FLAG_IDLE);
@@ -593,6 +641,7 @@ UnexpectedExceptionHandler.Evidence {
 
         switch (mpGetState()) {
         case IDLE:
+            if (DBG) P.v("MP" + System.identityHashCode(mMp) + " setDataSource");
             mMp.setDataSource(path);
             mpSetState(MPState.INITIALIZED);
             return;
@@ -612,6 +661,7 @@ UnexpectedExceptionHandler.Evidence {
         case INITIALIZED:
         case STOPPED:
             mpSetState(MPState.PREPARING);
+            if (DBG) P.v("MP" + System.identityHashCode(mMp) + " prepareAsync");
             mMp.prepareAsync();
             return;
 
@@ -626,8 +676,10 @@ UnexpectedExceptionHandler.Evidence {
             return;
 
 
-        if (MPState.ERROR != mMpS && mMp.isPlaying())
+        if (MPState.ERROR != mMpS && mMp.isPlaying()) {
+            if (DBG) P.v("MP" + System.identityHashCode(mMp) + " stop");
             mMp.stop();
+        }
 
         // Why run at another thread?
         // Sometimes mMp.release takes too long time or may never return.
@@ -639,6 +691,7 @@ UnexpectedExceptionHandler.Evidence {
             public void
             run() {
                 mpUnsetVideoSurface();
+                if (DBG) P.v("MP" + System.identityHashCode(mp) + " release");
                 mp.release();
             }
         }).start();
@@ -648,6 +701,7 @@ UnexpectedExceptionHandler.Evidence {
 
     private void
     mpReset() {
+        if (DBG) P.v("MPlayer - reset");
         if (null == mMp)
             return;
 
@@ -661,6 +715,7 @@ UnexpectedExceptionHandler.Evidence {
         case STOPPED:
         case PLAYBACK_COMPLETED:
         case ERROR:
+            if (DBG) P.v("MP" + System.identityHashCode(mMp) + " reset");
             mMp.reset();
             mpSetState(MPState.IDLE);
             return;
@@ -719,7 +774,7 @@ UnexpectedExceptionHandler.Evidence {
         case INVALID:
         case END:
             if (DBG) P.v("MP [" + mpGetState().name() + "] : mpGetVolume ignored : ");
-            return Policy.DEFAULT_VIDEO_VOLUME;
+            return PolicyConstant.DEFAULT_VIDEO_VOLUME;
 
         default: // ignored
         }
@@ -835,6 +890,7 @@ UnexpectedExceptionHandler.Evidence {
         switch (mpGetState()) {
         case STARTED:
         case PAUSED:
+            if (DBG) P.v("MP" + System.identityHashCode(mMp) + " pause");
             mMp.pause();
             mpSetState(MPState.PAUSED);
             return;
@@ -879,6 +935,7 @@ UnexpectedExceptionHandler.Evidence {
         case STARTED:
         case PAUSED:
         case PLAYBACK_COMPLETED:
+            if (DBG) P.v("MP" + System.identityHashCode(mMp) + " start");
             mMp.start();
             mpSetState(MPState.STARTED);
             return;
@@ -902,6 +959,7 @@ UnexpectedExceptionHandler.Evidence {
         case PAUSED:
         case STOPPED:
         case PLAYBACK_COMPLETED:
+            if (DBG) P.v("MP" + System.identityHashCode(mMp) + " stop");
             mMp.stop();
             mpSetState(MPState.STOPPED);
             return;
@@ -947,20 +1005,20 @@ UnexpectedExceptionHandler.Evidence {
     // ========================================================================
     private void
     ytpSuspendPlaying() {
-        eAssert(Utils.isUiThread());
+        P.bug(AUtil.isUiThread());
         playerPause();
         mYtpS = YTPState.SUSPENDED;
     }
 
     private void
     ytpResumePlaying() {
-        eAssert(Utils.isUiThread());
+        P.bug(AUtil.isUiThread());
         mYtpS = YTPState.IDLE;
     }
 
     private boolean
     ytpIsSuspended() {
-        eAssert(Utils.isUiThread());
+        P.bug(AUtil.isUiThread());
         return YTPState.SUSPENDED == mYtpS;
     }
 
@@ -991,7 +1049,7 @@ UnexpectedExceptionHandler.Evidence {
             return;
         }
         ttsSetState(TTSState.PREPARING);
-        mTts = new TextToSpeech(Utils.getAppContext(), this);
+        mTts = new TextToSpeech(AppEnv.getAppContext(), this);
     }
 
     private void
@@ -1006,7 +1064,7 @@ UnexpectedExceptionHandler.Evidence {
             public void onError(String utteranceId) { }
             @Override
             public void onDone(final String utteranceId) {
-                Utils.getUiHandler().postDelayed(new Runnable() {
+                AppEnv.getUiHandler().postDelayed(new Runnable() {
                      @Override
                      public void
                      run() {
@@ -1018,12 +1076,11 @@ UnexpectedExceptionHandler.Evidence {
                          && utteranceId.equals(v.v.ytvid))
                              followingAction.run();
                      }
-                },
-                Policy.YTPLAYER_TTS_MARGIN_TIME);
+                }, PolicyConstant.YTPLAYER_TTS_MARGIN_TIME);
             }
         });
         try {
-            Thread.sleep(Policy.YTPLAYER_TTS_MARGIN_TIME);
+            Thread.sleep(PolicyConstant.YTPLAYER_TTS_MARGIN_TIME);
         } catch (InterruptedException ignored) {}
         HashMap<String, String> param = new HashMap<>();
         param.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, ytvid);
@@ -1055,13 +1112,13 @@ UnexpectedExceptionHandler.Evidence {
         // status can be either TextToSpeech.SUCCESS or TextToSpeech.ERROR.
         if (status == TextToSpeech.SUCCESS) {
             // set to current locale.
-            int result = mTts.setLanguage(Utils.getAppContext().getResources().getConfiguration().locale);
+            int result = mTts.setLanguage(AppEnv.getAppContext().getResources().getConfiguration().locale);
             if (result == TextToSpeech.LANG_MISSING_DATA ||
                 result == TextToSpeech.LANG_NOT_SUPPORTED) {
                 // Language data is missing or the language is not supported.
                 if (DBG) P.w("Language is not available.");
                 // code to show toast here is... really acceptable in terms of software design?
-                //UiUtils.showTextToast(Utils.getAppContext(), R.string.msg_couldnt_use_title_tts);
+                //UxUtil.showTextToast(AppEnv.getAppContext(), R.string.msg_couldnt_use_title_tts);
                 ttsClose();
             } else {
                 // The TTS engine has been successfully initialized.
@@ -1073,7 +1130,7 @@ UnexpectedExceptionHandler.Evidence {
             // Initialization failed.
             if (DBG) P.w("Could not initialize TextToSpeech.");
             // code to show toast here is... really acceptable in terms of software design?
-            //UiUtils.showTextToast(Utils.getAppContext(), R.string.msg_couldnt_use_title_tts);
+            //UxUtil.showTextToast(AppEnv.getAppContext(), R.string.msg_couldnt_use_title_tts);
             ttsClose();
         }
     }
@@ -1085,11 +1142,9 @@ UnexpectedExceptionHandler.Evidence {
     // ========================================================================
     private void
     onMpStateChanged(MPState from, int fromFlag,
-                     MPState to,   int toFlag) {
-        Iterator<PlayerStateListener> iter = mPStateLsnrl.iterator();
-        while (iter.hasNext())
-            iter.next().onStateChanged(from, fromFlag, to, toFlag);
-
+                     MPState to, int toFlag) {
+        for (PlayerStateListener l : mPStateLsnrl)
+            l.onStateChanged(from, fromFlag, to, toFlag);
         switch (to) {
         case PAUSED:
         case INVALID:
@@ -1101,8 +1156,8 @@ UnexpectedExceptionHandler.Evidence {
             break;
 
         case STOPPED:
-            if (null != mLoader)
-                mLoader.close();
+            mYtHackTask.removeEventListener(mYtHackTaskListener);
+            mTm.cancelTask(mYtHackTask, null);
             break;
 
         default: // ignored
@@ -1119,32 +1174,32 @@ UnexpectedExceptionHandler.Evidence {
 
     private int
     getVideoQualityScore() {
-        Utils.PrefQuality pq = Utils.getPrefQuality();
+        Util.PrefQuality pq = Util.getPrefQuality();
         //Keep below code for future refactoring.(It is always 'false')
         //noinspection ConstantConditions
         if (null == pq)
-            return YTHacker.getQScorePreferLow(mapPrefToQScore(Utils.PrefQuality.LOW));
+            return YTHackTask.getQScorePreferLow(mapPrefToQScore(Util.PrefQuality.LOW));
         int qscore = mapPrefToQScore(pq);
         switch (pq) {
         case LOW:
         case MIDLOW:
-            return YTHacker.getQScorePreferLow(qscore);
+            return YTHackTask.getQScorePreferLow(qscore);
 
         case NORMAL:
         case HIGH:
         case VERYHIGH:
-            return YTHacker.getQScorePreferHigh(qscore);
+            return YTHackTask.getQScorePreferHigh(qscore);
         }
-        eAssert(false);
-        return YTHacker.getQScorePreferLow(qscore);
+        P.bug(false);
+        return YTHackTask.getQScorePreferLow(qscore);
     }
 
     private static String
-    getCachedVideoFilePath(String ytvid, Utils.PrefQuality quality) {
-        // Only mp4 is supported by YTHacker.
+    getCachedVideoFilePath(String ytvid, Util.PrefQuality quality) {
+        // Only mp4 is supported by YTHackTask.
         // WebM and Flv is not supported directly in Android's MediaPlayer.
         // So, Mpeg is only option we can choose.
-        return Policy.APPDATA_CACHEDIR + ytvid + "-" + quality.name() + ".mp4";
+        return PolicyConstant.APPDATA_CACHEDIR + ytvid + "-" + quality.name() + ".mp4";
     }
 
     @NonNull
@@ -1152,76 +1207,55 @@ UnexpectedExceptionHandler.Evidence {
     getYtvidOfCachedFile(String path) {
         int idStartI = path.lastIndexOf('/') + 1;
         int idEndI   = path.lastIndexOf('-');
-        eAssert(11 == path.substring(idStartI, idEndI).length());
+        P.bug(11 == path.substring(idStartI, idEndI).length());
         return path.substring(idStartI, idEndI);
     }
 
     @NonNull
     static File
     getCachedVideo(String ytvid) {
-        return new File(getCachedVideoFilePath(ytvid, Utils.getPrefQuality()));
+        return new File(getCachedVideoFilePath(ytvid, Util.getPrefQuality()));
     }
 
     private void
-    cachingVideo(final String vid) {
-        File cacheFile = getCachedVideo(vid);
-        if ((cacheFile.exists() && cacheFile.canRead())
-            // previous operation is same with current request. And it is still running.
-            // So, ignore current request.
-            || cacheFile.getAbsolutePath().equals(mYtDnr.getCurrentTargetFile()))
+    cachingVideo(final String ytvid, long delayms) {
+        P.bug(AUtil.isUiThread());
+        File cacheFile = getCachedVideo(ytvid);
+        if ((cacheFile.exists() && cacheFile.canRead()) // already cached or under downloading
+             || (mYtCachingTask.tmId().equals(YTDownloadTask.tmId(cacheFile))
+                /* order is important. 'isReady' should be checked prior 'isRunning'
+                 *   because thread state is changed from 'ready' to 'started'.
+                 */
+                 && (mYtCachingTask.isReady() || mYtCachingTask.isRunning())))
             return;
+        mTm.cancelTask(mYtCachingTask, null);
 
-        mYtDnr.close();
-
-        mYtDnr = new YTDownloader();
-        YTDownloader.DownloadDoneReceiver rcvr = new DownloadDoneReceiver() {
-            @Override
+        YTDownloadTask.Builder<YTDownloadTask.Builder> ytdnb
+                = new YTDownloadTask.Builder<>(cacheFile, ytvid, getVideoQualityScore());
+        final YTDownloadTask ytdnTask = ytdnb.create();
+        AppEnv.getUiHandler().postDelayed(new Runnable() {
             public void
-            downloadDone(YTDownloader downloader, DnArg arg, YTDownloader.Err err) {
-                if (mYtDnr != downloader) {
-                    downloader.close();
-                    return;
-                }
-
-                int retryTag = (Integer)downloader.getTag();
-                if (!(YTDownloader.Err.NO_ERR == err
-                      || YTDownloader.Err.UNSUPPORTED_VIDFORMAT == err)
-                    && Utils.isNetworkAvailable()
-                    && retryTag > 0) {
-                    // retry.
-                    retryTag--;
-                    downloader.setTag(retryTag);
-                    downloader.download(vid, getCachedVideo(vid), getVideoQualityScore(), 500);
-                } else
-                    downloader.close();
-                // Ignore other cases even if it is fails.
+            run() {
+                if (!mTm.addTask(
+                        ytdnTask,
+                        ytdnTask.tmId(),
+                        TaskType.CACHING,
+                        null))
+                    // Same operation is already under running!
+                    // So, ignore current request.
+                    if (DBG) P.w("Caching request ignored(Already running): "
+                                 + ytdnTask.getYtvid());
             }
-        };
-
-        mYtDnr.open("", rcvr);
-        // to retry in case of YTHTTPGET.
-        mYtDnr.setTag(Policy.NETOWRK_CONN_RETRY);
-        mYtDnr.download(vid, getCachedVideo(vid), getVideoQualityScore(),
-        Policy.YTPLAYER_CACHING_DELAY);
+        }, delayms);
+        /* Retry mechanism when caching operation fails, is not implemented.
+         * (We may need to add listener and check where success or not and do something...)
+         * TODO: Is this(retry) really usful?
+         */
     }
 
     private void
     stopCaching() {
-        mYtDnr.close();
-    }
-
-    @SuppressWarnings("unused")
-    private void
-    stopCaching(final String ytvid) {
-        // If current downloading video is same with current active video
-        //   it's wasting operation. So, stop it!
-        String dningFile = mYtDnr.getCurrentTargetFile();
-        if (null == dningFile)
-            return;
-
-        String dnvid = getYtvidOfCachedFile(dningFile);
-        if (dnvid.equals(ytvid))
-            mYtDnr.close();
+        mTm.cancelTask(mYtCachingTask, null);
     }
 
     private void
@@ -1230,19 +1264,17 @@ UnexpectedExceptionHandler.Evidence {
             allClear = true;
 
         HashSet<String> skipSet = new HashSet<>();
-        // DO NOT delete cache directory itself!
-        skipSet.add(sCacheDir.getAbsolutePath());
         if (!allClear) {
             // delete all cached videos except for
             //   current and next video.
-            for (Utils.PrefQuality pq : Utils.PrefQuality.values()) {
+            for (Util.PrefQuality pq : Util.PrefQuality.values()) {
                 skipSet.add(new File(getCachedVideoFilePath(mVlm.getActiveVideo().v.ytvid, pq)).getAbsolutePath());
                 Video nextVid = mVlm.getNextVideo();
                 if (null != nextVid)
                     skipSet.add(new File(getCachedVideoFilePath(nextVid.v.ytvid, pq)).getAbsolutePath());
             }
         }
-        FileUtils.removeFileRecursive(sCacheDir, skipSet);
+        FileUtil.cleanDirectory(sCacheDir, skipSet);
     }
 
     private void
@@ -1251,15 +1283,14 @@ UnexpectedExceptionHandler.Evidence {
             stopCaching();
             return;
         }
-
-        cachingVideo(mVlm.getNextVideo().v.ytvid);
+        cachingVideo(mVlm.getNextVideo().v.ytvid, PolicyConstant.YTPLAYER_CACHING_DELAY);
     }
 
     private void
     preparePlayerAsync() {
         final MediaPlayer mp = mpGet();
 
-        Utils.getUiHandler().post(new Runnable() {
+        AppEnv.getUiHandler().post(new Runnable() {
             private int retry = 20;
 
             @Override
@@ -1269,31 +1300,30 @@ UnexpectedExceptionHandler.Evidence {
                     return; // ignore preparing for old media player.
 
                 if (retry < 0) {
-                    if (DBG)
-                        P.w("YTPlayer : video surface is never created! Preparing will be stopped.");
+                    if (DBG) P.w("YTPlayer : video surface is never created! Preparing will be stopped.");
                     mpStop();
                     return;
                 }
 
                 if (!isVideoMode()
-                || isSurfaceReady()) {
+                        || isSurfaceReady()) {
                     mpSetVideoSurface(mSurfHolder);
                     mpPrepareAsync();
                 } else {
                     --retry;
-                    Utils.getUiHandler().postDelayed(this, 100);
+                    AppEnv.getUiHandler().postDelayed(this, 100);
                 }
             }
         });
     }
 
     private void
-    prepareVideoStreamingFromYtHack(YTHacker ythack) {
-        YTHacker.YtVideo ytv = ythack.getVideo(getVideoQualityScore(), false);
+    prepareVideoStreamingFromYtHack(YTHackTask ythack) {
+        YTHackTask.YtVideo ytv = ythack.getVideo(getVideoQualityScore(), false);
         if (null == ytv) {
             // Video format is not supported...
             // Just skip it with toast!
-            mUi.notifyToUser(Utils.getResString(R.string.err_ytnot_supported_vidformat));
+            mUi.notifyToUser(AUtil.getResString(R.string.err_ytnot_supported_vidformat));
             startNext();
             return;
         }
@@ -1311,81 +1341,31 @@ UnexpectedExceptionHandler.Evidence {
 
     private void
     prepareVideoStreaming(final String ytvid) {
+        P.bug(AUtil.isUiThread());
         if (DBG) P.v("ytid : " + ytvid);
 
-        YTHacker hacker = RTState.get().getCachedYtHacker(ytvid);
-        if (null != hacker
-            && ytvid.equals(hacker.getYtvid())
-            && (System.currentTimeMillis() - hacker.getHackTimeStamp()) < Policy.YTHACK_REUSE_TIMEOUT) {
-            eAssert(hacker.hasHackedResult());
+        YTHackTask hack = RTState.get().getCachedYtHack(ytvid);
+        if (null != hack
+                && ytvid.equals(hack.getYtvid())
+                && (System.currentTimeMillis() - hack.getHackTimeStamp()) < PolicyConstant.YTHACK_REUSE_TIMEOUT) {
+            P.bug(hack.hasHackedResult());
             // Let's try to reuse it.
-            prepareVideoStreamingFromYtHack(hacker);
+            prepareVideoStreamingFromYtHack(hack);
             return;
         }
 
-        if (null != mYtHack
-            && ytvid.equals(mYtHack.getYtvid())
-            && !mYtHack.hasHackedResult())
-            // hacking for this video is already on-going.
-            // this request is ignored.
-            return;
-
-        YTHacker.YtHackListener listener = new YTHacker.YtHackListener() {
-            @Override
-            public void
-            onPreHack(YTHacker ythack, String ytvid, Object user) {
-            }
-
-            @Override
-            public void
-            onPostHack(final YTHacker ythack, YTHacker.Err result, final NetLoader loader,
-                       String ytvid, Object user) {
-                if (mYtHack != ythack) {
-                    // Another try is already done.
-                    // So, this response should be ignored.
-                    if (DBG) P.v("YTPlayer Old Youtube connection is finished. Ignored");
-                    loader.close();
-                    return;
-                }
-
-                mYtHack = null;
-                if (null != mLoader)
-                    mLoader.close();
-                mLoader = loader;
-
-                if (YTHacker.Err.NO_ERR != result) {
-                    if (DBG) P.w("YTPlayer YTHack Fails : " + result.name());
-                    switch (result) {
-                    case IO_NET:
-                        mStartVideoRecovery.executeRecoveryStart(mVlm.getActiveVideo());
-                        break;
-
-                    default:
-                        // NOTE : Dirty!!!
-                        // But, extremely exceptional case that model referencing UI code
-                        mUi.notifyToUser(Utils.getResString(
-                                free.yhc.netmbuddy.Err.map(result).getMessage()));
-                        startNext(); // Move to next video.
-                    }
-                    return;
-                }
-
-                prepareVideoStreamingFromYtHack(ythack);
-            }
-
-            @Override
-            public void
-            onHackCancelled(YTHacker ythack, String ytvid, Object user) {
-                if (mYtHack != ythack) {
-                    if (DBG) P.v("Old Youtube connection is cancelled. Ignored");
-                    return;
-                }
-
-                mYtHack = null;
-            }
-        };
-        mYtHack = new YTHacker(ytvid, null, listener);
-        mYtHack.startAsync();
+        YTHackTask.Builder<YTHackTask.Builder> hb
+                = new YTHackTask.Builder<>(ytvid);
+        final YTHackTask hackTask = hb.create();
+        hackTask.addEventListener(AppEnv.getUiHandlerAdapter(), mYtHackTaskListener);
+        if (mTm.addTask(
+                hackTask,
+                "YTPlayer.HACK:" + ytvid,
+                TaskType.HACK,
+                null))
+            mYtHackTask = hackTask;
+        else
+            P.w("YTHackTask already running. Request is ignored. ID:" + ytvid);
     }
 
     private void
@@ -1415,7 +1395,7 @@ UnexpectedExceptionHandler.Evidence {
 
     private void
     startVideo(final String ytvid, final String title, final int volume, boolean recovery) {
-        eAssert(0 <= volume && volume <= 100);
+        P.bug(0 <= volume && volume <= 100);
 
         // Reset flag regarding video size.
         setVideoSizeReady(false);
@@ -1429,19 +1409,16 @@ UnexpectedExceptionHandler.Evidence {
         if (recovery) {
             mErrRetry--;
             if (mErrRetry <= 0) {
-                if (Utils.isNetworkAvailable()) {
+                if (Util.isNetworkAvailable()) {
+                    mUi.notifyToUser(AUtil.getResString(R.string.err_play_video));
                     if (mVlm.hasNextVideo()) {
                         if (mVlm.hasActiveVideo()) {
                             Video v = mVlm.getActiveVideo();
-                            if (DBG) {
-                                P.w("YTPlayer Recovery video play Fails");
-                                P.w("    ytvid : " + v.v.ytvid);
-                                P.w("    title : " + v.v.title);
-                            }
+                            if (DBG) P.w("YTPlayer: Recovery play fails: " + v.infoString());
                         }
                         startNext(); // move to next video.
                     } else
-                        stopPlay(StopState.UNKNOWN_ERROR);
+                        stopPlay(StopState.FAIL_PLAYING);
                 } else
                     stopPlay(StopState.NETWORK_UNAVAILABLE);
 
@@ -1450,9 +1427,8 @@ UnexpectedExceptionHandler.Evidence {
         } else
             mErrRetry = PLAYER_ERR_RETRY;
 
-        // Stop if tts is playing
-        if (null != mYtHack)
-            mYtHack.forceCancel();
+        mTm.cancelTask(mYtHackTask, null);
+
         // Stop if player is already running.
         mpStop();
         mpRelease();
@@ -1484,7 +1460,7 @@ UnexpectedExceptionHandler.Evidence {
         // The 2nd is "Network bandwidth burden"
         //
         // 1st one can be resolve by dropping caching thread's priority.
-        // (Priority of YTDownloader thread, is already set as THREAD_PRIORITY_BACKGROUND.)
+        // (Priority of YTDownloadTask thread, is already set as MIDLOW.)
         //
         // 2nd one is actually, main concern point.
         // But usually, in Wifi environment, network bandwidth is large enough versus video-bits-rate.
@@ -1502,7 +1478,7 @@ UnexpectedExceptionHandler.Evidence {
                 if (cachedVid.exists() && cachedVid.canRead())
                     prepareCachedVideo(cachedVid);
                 else {
-                    if (!Utils.isNetworkAvailable())
+                    if (!Util.isNetworkAvailable())
                         mStartVideoRecovery.executeRecoveryStart(new Video(ytvid, title, volume, 0), 1000);
                     else
                         prepareVideoStreaming(ytvid);
@@ -1510,10 +1486,10 @@ UnexpectedExceptionHandler.Evidence {
             }
         };
 
-        if (Utils.isPrefHeadTts()) {
-            String text = Utils.getResString(R.string.tts_title_head_pre) + " "
+        if (Util.isPrefHeadTts()) {
+            String text = AUtil.getResString(R.string.tts_title_head_pre) + " "
                           + title + " "
-                          + Utils.getResString(R.string.tts_title_head_post);
+                          + AUtil.getResString(R.string.tts_title_head_post);
             ttsSpeak(text, ytvid, action);
         } else
             action.run();
@@ -1555,12 +1531,11 @@ UnexpectedExceptionHandler.Evidence {
     private void
     stopPlay(StopState st) {
         if (DBG) P.v("YTPlayer stopPlay : " + st.name());
-        if (null != mYtHack)
-            mYtHack.forceCancel();
+        mTm.cancelTask(mYtHackTask, null);
         ttsStop();
 
         if (StopState.DONE == st
-            && Utils.isPrefRepeat()) {
+            && Util.isPrefRepeat()) {
             if (mVlm.moveToFist()) {
                 startVideo(mVlm.getActiveVideo(), false);
                 return;
@@ -1578,17 +1553,15 @@ UnexpectedExceptionHandler.Evidence {
         mpRelease();
         releaseLocks();
         mVlm.reset();
-        mYtDnr.close();
+        stopCaching();
         mErrRetry = PLAYER_ERR_RETRY;
 
         // This should be called before changing title because
         //   title may be changed in onMpStateChanged().
         // We need to overwrite title message.
         mpSetState(MPState.INVALID);
-
-        Iterator<VideosStateListener> iter = mVStateLsnrl.iterator();
-        while (iter.hasNext())
-            iter.next().onStopped(st);
+        for (VideosStateListener l : mVStateLsnrl)
+            l.onStopped(st);
     }
 
     private void
@@ -1602,7 +1575,7 @@ UnexpectedExceptionHandler.Evidence {
         //   new store is requested.
         // So, play need to keep last state.
         int storedPos = 0;
-        int storedVol = Policy.DEFAULT_VIDEO_VOLUME;
+        int storedVol = PolicyConstant.DEFAULT_VIDEO_VOLUME;
         if (mVlm.hasActiveVideo()) {
             Long vol = (Long)mDb.getVideoInfo(mVlm.getActiveVideo().v.ytvid, ColVideo.VOLUME);
             if (null != vol)
@@ -1728,9 +1701,8 @@ UnexpectedExceptionHandler.Evidence {
         if (DBG) P.v("MPlayer - onBufferingUpdate : " + percent + " %");
         // See comments around MEDIA_INFO_BUFFERING_START in onInfo()
         //mpSetState(MPState.BUFFERING);
-        Iterator<PlayerStateListener> iter = mPStateLsnrl.iterator();
-        while (iter.hasNext())
-            iter.next().onBufferingChanged(percent);
+        for (PlayerStateListener l : mPStateLsnrl)
+            l.onBufferingChanged(percent);
     }
 
     @Override
@@ -1747,11 +1719,11 @@ UnexpectedExceptionHandler.Evidence {
         };
 
         if (mVlm.hasActiveVideo()
-            && Utils.isPrefTailTts()) {
+            && Util.isPrefTailTts()) {
             Video v  = mVlm.getActiveVideo();
-            String text = Utils.getResString(R.string.tts_title_tail_pre) + " "
+            String text = AUtil.getResString(R.string.tts_title_tail_pre) + " "
                           + v.v.title + " "
-                          + Utils.getResString(R.string.tts_title_tail_post);
+                          + AUtil.getResString(R.string.tts_title_tail_post);
             ttsSpeak(text, v.v.ytvid, action);
         } else
             action.run();
@@ -1819,6 +1791,7 @@ UnexpectedExceptionHandler.Evidence {
     public boolean
     onError(MediaPlayer mp, int what, int extra) {
         boolean tryAgain = true;
+        if (DBG) P.v("MP" + System.identityHashCode(mp) + " error");
         MPState origState = mpGetState();
         mpSetState(MPState.ERROR);
         switch (what) {
@@ -1843,8 +1816,9 @@ UnexpectedExceptionHandler.Evidence {
             && mVlm.hasActiveVideo()
             && (MPState.INITIALIZED == origState
                 || MPState.PREPARING == origState)) {
-            if (DBG) P.v("MPlayer - Try to recover!");
-            startVideo(mVlm.getActiveVideo(), true);
+            Video v = mVlm.getActiveVideo();
+            if (DBG) P.i("MPlayer - Try to recover: " + v.infoString());
+            startVideo(v, true);
         } else {
             if (!haveStoredPlayerState()) {
                 if (DBG) P.v("MPlayer - not-recoverable error : " + what + "/" + extra);
@@ -1896,10 +1870,10 @@ UnexpectedExceptionHandler.Evidence {
     @Override
     public void
     onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-        if (!Utils.getResString(R.string.cstitle_tts).equals(key))
+        if (!AUtil.getResString(R.string.cstitle_tts).equals(key))
             return; // don't care others
 
-        if (Utils.isPrefTtsEnabled())
+        if (Util.isPrefTtsEnabled())
             ttsOpen();
         else
             ttsClose();
@@ -1991,8 +1965,7 @@ UnexpectedExceptionHandler.Evidence {
 
     void
     playerStop() {
-        if (null != mYtHack)
-            mYtHack.forceCancel();
+        mTm.cancelTask(mYtHackTask, null);
         mpStop();
     }
 
@@ -2023,7 +1996,7 @@ UnexpectedExceptionHandler.Evidence {
      */
     void
     playerSetVolume(int vol) {
-        eAssert(0 <= vol && vol <= 100);
+        P.bug(0 <= vol && vol <= 100);
         mpSetVolume(vol);
     }
 
@@ -2049,23 +2022,29 @@ UnexpectedExceptionHandler.Evidence {
     // ============================================================================
     private YTPlayer() {
         UnexpectedExceptionHandler.get().registerModule(this);
+        // mYtHackTask and mYtCachingTask are set as invalid initial instance to avoid checking 'null'
+        YTHackTask.Builder<YTHackTask.Builder> hb
+                = new YTHackTask.Builder<>("");
+        mYtHackTask = hb.create();
+        YTDownloadTask.Builder<YTDownloadTask.Builder> dnb
+                = new YTDownloadTask.Builder<>(new File(""), "", 0);
+        mYtCachingTask = dnb.create();
         mVlm = new YTPlayerVideoListManager(new YTPlayerVideoListManager.OnListChangedListener() {
             @Override
             public void
             onChanged(YTPlayerVideoListManager vm) {
-                eAssert(Utils.isUiThread());
+                P.bug(AUtil.isUiThread());
                 mUi.updateLDrawerList();
-                Iterator<VideosStateListener> iter = mVStateLsnrl.iterator();
-                while (iter.hasNext())
-                    iter.next().onChanged();
+                for (VideosStateListener l : mVStateLsnrl)
+                    l.onPlayQChanged();
             }
         });
 
         // Check TTS usage
-        if (Utils.isPrefTtsEnabled())
+        if (Util.isPrefTtsEnabled())
             ttsOpen();
 
-        PreferenceManager.getDefaultSharedPreferences(Utils.getAppContext())
+        PreferenceManager.getDefaultSharedPreferences(AppEnv.getAppContext())
                          .registerOnSharedPreferenceChangeListener(this);
     }
 
@@ -2083,30 +2062,30 @@ UnexpectedExceptionHandler.Evidence {
     }
 
     public static int
-    mapPrefToQScore(Utils.PrefQuality prefq) {
+    mapPrefToQScore(Util.PrefQuality prefq) {
         if (null == prefq) {
-            eAssert(false);
-            return YTHacker.YTQUALITY_SCORE_LOWEST;
+            P.bug(false);
+            return YTHackTask.YTQUALITY_SCORE_LOWEST;
         }
 
         switch (prefq) {
         case LOW:
-            return YTHacker.YTQUALITY_SCORE_LOWEST;
+            return YTHackTask.YTQUALITY_SCORE_LOWEST;
 
         case MIDLOW:
-            return YTHacker.YTQUALITY_SCORE_LOW;
+            return YTHackTask.YTQUALITY_SCORE_LOW;
 
         case NORMAL:
-            return YTHacker.YTQUALITY_SCORE_MIDLOW;
+            return YTHackTask.YTQUALITY_SCORE_MIDLOW;
 
         case HIGH:
-            return YTHacker.YTQUALITY_SCORE_HIGH;
+            return YTHackTask.YTQUALITY_SCORE_HIGH;
 
         case VERYHIGH:
-            return YTHacker.YTQUALITY_SCORE_HIGHEST;
+            return YTHackTask.YTQUALITY_SCORE_HIGHEST;
         }
-        eAssert(false);
-        return YTHacker.YTQUALITY_SCORE_LOWEST;
+        P.bug(false);
+        return YTHackTask.YTQUALITY_SCORE_LOWEST;
     }
 
     /**
@@ -2144,40 +2123,37 @@ UnexpectedExceptionHandler.Evidence {
     }
 
     public void
-    addVideosStateListener(Object key, VideosStateListener listener) {
-        eAssert(null != listener);
-        mVStateLsnrl.remove(key);
-        mVStateLsnrl.add(key, listener);
+    addVideosStateListener(VideosStateListener listener) {
+        P.bug(null != listener);
+        mVStateLsnrl.add(listener);
     }
 
     public void
-    removeVideosStateListener(Object key) {
-        mVStateLsnrl.remove(key);
+    removeVideosStateListener(VideosStateListener listener) {
+        mVStateLsnrl.remove(listener);
     }
 
     public void
-    addPlayerStateListener(Object key, PlayerStateListener listener) {
-        eAssert(null != listener);
-        mPStateLsnrl.remove(key);
-        mPStateLsnrl.add(key, listener);
+    addPlayerStateListener(PlayerStateListener listener) {
+        P.bug(null != listener);
+        mPStateLsnrl.add(listener);
     }
 
     public void
-    removePlayerStateListener(Object key) {
-        mPStateLsnrl.remove(key);
+    removePlayerStateListener(PlayerStateListener listener) {
+        mPStateLsnrl.remove(listener);
     }
 
 
     public void
-    addOnDbUpdatedListener(Object key, YTPlayer.OnDBUpdatedListener listener) {
-        mUi.addOnDbUpdatedListener(key, listener);
+    addOnDbUpdatedListener(YTPlayer.OnDBUpdatedListener listener) {
+        mUi.addOnDbUpdatedListener(listener);
     }
 
     public void
-    removeOnDbUpdatedListener(Object key) {
-        mUi.removeOnDbUpdatedListener(key);
+    removeOnDbUpdatedListener(YTPlayer.OnDBUpdatedListener listener) {
+        mUi.removeOnDbUpdatedListener(listener);
     }
-
 
     public void
     setSurfaceHolder(SurfaceHolder holder) {
@@ -2281,12 +2257,12 @@ UnexpectedExceptionHandler.Evidence {
 
     public boolean
     isPlayerSeeking() {
-        return Utils.bitIsSet(mpGetStateFlag(), MPSTATE_FLAG_SEEKING);
+        return Util.bitIsSet(mpGetStateFlag(), MPSTATE_FLAG_SEEKING);
     }
 
     public boolean
     isPlayerBuffering() {
-        return Utils.bitIsSet(mpGetStateFlag(), MPSTATE_FLAG_BUFFERING);
+        return Util.bitIsSet(mpGetStateFlag(), MPSTATE_FLAG_BUFFERING);
     }
 
     /**
@@ -2319,7 +2295,7 @@ UnexpectedExceptionHandler.Evidence {
 
     public void
     startVideos(final Video[] vs) {
-        eAssert(Utils.isUiThread());
+        P.bug(AUtil.isUiThread());
 
         if (null == vs || vs.length <= 0)
             return;
@@ -2332,9 +2308,8 @@ UnexpectedExceptionHandler.Evidence {
 
         if (mVlm.moveToFist()) {
             startVideo(mVlm.getActiveVideo(), false);
-            Iterator<VideosStateListener> iter = mVStateLsnrl.iterator();
-            while (iter.hasNext())
-                iter.next().onStarted();
+            for (VideosStateListener l : mVStateLsnrl)
+                l.onStarted();
             mUi.setPlayerVisibility(View.VISIBLE);
         }
     }
@@ -2345,14 +2320,14 @@ UnexpectedExceptionHandler.Evidence {
      */
     public void
     startVideos(final Cursor c, final boolean shuffle) {
-        eAssert(Utils.isUiThread());
+        P.bug(AUtil.isUiThread());
 
         new Thread(new Runnable() {
             @Override
             public void
             run() {
                 final Video[] vs = getVideos(c, shuffle);
-                Utils.getUiHandler().post(new Runnable() {
+                AppEnv.getUiHandler().post(new Runnable() {
                     @Override
                     public void
                     run() {

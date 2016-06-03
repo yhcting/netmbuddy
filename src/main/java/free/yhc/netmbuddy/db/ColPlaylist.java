@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014, 2015
+ * Copyright (C) 2012, 2013, 2014, 2015, 2016
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -36,9 +36,10 @@
 
 package free.yhc.netmbuddy.db;
 
-import static free.yhc.netmbuddy.utils.Utils.eAssert;
 import android.content.ContentValues;
 import android.provider.BaseColumns;
+
+import free.yhc.baselib.Logger;
 
 public enum ColPlaylist implements DB.Col {
     TITLE           ("title",           "text",     null,   "not null"),
@@ -65,6 +66,9 @@ public enum ColPlaylist implements DB.Col {
 
     ID              (BaseColumns._ID,   "integer",  null,   "primary key autoincrement");
 
+    private static final boolean DBG = Logger.DBG_DEFAULT;
+    private static final Logger P = Logger.create(ColPlaylist.class, Logger.LOGLV_DEFAULT);
+
     private final String _mName;
     private final String _mType;
     private final String _mConstraint;
@@ -72,7 +76,7 @@ public enum ColPlaylist implements DB.Col {
 
     static ContentValues
     createContentValuesForInsert(String title) {
-        eAssert(null != title);
+        P.bug(null != title);
         ContentValues cvs = new ContentValues();
         cvs.put(TITLE.getName(), title);
         cvs.put(DESCRIPTION.getName(), "");

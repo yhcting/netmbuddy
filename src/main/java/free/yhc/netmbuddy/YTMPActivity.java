@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014, 2015
+ * Copyright (C) 2012, 2013, 2014, 2015, 2016
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -38,24 +38,44 @@ package free.yhc.netmbuddy;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.os.Bundle;
-import free.yhc.netmbuddy.utils.Utils;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
+
+import free.yhc.baselib.Logger;
+import free.yhc.abaselib.util.UxUtil;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class YTMPActivity extends Activity {
-    @SuppressWarnings("unused")
-    private static final boolean DBG = false;
-    @SuppressWarnings("unused")
-    private static final Utils.Logger P = new Utils.Logger(YTMPActivity.class);
+    private static final boolean DBG = Logger.DBG_DEFAULT;
+    private static final Logger P = Logger.create(YTMPActivity.class, Logger.LOGLV_DEFAULT);
 
-    @Override
-    public void
-    onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+    private static final int PERM_REQ_ESSENTIAL = 0;
 
+    private void
+    handleSendText(Intent intent) {
+        String recivedText = intent.getData().toString();
+
+        // Filter the received text to match a valid search term:
+        // youtube.+v=  ---> "youtube" + one or more chars + "v="
+        // [^&|\n]+     ---> one or more chars + "&" or end of line
+        Pattern p = Pattern.compile("youtube.+v=[^&|\n]+");
+        Matcher m = p.matcher(recivedText);
+        String path = "";
+        if(m.find())
+            path = m.group();
+
+        Intent i = new Intent(this, YTVideoSearchKeywordActivity.class);
+        i.putExtra(YTSearchActivity.KEY_TEXT, path);
+        startActivity(i);
+    }
+
+    private void
+    startMainActivity() {
         Intent i = new Intent(this, PlaylistActivity.class);
         startActivity(i);
 
@@ -63,27 +83,38 @@ public class YTMPActivity extends Activity {
         String action = intent.getAction();
 
         if (Intent.ACTION_VIEW.equals(action))
-        	handleSendText(intent);
-        	
-        finish();
+            handleSendText(intent);
     }
-    
-    private void
-    handleSendText(Intent intent) {
-        String recivedText = intent.getData().toString();
-        
-        // Filter the received text to match a valid search term:
-        // youtube.+v=  ---> "youtube" + one or more chars + "v="
-        // [^&|\n]+     ---> one or more chars + "&" or end of line
-        Pattern p = Pattern.compile("youtube.+v=[^&|\n]+");
-        Matcher m = p.matcher(recivedText);
-    	String path = "";
-        if(m.find())
-        	path = m.group();
-        
-        Intent i = new Intent(this, YTVideoSearchKeywordActivity.class);
-        i.putExtra(YTSearchActivity.KEY_TEXT, path);
-        startActivity(i);
+
+    @Override
+    public void
+    onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        if (YTMPApp.hasEssentialPermissions()) {
+            startMainActivity();
+            finish();
+        } else {
+            ActivityCompat.requestPermissions(
+                    this, YTMPApp.getEssentialPermissions(), PERM_REQ_ESSENTIAL);
+        }
+    }
+
+    @Override
+    public void
+    onRequestPermissionsResult(final int requestCode,
+                               @NonNull final String[] permissions,
+                               @NonNull final int[] grantResults) {
+        P.bug(PERM_REQ_ESSENTIAL == requestCode);
+        if (grantResults.length > 0
+                && PackageManager.PERMISSION_GRANTED == grantResults[0]) {
+            YTMPApp.initApplicationPostEssentialPermissions();
+            startMainActivity();
+        } else {
+            if (!YTMPApp.hasEssentialPermissions()) {
+                UxUtil.showTextToast(R.string.err_essential_perm);
+            }
+        }
+        finish();
     }
 
     @Override

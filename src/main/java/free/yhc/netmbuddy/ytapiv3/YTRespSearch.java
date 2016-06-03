@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2015
+ * Copyright (C) 2015, 2016
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -41,23 +41,20 @@ import android.net.Uri;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import free.yhc.netmbuddy.core.YTDataAdapter;
-import free.yhc.netmbuddy.utils.Utils;
-
-import static free.yhc.netmbuddy.utils.Utils.eAssert;
+import free.yhc.baselib.Logger;
+import free.yhc.baselib.exception.BadResponseException;
 
 public class YTRespSearch extends YTResp {
-    @SuppressWarnings("unused")
-    private static final boolean DBG = false;
-    @SuppressWarnings("unused")
-    private static final Utils.Logger P = new Utils.Logger(YTRespSearch.class);
+    private static final boolean DBG = Logger.DBG_DEFAULT;
+    private static final Logger P = Logger.create(YTRespSearch.class, Logger.LOGLV_DEFAULT);
 
     static String
     getVideoSearchRequestUrl(String channelId,
                              String query,
                              String pageToken,
                              int maxResults) {
-        eAssert(null != pageToken);
+        P.bug(null != pageToken);
+        assert null != pageToken;
         if (!pageToken.isEmpty())
             pageToken = "&pageToken=" + Uri.encode(pageToken, null);
         if (!channelId.isEmpty())
@@ -79,12 +76,13 @@ public class YTRespSearch extends YTResp {
     YTRespSearch() { }
 
     static YTResp.SearchListResponse
-    parse(byte[] data) throws YTDataAdapter.YTApiException {
+    parse(byte[] data) throws BadResponseException {
         JSONObject jo;
         try {
             jo = new JSONObject(new String(data));
         } catch (JSONException e) {
-            throw new YTDataAdapter.YTApiException(YTDataAdapter.Err.BAD_RESPONSE);
+            if (DBG) P.w("Youtube data api gives bad response!!");
+            throw new BadResponseException(e);
         }
         YTResp.SearchListResponse resp = new YTResp.SearchListResponse();
         resp.set(jo);

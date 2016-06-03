@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014, 2015
+ * Copyright (C) 2012, 2013, 2014, 2015, 2016
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -36,33 +36,51 @@
 
 package free.yhc.netmbuddy.utils;
 
-import static free.yhc.netmbuddy.utils.Utils.eAssert;
-
 import android.graphics.Bitmap;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.net.URL;
+
+import free.yhc.abaselib.AppEnv;
+import free.yhc.baselib.Logger;
+import free.yhc.baselib.exception.BadResponseException;
+import free.yhc.baselib.net.NetReadTask;
+import free.yhc.abaselib.util.ImgUtil;
 import free.yhc.netmbuddy.R;
 import free.yhc.netmbuddy.core.YTDataAdapter;
-import free.yhc.netmbuddy.core.YTDataHelper;
 import free.yhc.netmbuddy.db.DMVideo;
+import free.yhc.netmbuddy.task.YTHackTask;
+import free.yhc.netmbuddy.task.YTThumbnailTask;
 import free.yhc.netmbuddy.ytapiv3.YTApiFacade;
-import free.yhc.netmbuddy.core.YTHacker;
 
-public class YTUtils {
-    @SuppressWarnings("unused")
-    private static final boolean DBG = false;
-    @SuppressWarnings("unused")
-    private static final Utils.Logger P = new Utils.Logger(YTUtils.class);
+public class YTUtil {
+    private static final boolean DBG = Logger.DBG_DEFAULT;
+    private static final Logger P = Logger.create(YTUtil.class, Logger.LOGLV_DEFAULT);
 
-    private static YTDataHelper.ThumbnailResp
-    loadYtVideoThumbnail(String ytvid) throws YTDataAdapter.YTApiException {
-        String thumbnailUrl = YTHacker.getYtVideoThumbnailUrl(ytvid);
-        YTDataHelper.ThumbnailReq req = new YTDataHelper.ThumbnailReq(
-            null,
-            thumbnailUrl,
-            Utils.getAppContext().getResources().getDimensionPixelSize(R.dimen.thumbnail_width),
-            Utils.getAppContext().getResources().getDimensionPixelSize(R.dimen.thumbnail_height));
-        return YTDataHelper.requestThumbnail(req);
+    /**
+     * @throws InterruptedException
+     * @throws IOException (MalformedURLException ...)
+     */
+    @NonNull
+    public static byte[]
+    loadYtDataUrl(String urlstr)
+            throws InterruptedException, IOException {
+        URL url = new URL(urlstr);
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream(4096)){
+            NetReadTask.Builder<NetReadTask.Builder> nrb
+                    = new NetReadTask.Builder<>(Util.createNetConn(url), baos);
+            try {
+                nrb.create().startSync();
+            } catch (IOException | InterruptedException e) {
+                throw e;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            return baos.toByteArray();
+        }
     }
 
     public static boolean
@@ -87,7 +105,7 @@ public class YTUtils {
     getYtVideoData(String ytvid) {
         try {
             return YTApiFacade.requestVideoInfo(ytvid);
-        } catch (YTDataAdapter.YTApiException e) {
+        } catch (InterruptedException | IOException | BadResponseException e) {
             return null;
         }
     }
@@ -95,21 +113,27 @@ public class YTUtils {
     @Nullable
     public static Bitmap
     getYtThumbnail(String ytvid) {
-        YTDataHelper.ThumbnailResp tr;
-        // Loading thumbnail is done.
         try {
-            tr = loadYtVideoThumbnail(ytvid);
-        } catch (YTDataAdapter.YTApiException e) {
+            YTThumbnailTask t = YTThumbnailTask.create(
+                    new URL(YTHackTask.getYtVideoThumbnailUrl(ytvid)),
+                    AppEnv.getAppContext().getResources().getDimensionPixelSize(R.dimen.thumbnail_width),
+                    AppEnv.getAppContext().getResources().getDimensionPixelSize(R.dimen.thumbnail_height),
+                    null);
+            try {
+                return t.startSync();
+            } catch (InterruptedException | IOException | BadResponseException e) {
+                throw e;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        } catch (InterruptedException | BadResponseException | IOException e) {
             return null;
         }
-        if (null == tr)
-            return null;
-        return tr.bm;
     }
 
     public static boolean
     fillYtDataAndThumbnail(DMVideo v) {
-        eAssert(verifyYoutubeVideoId(v.ytvid));
+        P.bug(verifyYoutubeVideoId(v.ytvid));
         if (!v.isYtDataFilled()) {
             YTDataAdapter.Video ytv = getYtVideoData(v.ytvid);
             if (null == ytv)
@@ -121,11 +145,11 @@ public class YTUtils {
             // Getting thumbnail URL from youtube video id requires downloanding and parsing.
             // It takes too much time.
             // So, a kind of HACK is used to get thumbnail URL from youtube video id.
-            // see comments of 'YTHacker.getYtVideoThumbnailUrl()' for details.
+            // see comments of 'YTHackTask.getYtVideoThumbnailUrl()' for details.
             Bitmap bm = getYtThumbnail(v.ytvid);
             if (null == bm)
                 return false;
-            v.setThumbnail(ImageUtils.compressBitmap(bm));
+            v.setThumbnail(ImgUtil.compressToJpeg(bm));
             bm.recycle();
         }
         return true;

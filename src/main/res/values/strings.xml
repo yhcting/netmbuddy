@@ -206,6 +206,7 @@ It may takes long time(up to several minutes) in case that:\n
     <string name="err_no_match">No matching result.</string>
     <string name="err_ytsearch">Fail in searching Youtube.</string>
     <string name="err_ytprotocol">Error in communication with Youtube.</string>
+    <string name="err_essential_perm">Essential permissions are not granted.</string>
     <string name="err_not_implemented">Not implemented yet.</string>
     <string name="err_ytparsehtml">
 Error getting video from Youtube.\n
@@ -220,6 +221,7 @@ This can be caused by one of below reasons.\n
     <string name="err_end_of_data">End of data.</string>
     <string name="err_invalid_data">Invalid data. Data may be broken or unknown source.</string>
     <string name="err_unsupported_version">Unsupported version.</string>
+    <string name="err_play_video">Fail to play video. It may caused by unstable network or unavailable video format.</string>
 
     <string name="appinfo_text">
 E-mail : yhcting77@gmail.com\n

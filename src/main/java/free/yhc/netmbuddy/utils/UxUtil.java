@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014, 2015
+ * Copyright (C) 2012, 2013, 2014, 2015, 2016
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -36,12 +36,9 @@
 
 package free.yhc.netmbuddy.utils;
 
-import static free.yhc.netmbuddy.utils.Utils.eAssert;
-
 import java.text.DateFormat;
 import java.util.Date;
 import java.util.LinkedList;
-import java.util.concurrent.atomic.AtomicReference;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -56,9 +53,8 @@ import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
-import android.view.Gravity;
+import android.support.annotation.NonNull;
 import android.view.KeyEvent;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.AdapterView;
@@ -66,23 +62,27 @@ import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
-import android.widget.Toast;
-import free.yhc.netmbuddy.DiagAsyncTask;
+
+import free.yhc.abaselib.AppEnv;
+import free.yhc.baselib.Logger;
+import free.yhc.baselib.async.Task;
+import free.yhc.abaselib.util.AUtil;
+import free.yhc.abaselib.ux.DialogTask;
 import free.yhc.netmbuddy.Err;
 import free.yhc.netmbuddy.R;
 import free.yhc.netmbuddy.db.ColPlaylist;
 import free.yhc.netmbuddy.db.ColVideo;
 import free.yhc.netmbuddy.db.DB;
 import free.yhc.netmbuddy.db.DB.Bookmark;
-import free.yhc.netmbuddy.core.Policy;
-import free.yhc.netmbuddy.core.YTHacker;
+import free.yhc.netmbuddy.core.PolicyConstant;
 import free.yhc.netmbuddy.core.YTPlayer;
 import free.yhc.netmbuddy.db.DMVideo;
 import free.yhc.netmbuddy.scmp.SCmp;
+import free.yhc.netmbuddy.task.YTHackTask;
 
-public class UiUtils {
-    private static final boolean DBG = false;
-    private static final Utils.Logger P = new Utils.Logger(UiUtils.class);
+public class UxUtil extends free.yhc.abaselib.util.UxUtil {
+    private static final boolean DBG = Logger.DBG_DEFAULT;
+    private static final Logger P = Logger.create(free.yhc.netmbuddy.utils.UxUtil.class, Logger.LOGLV_DEFAULT);
 
     public static final long PLID_INVALID = DB.INVALID_PLAYLIST_ID;
     // Special playlist id that represents that this is unknown non-user playlist.
@@ -93,16 +93,11 @@ public class UiUtils {
     // NOTE
     // To save time for decoding image, pre-decoded bitmap is uses for unknown thumbnail image.
     private static final Bitmap sBmIcUnknownImage
-        = BitmapFactory.decodeResource(Utils.getAppContext().getResources(), R.drawable.ic_unknown_image);
+        = BitmapFactory.decodeResource(AppEnv.getAppContext().getResources(), R.drawable.ic_unknown_image);
 
     public interface EditTextAction {
         void prepare(Dialog dialog, EditText edit);
         void onOk(Dialog dialog, EditText edit);
-    }
-
-    public interface ConfirmAction {
-        void onOk(Dialog dialog);
-        void onCancel(Dialog dialog);
     }
 
     public interface OnPlaylistSelected {
@@ -115,7 +110,7 @@ public class UiUtils {
     }
 
     public interface OnPostExecuteListener {
-        void    onPostExecute(Err result, Object tag);
+        void onPostExecute(Err result, Object tag);
     }
 
     // ========================================================================
@@ -126,105 +121,29 @@ public class UiUtils {
 
     // ------------------------------------------------------------------------
     //
-    // Error to feedback message
-    //
-    // ------------------------------------------------------------------------
-    public static View
-    inflateLayout(Context context, int layout) {
-        LayoutInflater inflater = (LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        return inflater.inflate(layout, null);
-    }
-
-    public static void
-    showTextToast(Context context, CharSequence text) {
-        Toast t = Toast.makeText(context, text, Toast.LENGTH_SHORT);
-        t.setGravity(Gravity.CENTER, 0, 0);
-        t.show();
-    }
-
-    public static void
-    showTextToast(Context context, CharSequence text, boolean lengthLong) {
-        Toast t = Toast.makeText(context, text, lengthLong? Toast.LENGTH_LONG: Toast.LENGTH_SHORT);
-        t.setGravity(Gravity.CENTER, 0, 0);
-        t.show();
-    }
-
-    public static void
-    showTextToast(Context context, int textid) {
-        Toast t = Toast.makeText(context, textid, Toast.LENGTH_SHORT);
-        t.setGravity(Gravity.CENTER, 0, 0);
-        t.show();
-    }
-
-    public static void
-    showTextToastAtBottom(Context context, int textid, boolean lengthLong) {
-        Toast t = Toast.makeText(context, textid, lengthLong ? Toast.LENGTH_LONG : Toast.LENGTH_SHORT);
-        t.setGravity(Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL, 0, 50);
-        t.show();
-    }
-
-    // ------------------------------------------------------------------------
-    //
     // Dialog
     //
     // ------------------------------------------------------------------------
     public static AlertDialog
-    createAlertDialog(Context context, int icon, CharSequence title, CharSequence message) {
-        eAssert(null != title);
-        AlertDialog.Builder builder = new AlertDialog.Builder(context);
-        AlertDialog dialog = builder.create();
-        if (0 != icon)
-            dialog.setIcon(icon);
-        dialog.setTitle(title);
-        if (null != message)
-            dialog.setMessage(message);
-        return dialog;
-    }
-
-    @SuppressWarnings("unused")
-    public static AlertDialog
-    createAlertDialog(Context context, int icon, int title, int message) {
-        eAssert(0 != title);
-        CharSequence t = context.getResources().getText(title);
-        CharSequence msg = (0 == message)? null: context.getResources().getText(message);
-        return createAlertDialog(context, icon, t, msg);
+    buildConfirmDialog(@NonNull final Context context,
+                       @NonNull final CharSequence title,
+                       @NonNull final CharSequence description,
+                       @NonNull final ConfirmAction action) {
+        return free.yhc.abaselib.util.UxUtil.buildConfirmDialog(
+                context,
+                title,
+                description,
+                R.drawable.ic_info,
+                AUtil.getResText(R.string.yes),
+                AUtil.getResText(R.string.no),
+                action);
     }
 
     public static AlertDialog
-    buildConfirmDialog(final Context context,
-                       final CharSequence title,
-                       final CharSequence description,
-                       final ConfirmAction action) {
-        final AlertDialog dialog = createAlertDialog(context, R.drawable.ic_info, title, description);
-        dialog.setButton(AlertDialog.BUTTON_POSITIVE,
-                         context.getResources().getText(R.string.yes),
-                         new DialogInterface.OnClickListener() {
-            @Override
-            public void
-            onClick(DialogInterface diag, int which) {
-                action.onOk(dialog);
-                dialog.dismiss();
-            }
-        });
-
-        dialog.setButton(AlertDialog.BUTTON_NEGATIVE,
-                         context.getResources().getText(R.string.no),
-                         new DialogInterface.OnClickListener() {
-            @Override
-            public void
-            onClick(DialogInterface diag, int which) {
-                action.onCancel(dialog);
-                diag.dismiss();
-            }
-        });
-        return dialog;
-    }
-
-    public static AlertDialog
-    buildConfirmDialog(final Context context,
+    buildConfirmDialog(@NonNull final Context context,
                        final int title,
                        final int description,
-                       final ConfirmAction action) {
+                       @NonNull final ConfirmAction action) {
         return buildConfirmDialog(context,
                                   context.getResources().getText(title),
                                   context.getResources().getText(description),
@@ -256,7 +175,7 @@ public class UiUtils {
                                final CharSequence hintText,
                                final EditTextAction action) {
         // Create "Enter Url" dialog
-        View layout = inflateLayout(context, R.layout.edittext_dialog);
+        View layout = AUtil.inflateLayout(R.layout.edittext_dialog);
         final AlertDialog dialog = createEditTextDialog(context, layout, title);
         // Set action for dialog.
         final EditText edit = (EditText)layout.findViewById(R.id.edit);
@@ -429,7 +348,7 @@ public class UiUtils {
         c.close();
 
         final String[] menus = menul.toArray(new String[menul.size()]);
-        final long[] ids = Utils.convertArrayLongTolong(idl.toArray(new Long[idl.size()]));
+        final long[] ids = Util.convertArrayLongTolong(idl.toArray(new Long[idl.size()]));
 
         AlertDialog.Builder bldr = new AlertDialog.Builder(context);
         if (diagTitle > 0)
@@ -440,14 +359,14 @@ public class UiUtils {
             @Override
             public void
             onClick(DialogInterface dialog, int which) {
-                eAssert(which >= 0);
+                P.bug(which >= 0);
                 dialog.dismiss();
                 if (userMenus.length > which) {
                     // User menu is selected.
                     action.onUserMenu(which, tag);
                 } else if (userMenus.length == which) {
                     // Need to get new playlist name.
-                    UiUtils.EditTextAction edAction = new UiUtils.EditTextAction() {
+                    free.yhc.netmbuddy.utils.UxUtil.EditTextAction edAction = new free.yhc.netmbuddy.utils.UxUtil.EditTextAction() {
                         @Override
                         public void
                         prepare(Dialog dialog, EditText edit) {
@@ -458,20 +377,20 @@ public class UiUtils {
                         onOk(Dialog dialog, EditText edit) {
                             String title = edit.getText().toString();
                             if (db.containsPlaylist(title)) {
-                                UiUtils.showTextToast(context, R.string.msg_existing_playlist);
+                                showTextToast(R.string.msg_existing_playlist);
                                 return;
                             }
 
                             long plid = db.insertPlaylist(title);
                             if (plid < 0) {
-                                UiUtils.showTextToast(context, R.string.err_db_unknown);
+                                showTextToast(R.string.err_db_unknown);
                                 return;
                             }
 
                             action.onPlaylist(plid, tag);
                         }
                     };
-                    UiUtils.buildOneLineEditTextDialog(context, R.string.enter_playlist_title, edAction)
+                    free.yhc.netmbuddy.utils.UxUtil.buildOneLineEditTextDialog(context, R.string.enter_playlist_title, edAction)
                            .show();
                 } else
                     action.onPlaylist(ids[which], tag);
@@ -525,11 +444,11 @@ public class UiUtils {
     playAsVideo(Context context, String ytvid) {
         YTPlayer.get().stopVideos();
         Intent i = new Intent(Intent.ACTION_VIEW,
-                Uri.parse(YTHacker.getYtVideoPageUrl(ytvid)));
+                Uri.parse(YTHackTask.getYtVideoPageUrl(ytvid)));
         try {
             context.startActivity(i);
         } catch (ActivityNotFoundException e) {
-            UiUtils.showTextToast(context, R.string.msg_fail_find_app);
+            showTextToast(R.string.msg_fail_find_app);
         }
     }
 
@@ -539,22 +458,15 @@ public class UiUtils {
     }
 
     public static void
-    doDeleteVideos(final Activity activity,
+    doDeleteVideos(@NonNull final Activity activity,
                    final Object user,
                    final OnPostExecuteListener listener,
                    final long plid,
-                   final long[] mids) {
-        DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
+                   @NonNull final long[] mids) {
+        Task<Void> t = new Task<Void>() {
             @Override
-            public void
-            onPostExecute(DiagAsyncTask task, Err result) {
-                if (null != listener)
-                    listener.onPostExecute(result, user);
-            }
-
-            @Override
-            public Err
-            doBackgroundWork(DiagAsyncTask task) {
+            protected Void
+            doAsync() {
                 DB db = DB.get();
                 db.beginTransaction();
                 try {
@@ -565,97 +477,104 @@ public class UiUtils {
                             db.deleteVideoFromAllPlaylist(mid);
                     }
                     db.setTransactionSuccessful();
+                    if (null != listener)
+                        listener.onPostExecute(Err.NO_ERR, user);
                 } finally {
                     db.endTransaction();
                 }
-                return Err.NO_ERR;
+                return null;
             }
         };
-        new DiagAsyncTask(activity,
-                          worker,
-                          DiagAsyncTask.Style.SPIN,
-                          R.string.deleting)
-            .run();
+        DialogTask.Builder<DialogTask.Builder> b
+                = new DialogTask.Builder<>(activity, t);
+        b.setCancelButtonText(R.string.cancel)
+                .setMessage(R.string.deleting);
+        if (!b.create().start())
+            P.bug();
     }
 
     public static void
-    deleteVideos(final Activity activity,
+    deleteVideos(@NonNull final Activity activity,
                  final Object user, // passed to callback
                  final OnPostExecuteListener listener,
                  final long plid,
-                 final long[] vids) {
-        UiUtils.ConfirmAction action = new UiUtils.ConfirmAction() {
+                 @NonNull final long[] vids) {
+        ConfirmAction action
+                = new ConfirmAction() {
             @Override
             public void
-            onOk(Dialog dialog) {
+            onPositive(@NonNull Dialog dialog) {
                 doDeleteVideos(activity, user, listener, plid, vids);
             }
 
             @Override
             public void
-            onCancel(Dialog dialog) { }
+            onNegative(@NonNull Dialog dialog) { }
         };
-        UiUtils.buildConfirmDialog(activity,
-                                   R.string.delete,
-                                   isUserPlaylist(plid)? R.string.msg_delete_musics
-                                                       : R.string.msg_delete_musics_completely,
-                                   action)
+        buildConfirmDialog(activity,
+                           R.string.delete,
+                           isUserPlaylist(plid)? R.string.msg_delete_musics
+                                   : R.string.msg_delete_musics_completely,
+                           action)
                .show();
     }
 
     public static void
-    doAddVideosTo(final Activity activity,
+    doAddVideosTo(@NonNull final Activity activity,
                   final Object user,
                   final OnPostExecuteListener listener,
                   final long dstPlid,
                   final long srcPlid,
-                  final long[] vids,
+                  @NonNull final long[] vids,
                   final boolean move) {
-        DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
+        Task<Void> t = new Task<Void>() {
             @Override
-            public void
-            onPostExecute(DiagAsyncTask task, Err result) {
-                listener.onPostExecute(result, user);
-            }
-
-            @Override
-            public Err
-            doBackgroundWork(DiagAsyncTask task) {
+            protected Void
+            doAsync() {
+                Err err = Err.NO_ERR;
                 DB db = DB.get();
                 db.beginTransaction();
                 try {
                     for (long mid : vids) {
-                        DB.Err err = db.insertVideoToPlaylist(dstPlid, mid);
-                        if (DB.Err.NO_ERR != err) {
+                        DB.Err dbErr = db.insertVideoToPlaylist(dstPlid, mid);
+                        if (DB.Err.NO_ERR != dbErr) {
                             // Error Case
-                            if (DB.Err.DUPLICATED != err
-                                || 1 == vids.length && !move)
-                                return Err.map(err);
-
+                            if (DB.Err.DUPLICATED != dbErr
+                                    || 1 == vids.length && !move)
+                                err = Err.map(dbErr);
                             // From here : DB_DUPLICATED Case.
+                        } else {
+                            // "Insertion is OK"
+                            // OR "DB_DUPLICATED but [ 'move == true' or "mids.length > 1" ]
+                            if (move) {
+                                if (free.yhc.netmbuddy.utils.UxUtil.isUserPlaylist(srcPlid))
+                                    db.deleteVideoFrom(srcPlid, mid);
+                                else
+                                    db.deleteVideoExcept(dstPlid, mid);
+                            }
                         }
-
-                        // "Insertion is OK"
-                        // OR "DB_DUPLICATED but [ 'move == true' or "mids.length > 1" ]
-                        if (move) {
-                            if (UiUtils.isUserPlaylist(srcPlid))
-                                db.deleteVideoFrom(srcPlid, mid);
-                            else
-                                db.deleteVideoExcept(dstPlid, mid);
-                        }
+                        db.setTransactionSuccessful();
                     }
-                    db.setTransactionSuccessful();
                 } finally {
                     db.endTransaction();
                 }
-                return Err.NO_ERR;
+
+                final Err result = err;
+                AppEnv.getUiHandler().post(new Runnable() {
+                    @Override
+                    public void run() {
+                        listener.onPostExecute(result, user);
+                    }
+                });
+                return null;
             }
         };
-        new DiagAsyncTask(activity,
-                          worker,
-                          DiagAsyncTask.Style.SPIN,
-                          move? R.string.moving: R.string.adding)
-            .run();
+        DialogTask.Builder<DialogTask.Builder> b
+                = new DialogTask.Builder<>(activity, t);
+        b.setCancelButtonText(R.string.cancel)
+                .setMessage(move? R.string.moving: R.string.adding);
+        if (!b.create().start())
+            P.bug();
     }
 
     public static void
@@ -665,8 +584,8 @@ public class UiUtils {
                 final long plid,
                 final long[] vids,
                 final boolean move) {
-        final long srcPlid = UiUtils.isUserPlaylist(plid)? plid: DB.INVALID_PLAYLIST_ID;
-        UiUtils.OnPlaylistSelected action = new UiUtils.OnPlaylistSelected() {
+        final long srcPlid = free.yhc.netmbuddy.utils.UxUtil.isUserPlaylist(plid)? plid: DB.INVALID_PLAYLIST_ID;
+        free.yhc.netmbuddy.utils.UxUtil.OnPlaylistSelected action = new free.yhc.netmbuddy.utils.UxUtil.OnPlaylistSelected() {
             @Override
             public void
             onPlaylist(long plid, Object user) {
@@ -679,95 +598,96 @@ public class UiUtils {
         };
 
         // exclude current playlist
-        UiUtils.buildSelectPlaylistDialog(DB.get(),
-                                          activity,
-                                          move? R.string.move_to: R.string.add_to,
-                                          null,
-                                          action,
-                                          srcPlid,
-                                          tag)
+        free.yhc.netmbuddy.utils.UxUtil.buildSelectPlaylistDialog(DB.get(),
+                                                                  activity,
+                                                                  move? R.string.move_to: R.string.add_to,
+                                                                  null,
+                                                                  action,
+                                                                  srcPlid,
+                                                                  tag)
                .show();
     }
 
     public static void
     showVideoDetailInfo(final Activity activity, final long vid) {
-        DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
-            private DMVideo _mDmb = null;
-            private String[] _mPls = new String[0];
-
-            @Override
-            public void
-            onPostExecute(DiagAsyncTask task, Err result) {
+        Task<Void> t = new Task<Void>() {
+            private void
+            postExecute(DMVideo dmv, String[] pls) {
                 DateFormat df = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM);
-                String channel = Utils.getResString(R.string.channel) + " : ";
-                if (Utils.isValidValue(_mDmb.channelTitle))
-                    channel +=  _mDmb.channelTitle;
+                String channel = AUtil.getResString(R.string.channel) + " : ";
+                if (Util.isValidValue(dmv.channelTitle))
+                    channel += dmv.channelTitle;
                 else
-                    channel += Utils.getResString(R.string.unknown);
+                    channel += AUtil.getResString(R.string.unknown);
 
                 String strTimePlayed;
-                if (0 == _mDmb.extra.timePlayed)
-                    strTimePlayed = Utils.getResString(R.string.not_played_yet);
+                if (0 == dmv.extra.timePlayed)
+                    strTimePlayed = AUtil.getResString(R.string.not_played_yet);
                 else
-                    strTimePlayed = df.format(new Date(_mDmb.extra.timePlayed));
+                    strTimePlayed = df.format(new Date(dmv.extra.timePlayed));
 
                 DB.Bookmark[] bookmarks;
-                if (null == _mDmb.bookmarks)
+                if (null == dmv.bookmarks)
                     // Unexpected error is ignored.
                     bookmarks = new DB.Bookmark[0];
                 else
-                    bookmarks = DB.Bookmark.decode(_mDmb.bookmarks);
+                    bookmarks = DB.Bookmark.decode(dmv.bookmarks);
 
-                String playbackTm = Utils.getResString(R.string.playback_time) + " : " + _mDmb.playtime
-                                        + Utils.getResString(R.string.seconds);
-                String volume = Utils.getResString(R.string.volume) + " : " + _mDmb.volume + " / 100";
-                String timeAdded = Utils.getResString(R.string.time_added) + " : " + _mDmb.extra.timeAdd;
-                String timePlayed = Utils.getResString(R.string.time_last_played) + " : " + strTimePlayed;
-                String ytvid = Utils.getResString(R.string.youtube_id) + " : " + _mDmb.ytvid;
-                String msg =_mDmb.title + "\n\n"
-                             + ytvid + "\n"
-                             + channel + "\n"
-                             + playbackTm + "\n"
-                             + volume + "\n"
-                             + timeAdded + "\n"
-                             + timePlayed + "\n";
+                String playbackTm = AUtil.getResString(R.string.playback_time) + " : " + dmv.playtime
+                        + AUtil.getResString(R.string.seconds);
+                String volume = AUtil.getResString(R.string.volume) + " : " + dmv.volume + " / 100";
+                String timeAdded = AUtil.getResString(R.string.time_added) + " : " + dmv.extra.timeAdd;
+                String timePlayed = AUtil.getResString(R.string.time_last_played) + " : " + strTimePlayed;
+                String ytvid = AUtil.getResString(R.string.youtube_id) + " : " + dmv.ytvid;
+                String msg = dmv.title + "\n\n"
+                        + ytvid + "\n"
+                        + channel + "\n"
+                        + playbackTm + "\n"
+                        + volume + "\n"
+                        + timeAdded + "\n"
+                        + timePlayed + "\n";
                 if (bookmarks.length > 0) {
-                    msg += "[ " + Utils.getResString(R.string.bookmarks) + " ]\n";
+                    msg += "[ " + AUtil.getResString(R.string.bookmarks) + " ]\n";
                     for (DB.Bookmark bm : bookmarks)
-                        msg += "    <" + Utils.secsToMinSecText(bm.pos / 1000) + "> " + bm.name + "\n";
+                        msg += "    <" + Util.secsToMinSecText(bm.pos / 1000) + "> " + bm.name + "\n";
                 }
 
-                msg += "\n[ " + Utils.getResString(R.string.playlist) + " ]\n";
-                for (String title : _mPls)
+                msg += "\n[ " + AUtil.getResString(R.string.playlist) + " ]\n";
+                for (String title : pls)
                     msg += "* " + title + "\n";
 
-                UiUtils.createAlertDialog(activity,
-                                          0,
-                                          Utils.getResString(R.string.detail_info),
-                                          msg)
-                       .show();
+                createAlertDialog(activity,
+                                  0,
+                                  AUtil.getResString(R.string.detail_info),
+                                  msg)
+                        .show();
             }
 
             @Override
-            public Err
-            doBackgroundWork(DiagAsyncTask task) {
-                DB db = DB.get();
-                _mDmb = db.getVideoInfo(vid, DMVideo.sDBProjectionExtraWithoutThumbnail);
-
+            protected Void
+            doAsync() {
+                final DB db = DB.get();
+                final DMVideo dmv = db.getVideoInfo(vid, DMVideo.sDBProjectionExtraWithoutThumbnail);
                 long[] plids = db.getPlaylistsContainVideo(vid);
-                _mPls = new String[plids.length];
+                final String[] pls = new String[plids.length];
                 for (int i = 0; i < plids.length; i++)
-                    _mPls[i] = (String)db.getPlaylistInfo(plids[i], ColPlaylist.TITLE);
-
-                return Err.NO_ERR;
+                    pls[i] = (String)db.getPlaylistInfo(plids[i], ColPlaylist.TITLE);
+                AppEnv.getUiHandler().post(new Runnable() {
+                    @Override
+                    public void run() {
+                        postExecute(dmv, pls);
+                    }
+                });
+                return null;
             }
         };
 
-        new DiagAsyncTask(activity,
-                          worker,
-                          DiagAsyncTask.Style.SPIN,
-                          R.string.loading)
-            .run();
+        DialogTask.Builder<DialogTask.Builder> b
+                = new DialogTask.Builder<>(activity, t);
+        b.setCancelButtonText(R.string.cancel);
+        b.setMessage(R.string.loading);
+        if (!b.create().start())
+            P.bug();
     }
 
     // ----------------------------------------------------------------------------------------------------------------
@@ -775,17 +695,17 @@ public class UiUtils {
     // ----------------------------------------------------------------------------------------------------------------
     public static void
     showBookmarkDialog(final Activity activity, final String ytvid, String title) {
-        ListView lv = (ListView)UiUtils.inflateLayout(activity, R.layout.bookmark_dialog);
+        ListView lv = (ListView)AUtil.inflateLayout(R.layout.bookmark_dialog);
         final DB db = DB.get();
 
         DB.Bookmark[] bms = db.getBookmarks(ytvid);
         if (0 == bms.length) {
-            showTextToast(activity, R.string.msg_empty_bookmarks);
+            showTextToast(R.string.msg_empty_bookmarks);
             return;
         }
 
         AlertDialog.Builder bldr = new AlertDialog.Builder(activity);
-        bldr.setTitle("[" + Utils.getResString(R.string.bookmarks) + "]\n" + title);
+        bldr.setTitle("[" + AUtil.getResString(R.string.bookmarks) + "]\n" + title);
         bldr.setView(lv);
         final AlertDialog diag = bldr.create();
 
@@ -814,7 +734,7 @@ public class UiUtils {
                 if (ytvid.equals(activeYtvid))
                     mp.playerSeekTo(bm.pos);
                 else
-                    showTextToast(activity, R.string.msg_fail_seek_to_bookmark);
+                    showTextToast(R.string.msg_fail_seek_to_bookmark);
                 diag.dismiss();
             }
         });
@@ -826,31 +746,50 @@ public class UiUtils {
     // ----------------------------------------------------------------------------------------------------------------
     public static void
     showSimilarTitlesDialog(final Activity activity, final String title) {
-        DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
-            private AtomicReference<Boolean> mCancelled = new AtomicReference<>(false);
-            private LinkedList<Long> mVids = new LinkedList<>();
+        Task<Void> t = new Task<Void>() {
+            private void
+            postExecute(final LinkedList<Long> vidl) {
+                if (0 == vidl.size()) {
+                    showTextToast(R.string.msg_no_similar_titles);
+                    return;
+                }
+
+                ListView lv = (ListView)AUtil.inflateLayout(R.layout.similar_title_dialog);
+                AlertDialog.Builder bldr = new AlertDialog.Builder(activity);
+                bldr.setTitle("[" + AUtil.getResString(R.string.search_similar_titles) + "]\n" + title);
+                bldr.setView(lv);
+                final AlertDialog diag = bldr.create();
+                final SimilarTitlesListAdapter adapter
+                        = new SimilarTitlesListAdapter(
+                        activity,
+                        Util.convertArrayLongTolong(vidl.toArray(new Long[vidl.size()])));
+                lv.setAdapter(adapter);
+                diag.show();
+            }
 
             @Override
-            public Err
-            doBackgroundWork(DiagAsyncTask task) {
-                float similarityThreshold = Utils.getPrefTitleSimilarityThreshold();
+            protected Void
+            doAsync() throws InterruptedException {
+                final LinkedList<Long> vidl = new LinkedList<>();
+                float similarityThreshold = Util.getPrefTitleSimilarityThreshold();
                 SCmp scmp = new SCmp();
                 scmp.setCmpParameter(title, true, null);
-                Cursor c = null;
-                try {
+                try (Cursor c = DB.get().queryVideos(
+                        new ColVideo[] { ColVideo.ID,
+                                         ColVideo.TITLE },
+                        null,
+                        false)) {
                     final int COLI_ID = 0;
                     final int COLI_TITLE = 1;
-                    c = DB.get().queryVideos(new ColVideo[] { ColVideo.ID,
-                                                              ColVideo.TITLE },
-                                             null,
-                                             false);
                     if (!c.moveToFirst())
-                        return Err.NO_ERR;
+                        return null;
 
                     int maxCnt = c.getCount();
 
-                    task.publishPreProgress(maxCnt);
-                    task.publishProgress(0);
+                    long progcnt = 0;
+                    publishProgressInit(maxCnt);
+                    publishProgress(progcnt);
+
                     do {
                         if (DBG) {
                             String title = c.getString(COLI_TITLE);
@@ -859,71 +798,33 @@ public class UiUtils {
                             P.v("    " + sim);
                         }
                         if (similarityThreshold < scmp.similarity(c.getString(COLI_TITLE))) {
-                            mVids.addLast(c.getLong(COLI_ID));
-                            if (mVids.size() >= Policy.MAX_SIMILAR_TITLES_RESULT)
-                                return Err.NO_ERR;
+                            vidl.addLast(c.getLong(COLI_ID));
+                            if (vidl.size() >= PolicyConstant.MAX_SIMILAR_TITLES_RESULT)
+                                return null;
                         }
 
-                        task.publishIncrenemtProgressBy(1);
-                        if (mCancelled.get())
-                            return Err.CANCELLED;
+                        publishProgress(++progcnt);
+                        if (isCancel())
+                            throw new InterruptedException();
                     } while (c.moveToNext());
-                } catch (Exception e) {
-                    e.printStackTrace();
-                } finally {
-                    if (null != c)
-                        c.close();
-                }
-                return Err.NO_ERR;
-
-            }
-
-            @Override
-            public void
-            onPreExecute(DiagAsyncTask task) {
-
-            }
-
-            @Override
-            public void
-            onPostExecute(DiagAsyncTask task, Err result) {
-                if (0 == mVids.size()) {
-                    UiUtils.showTextToast(activity, R.string.msg_no_similar_titles);
-                    return;
                 }
 
-                ListView lv = (ListView)UiUtils.inflateLayout(activity, R.layout.similar_title_dialog);
-                AlertDialog.Builder bldr = new AlertDialog.Builder(activity);
-                bldr.setTitle("[" + Utils.getResString(R.string.search_similar_titles) + "]\n" + title);
-                bldr.setView(lv);
-                final AlertDialog diag = bldr.create();
-                final SimilarTitlesListAdapter adapter
-                    = new SimilarTitlesListAdapter(
-                        activity,
-                        Utils.convertArrayLongTolong(mVids.toArray(new Long[mVids.size()])));
-                lv.setAdapter(adapter);
-                diag.show();
-            }
-
-            @Override
-            public void
-            onCancel(DiagAsyncTask task) {
-                mCancelled.set(true);
-            }
-
-            @Override
-            public void
-            onCancelled(DiagAsyncTask task) {
+                AppEnv.getUiHandler().post(new Runnable() {
+                    @Override
+                    public void run() {
+                        postExecute(vidl);
+                    }
+                });
+                return null;
             }
         };
 
-        new DiagAsyncTask(activity,
-                          worker,
-                          DiagAsyncTask.Style.PROGRESS,
-                          R.string.searching,
-                          true,
-                          false)
-
-            .run();
+        DialogTask.Builder<DialogTask.Builder> b
+                = new DialogTask.Builder<>(activity, t);
+        b.setStyle(DialogTask.Style.PROGRESS);
+        b.setCancelButtonText(R.string.cancel);
+        b.setMessage(R.string.searching);
+        if (!b.create().start())
+            P.bug();
     }
 }

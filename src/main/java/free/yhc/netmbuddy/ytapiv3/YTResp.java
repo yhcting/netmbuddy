@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2015
+ * Copyright (C) 2015, 2016
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -44,25 +44,23 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static free.yhc.netmbuddy.utils.JsonUtils.jGetString;
-import static free.yhc.netmbuddy.utils.JsonUtils.jGetStrings;
-import static free.yhc.netmbuddy.utils.JsonUtils.jGetInt;
-import static free.yhc.netmbuddy.utils.JsonUtils.jGetLong;
-import static free.yhc.netmbuddy.utils.JsonUtils.jGetDouble;
-import static free.yhc.netmbuddy.utils.JsonUtils.jGetObject;
-import static free.yhc.netmbuddy.utils.JsonUtils.jGetObjects;
-import static free.yhc.netmbuddy.utils.JsonUtils.jGetBoolean;
+import static free.yhc.netmbuddy.utils.JsonUtil.jGetString;
+import static free.yhc.netmbuddy.utils.JsonUtil.jGetStrings;
+import static free.yhc.netmbuddy.utils.JsonUtil.jGetInt;
+import static free.yhc.netmbuddy.utils.JsonUtil.jGetLong;
+import static free.yhc.netmbuddy.utils.JsonUtil.jGetDouble;
+import static free.yhc.netmbuddy.utils.JsonUtil.jGetObject;
+import static free.yhc.netmbuddy.utils.JsonUtil.jGetObjects;
+import static free.yhc.netmbuddy.utils.JsonUtil.jGetBoolean;
 
+import free.yhc.baselib.Logger;
 import free.yhc.netmbuddy.core.YTDataAdapter;
-import free.yhc.netmbuddy.utils.Utils;
-import free.yhc.netmbuddy.utils.JsonUtils.JsonModel;
+import free.yhc.netmbuddy.utils.JsonUtil.JsonModel;
 
 // To support Youtube Data API v3
 class YTResp {
-    @SuppressWarnings("unused")
-    private static final boolean DBG = false;
-    @SuppressWarnings("unused")
-    private static final Utils.Logger P = new Utils.Logger(YTResp.class);
+    private static final boolean DBG = Logger.DBG_DEFAULT;
+    private static final Logger P = Logger.create(YTResp.class, Logger.LOGLV_DEFAULT);
 
     static final SimpleDateFormat SDF = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss.SSS'Z'", Locale.US);
 

@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014, 2015
+ * Copyright (C) 2012, 2013, 2014, 2015, 2016
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -38,13 +38,11 @@ package free.yhc.netmbuddy.scmp;
 
 import java.util.LinkedList;
 
-import free.yhc.netmbuddy.utils.Utils;
+import free.yhc.baselib.Logger;
 
 class SCElemSStr extends SCElem {
-    @SuppressWarnings("unused")
-    private static final boolean DBG = false;
-    @SuppressWarnings("unused")
-    private static final Utils.Logger P = new Utils.Logger(SCElemSStr.class);
+    private static final boolean DBG = Logger.DBG_DEFAULT;
+    private static final Logger P = Logger.create(SCElemSStr.class, Logger.LOGLV_DEFAULT);
 
     private static final String DEF_DELIMITER_REGEX = "[\\Q ~().,-\\*&|^%$#@!`'\"?/><_+=[]{};:\\E]+";
 

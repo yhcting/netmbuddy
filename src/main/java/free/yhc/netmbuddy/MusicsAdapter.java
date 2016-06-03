@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2012, 2013, 2014, 2015
+ * Copyright (C) 2012, 2013, 2014, 2015, 2016
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -36,8 +36,6 @@
 
 package free.yhc.netmbuddy;
 
-import static free.yhc.netmbuddy.utils.Utils.eAssert;
-
 import java.util.HashMap;
 
 import android.content.Context;
@@ -48,19 +46,22 @@ import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.ResourceCursorAdapter;
 import android.widget.TextView;
+
+import free.yhc.abaselib.AppEnv;
+import free.yhc.baselib.Logger;
+import free.yhc.baselib.async.Task;
+import free.yhc.abaselib.ux.DialogTask;
 import free.yhc.netmbuddy.db.ColVideo;
 import free.yhc.netmbuddy.db.DB;
 import free.yhc.netmbuddy.core.YTPlayer;
 import free.yhc.netmbuddy.db.DBUtils;
 import free.yhc.netmbuddy.db.DMVideo;
-import free.yhc.netmbuddy.utils.UiUtils;
-import free.yhc.netmbuddy.utils.Utils;
+import free.yhc.netmbuddy.utils.Util;
+import free.yhc.netmbuddy.utils.UxUtil;
 
 public class MusicsAdapter extends ResourceCursorAdapter {
-    @SuppressWarnings("unused")
-    private static final boolean DBG = false;
-    @SuppressWarnings("unused")
-    private static final Utils.Logger P = new Utils.Logger(MusicsAdapter.class);
+    private static final boolean DBG = Logger.DBG_DEFAULT;
+    private static final Logger P = Logger.create(MusicsAdapter.class, Logger.LOGLV_DEFAULT);
 
     private static final int LAYOUT = R.layout.musics_row;
 
@@ -112,18 +113,18 @@ public class MusicsAdapter extends ResourceCursorAdapter {
     getCursorInfo(int pos, ColVideo col) {
         Cursor c = getCursor();
         if (!c.moveToPosition(pos))
-            eAssert(false);
+            P.bug(false);
         return DBUtils.getCursorVal(c, col);
     }
 
     private Cursor
     createCursor() {
         // NOTE: To reduce cursor's window size, thumbnail is excluded from main adapter cursor.
-        if (UiUtils.PLID_RECENT_PLAYED == mCurArg.plid)
+        if (UxUtil.PLID_RECENT_PLAYED == mCurArg.plid)
             return DB.get().queryVideos(DMVideo.sDBProjectionWithoutThumbnail,
                                         ColVideo.TIME_PLAYED,
                                         false);
-        else if (UiUtils.PLID_SEARCHED == mCurArg.plid)
+        else if (UxUtil.PLID_SEARCHED == mCurArg.plid)
             return DB.get().queryVideosSearchTitle(DMVideo.sDBProjectionWithoutThumbnail,
                                                    mCurArg.extra.split("\\s"));
         else
@@ -138,7 +139,7 @@ public class MusicsAdapter extends ResourceCursorAdapter {
                          CheckStateListener listener) {
         // TODO Should we use 'auto-requery' here?
         super(context, LAYOUT, null, true);
-        eAssert(null != arg);
+        P.bug(null != arg);
         mContext = context;
         mCurArg = arg;
         mCheckListener = listener;
@@ -195,12 +196,12 @@ public class MusicsAdapter extends ResourceCursorAdapter {
     public int[]
     getCheckedMusics() {
         //noinspection ToArrayCallWithZeroLengthArrayArgument
-        return Utils.convertArrayIntegerToint(mCheckedMap.keySet().toArray(new Integer[0]));
+        return Util.convertArrayIntegerToint(mCheckedMap.keySet().toArray(new Integer[0]));
     }
 
     public int[]
     getCheckedMusicsSortedByTime() {
-        Object[] objs = Utils.getSortedKeyOfTimeMap(mCheckedMap);
+        Object[] objs = Util.getSortedKeyOfTimeMap(mCheckedMap);
         int[] poss = new int[objs.length];
         for (int i = 0; i < poss.length; i++)
             poss[i] = (int)objs[i];
@@ -223,18 +224,11 @@ public class MusicsAdapter extends ResourceCursorAdapter {
     public void
     reloadCursorAsync() {
         cleanChecked();
-        DiagAsyncTask.Worker worker = new DiagAsyncTask.Worker() {
-            private Cursor newCursor;
+        Task<Void> t = new Task<Void>() {
             @Override
-            public void
-            onPostExecute(DiagAsyncTask task, Err result) {
-                changeCursor(newCursor);
-            }
-
-            @Override
-            public Err
-            doBackgroundWork(DiagAsyncTask task) {
-                newCursor = createCursor();
+            public Void
+            doAsync() {
+                final Cursor c = createCursor();
                 // NOTE
                 // First-call of'getCount()', can make 'Cursor' cache lots of internal information.
                 // And this caching-job usually takes quite long time especially DB has lots of rows.
@@ -242,14 +236,21 @@ public class MusicsAdapter extends ResourceCursorAdapter {
                 // This has dependency on internal implementation of Cursor!
                 // Until JellyBean, SQLiteCursor executes 'fillWindow(0)' at first 'getCount()' call.
                 // And 'fillWindow(0)' is most-time-consuming preparation for using cursor.
-                newCursor.getCount();
-                return Err.NO_ERR;
+                c.getCount();
+                AppEnv.getUiHandler().post(new Runnable() {
+                    @Override
+                    public void run() {
+                        changeCursor(c);
+                    }
+                });
+                return null;
             }
         };
-        new DiagAsyncTask(mContext, worker,
-                          DiagAsyncTask.Style.SPIN,
-                          R.string.loading)
-            .run();
+        DialogTask.Builder<DialogTask.Builder> b
+                = new DialogTask.Builder<>(mContext, t);
+        b.setMessage(R.string.loading);
+        if (!b.create().start())
+            P.bug();
     }
 
     @Override
@@ -273,17 +274,17 @@ public class MusicsAdapter extends ResourceCursorAdapter {
 
         titlev.setText((String)DBUtils.getCursorVal(cur, ColVideo.TITLE));
         String channel = (String)DBUtils.getCursorVal(cur, ColVideo.CHANNELTITLE);
-        if (Utils.isValidValue(channel)) {
+        if (Util.isValidValue(channel)) {
             channelv.setVisibility(View.VISIBLE);
             channelv.setText(channel);
         } else
             channelv.setVisibility(View.GONE);
         uploadtmv.setVisibility(View.GONE);
-        playtmv.setText(Utils.secsToMinSecText((int)(long)DBUtils.getCursorVal(cur, ColVideo.PLAYTIME)));
+        playtmv.setText(Util.secsToMinSecText((int)(long)DBUtils.getCursorVal(cur, ColVideo.PLAYTIME)));
         // TODO How about caching thumbnails???
         // NOTE: Load thumbnail separately from main adapter cursor
         byte[] thumbnailData = (byte[])DB.get().getVideoInfo((Long)DBUtils.getCursorVal(cur, ColVideo.ID),
                                                              ColVideo.THUMBNAIL);
-        UiUtils.setThumbnailImageView(thumbnailv, thumbnailData);
+        UxUtil.setThumbnailImageView(thumbnailv, thumbnailData);
     }
 }

@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2015
+ * Copyright (C) 2015, 2016
  * Younghyung Cho. <yhcting77@gmail.com>
  * All rights reserved.
  *
@@ -40,19 +40,16 @@ import android.database.Cursor;
 
 import java.util.ArrayList;
 
+import free.yhc.baselib.Logger;
 import free.yhc.netmbuddy.core.YTDataAdapter;
-import free.yhc.netmbuddy.utils.Utils;
-
-import static free.yhc.netmbuddy.utils.Utils.eAssert;
+import free.yhc.netmbuddy.utils.Util;
 
 /**
  * DMVideo : Data Model Video
  */
 public class DMVideo {
-    @SuppressWarnings("unused")
-    private static final boolean DBG = false;
-    @SuppressWarnings("unused")
-    private static final Utils.Logger P = new Utils.Logger(DMVideo.class);
+    private static final boolean DBG = Logger.DBG_DEFAULT;
+    private static final Logger P = Logger.create(DMVideo.class, Logger.LOGLV_DEFAULT);
 
     public static final ColVideo[] sDBProjectionWithoutThumbnail;
     public static final ColVideo[] sDBProjection;
@@ -130,7 +127,7 @@ public class DMVideo {
     public boolean
     isAvailable() {
         // if ytvid is set, it is available.
-        return Utils.isValidValue(ytvid);
+        return Util.isValidValue(ytvid);
     }
 
     @SuppressWarnings("unused")
@@ -148,17 +145,17 @@ public class DMVideo {
     // Data that can be get from Youtube data api is filled.
     public boolean
     isYtDataFilled() {
-        return Utils.isValidValue(ytvid)
-        && Utils.isValidValue(title)
-        && Utils.isValidValue(channelId)
-        && Utils.isValidValue(channelTitle)
+        return Util.isValidValue(ytvid)
+        && Util.isValidValue(title)
+        && Util.isValidValue(channelId)
+        && Util.isValidValue(channelTitle)
         && playtime > 0;
 
     }
 
     public DMVideo
     setData(ColVideo[] cols, Object[] values) {
-        eAssert(cols.length == values.length);
+        P.bug(cols.length == values.length);
         if (null == extra)
             extra = new Extra();
         for (int i = 0; i < cols.length; i++) {
